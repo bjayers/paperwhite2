@@ -40,6 +40,9 @@
 #include "system/season.h"
 #include "system/wordset.h"
 #include "text/system/btl_server_flow_title.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/species.h"
+#endif
 
 // The detail screen's habitat map page, which the ROM does not name: the town map on the main screen with the areas
 // where the Pokémon lives in each season, and a cursor to pick a place for the Pokédex's habitat list
@@ -2125,6 +2128,14 @@ static void PokedexDetailMap_ChangeSeason(PokedexDetailMapParam *param, PokedexD
 static PokedexHabitat *PokedexDetailMap_LoadHabitat(u16 species, HeapID heapId, ArcTool *arc) {
     u32 size;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the archive has a file for each species up to the Pokéstar Studios' (species - 1), and an added
+    // species reads Bulbasaur's, the empty habitat of the 454 species never found in Unova (paperwhite2/species.h).
+    // The hack's own Info page has the areas, and never starts this page
+    if (PaperWhite2_IsAddedSpecies(species)) {
+        species = SPECIES_BULBASAUR;
+    }
+#endif
     return GFL_ArcToolReadHeapNewLZGetLen(arc, species - 1, FALSE, heapId, &size);
 }
 

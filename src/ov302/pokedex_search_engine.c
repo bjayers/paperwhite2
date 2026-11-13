@@ -7,6 +7,9 @@
 #include "gfl/std.h"
 #include "pml/personal.h"
 #include "save/pokedex_savedata.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/species.h"
+#endif
 
 // The Pokédex's search: the species of the list that match the search screen's criteria, found a few at a time
 
@@ -17,8 +20,15 @@
 #define FILE_SHAPES 2
 // The file of the national Pokédex's species, in their order
 #define FILE_NATIONAL_ORDER 4
+#ifdef PAPERWHITE2
+// Paper White 2: the national Pokédex's species, 649 and the added species it has (paperwhite2/species.h), and the
+// list's first part, from 1 to Genesect; the added species follow in their order. Its search excludes those not seen
+#define NATIONAL_COUNT PAPERWHITE2_POKEDEX_LIST_COUNT
+#define NATIONAL_NUMBERED_COUNT SPECIES_GENESECT
+#else
 // The number of species of the national Pokédex
 #define NATIONAL_COUNT 649
+#endif
 // A species' value in the regional Pokédex's table when it is not in it
 #define REGIONAL_NONE 999
 // The species and the form of an entry of the list
@@ -262,19 +272,34 @@ u32 PokedexSearchEngine_LoadList(u32 type, HeapID heapId, u16 **outList) {
     u16 size;
 
     if (type == 0) {
+#ifdef PAPERWHITE2
+        // Paper White 2: 1 to Genesect, then the added species
+        u32 bytes = NATIONAL_COUNT * 2;
+#else
         u32 bytes = 0x512;
+#endif
         u16 *list = GFL_HeapAllocate(heapId, bytes, FALSE, "zukan_search_engine.c", 825);
         u16 i;
 
+#ifdef PAPERWHITE2
+        for (i = 0; i < NATIONAL_NUMBERED_COUNT; i++) {
+            list[i] = i + 1;
+        }
+        if (PAPERWHITE2_POKEDEX_ADDED_COUNT != 0) {
+            PaperWhite2_PokedexAddSpecies(list + NATIONAL_NUMBERED_COUNT);
+        }
+#else
         for (i = 0; i < bytes / 2; i++) {
             list[i] = i + 1;
         }
+#endif
         *outList = list;
         return NATIONAL_COUNT;
     } else {
         u16 *regionalTable = PML_PersonalLoadRegionalDexTable(heapId, &size);
         u32 length;
-        u16 *national = GFL_ArcSysReadHeapNewLZGetLen(ARCID_POKEDEX_SEARCH, FILE_NATIONAL_ORDER, FALSE, heapId, &length);
+        u16 *national =
+            GFL_ArcSysReadHeapNewLZGetLen(ARCID_POKEDEX_SEARCH, FILE_NATIONAL_ORDER, FALSE, heapId, &length);
         u16 count = length >> 1;
         u16 *list = GFL_HeapAllocate(heapId, size * 2, FALSE, "zukan_search_engine.c", 862);
         u16 n = 0;
@@ -300,13 +325,27 @@ static u16 PokedexSearchEngine_LoadOrder(ArcTool *arc, u32 regional, u32 order, 
     u16 *data;
 
     if (regional == 0 && order == 0) {
+#ifdef PAPERWHITE2
+        // Paper White 2: the list's order, 1 to Genesect, then the added species
+        u32 bytes = NATIONAL_COUNT * 2;
+#else
         u32 bytes = 0x512;
+#endif
         u16 i;
 
         data = GFL_HeapAllocate(heapId, bytes, FALSE, "zukan_search_engine.c", 945);
+#ifdef PAPERWHITE2
+        for (i = 0; i < NATIONAL_NUMBERED_COUNT; i++) {
+            data[i] = i + 1;
+        }
+        if (PAPERWHITE2_POKEDEX_ADDED_COUNT != 0) {
+            PaperWhite2_PokedexAddSpecies(data + NATIONAL_NUMBERED_COUNT);
+        }
+#else
         for (i = 0; i < bytes / 2; i++) {
             data[i] = i + 1;
         }
+#endif
         count = NATIONAL_COUNT;
     } else {
         u32 length;

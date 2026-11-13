@@ -3,6 +3,7 @@
 #include "app/pokedex_detail.h"
 #include "constants/pokemon.h"
 #include "paperwhite2/pokedex_shortcut.h"
+#include "paperwhite2/species.h"
 #include "pml/poke_party.h"
 
 // Paper White 2: the Pokémon that the Pokédex's detail screen steps through when the party screen, the summary or the
@@ -22,8 +23,10 @@ void PaperWhite2_PokedexShortcutList_Init(PokedexShortcutList *list, GameData *g
 void PaperWhite2_PokedexShortcutList_Add(PokedexShortcutList *list, BoxPkm *pkm, u8 slot, u8 openedSlot) {
     u16 count = list->detail.count;
 
+    // A species that never enters the Pokédex has no page there (paperwhite2/species.h)
     if (count >= POKEDEX_SHORTCUT_LIST_MAX || !PML_PkmGetParam(pkm, PKM_PARAM_SPECIES_VALID, NULL) ||
-        PML_PkmGetParam(pkm, PKM_PARAM_IS_EGG, NULL)) {
+        PML_PkmGetParam(pkm, PKM_PARAM_IS_EGG, NULL) ||
+        PaperWhite2_IsNotInPokedex(PML_PkmGetParam(pkm, PKM_PARAM_SPECIES, NULL))) {
         return;
     }
     if (slot == openedSlot) {

@@ -26,6 +26,8 @@
 #include "text/system/box2_bmp.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/prestige.h"
+#include "paperwhite2/species.h"
+#include "text/system/btl_pokeparam_box_main_save_init.h"
 #endif
 
 // The PC box's windows: the Pokémon's data on the upper screen, the buttons of the frames, the box names and counts on
@@ -258,17 +260,36 @@ static void PrintInfoDexNumber(Box2SysWork *syswk, Box2PokeInfo *info, u32 index
     GFL_BitmapFill(BmpWin_GetBitmap(syswk->app->windows[index].window), 0);
     if (info->egg == FALSE) {
         if (syswk->app->nationalDex == TRUE) {
+#ifdef PAPERWHITE2
+            // Paper White 2: the species' display number, 4 digits from 1000, and "???" for an added species without
+            // one (paperwhite2/species.h)
+            number = PaperWhite2_PokedexDisplayNumber(info->species);
+#else
             number = info->species;
+#endif
         } else {
             number = syswk->app->regionalDex[info->species];
         }
         if (number != 999) {
             PrintFormattedMsg(syswk->app, index, syswk->app->msgData, 108, 0, 0, syswk->app->font, BOX2_COLOR_NORMAL);
             width = GFL_FontGetBlockWidth(syswk->app->expandBuf, syswk->app->font, 0);
+#ifdef PAPERWHITE2
+            WordSetNumber(syswk->app->wordSet, 0, number, PaperWhite2_PokedexNumberDigits(number), 2, TRUE);
+#else
             WordSetNumber(syswk->app->wordSet, 0, number, 3, 2, TRUE);
+#endif
             PrintFormattedMsg(syswk->app, index, syswk->app->msgData, 104, width, 0, syswk->app->font,
                               BOX2_COLOR_NORMAL);
-        } else {
+        }
+#ifdef PAPERWHITE2
+        else if (PaperWhite2_IsPokedexNumberNone(number) && syswk->app->nationalDex == TRUE) {
+            PrintFormattedMsg(syswk->app, index, syswk->app->msgData, 108, 0, 0, syswk->app->font, BOX2_COLOR_NORMAL);
+            width = GFL_FontGetBlockWidth(syswk->app->expandBuf, syswk->app->font, 0);
+            PrintFormattedMsg(syswk->app, index, syswk->app->msgData, BtlPokeparamBoxMainSaveInit_Text_Empty_25, width,
+                              0, syswk->app->font, BOX2_COLOR_NORMAL);
+        }
+#endif
+        else {
             RequestFlushChar(syswk->app, index);
             return;
         }

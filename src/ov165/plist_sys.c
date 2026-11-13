@@ -52,6 +52,7 @@
 #include "paperwhite2/pokedex_shortcut.h"
 #include "paperwhite2/pokelist_field_moves.h"
 #include "paperwhite2/shiny_candy.h"
+#include "paperwhite2/species.h"
 #endif
 
 // The party list's screen: its graphics, the cursor, and what each mode does with the Pokémon picked. The ROM
@@ -1193,7 +1194,9 @@ static void PokeList_OpenMenu(PokeListWork *wk) {
             u32 i = 0;
 
             items[i++] = 0;
-            if (wk->param->showPokedex) {
+            if (wk->param->showPokedex &&
+                !PaperWhite2_IsNotInPokedex(
+                    PokeParty_GetParam(PokeParty_GetPkm(wk->param->party, wk->cursorPos), PKM_PARAM_SPECIES, NULL))) {
                 items[i++] = POKELIST_MENU_POKEDEX;
             }
             items[i++] = POKELIST_MENU_FIELD_MOVES;

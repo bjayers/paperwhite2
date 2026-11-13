@@ -18,6 +18,9 @@
 #include "system/printsys.h"
 #include "system/wordset.h"
 #include "text/system/game_start_3.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/species.h"
+#endif
 
 // The windows and text of the Pokédex's list. The ROM doesn't name this file; pokedex_list_bmp.c is a guess after the
 // search screen's pokedex_search_bmp.c
@@ -25,6 +28,11 @@
 #define COLOR_ITEM PRINT_COLOR(14, 15, 0)
 #define COLOR_BUTTON PRINT_COLOR(15, 2, 1)
 #define COLOR_COUNT PRINT_COLOR(12, 13, 0)
+#ifdef PAPERWHITE2
+// Paper White 2: where a row's name starts, after its number: further right after 4 digits, as far as they need
+// (PaperWhite2_PokedexListNameX)
+#define ITEM_NAME_X 28
+#endif
 
 // A window to create, as BmpWin_CreateDynamic takes it
 typedef struct {
@@ -224,10 +232,31 @@ void PokedexListBmp_PrintItem(PokedexListWork *wk, PrintWindow *window, StrBuf *
     if (PokeDex_GetMode(wk->param->pokedex) != DEX_NATIONAL) {
         number = wk->regionalNumbers[number];
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the national list shows each species' display number, 4 digits from 1000 with the name after
+    // them, and "???" for an added species without one (paperwhite2/species.h)
+    else {
+        number = PaperWhite2_PokedexDisplayNumber(number);
+    }
+    strbuf = GFL_MsgDataLoadStrbufNew(wk->msgData, GameStart3_Text_Empty_4);
+    WordSetNumber(wk->wordSet, 0, number, PaperWhite2_PokedexNumberDigits(number), 2, TRUE);
+    GFL_WordSetFormatStrbuf(wk->wordSet, wk->strbuf, strbuf);
+    GFL_StrBufFree(strbuf);
+    if (PaperWhite2_IsPokedexNumberNone(number)) {
+        PaperWhite2_PokedexLoadNumberNone(wk->strbuf, HEAPID_POKEDEX_LIST | HEAPID_TAIL_BIT);
+    }
+    PrintStrAligned(window, queue, 0, 4, wk->strbuf, wk->font, COLOR_ITEM, PRINT_ALIGN_LEFT);
+    PrintStrAligned(window, queue,
+                    PaperWhite2_PokedexNumberDigits(number) == 4
+                        ? PaperWhite2_PokedexListNameX(wk->strbuf, wk->font, ITEM_NAME_X)
+                        : ITEM_NAME_X,
+                    4, name, wk->font, COLOR_ITEM, PRINT_ALIGN_LEFT);
+#else
     strbuf = GFL_MsgDataLoadStrbufNew(wk->msgData, GameStart3_Text_Empty_4);
     WordSetNumber(wk->wordSet, 0, number, 3, 2, TRUE);
     GFL_WordSetFormatStrbuf(wk->wordSet, wk->strbuf, strbuf);
     GFL_StrBufFree(strbuf);
     PrintStrAligned(window, queue, 0, 4, wk->strbuf, wk->font, COLOR_ITEM, PRINT_ALIGN_LEFT);
     PrintStrAligned(window, queue, 28, 4, name, wk->font, COLOR_ITEM, PRINT_ALIGN_LEFT);
+#endif
 }

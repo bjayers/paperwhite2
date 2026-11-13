@@ -24,6 +24,9 @@
 #include "system/app_menu_common.h"
 #include "system/game_data.h"
 #include "system/wipe.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/species.h"
+#endif
 
 // The summary screen's core: setting up and tearing down the screens, the main loop, the buttons of the bottom
 // screen, changing the page or the Pokémon behind a mosaic, and printing for the pages. The file's name is a guess
@@ -1306,12 +1309,18 @@ static BOOL PStatus_IsFromFieldMenu(PStatusWork *wk) {
 }
 
 #ifdef PAPERWHITE2
+// Paper White 2: whether the Pokémon shown is of a species that never enters the Pokédex (paperwhite2/species.h),
+// which has no page there
+#define PStatus_IsNotInPokedex(wk)                                                                                     \
+    PaperWhite2_IsNotInPokedex(PML_PkmGetParam(PStatus_GetBoxPkm(wk), PKM_PARAM_SPECIES, NULL))
+
 // Paper White 2: the INFO button shows while the tabs take input, for a Pokémon that isn't an egg, beside the ribbons'
 // tab when it has ribbons
 static void PStatus_ShowPokedexButton(PStatusWork *wk) {
     if (wk->pokedexButton != NULL) {
         PaperWhite2_PStatusPokedex_SetVisible(wk->pokedexButton, wk->isInputEnabled == TRUE && wk->isEgg == FALSE &&
-                                                                     wk->page != PSTATUS_PAGE_FORGET);
+                                                                     wk->page != PSTATUS_PAGE_FORGET &&
+                                                                     !PStatus_IsNotInPokedex(wk));
     }
 }
 
@@ -1319,7 +1328,7 @@ static void PStatus_ShowPokedexButton(PStatusWork *wk) {
 // field app call opens, opening the summary again on this page as it closes (paperwhite2/pokedex_shortcut.h)
 static BOOL PStatus_CheckPokedexButton(PStatusWork *wk) {
     if (wk->pokedexButton == NULL || wk->isEgg == TRUE || wk->page == PSTATUS_PAGE_FORGET ||
-        !PaperWhite2_PStatusPokedex_IsPressed(wk->pokedexButton)) {
+        PStatus_IsNotInPokedex(wk) || !PaperWhite2_PStatusPokedex_IsPressed(wk->pokedexButton)) {
         return FALSE;
     }
     wk->isTouch = (GCTX_HIDGetPressedKeys() & PAD_BUTTON_START) ? FALSE : TRUE;

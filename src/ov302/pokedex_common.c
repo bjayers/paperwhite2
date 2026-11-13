@@ -19,6 +19,7 @@
 #include "system/wipe.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/habitat_dex.h"
+#include "paperwhite2/species.h"
 #endif
 
 // What the Pokédex's overlays share: the list of the species, and the habitat lists
@@ -111,6 +112,13 @@ u32 PokedexCommon_CreateList(PokeDexSave *pokedex, u16 **list, HeapID heapId) {
 
     if (PokeDex_GetMode(pokedex) == 1) {
         count = PokedexSearchEngine_LoadList(0, heapId, &species);
+#ifdef PAPERWHITE2
+        // Paper White 2: the added species after Genesect show only once seen, without rows for the numbers between
+        // (paperwhite2/species.h)
+        if (PAPERWHITE2_POKEDEX_ADDED_COUNT != 0) {
+            count = PaperWhite2_PokedexHideUnseen(pokedex, species, count);
+        }
+#endif
     } else {
         count = PokedexSearchEngine_LoadList(1, heapId, &species);
     }

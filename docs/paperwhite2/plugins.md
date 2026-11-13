@@ -2479,7 +2479,7 @@ then loses the whole save (design doc section 2.4).
 ### New species
 
 Whole new species, appended to `generated/species.txt` from 687 after `SPECIES_PAPERWHITE2_RESERVED_685`/`_686`
-(`docs/paperwhite2/design/new-species.md`, section 14 for what is built; `include/paperwhite2/species.h`,
+(`docs/paperwhite2/design/new-species.md`, sections 14 and 15 for what is built; `include/paperwhite2/species.h`,
 `tools/data/species_list.py`):
 
 - **One definition.** `tools/data/species_list.py` for the tools (real species 1-649 and 687 on, the Pokédex's less
@@ -2496,8 +2496,26 @@ Whole new species, appended to `generated/species.txt` from 687 after `SPECIES_P
   the Wonder Trade's tables, the Info page's family table, the debug pickers.
 - **Without added species the ROM is the one before** (each check folds to the original; see the design doc for the
   two compiler traps: macros for compound checks, no lines before a `__LINE__` allocation).
-- **Not yet:** the display number (step 3; the summary and Info page show the ID), Add Pokémon in the editor (step 4),
-  the musical and the vanilla Area page (step 5).
+- **The Pokédex's numbering** (section 15 of the design doc; `src/paperwhite2/main/paperwhite2_pokedex_numbers.c`):
+  - an added species' `pokedex.display_number` (650-9999 but 999, or none for "???"; two species with one number stop
+    the build in `species_list.display_numbers()`); `PaperWhite2_PokedexDisplayNumber` gives the shown number
+    everywhere one is printed (the list rows, the Info page and its registration screen, the summary, the PC box), 3
+    digits under 1000 and 4 from 1000 (`PaperWhite2_PokedexNumberDigits`), "???" for none (999, which the Info page and
+    summary already print so; the list row loads the Info page's "???", the box prints its own after "No.");
+  - the National list is 1-649 as before, then the added species by display number (unnumbered last), each only once
+    seen, with no rows for the numbers between (`PokedexSearchEngine_LoadList`, `PokedexCommon_CreateList`,
+    `POKEDEX_LIST_SPECIES_COUNT` = `PAPERWHITE2_POKEDEX_LIST_COUNT`); a 4-digit row's name moves right only as far as
+    the number needs;
+  - search and sorts: the number order is the list's, A to Z is a/0/9/7 file 5 (now generated, with the PC box's search
+    by name taking generated first-letter groups in `box_search.c`), height and weight as before;
+  - SEEN and OBTAINED (the list, the trainer card, the scripts' counts, the battle's capture odds) count the added
+    species; the National completion (the Shiny Charm, the diploma, the trainer card's star) and its evaluation stay on
+    1-649;
+  - `"pokedex": false` species: never seen or caught (their bits are ignored), no list row, search or box-search entry,
+    no POKéDEX in the party menu, no INFO/START in the summary, left out of the detail screen's party and box lists, no
+    registration page after a catch; their number shows "???" in the summary and box.
+- **Not yet:** Add Pokémon in the editor (step 4), followers, encounters, the Wonder Trade and the musical (step 5). The
+  vanilla Area page (never started in the hack) reads Bulbasaur's empty habitat for an added species.
 
 ## Adding global scripts
 

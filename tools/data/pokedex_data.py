@@ -11,13 +11,21 @@ The archive's files (pokedex_search_engine.c, pokedex_detail_form.c, pokedex_inf
    slot's entry the next form's, 0 after its species' last. The slots are the lines of the alternate forms in the
    text that \\from{species.pokedex.forms.<field>} writes (their names, entries, heights and weights), so the table is
    made from the same pokedex.forms lists, and a form added to a species keeps every other form's text.
-1. The species' initials' groups, a byte per species: its English name's first letter, A as 0 to Z as 25, or 26
-   for none (SPECIES_NONE's, and the IDs that have no Pokédex row).
+1. The species' initials' groups, a byte per species: its English name's first letter, A as 0 to Z as 25 (an
+   accented letter as its own, É as E), or 26 for none (SPECIES_NONE's, and the IDs that have no Pokédex row).
 2. The search's shapes (PokedexSearchEngine_GetShape): a byte per species, its pokedex.shape, then the empty slot's
    and the alternate forms', their pokedex.forms[].shape, by slot. The empty slot has the last species' shape, as the
    original's has, which nothing reads, since no form's slot is the empty one.
-3. 4. 5. Lists of the national Pokédex's species (the numbers, the national order, A to Z): the original's (the
-   added species' rows come with their display numbers, docs/paperwhite2/design/new-species.md section 5).
+3. 4. 5. Lists of the national Pokédex's species, a u16 each: 3 in number order (1 to 649, then the added species
+   by display number, species_list.pokedex_order(), as the hack's list builds it in PokedexSearchEngine_LoadList);
+   4 the regional Pokédex's order, every species without a regional number in number order and then the regional
+   ones by it (PokedexSearchEngine_LoadList's regional list, which keeps those of the table, and the regional search's
+   first order); 5 A to Z by English name (the search's second order, and the PC box's search by name with the first
+   letters' groups that tools/paperwhite2/pokemon_forms.py generates from initial_groups()): letters and digits only,
+   without case or accents, equal names in ID order (Nidoran♀ before Nidoran♂, Ho-Oh after Honchkrow, Porygon2 before
+   Porygon-Z), as the original's. Nothing reads file 3 (the national order is built in code); the hack has no
+   regional mode, so file 4 is kept only as the original has it. The added species that enter the Pokédex are in each
+   (docs/paperwhite2/design/new-species.md section 5).
 6. 7. 8. 9. Every species and alternate form, as form << 10 | species, by height from the tallest, by height from the
    shortest, by weight from the heaviest and by weight from the lightest: the record's height and weight, the form's
    record's for a form that has one (res/pokemon/forms.json) and the species' for one that doesn't. Equal ones are in
@@ -29,6 +37,7 @@ An unchanged res/pokemon reproduces the original archive byte for byte.
 import json
 import struct
 import sys
+import unicodedata
 from pathlib import Path
 
 from narc import read_narc, write_narc
@@ -36,6 +45,7 @@ import species_list
 
 ROOT = Path(__file__).resolve().parents[2]
 FILE_FORMS, FILE_INITIALS, FILE_SHAPES = 0, 1, 2
+FILE_NUMBER_ORDER, FILE_REGIONAL_ORDER, FILE_NAME_ORDER = 3, 4, 5
 # The initials' group of a name that starts with no letter
 NO_INITIAL = 26
 # The orders' files, each with its field and whether it starts from the greatest
@@ -105,11 +115,55 @@ def shapes_file(species: list[dict | None], forms: list) -> bytes:
     return bytes([*shapes, shapes[-1], *(entry["shape"] for _, _, entry, _ in forms)])
 
 
+def folded_name(name: str) -> str:
+    """A name as the A to Z order compares it: its letters and digits, lower case and without accents."""
+    return "".join(c for c in unicodedata.normalize("NFD", name).lower() if c.isascii() and c.isalnum())
+
+
+def initial(data: dict | None) -> int:
+    """A species' initials' group: its name's first letter, A as 0 to Z as 25, or NO_INITIAL."""
+    letter = unicodedata.normalize("NFD", data["name"])[:1].upper() if data else ""
+    return ord(letter) - ord("A") if "A" <= letter <= "Z" else NO_INITIAL
+
+
 def initials_file(species: list[dict | None]) -> bytes:
-    def initial(data: dict | None) -> int:
-        letter = data["name"][:1].upper() if data else ""
-        return ord(letter) - ord("A") if "A" <= letter <= "Z" else NO_INITIAL
     return bytes(initial(data) for data in species)
+
+
+def name_order(species: list[dict | None]) -> list[int]:
+    """The Pokédex's species from A to Z (file 5). Stops on a species whose name starts with no letter, which the
+    search by first letter and the PC box's groups couldn't place."""
+    numbers = [number for number, data in enumerate(species) if number and data is not None]
+    for number in numbers:
+        if initial(species[number]) == NO_INITIAL:
+            raise PokedexDataError(f"{species[number]['name']!r} (species {number}): a Pokédex species' name must start "
+                                   "with a letter, which the search by first letter groups it by")
+    return sorted(numbers, key=lambda number: (folded_name(species[number]["name"]), number))
+
+
+def initial_groups(root: Path) -> tuple[list[int], list[int]]:
+    """Where each first letter's species start and end in file 5, A to Z (the PC box's search by name, box_search.c)."""
+    species, _ = species_forms(root)
+    initials = [initial(species[number]) for number in name_order(species)]
+    starts = [sum(1 for group in initials if group < letter) for letter in range(NO_INITIAL)]
+    ends = [sum(1 for group in initials if group <= letter) for letter in range(NO_INITIAL)]
+    return starts, ends
+
+
+def number_order(root: Path) -> list[int]:
+    return species_list.pokedex_order(root)
+
+
+def regional_order(species: list[dict | None], root: Path) -> list[int]:
+    """The regional Pokédex's order (file 4): the species without a regional number, then those with one, by it."""
+    order = number_order(root)
+    regional = {number: species[number].get("regional_dex_number") for number in order}
+    return ([number for number in order if regional[number] is None] +
+            sorted((number for number in order if regional[number] is not None), key=lambda number: regional[number]))
+
+
+def u16_file(values: list[int]) -> bytes:
+    return struct.pack(f"<{len(values)}H", *values)
 
 
 def order_file(species: list[dict | None], forms: list, field: str, greatest_first: bool) -> bytes:
@@ -127,6 +181,9 @@ def pack(root: Path, game: str, output: Path):
     files[FILE_FORMS] = forms_file(species, forms)
     files[FILE_INITIALS] = initials_file(species)
     files[FILE_SHAPES] = shapes_file(species, forms)
+    files[FILE_NUMBER_ORDER] = u16_file(number_order(root))
+    files[FILE_REGIONAL_ORDER] = u16_file(regional_order(species, root))
+    files[FILE_NAME_ORDER] = u16_file(name_order(species))
     for number, (field, greatest_first) in ORDERS.items():
         files[number] = order_file(species, forms, field, greatest_first)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -139,5 +196,5 @@ if __name__ == "__main__":
         raise SystemExit(__doc__)
     try:
         pack(Path(sys.argv[2]), sys.argv[3], Path(sys.argv[4]))
-    except PokedexDataError as error:
+    except (PokedexDataError, species_list.SpeciesListError) as error:
         sys.exit(f"pokedex_data.py: {error}")

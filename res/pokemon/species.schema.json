@@ -175,6 +175,14 @@
                 "height": { "type": "string", "description": "The height as the Pokédex shows it; the record's height is the number the game uses" },
                 "weight": { "type": "string", "description": "The weight as the Pokédex shows it, rounded as the game's text has it; the record's weight is the number the game uses" },
                 "shape": { "$ref": "#/$defs/pokedex_shape" },
+                "display_number": {
+                    "anyOf": [
+                        { "title": "\"???\"", "type": "null" },
+                        { "title": "A number", "type": "integer", "minimum": 650, "maximum": 998 },
+                        { "title": "A number of four digits", "type": "integer", "minimum": 1000, "maximum": 9999 }
+                    ],
+                    "description": "Paper White 2, an added species only: the number the Pokédex shows for it, such as 840 for Applin, which also places it in the National list after Genesect (by number, those without one last); null or left out shows \"???\". From 650 to 9999 but 999 (the game's \"no number\"), and no two species with one number (tools/data/species_list.py). The original species show their own number. Under 1000 it prints with 3 digits, from 1000 with 4"
+                },
                 "form_name": {
                     "type": "string",
                     "description": "The first form's name on the Pokédex's forms page and the Info page's tab (pokedex_detail_form.txt), such as \"Plant Cloak\", for a species with forms; empty when left out"

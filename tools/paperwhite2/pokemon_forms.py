@@ -23,7 +23,11 @@ The header has, for src/paperwhite2/main/paperwhite2_pokemon_forms.c (include/pa
 - the added species (tools/data/species_list.py, include/paperwhite2/species.h): their first ID, count and the last
   real species, where their battle sprite groups and icons start (after the hack's form groups,
   tools/data/pokemon_graphics.py) and their first cry (tools/data/pokemon_cries.py), their icons' palettes, and which
-  of them never enter the Pokédex, a bit each from the first.
+  of them never enter the Pokédex, a bit each from the first;
+- the Pokédex's numbering (docs/paperwhite2/design/new-species.md section 5): how many added species the Pokédex has
+  and the National list's length, their order after Genesect (species_list.pokedex_order()), each added species'
+  display number, and where each first letter's species start and end in the A to Z order (a/0/9/7 file 5,
+  tools/data/pokedex_data.py), which the PC box's search by name takes.
 
 Only the hack's build runs this (configure.py --hack). tools/paperwhite2/pokedex_save.py reads the same list.
 """
@@ -39,6 +43,7 @@ from tools.data.gen_constants import load as load_list  # noqa: E402
 from tools.data.pokemon_graphics import (ADDED_FORM_FILES, GROUP_FILES, GROUPS, ICON_FILES,  # noqa: E402
                                          ORIGINAL_FORM_GROUPS, added_form_groups, form_names, icon_bank, species_names)
 from tools.data.pokemon_cries import ADDED_CRY_FIRST  # noqa: E402
+from tools.data.pokedex_data import PokedexDataError, initial_groups  # noqa: E402
 from tools.data import species_list  # noqa: E402
 
 POKEMON = ROOT / "res" / "pokemon"
@@ -157,6 +162,30 @@ def species_lines() -> list[str]:
     ]
 
 
+def numbering_lines() -> list[str]:
+    """The Pokédex's numbering part of the header."""
+    order = species_list.pokedex_order(POKEMON)
+    national = species_list.national_count() - 1
+    added = order[national:]
+    numbers = species_list.display_numbers(POKEMON)
+    shown = [numbers.get(number) or species_list.DISPLAY_NUMBER_NONE for number in
+             range(species_list.FIRST_ADDED, species_list.last_species() + 1)]
+    starts, ends = initial_groups(POKEMON)
+    return [
+        "// The Pokédex's numbering (paperwhite2/species.h): the added species it has, and the National list's length",
+        f"#define PAPERWHITE2_POKEDEX_ADDED_COUNT {len(added)}",
+        f"#define PAPERWHITE2_POKEDEX_LIST_COUNT {len(order)}",
+        "// The added species in the National list after Genesect, by display number and those without one last, then",
+        "// an unused 0",
+        "#define PAPERWHITE2_POKEDEX_ADDED_ORDER " + ", ".join(str(number) for number in [*added, 0]),
+        "// Each added species' display number, PAPERWHITE2_POKEDEX_NUMBER_NONE (999, \"???\") for none, then an unused 0",
+        "#define PAPERWHITE2_POKEDEX_DISPLAY_NUMBERS " + ", ".join(str(number) for number in [*shown, 0]),
+        "// Where the species of each first letter, A to Z, start and end in the Pokédex's order by name (a/0/9/7 file 5)",
+        "#define PAPERWHITE2_POKEDEX_INITIAL_STARTS " + ", ".join(str(number) for number in starts),
+        "#define PAPERWHITE2_POKEDEX_INITIAL_ENDS " + ", ".join(str(number) for number in ends),
+    ]
+
+
 def header() -> str:
     palettes = icon_palettes()
     forms = no_evolution()
@@ -184,6 +213,7 @@ def header() -> str:
         "// The last follower's object code (generated/obj_codes.txt), the end of GetIndexOfObjID's followers",
         f"#define FOLLOWING_LAST_OBJ_CODE {last_follower()}",
         *species_lines(),
+        *numbering_lines(),
         "",
         "#endif // POKEBW2_PAPERWHITE2_POKEMON_FORMS_CONFIG_H",
     ]
@@ -195,7 +225,7 @@ def main():
         sys.exit(__doc__)
     try:
         text = header()
-    except (FormsError, ValueError) as error:
+    except (FormsError, PokedexDataError, ValueError) as error:
         sys.exit(f"pokemon_forms.py: {error}")
     output = Path(sys.argv[1])
     if not output.is_file() or output.read_text() != text:

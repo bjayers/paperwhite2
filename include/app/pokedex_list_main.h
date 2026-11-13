@@ -10,6 +10,9 @@
 #include "gfl/str.h"
 #include "struct_decls.h"
 #include "system/printsys.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/pokemon_forms_config.h"
+#endif
 
 // pokedex_list_main.c: the Pokédex's list: its work, its BGs and graphics, its fades, the frame of the touch bar that
 // slides in and the list of the species. The ROM doesn't name this file; pokedex_list_main.c is a guess after the
@@ -19,7 +22,12 @@
 #define HEAPID_POKEDEX_LIST 0x6b
 
 // How many species the list can hold, and the rows it shows
+#ifdef PAPERWHITE2
+// Paper White 2: 649 and the added species that the Pokédex has (paperwhite2/species.h)
+#define POKEDEX_LIST_SPECIES_COUNT PAPERWHITE2_POKEDEX_LIST_COUNT
+#else
 #define POKEDEX_LIST_SPECIES_COUNT 649
+#endif
 #define POKEDEX_LIST_ROW_COUNT 7
 
 // The icons of the rows that a screen can show while the list scrolls

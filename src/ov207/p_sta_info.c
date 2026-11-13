@@ -17,6 +17,7 @@
 #include "system/game_data.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/prestige.h"
+#include "paperwhite2/species.h"
 #include "text/system/p_sta_sys.h"
 #endif
 
@@ -240,13 +241,24 @@ static void PStaInfo_PrintInfo(PStatusWork *wk, PStaInfoWork *info, BoxPkm *pkm)
         if (wk->param->isNationalDex == FALSE) {
             dexNumber = info->regionalDex[dexNumber];
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: the species' display number, 4 digits from 1000, and "???" (DEX_NUMBER_NONE) for an added
+        // species without one or one that never enters the Pokédex (paperwhite2/species.h)
+        else {
+            dexNumber = PaperWhite2_PokedexDisplayNumber(dexNumber);
+        }
+#endif
         if (PML_PkmIsRare(pkm) == TRUE) {
             color = PRINT_COLOR(3, 4, 0);
         }
         if (dexNumber == DEX_NUMBER_NONE) {
             PStatus_PrintFormattedToWindow(wk, info->windows[0], wordSet, 22, 65, 1, color);
         } else {
+#ifdef PAPERWHITE2
+            WordSetNumber(wordSet, 0, dexNumber, PaperWhite2_PokedexNumberDigits(dexNumber), 2, 1);
+#else
             WordSetNumber(wordSet, 0, dexNumber, 3, 2, 1);
+#endif
             PStatus_PrintFormattedToWindow(wk, info->windows[0], wordSet, 9, 65, 1, color);
         }
         GFL_WordSetSystemFree(wordSet);

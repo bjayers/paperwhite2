@@ -35,6 +35,9 @@
 #include "system/wipe.h"
 #include "system/wordset.h"
 #include "text/system/btl_pokeparam_box_main_save_init.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/pokemon_forms_config.h"
+#endif
 
 // The PC box's Pokémon search: lists to pick a species by its first letter, a nature, an ability by its first letter,
 // the sex, the held item and the markings that the box's Pokémon are filtered by. Names are ours
@@ -388,6 +391,13 @@ static const FrameListSetup data_ov255_021d8fa8 = {
 };
 
 // Where each group of species starts and ends in the Pokédex's order by name
+#ifdef PAPERWHITE2
+// Paper White 2: generated from res/pokemon (a/0/9/7 file 5, tools/data/pokedex_data.py), with the added species that
+// the Pokédex has; the original's numbers without them
+static const u16 data_ov255_021d8fd0[] = { PAPERWHITE2_POKEDEX_INITIAL_STARTS };
+
+static const u16 data_ov255_021d9004[] = { PAPERWHITE2_POKEDEX_INITIAL_ENDS };
+#else
 static const u16 data_ov255_021d8fd0[] = {
     0,   28,  62,  112, 147, 167, 184, 226, 249, 253, 260, 282, 315,
     372, 386, 392, 435, 438, 463, 557, 590, 595, 615, 636, 637, 640,
@@ -397,6 +407,7 @@ static const u16 data_ov255_021d9004[] = {
     28,  62,  112, 147, 167, 184, 226, 249, 253, 260, 282, 315, 372,
     386, 392, 435, 438, 463, 557, 590, 595, 615, 636, 637, 640, 649,
 };
+#endif
 
 // Where each group of abilities starts and ends in data_ov255_021d9248, from 1
 // clang-format off

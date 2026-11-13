@@ -13,7 +13,10 @@ tables, and their records are copies of the egg's (directory() gives them egg/).
 - real_species(): the species a Pokémon can be, 1-649 and the added ones;
 - pokedex_species(): those of them the Pokédex has, all but the added species whose data.json has "pokedex": false
   (creatures that never enter it, as the Pokéstar species);
-- added_species(): the added ones' constants, from FIRST_ADDED, in ID order.
+- added_species(): the added ones' constants, from FIRST_ADDED, in ID order;
+- display_number(): the number the Pokédex shows for a species, its ID for 1-649 and an added one's
+  pokedex.display_number (None, shown as "???", where it has none), and pokedex_order(), the National list's species:
+  1-649, then the added ones by display number, the unnumbered last (new-species.md section 5).
 
 Every packer and generator loops over these rather than "before SPECIES_EGG" or "up to SPECIES_GENESECT", so that
 the IDs 650-686 are never taken for Pokémon. Without added species the lists are the original game's.
@@ -31,6 +34,12 @@ FIRST_ADDED = 687
 RESERVED = ("SPECIES_PAPERWHITE2_RESERVED_685", "SPECIES_PAPERWHITE2_RESERVED_686")
 # The longest name a Pokémon's nickname field holds
 NAME_LENGTH = 10
+# The display numbers an added species can have: past the original species' 1-649, up to four digits, but 999, which
+# the game's tables take for "no number" (the regional table's REGIONAL_DEX_NONE, which the Info page and the summary
+# print as "???", and PAPERWHITE2_POKEDEX_NUMBER_NONE in include/paperwhite2/species.h)
+DISPLAY_NUMBER_MIN = 650
+DISPLAY_NUMBER_MAX = 9999
+DISPLAY_NUMBER_NONE = 999
 
 
 class SpeciesListError(ValueError):
@@ -144,6 +153,53 @@ def last_pokedex_species(root: Path = POKEMON) -> int:
     return pokedex_species(root)[-1]
 
 
+@lru_cache(maxsize=2)
+def display_numbers(root: Path = POKEMON) -> dict[int, int | None]:
+    """The display number of each added species that enters the Pokédex, by ID: its pokedex.display_number, or None
+    where it has none ("???"). Stops on a number that an original species has (1-649 show their IDs), the reserved 999,
+    one past four digits, two species with one number, or a number on an original species."""
+    numbers: dict[int, int | None] = {}
+    owners: dict[int, int] = {}
+    for number in range(1, national_count()):
+        if "display_number" in species_data(number, root)["pokedex"]:
+            raise SpeciesListError(f"{directory(constants()[number])}: pokedex.display_number is only for added "
+                                   f"species; the original species show their own number, {number}")
+    for number in range(FIRST_ADDED, last_species() + 1):
+        data = species_data(number, root)
+        if not in_pokedex(data):
+            continue
+        shown = data["pokedex"].get("display_number")
+        name = directory(constants()[number])
+        if shown is not None:
+            if (isinstance(shown, bool) or not isinstance(shown, int) or
+                    not DISPLAY_NUMBER_MIN <= shown <= DISPLAY_NUMBER_MAX or shown == DISPLAY_NUMBER_NONE):
+                raise SpeciesListError(f"{name}: pokedex.display_number {shown!r} must be from {DISPLAY_NUMBER_MIN} "
+                                       f"to {DISPLAY_NUMBER_MAX} but {DISPLAY_NUMBER_NONE} (the game's \"no number\"), "
+                                       "or null for \"???\"")
+            if shown in owners:
+                raise SpeciesListError(f"{name}: pokedex.display_number {shown} is "
+                                       f"{directory(constants()[owners[shown]])}'s too; each species has its own")
+            owners[shown] = number
+        numbers[number] = shown
+    return numbers
+
+
+def display_number(number: int, root: Path = POKEMON) -> int | None:
+    """The number the Pokédex shows for a species: its ID for 1 to Genesect, an added one's display number, or None
+    for an added species without one or one that never enters the Pokédex."""
+    if 0 < number < national_count():
+        return number
+    return display_numbers(root).get(number)
+
+
+def pokedex_order(root: Path = POKEMON) -> list[int]:
+    """The National Pokédex's species in its list's order: 1 to Genesect, then the added species that enter it, by
+    display number, those without one last in ID order."""
+    numbers = display_numbers(root)
+    added = sorted(numbers, key=lambda number: (numbers[number] is None, numbers[number] or 0, number))
+    return [*range(1, national_count()), *added]
+
+
 def main():
     names = constants()
     added = added_species()
@@ -151,8 +207,10 @@ def main():
           f"{FIRST_ADDED - len(RESERVED) - 1} the egg, the bad egg and Pokéstar Studios', "
           f"{'reserved 685-686, ' if added else ''}{len(added)} added")
     hidden = set(hidden_species())
+    numbers = display_numbers()
     for number, name in enumerate(added, FIRST_ADDED):
-        print(f"{number:5} {name}{' (not in the Pokédex)' if number in hidden else ''}")
+        shown = "not in the Pokédex" if number in hidden else f"No. {numbers[number] or '???'}"
+        print(f"{number:5} {name} ({shown})")
 
 
 if __name__ == "__main__":

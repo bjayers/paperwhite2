@@ -735,7 +735,13 @@ static u16 PokeDex_GetCaughtNoPermissive(PokeDexSave *pokedex) {
     int i;
     u16 count = 0;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the completion (the Shiny Charm, the diploma, the evaluation) stays on Bulbasaur to Genesect; no
+    // added species is needed for it, nor counts towards it
+    for (i = 1; i <= SPECIES_GENESECT; i++) {
+#else
     for (i = 1; i <= POKEDEX_LAST_SPECIES; i++) {
+#endif
         if (PokeDex_IsCaught(pokedex, i) == TRUE && PML_PkmIsNationalDexExclude(i) == TRUE) {
             count++;
         }
@@ -884,7 +890,14 @@ void PokeDex_GetEvaluationParams(PokeDexSave *pokedex, u16 mode, HeapID heapId, 
         *unk = PokeDex_LookupEvaluation(unovaUnks, PokeDex_GetSeenNoUnovaPermissive(pokedex, heapId));
         break;
     case POKEDEX_EVALUATION_NATIONAL_CAUGHT:
+#ifdef PAPERWHITE2
+        // Paper White 2: the evaluation counts Bulbasaur to Genesect, as the completion does
+        *count = PAPERWHITE2_POKEDEX_ADDED_COUNT != 0 && PokeDex_IsNationalObtained(pokedex)
+                     ? PaperWhite2_PokedexGetCaughtOriginal(pokedex)
+                     : PokeDex_GetCaughtNo(pokedex, heapId);
+#else
         *count = PokeDex_GetCaughtNo(pokedex, heapId);
+#endif
         if (PokeDex_IsCompleteNational(pokedex) == TRUE) {
             *message = 60;
             *unk = 1316;

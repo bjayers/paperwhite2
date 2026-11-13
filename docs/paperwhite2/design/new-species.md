@@ -654,3 +654,84 @@ Removed: the ROM is `57cd9af0...` again.
 - Step 4: Add Pokémon writes generated/species.txt (the reserved pair first), the folder with `"art_template"`, and
   nothing for cries (the packer names the slots); `pokemon_species.py remove` reverts both lists. Ninja picked up the
   header change in one build here (configure re-ran because species.txt changed).
+
+## 15. Built: step 3, the Pokédex numbering (2026-11-13)
+
+### 15.1 The data
+
+- **`pokedex.display_number`** (`res/pokemon/species.schema.json`): null/absent ("???"), 650-998, or 1000-9999. 999 is
+  refused because the game's tables already take it for "no number" (the regional table's `REGIONAL_DEX_NONE`, which
+  the Info page and the summary print as "???"), so `PAPERWHITE2_POKEDEX_NUMBER_NONE` is 999 and those two sites print
+  "???" without a new branch. `species_list.display_numbers()` stops the build for a duplicate, 999, a number out of
+  range, or a number on an original species (1-649 show their ID); `pokedex_order()` is the National list's order.
+- **Generated** (`pokemon_forms.py` → `paperwhite2/pokemon_forms_config.h`): `PAPERWHITE2_POKEDEX_ADDED_COUNT`,
+  `_LIST_COUNT` (649 + those), `_ADDED_ORDER`, `_DISPLAY_NUMBERS` (by ID from 687, 999 for none or hidden),
+  `_INITIAL_STARTS`/`_ENDS` (the A-Z order's first-letter groups).
+- **a/0/9/7** (`pokedex_data.py`): file 3 the number order, file 4 the regional order (non-regional species in number
+  order, then the regional ones by regional number; only the regional mode reads it, which the hack doesn't have),
+  file 5 A to Z. The original's A-Z key, found by reproducing file 5: letters and digits only, case and accents folded
+  (NFD, so Nidoran♀/♂ tie and fall back to ID order), ties by ID. All three are byte for byte the original's without
+  added species. A Pokédex species' name must start with a letter (the search's initials).
+
+### 15.2 The C
+
+| Where | What |
+| --- | --- |
+| `include/paperwhite2/species.h` | `PaperWhite2_PokedexDisplayNumber(species)` (a macro over `PaperWhite2_GetAddedDisplayNumber`, so it is the species itself without added species), `PaperWhite2_PokedexNumberDigits`, `PaperWhite2_IsPokedexNumberNone`, `PaperWhite2_IsNotInPokedex`; functions in the new `src/paperwhite2/main/paperwhite2_pokedex_numbers.c`, built only with added species |
+| `pokedex_search_engine.c` | the national list and the search's number order: 1-649 then `PAPERWHITE2_POKEDEX_ADDED_ORDER`; `NATIONAL_COUNT` = the list count (which also keeps the A-Z file's "species list, take the shown form" test right) |
+| `pokedex_common.c` | `PokedexCommon_CreateList` drops the unseen added species (`PaperWhite2_PokedexHideUnseen`) before trimming after the last seen |
+| `pokedex_list_main.h` | `POKEDEX_LIST_SPECIES_COUNT` (the names array and the frame list) = the list count. The work grows 4 bytes a species; it is allocated by `sizeof` from the list's 0x60000 heap, so the allocation White2Upgrade had to patch grows by itself |
+| `pokedex_list_bmp.c` | the row's number, 4 digits from 1000, "???" (the Info page's, `BtlServerFlowTitle_Text_Empty_173`), the name after a 4-digit number at max(28, its width + 10): the font is proportional, so "1011" barely moves |
+| `pokedex_info.c` (both entries, and the registration screen), `p_sta_info.c`, `box2_bmp.c` | the display number and its digits; the box prints "No." and its own "???" (106) for none |
+| `box_search.c` | the first-letter tables from the generated groups |
+| `pokedex_savedata.c` | the completion count (`PokeDex_GetCaughtNoPermissive`) runs 1-649; the National evaluation counts 1-649 (`PaperWhite2_PokedexGetCaughtOriginal`) when species are added |
+| `event_battle_return.c`, `event_pdc_return.c` | no registration page for a `"pokedex": false` species |
+| `plist_sys.c`, `p_sta_sys.c`, `paperwhite2_pokedex_shortcut.c` | no POKéDEX menu item, INFO button or START for one, and the detail screen's party/box list leaves it out |
+| `pokedex_detail_map.c` | the vanilla Area page (never started in the hack) reads Bulbasaur's file, the empty habitat that 454 species share, for an added species |
+
+**Counts, decided:** SEEN and OBTAINED (the list, the trainer card, the Continue screen, scripts' "how many have you
+found", the capture odds, Join Avenue) include added Pokédex species, matching the list's rows. Completion (the Shiny
+Charm, the diploma, the trainer card's star) and the National evaluation stay on 1-649, so an added species neither is
+needed nor stands in for a missing original.
+
+**Byte identity:** every hook folds to the original without added species. One trap: an `else { number =
+macro(number); }` after the regional branch changed the Info page's register allocation, so the Info page assigns the
+display number in place of `number = info->species` instead. The empty object file of the new source changes nothing.
+
+### 15.3 Proof
+
+- Without species: the `--hack` ROM `57cd9af0dfab0e720e9d82e3e12298a1c1cd904d`, as at the `new-species` tip; every
+  changed C file's code compared against the tip's (all identical); `verify_dsi_rom.py` intact; the plain `w2_us`
+  build fails only its archive and ROM checks, as before (no module check fails); a/0/9/7 packed byte for byte as
+  before.
+- With test species (scratchpad `newsp3/testmon3.py`): Testmon 687 (No. 840), Testevo 688 (1011), Testnone 689 (no
+  number), Testhide 690 (`"pokedex": false`); ROM `660d6012...`. On a copy of the user's save (shots in
+  `newsp3/shots/`):
+  - the list before anything added is seen ends as before (`list_before`); with Testmon caught, Testnone seen and
+    Testhide's bits set: 647, 648 ?????, 649 ?????, 840 Testmon, ??? Testnone, SEEN 63 / OBTAINED 15 (Testevo hidden,
+    Testhide absent and uncounted; `list_a_end`); Testevo seen too: 840, 1011, ??? (`list_b_testevo`,
+    `list_b_rows_zoom`);
+  - Info pages: ??? Testnone, 1011 Testevo, 840 Testmon, 647 Keldeo (`info_*`); the summary's Dex No. 840, 1011, ???,
+    and ??? for Testhide, which has no INFO button and ignores START (`summary_*`); the party menu without POKéDEX for
+    Testhide (`partymenu_testhide`); from Testevo's summary the detail screen steps Testevo → Testnone → Zekrom,
+    skipping Testhide (`shortcut_*`);
+  - the PC box: No.840, No.1011, No.??? (Testnone and Testhide) (`box_test*`);
+  - searches: by number (64 results ending 840, 1011, ???; `search_number`), A to Z (… Swinub, Tepig, Testevo,
+    Testmon, Testnone, Timburr …; `search_az`), Tall to Short (caught only: 15, Testmon among them; `search_tall`); the
+    PC box's search by name, T: Tepig, Testmon, Trubbish (`boxsearch_t`);
+  - completion: 635 of the 636 needed originals and the three added species caught: no Pokédex star on the trainer
+    card (blue, POKéDEX 639); with the 636th original: the star (green, 640) (`card_a`, `card_b`, `card_a_list`).
+  - Refused by the build: a duplicate number (840 twice) and 999, by `species_list` and the schema.
+- Removed: the ROM is `57cd9af0...` again.
+
+**Not tested live:** a catch of a `"pokedex": false` species (the registration guard is read, not run; its caught bit
+is ignored, as the counts show); the Japanese/other-language Info entry of an added species (none exist).
+
+### 15.4 For the next steps
+
+- Step 4: `pokemon_species.py add --number N` / `number SPECIES N|none` write `pokedex.display_number`, checked by
+  `species_list.display_numbers()`; the editor's Pokédex card gets the field from the schema; the Pokémon list could
+  sort added species by display number (`pokedex_order()`).
+- Places that still print a species' ID as a number are none found beyond the five above; wireless screens (GTS, Game
+  Sync) are left.
+- Step 5: DexNav and the Habitat Dex print no numbers; they need encounters of added species. The musical's hook.

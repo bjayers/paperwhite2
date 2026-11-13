@@ -34,6 +34,9 @@
 #include "system/str_tool.h"
 #include "system/wordset.h"
 #include "text/system/btl_server_flow_title.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/species.h"
+#endif
 
 // pokedex_info.c, zukan_info.c by the ROM's own string: a Pokémon's Pokédex entry on one screen. Its sprite, its types,
 // its footprint, and in windows its name, number, category, height, weight and description, in the game's language or
@@ -1094,7 +1097,13 @@ static void PokedexInfo_PrintEntry(PokedexInfo *info) {
                                  PRINT_ALIGN_CENTER, NULL);
     }
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the species' display number, 4 digits from 1000, and "???" (999) for an added species without one
+    // (paperwhite2/species.h)
+    number = PaperWhite2_PokedexDisplayNumber(info->species);
+#else
     number = info->species;
+#endif
     if (!info->national) {
         u16 *table = PML_PersonalLoadRegionalDexTable(info->heapId, 0);
 
@@ -1103,7 +1112,11 @@ static void PokedexInfo_PrintEntry(PokedexInfo *info) {
     }
     if (number != 999) {
         wordSet = GFL_WordSetSystemCreateDefault(info->heapId);
+#ifdef PAPERWHITE2
+        WordSetNumber(wordSet, 0, number, PaperWhite2_PokedexNumberDigits(number), NUM_PAD_ZERO, TRUE);
+#else
         WordSetNumber(wordSet, 0, number, 3, NUM_PAD_ZERO, TRUE);
+#endif
         PokedexInfo_PrintStrbuf(info->heapId, info->windows[POKEDEX_INFO_WINDOW_NAME], info->printQueue, info->font,
                                 info->labels[0], 8, 5, COLOR_LABEL, PRINT_ALIGN_LEFT, wordSet);
         GFL_WordSetSystemFree(wordSet);
@@ -1192,7 +1205,12 @@ static void PokedexInfo_PrintEntryInLanguage(PokedexInfo *info, unsigned int lan
                                  PRINT_ALIGN_CENTER, NULL);
     }
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the display number, as PokedexInfo_PrintEntry's
+    number = PaperWhite2_PokedexDisplayNumber(info->species);
+#else
     number = info->species;
+#endif
     if (!info->national) {
         u16 *table = PML_PersonalLoadRegionalDexTable(info->heapId, 0);
 
@@ -1201,11 +1219,19 @@ static void PokedexInfo_PrintEntryInLanguage(PokedexInfo *info, unsigned int lan
     }
     if (number != 999) {
         wordSet = GFL_WordSetSystemCreateDefault(info->heapId);
+#ifdef PAPERWHITE2
+        if (language == 0) {
+            WordSetNumber(wordSet, 0, number, PaperWhite2_PokedexNumberDigits(number), NUM_PAD_ZERO, FALSE);
+        } else {
+            WordSetNumber(wordSet, 0, number, PaperWhite2_PokedexNumberDigits(number), NUM_PAD_ZERO, TRUE);
+        }
+#else
         if (language == 0) {
             WordSetNumber(wordSet, 0, number, 3, NUM_PAD_ZERO, FALSE);
         } else {
             WordSetNumber(wordSet, 0, number, 3, NUM_PAD_ZERO, TRUE);
         }
+#endif
         PokedexInfo_PrintStrbuf(info->heapId, info->windows[POKEDEX_INFO_WINDOW_NAME], info->printQueue, info->font,
                                 info->labels[0], 8, 5, COLOR_LABEL, PRINT_ALIGN_LEFT, wordSet);
         GFL_WordSetSystemFree(wordSet);

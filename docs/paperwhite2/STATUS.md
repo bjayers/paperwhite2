@@ -2,6 +2,22 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-13: new species, step 3, the Pokédex numbering (ROM session, on a branch from `new-species`)
+
+design/new-species.md section 15 has the details.
+
+- `pokedex.display_number` (schema; checked in `species_list.py`), `PaperWhite2_PokedexDisplayNumber` in the list rows,
+  the Info page, the summary and the PC box: 3 digits under 1000, 4 from 1000, "???" for none.
+- The National list: 1-649 as before, then the seen added species by display number (unnumbered last), no gap rows;
+  unseen added species are hidden. a/0/9/7 files 3-5 generated (byte-identical without species), the PC box's search
+  groups generated. Completion (Shiny Charm, diploma, trainer card star, evaluation) stays on 1-649; SEEN/OBTAINED
+  include added species. `"pokedex": false` honoured on every Pokédex path found.
+- Proof: the `--hack` ROM without species is `57cd9af0...`, as before; with test species (840, 1011, ???, and a
+  `pokedex: false` one) py-desmume shots of the list, Info, summary, box, searches (number, A-Z, height), the box
+  search, the party menu, the trainer card's completion; removed: `57cd9af0...` again. The plain build's modules match.
+
+Next: step 4, Add Pokémon in the editor (`pokemon_species.py`, which also writes `display_number`).
+
 ## 2026-11-13: new species, steps 1 and 2 (ROM session, on a branch from `new-species`)
 
 design/new-species.md section 14 has the details.

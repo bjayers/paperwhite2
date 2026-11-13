@@ -32,3 +32,11 @@ test("it catches what the build would", () => {
   assert.deepEqual(validate(setIn(data, ["colour"], "red"), schema, constants).map((e) => e.message), ["colour is not a field here"]);
   assert.deepEqual(validate(setIn(data, ["name"], undefined), schema, constants).map((e) => e.message), ["name is missing"]);
 });
+
+test("a species' Pokédex display number: null, 650-998 or 1000-9999", () => {
+  const schema = JSON.parse(readFileSync(project.abs("res/pokemon/species.schema.json"), "utf8")) as Schema;
+  const data = parseJson(readFileSync(project.abs("res/pokemon/bulbasaur/data.json"), "utf8"));
+  const errors = (value: unknown) => validate(setIn(data, ["pokedex", "display_number"], value as never), schema, constants).length;
+  for (const ok of [null, 650, 840, 998, 1000, 1011, 9999]) assert.equal(errors(ok), 0, `${ok}`);
+  for (const bad of [649, 999, 10000, 0, "840", 840.5, true]) assert.notEqual(errors(bad), 0, `${bad}`);
+});

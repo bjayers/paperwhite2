@@ -34,6 +34,9 @@
 #include "save/records.h"
 #include "save/save_control.h"
 #include "system/game_data.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/species.h"
+#endif
 
 // The battle types of the field's wild and trainer battles
 enum {
@@ -227,6 +230,13 @@ static BOOL EventBattleReturn_Main(GameProc *proc, u32 *state, void *param, void
             if (!PokeDex_IsCaught(pokedex, PokeParty_GetParam(wk->pkm, PKM_PARAM_SPECIES, NULL))) {
                 firstCatch = TRUE;
             }
+#ifdef PAPERWHITE2
+            // Paper White 2: a species that never enters the Pokédex is never registered, so its catch never opens
+            // the Pokédex's page (paperwhite2/species.h)
+            if (PaperWhite2_IsNotInPokedex(PokeParty_GetParam(wk->pkm, PKM_PARAM_SPECIES, NULL))) {
+                firstCatch = FALSE;
+            }
+#endif
             PokeDex_RegistPkm(pokedex, wk->pkm);
             addPkmToDex(pokedex, wk->pkm);
             wk->dex.pkm = wk->pkm;

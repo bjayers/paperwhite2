@@ -23,6 +23,9 @@
 #include "save/records.h"
 #include "save/save_control.h"
 #include "system/game_data.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/species.h"
+#endif
 
 #define HEAPID_PDC_RETURN 0x8b
 
@@ -145,6 +148,13 @@ static BOOL EventPdcReturn_Main(GameProc *proc, u32 *state, void *param, void *w
             if (!PokeDex_IsCaught(pokedex, PokeParty_GetParam(prm->pkm, PKM_PARAM_SPECIES, NULL))) {
                 firstCatch = TRUE;
             }
+#ifdef PAPERWHITE2
+            // Paper White 2: a species that never enters the Pokédex is never registered, so its catch never opens
+            // the Pokédex's page (paperwhite2/species.h)
+            if (PaperWhite2_IsNotInPokedex(PokeParty_GetParam(prm->pkm, PKM_PARAM_SPECIES, NULL))) {
+                firstCatch = FALSE;
+            }
+#endif
             PokeDex_RegistPkm(pokedex, prm->pkm);
             addPkmToDex(pokedex, prm->pkm);
             wk->dex.pkm = prm->pkm;
