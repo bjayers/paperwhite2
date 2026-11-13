@@ -549,3 +549,21 @@ edit, and nothing is a patched literal.
 7. **Removal policy:** only the last added species can be removed, and others retired (recommended)?
 8. **Gen 8/9 mechanics** for the Applin line: stand-ins now, or the item, move and ability expansion first (§9)?
 9. **Roguelike creatures:** a `"pokedex": false` flag in this design (§8), or deferred until the roguelike exists?
+
+## 13. The user's decisions (2026-11-13)
+
+1. **IDs from 687**, 685 and 686 reserved. Each species' Pokédex number is set on its own (the display number).
+2. **Display numbers over 999** are supported, but numbers under 1000 keep 3 digits ("001", not "0001"); only numbers
+   of 1000 and up print 4 digits (Dipplin 1011, Hydrapple 1019).
+3. **Originals**: a blank number shows "???". Two species with one number are refused.
+4. **Unseen new species are hidden** from the National list until seen (most will be secrets or special battles).
+5. **Completion stays on 1-649**: no new species is required (as mythicals in the original).
+6. **Cries**: a reused cry (the template's) is allowed, with a note, until the user has one of the species' own.
+7. **Removal**: only the last added species can be removed; any other can be hidden (retired), and a retired slot can
+   later be turned into a new species that is used.
+8. **Gen 8/9 mechanics for the Applin line**: stand-ins for now; the real items, moves and abilities later.
+9. **`"pokedex": false`** for creatures that never enter the Pokédex (the roguelike's), built now.
+
+The build runs on the branch `new-species` (not main) in the steps of section 10, each proven before the next; the
+Applin line (Applin 840, Flapple 841, Appletun 842, Dipplin 1011, Hydrapple 1019) is the test case, with placeholder
+art until the user draws it.
