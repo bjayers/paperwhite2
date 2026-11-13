@@ -1,0 +1,113 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "A battle sprite's armature",
+    "description": "The editor's source layer above one side's flat rig, <side>_rig_source.json beside <side>_rig.json: the parts' parents (an armature), their key poses with the curves between them, the sequences' pose keys with the root's (the whole sprite's) key poses, and the step the bake keys them at. The Rig Editor bakes it into the flat rig's tracks' and sequences' keys on every change and writes both files; the build reads only the flat rig (tools/paperwhite2/mcss_rig.py), so this file changes nothing in the ROM by itself. editor/src/modules/rig/armature.ts; docs/paperwhite2/design/battle-sprites.md section 19.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["format", "side", "step", "bones", "sequences"],
+    "$defs": {
+        "curve": {
+            "enum": ["constant", "linear", "ease_in", "ease_out", "ease_in_out", "bezier"],
+            "description": "How a channel goes from this key pose to the next: held, straight, eased (sine) at the start, the end or both, or a Bezier curve through the keys' handles"
+        },
+        "handle": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2,
+                   "description": "A Bezier handle: frames and value from its key pose (the left handle's frames at most 0, the right's at least 0)"},
+        "handles": {"type": "array", "items": {"$ref": "#/$defs/handle"}, "minItems": 2, "maxItems": 2,
+                    "description": "The left and the right handle"},
+        "channels_curve": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "A channel's own curve, where it differs from the key pose's",
+            "properties": {
+                "move_x": {"$ref": "#/$defs/curve"},
+                "move_y": {"$ref": "#/$defs/curve"},
+                "rotation": {"$ref": "#/$defs/curve"},
+                "scale_x": {"$ref": "#/$defs/curve"},
+                "scale_y": {"$ref": "#/$defs/curve"}
+            }
+        },
+        "channels_handles": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Bezier handles by channel; a channel without them has flat handles a third of the way to its neighbours",
+            "properties": {
+                "move_x": {"$ref": "#/$defs/handles"},
+                "move_y": {"$ref": "#/$defs/handles"},
+                "rotation": {"$ref": "#/$defs/handles"},
+                "scale_x": {"$ref": "#/$defs/handles"},
+                "scale_y": {"$ref": "#/$defs/handles"}
+            }
+        },
+        "flat_extra": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Fields the flat rig's key held only where a file differs (section 15.2), put on the first key this key pose bakes to",
+            "properties": {
+                "unused": {"type": "integer"},
+                "marker": {"type": "integer"},
+                "result_copy": {"type": "integer", "minimum": 1}
+            }
+        },
+        "key_pose": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["frame"],
+            "description": "A key pose: the channels' values at a frame of the track's (or the sequence's) own time. Two key poses at one frame bake to a key held 0 frames, as some originals have",
+            "properties": {
+                "frame": {"type": "integer", "minimum": 0, "maximum": 65535},
+                "picture": {"type": "integer", "minimum": 0, "maximum": 65535, "description": "Tracks: the picture shown from here (held, never tweened)"},
+                "pose": {"type": "integer", "minimum": 0, "maximum": 65535, "description": "Sequences: the pose shown from here (held)"},
+                "move": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2,
+                         "description": "Pixels from the pivot (the root: from the feet), x right, y down; baked to whole pixels. Absent: 0, 0"},
+                "rotation": {"type": "number", "description": "Degrees, clockwise, not wrapped (370 is a turn and 10 more), baked to 65536ths of a turn. Absent: 0"},
+                "scale": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2,
+                          "description": "x and y (negative mirrors), baked to multiples of 1/4096. Absent: 1, 1"},
+                "curve": {"$ref": "#/$defs/curve"},
+                "curves": {"$ref": "#/$defs/channels_curve"},
+                "handles": {"$ref": "#/$defs/channels_handles"},
+                "flat": {"$ref": "#/$defs/flat_extra"}
+            }
+        },
+        "key_type": {"enum": ["plain", "srt", "move"],
+                     "description": "The least key type the bake writes; it writes a fuller one where the baked keys need it"},
+        "step": {"type": "integer", "minimum": 1, "maximum": 60, "description": "Baked keys are held this many frames (Game Freak's: 6)"}
+    },
+    "properties": {
+        "$schema": {"type": "string", "description": "This schema, for editors"},
+        "format": {"type": "integer", "enum": [1], "description": "The armature format's version"},
+        "side": {"enum": ["front", "back"]},
+        "step": {"$ref": "#/$defs/step"},
+        "bones": {
+            "type": "array",
+            "description": "A bone for each of the flat rig's tracks, by the same number: what the track's part is parented to, and its key poses on the track's own time",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["parent", "key_type", "frames", "keys"],
+                "properties": {
+                    "parent": {"anyOf": [{"type": "null"}, {"type": "integer", "minimum": 0}],
+                               "description": "The parent bone (a track's number), or null for one parented to the root"},
+                    "key_type": {"$ref": "#/$defs/key_type"},
+                    "frames": {"type": "integer", "minimum": 0, "maximum": 65535, "description": "The track's length (one loop)"},
+                    "step": {"$ref": "#/$defs/step"},
+                    "keys": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/key_pose"}}
+                }
+            }
+        },
+        "sequences": {
+            "type": "array",
+            "description": "For each of the flat rig's sequences, by number: its pose keys and the root's key poses (the whole sprite's move, turn and scale, about the feet)",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["key_type", "frames", "keys"],
+                "properties": {
+                    "key_type": {"$ref": "#/$defs/key_type"},
+                    "frames": {"type": "integer", "minimum": 0, "maximum": 65535},
+                    "step": {"$ref": "#/$defs/step"},
+                    "keys": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/key_pose"}}
+                }
+            }
+        }
+    }
+}
