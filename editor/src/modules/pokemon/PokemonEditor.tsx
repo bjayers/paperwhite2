@@ -16,6 +16,7 @@ import { PalettePreview } from "../palettes/PaletteEditor.tsx";
 import { parsePal, type Rgb } from "../palettes/pal.ts";
 import { readIndexedPng, type IndexedImage } from "../palettes/png.ts";
 import { constantLabel, constantOptions } from "../schema-form/form.tsx";
+import { evolutionText } from "./evolutionText.ts";
 import { DocForm, useHeld } from "../followers/DocForm.tsx";
 import { SpeciesIcon, speciesFolder } from "./SpeciesIcon.tsx";
 import { useToolActive } from "../active.ts";
@@ -106,17 +107,28 @@ function LevelMoves({ path, data, constants }: { path: string; data: JsonMap; co
   );
 }
 
-function Evolutions({ path, data, constants }: { path: string; data: JsonMap; constants: Constants }) {
+/** A species' evolutions, each with its species, method, parameter and, where the species has forms, the only form
+ * that evolves that way ("form": CheckEvolveSpecies clears the others' for a Pokémon of another form), so any method
+ * can be one form's. */
+function Evolutions({ path, data, constants, formNames }: { path: string; data: JsonMap; constants: Constants; formNames: string[] }) {
   const evolutions = ((data.get("evolutions") as JsonValue[] | undefined) ?? []).map(map);
   const at = (i: number, key: string) => ["evolutions", i, key];
+  const forms = formNames.length > 1;
   return (
     <div className="pkm-evolutions">
+      {forms && evolutions.length > 0 && (
+        <div className="pkm-evolution pkm-evolution-forms pkm-evolution-head">
+          <span /><span className="muted">Evolves into</span><span className="muted">Method</span><span className="muted">Parameter</span>
+          <span className="muted" title="Only a Pokémon of this form evolves this way; Any for every form. It keeps its form number.">Only form</span><span />
+        </div>
+      )}
       {evolutions.map((evo, i) => {
         const method = String(evo.get("method") ?? "EVO_METHOD_LEVEL");
         const kind = paramKind(method);
         const param = evo.get("param");
+        const form = evo.get("form");
         return (
-          <div key={i} className="pkm-evolution">
+          <div key={i} className={`pkm-evolution${forms ? " pkm-evolution-forms" : ""}`}>
             <SpeciesIcon species={String(evo.get("species") ?? "")} />
             <SearchSelect value={String(evo.get("species") ?? "")} options={constantOptions(constants, "SPECIES_")}
                           onChange={(v) => documents.edit(path, at(i, "species"), v)} />
@@ -134,6 +146,15 @@ function Evolutions({ path, data, constants }: { path: string; data: JsonMap; co
                        onChange={(e) => documents.edit(path, at(i, "param"), Math.max(0, Math.min(65535, Number(e.target.value) || 0)))} />
               )}
             </label>
+            {forms && (
+              <select className="pkm-only-form" value={form === undefined ? "" : String(form)} aria-label="Only form"
+                      title="Only a Pokémon of this form evolves this way"
+                      onChange={(e) => documents.edit(path, at(i, "form"), e.target.value === "" ? undefined : Number(e.target.value))}>
+                <option value="">Any form</option>
+                {formNames.map((name, n) => <option key={n} value={n}>{n}: {name}</option>)}
+                {typeof form === "number" && form >= formNames.length && <option value={form}>{form}: (no such form)</option>}
+              </select>
+            )}
             <button className="icon" title="Remove" onClick={() => documents.edit(path, ["evolutions", i], undefined)}>×</button>
           </div>
         );
@@ -167,7 +188,7 @@ function Family({ species, list, onOpen }: { species: string; list: Listed[]; on
           <div className="pkm-family-children">
             {entry.evolutions.map((e, i) => (
               <div key={i} className="pkm-family-branch">
-                <span className="muted pkm-family-how">{constantLabel(e.method, "EVO_METHOD_")}{e.param !== 0 && e.param !== undefined ? ` ${typeof e.param === "string" ? constantLabel(e.param, /^(ITEM|MOVE|SPECIES)_/.exec(e.param)?.[0] ?? "") : e.param}` : ""} →</span>
+                <span className="muted pkm-family-how">{evolutionText(e)}{e.form !== undefined ? ` (${entry.formNames[e.form] ?? `form ${e.form}`} only)` : ""} →</span>
                 {node(e.species, depth + 1)}
               </div>
             ))}
@@ -179,7 +200,8 @@ function Family({ species, list, onOpen }: { species: string; list: Listed[]; on
   return <div className="pkm-family">{node(root, 0)}</div>;
 }
 
-/** A record's data sections: stats, abilities and the rest, evolutions (with the family for a species), learnset. */
+/** A record's data sections: stats, abilities and the rest, evolutions with the family (a species' only: a form takes
+ * its species' evolutions, which its page shows), learnset. */
 function RecordSections({ path, entry, list, constants, onOpen }: {
   path: string; entry: Listed; list: Listed[]; constants: Constants; onOpen(species: string): void;
 }) {
@@ -213,13 +235,14 @@ function RecordSections({ path, entry, list, constants, onOpen }: {
             "regional_dex_number", "asymmetric", "palette_forms", "cry_volume", "underground", "name_article"].map((k) => field(k))}
         </div>
       </section>
-      <section className="pkm-card">
+      {!form && <section className="pkm-card">
         <h3>Evolutions</h3>
-        {form && <p className="muted pkm-note">The game reads evolutions by species (CheckEvolveSpecies), so a form's own are
-          packed but not used yet: this form evolves as its species does, unless it can't evolve.</p>}
-        <Evolutions path={path} data={data} constants={constants} />
-        {!form && <><h4>The family</h4><Family species={entry.species} list={list} onOpen={onOpen} /></>}
-      </section>
+        {entry.count > 1 && <p className="muted pkm-note">An evolution for one form only: pick it in Only form (an Alolan
+          Vulpix by an Ice Rock, a plain one by a Fire Stone). Any method can be one form's. The evolved Pokémon keeps its
+          form number. Each form's page shows the evolutions it takes.</p>}
+        <Evolutions path={path} data={data} constants={constants} formNames={entry.formNames} />
+        <h4>The family</h4><Family species={entry.species} list={list} onOpen={onOpen} />
+      </section>}
       <section className="pkm-card">
         <h3>Learnset</h3>
         <div className="pkm-learnset">
@@ -361,7 +384,8 @@ export function PokemonEditor({ constants }: ToolProps) {
         </div>
         <div className="pkm-detail">
           {entry && entry.form > 0 ? (
-            <FormPage key={`${entry.key}@${entry.recordPath ?? ""}`} entry={entry} info={info} constants={constants} onChanged={changed}
+            <FormPage key={`${entry.key}@${entry.recordPath ?? ""}`} entry={entry} list={list ?? []} info={info} constants={constants}
+              onChanged={changed} onOpen={openSpecies}
               sprite={(folder, e) => <Sprite key={`${folder}@${e}`} folder={folder} />}
               record={(path) => <RecordSections path={path} entry={entry} list={list ?? []} constants={constants} onOpen={openSpecies} />} />
           ) : entry ? (

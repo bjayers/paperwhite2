@@ -38,6 +38,12 @@
 .pkm-field .schema-form { padding: 0; }
 .pkm-evolutions { display: flex; flex-direction: column; gap: 6px; }
 .pkm-evolution { display: grid; grid-template-columns: 32px 1fr 1fr 1fr 28px; align-items: center; gap: 6px; }
+.pkm-evolution.pkm-evolution-forms { grid-template-columns: 32px 1fr 1fr 1fr minmax(120px, 0.8fr) 28px; }
+.pkm-evolution-head { font-size: 11px; }
+.pkm-only-form { min-width: 0; }
+.pkm-form-evos { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; align-items: flex-start; }
+.pkm-form-evo { display: flex; align-items: center; gap: 6px; }
+.pkm-form-evo-note { margin: 6px 0 0; }
 .pkm-param { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 4px; font-size: 12px; }
 .pkm-family { display: flex; overflow-x: auto; padding: 4px 0; }
 .pkm-family-node { display: flex; align-items: center; gap: 6px; }
