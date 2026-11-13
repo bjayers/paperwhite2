@@ -21,7 +21,7 @@ If Edge can't reach it, WSL isn't forwarding the port: check that `localhostForw
 ## What it does
 
 - **Specialty editors** at the top of the sidebar, under **Editors**: everything about one subject in one place. The
-  first are the **Encounter Editor**, **Graphics & Palettes**, the **Follower Editor**, the **Text Editor**, the **Script Editor**, the **Pokémon Editor**, the **Trainer Editor** and the **Weather Editor** (below). The per-file editors are under **Data files**, which folds away. A page
+  first are the **Encounter Editor**, **Graphics & Palettes**, the **Follower Editor**, the **Text Editor**, the **Script Editor**, the **Pokémon Editor**, the **Rig Editor**, the **Trainer Editor** and the **Weather Editor** (below). The per-file editors are under **Data files**, which folds away. A page
   of a tool can be linked to: `http://localhost:7420/#tool/encounters`.
 - **Every kind of data in `res/`, found by itself.** Each data file names its schema in `"$schema"`; the editor groups
   the files by schema, so a new kind of data, a new field or a new file shows up without changing the editor.
@@ -394,15 +394,16 @@ Forms (`FormPage.tsx`, docs/paperwhite2/design/forms-and-species.md section 11.6
   as a species but evolutions (a form's record has none: the game reads its species').
 - **Battle sprite** (`BattleSpriteArt.tsx`, on every species' page and every form with art of its own;
   docs/paperwhite2/design/battle-sprites.md section 14): the sprite as the battle draws it, its "stay" animation played
-  from the sheets on its rig, front and back, female, normal or shiny. **Export art (.zip)** gives the sheets, stills,
+  from the sheets on its rig, front and back, female, normal or shiny. **Edit rig…** opens the Rig Editor on it (below).
+  **Export art (.zip)** gives the sheets, stills,
   palettes, a shiny-coloured copy of each picture, a guide per sheet (each piece's rectangle numbered, with the parts it
   belongs to) and a README of the rules. **Import art…** takes any of them back (PNGs, .pal files or the zip): the
   errors, warnings (pixels outside the pieces, colours changed in one palette only) and the files it changes, and a
   preview of the new art animated on the rig, normal and shiny, with the stills, the sheets (changed pixels outside the
   pieces in red) and the palettes; **Apply** writes the res/ files. **Make stills from the sheets** draws the 96x96
-  stills from the first frame. The rig itself stays; editing it is the rig editor's, later. Each side's rig is
+  stills from the first frame. Each side's rig is
   `front_rig.json` / `back_rig.json` beside its sheet (battle-sprites.md section 17), which the build turns into the
-  game's five files; until the rig editor, it shows under Data files as "A battle sprite's rig" (1,506 files, the
+  game's five files; it also shows under Data files as "A battle sprite's rig" (1,506 files, the
   compact JSON layout, written back byte for byte).
   `tools/paperwhite2/battle_sprite.py` (`export`, `check`, `import`) does the work, through `GET /api/battle-sprite/export`
   and `POST /api/battle-sprite/check` (with `write` to import); it writes res/ itself, so the card refuses while the
@@ -410,6 +411,45 @@ Forms (`FormPage.tsx`, docs/paperwhite2/design/forms-and-species.md section 11.6
 - Adding, removing and records run `tools/paperwhite2/pokemon_form.py` on the server (`/api/pokemon-forms`, `/add`,
   `/remove`, `/record`, `/art`), which writes `res/` itself (art and follower folders, `obj_codes.txt`, other species'
   offsets): the editor refuses while those files have unsaved edits, and reads the changed files again after.
+
+## The Rig Editor
+
+One side of a battle sprite's rig (`src/modules/rig/`, `res/pokemon/<folder>/<side>_rig.json`; the design is
+docs/paperwhite2/design/battle-sprites.md sections 15 to 18), opened from a Battle sprite card's **Edit rig…** or the
+sidebar (`#tool/rig?folder=pichu/form_1&side=front`). The art stays a full 256×128 sheet drawn in Aseprite and brought
+in with the card's Import art; here the pictures are cut from it and moved. The header switches **Front** and
+**Back** (separate rigs; a • marks unsaved changes), the **Male** and **Female** sheet where there is one, and has
+**Copy front to back** (or back to front, with a confirm: the whole rig, as a starting point), the size of the five
+files the build will write against the ~40 KB guidance (section 15.6) with the stay loop's length, **Revert** and
+**Save** (Ctrl+S). Save runs the build's checks first (`POST /api/battle-sprite/rig-check`, `server/python/rig_check.py`:
+`mcss_rig.check`, refusing errors) and then the validator; Ctrl+Z and Ctrl+Y undo and redo.
+
+- **Preview:** the sprite as MCSS draws it (`mcss.ts`, a port of `mcss.render` that `tests/rig-render.test.ts` proves
+  pixel for pixel), live as the rig is edited, at 60 frames a second: play and pause (Space), a frame back and on
+  (← →, Shift for 6), Home, a scrub bar; 2–4×; shiny; onion skin (6 frames before and after); **Battle pauses** (at
+  each end of the stay loop the battle's roll, 1 in 3, 2, then 1: sequence 1, only the idle parts moving, 48, 56 or
+  64 frames) and **Slowed** (a status's third speed); the feet's lines. Click a part to choose it: its rectangles are
+  outlined and its pivot marked, and the tool's gizmo moves it: **Pivot** (P, the pose's pivot), **Move** (G),
+  **Rotate** (R, Shift for 5° steps) and **Scale** (S, Shift across only, Ctrl up and down only), the last three
+  writing the key the part shows at the playhead (each drag one undo step).
+- **Sheet:** every picture's rectangles over the sheet, numbered (a second rectangle dashed, `N+`), the chosen
+  picture's yellow with handles and the chosen part's other pictures in its colour. Click to choose, drag to move,
+  drag an edge or corner to resize (snapped to 8 pixels, Alt for 1; a moved west or north edge keeps the picture in
+  place on the part). The OBJs are made again from the rectangles (`generate_objs`). Art outside every rectangle is
+  red, and listed under Checks, with sizes that can't be cut into OBJs and rectangles past the sheet.
+- **Timeline:** the sequence (**Stay**, **Stop**) with its keys (the pose each shows, for how long), then the parts of
+  the pose shown (following the playhead, or chosen) front to back: drag a name to reorder the layers (the idle parts
+  follow), **idle** toggles. Each part's keys are blocks as wide as their frames, where the game plays them (from the
+  pose's start for a part that restarts, on the sequence's time for one that continues); a looping track's later
+  passes are faded, keys a pose never reaches hatched. Click a key to choose it, drag its right edge to change its
+  frames (Shift: steps of 6, Game Freak's rhythm).
+- **The side panel** (laid out as the Ambients panel): the **Part** (its track and name, pivot, whether its track
+  restarts or continues, idle, layer forward and back, add and remove), its **Key** (picture, frames, turn in degrees,
+  scale, move; Duplicate, Split at playhead, + Key after, Delete; the track's key type: picture only, move, or turn,
+  scale and move, and loop or once), the **Picture** (each rectangle's place on the sheet, size and place from the
+  pivot; a second rectangle; new, and remove when no key shows it, the later pictures renumbered) and the **Sequence
+  key** (pose, frames). Under the sheet, the **Sprite** (whether the battle's idle pause stops it, the airborne flag,
+  the box) and the **Checks**.
 
 ## The Trainer Editor
 

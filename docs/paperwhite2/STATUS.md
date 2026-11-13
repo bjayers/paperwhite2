@@ -2,6 +2,25 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-12: battle sprites, the Rig Editor (ROM session, on a branch)
+
+The rig editor plan's step 2 (design/battle-sprites.md section 18; editor/README.md, The Rig Editor):
+
+- `editor/src/modules/rig/`: a tool page for one side's `<side>_rig.json`, opened by **Edit rig…** on the Battle
+  sprite card. Live preview (`mcss.ts`, a port of `mcss.render`) at 60 fps with play/step/scrub, shiny, female, onion
+  skin, the battle's idle pauses and a status's slow-down, and Pivot/Move/Rotate/Scale gizmos; the sheet with each
+  picture's rectangles (move, resize snapped to 8, OBJs made again, art outside them red); the timeline (sequence
+  keys, the pose's parts front to back with drag-to-reorder and idle toggles, keys as blocks, edge drag for frames);
+  the side panel (part, key, picture, sequence key, sprite, checks, size against ~40 KB); Copy front to back.
+- Save runs `mcss_rig.check` (`POST /api/battle-sprite/rig-check`, `editor/server/python/rig_check.py`) then the
+  validator. The render port matches `mcss.render` pixel for pixel (test on 5 groups; a one-off sweep of 44,136 frames
+  of 218 sides found no difference).
+- End to end: Spiky-eared Pichu's front edited in the editor (ear pivot, a −45° wiggle key), built, seen in py-desmume's
+  summary as the preview drew it, then reverted (res/ unchanged by these commits).
+- Tests: typecheck, `npm test` (93), vite build.
+
+Next: step 3, the armature and curves (section 18.2 says where they plug in).
+
 ## 2026-11-12: battle sprites, the rig as source (ROM session)
 
 The rig editor plan's step 1 (design/battle-sprites.md sections 16 and 17):

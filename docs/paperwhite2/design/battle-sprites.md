@@ -5,7 +5,7 @@ that builds them from parts: import the parts, set each part's box, place and la
 Researched 2026-11-12 from the code (`src/system/mcss.c`, `src/system/mcss_tool.c`, `src/system/pokegra.c`,
 `src/ov168/btlv_mcss.c`, `lib/nnsys/src/g2d/g2d_MultiCellAnimation.c`) and the data (`res/pokemon/`, the White 2
 archive `a/0/0/4`). Built since: new form groups (section 6), the art's export and import on the existing rig
-(section 14), and the rig's JSON form, writer and checks (section 15); the rig editor is not. "Verified" means read
+(section 14), the rig's JSON form, writer and checks (section 15), the rig as source (section 17) and the editor's flat rig editing (section 18); the armature and curves are not. "Verified" means read
 in the code or decoded from the data; "inferred" means reasoned and not checked in the game.
 
 The decoder and renderer that prove the decoding are in the ROM session's scratchpad
@@ -738,7 +738,7 @@ The plan:
 1. **The rig as source** (built, section 17): every side's flat rig JSON in res/ beside its sheet, the packer
    writing the five files from it at build time (byte-identical, as section 15 proves), and the five binary files
    leave res/ (source only, as the user wants, and one thing for the editor to edit).
-2. **The editor's flat rig editing**: the sheet with each picture's rectangles (drag, resize, add a second), pivots,
+2. **The editor's flat rig editing** (built, section 18): the sheet with each picture's rectangles (drag, resize, add a second), pivots,
    parts' layer order, the per-part keyframe timeline (picture, move, rotation, scale, frames), sequences (stay, stop),
    idle parts, the live preview (a JavaScript port of `mcss.render`) with the battle's pauses, normal and shiny, and
    the checks; Copy front to back.
@@ -829,3 +829,78 @@ schema, and the round trip proves it):
    where they differ from it saves most of the 3.6 MB of OBJs.
 
 1 and 3 together would bring the JSON to about 19 MB (4 times the binaries).
+
+## 18. Built (2026-11-12): the Rig Editor, flat rig editing
+
+Section 16's step 2: the editor's **Rig Editor** (`editor/src/modules/rig/`, `editor/README.md`, The Rig Editor), a
+tool page for one side's `<side>_rig.json`, opened from the Battle sprite card's **Edit rig…** or
+`#tool/rig?folder=pichu/form_1&side=front`. It edits the flat rig of section 15.2 through the editor's documents
+(undo, redo, unsaved state); Save runs `mcss_rig.check` first (`POST /api/battle-sprite/rig-check`,
+`editor/server/python/rig_check.py`, which also gives the five files' sizes; errors refuse the save) and then the
+build's validator. The schema needed no new keywords.
+
+- **Preview:** `mcss.ts` is a port of `mcss.render` (the three movements, back to front, second rectangle in front,
+  pixel centres, nearest) drawn live from the rig being edited at 60 frames a second, with play, pause, step, scrub,
+  2–4×, normal or shiny, male or female sheet, onion skin, the battle's idle pauses as `BtlvMcss_OnAnimationEnd` and
+  `BtlvMcss_IdleTask` do them (the roll 1 in 3, 2, 1 at each loop end; sequence 1 if any; only the idle parts' tracks
+  going on; 48, 56 or 64 frames) and a status's slow-down (0x555). Gizmos on the chosen part: Pivot (the pose's),
+  Move, Rotate and Scale (the key the part shows at the playhead).
+- **Sheet:** each picture's rectangles over the sheet; move and resize them snapped to 8 pixels (Alt: 1), a moved
+  west or north edge shifting `at` so the picture stays put on the part; OBJs made again with a port of
+  `generate_objs`. **Valid sizes:** MCSS draws any rectangle, but the NCER's OBJs are cut as NITRO-CHARACTER cut them,
+  rows and columns of 64, 32, 16 and 8, so a size must be whole tiles and no piece may be 64×8, 64×16, 8×64 or
+  16×64 (a side of 64 or more needs the other a multiple of 32): `sizeProblem` warns, and such a rectangle keeps its
+  old OBJs. Art outside every rectangle is shown red and counted.
+- **Parts and timeline:** the shown pose's parts front to back, drag to reorder (idle parts follow their layer), each
+  part's track keys as blocks where the game plays them (restart: from the pose's start; continue: the sequence's
+  time; a looping track's later passes faded; a key the pose never reaches hatched); key edges drag to change frames
+  (Shift: steps of 6); the sequence's row (pose and frames per key); idle toggles; key type (picture, move, or turn,
+  scale and move) per track.
+- **Side panel**, after the Ambients panel: Part, Key (degrees in the UI, 65536ths in the file; scale to 1/4096),
+  Picture (rectangles, a second, new, remove with renumbering), Sequence key; the sprite's idle pause and airborne
+  flag; the checks and the resident size against the ~40 KB guidance of section 15.6; Copy front to back and back to
+  front (with a confirm).
+
+### 18.1 Proven
+
+- `editor/tests/rig-render.test.ts`: the port draws what `mcss.render` draws, pixel for pixel and canvas for canvas,
+  on Pichu, Charizard (continuing parts, a stop sequence), Abomasnow's female sheets, Kyurem form 2 (35 parts) and two
+  Pokéstar groups, 14 times per sequence. A one-off sweep of every sixth rig folder (218 sides, every second frame of
+  each sequence's loop, 44,136 frames) found no pixel different.
+- `editor/tests/rig-edit.test.ts`: an unchanged rig written back is the file byte for byte; an edited key and pivot
+  change two lines, pass the build's validator, the editor's and `mcss_rig.check`, and read back as edited; the OBJs
+  are `generate_objs`'s; removing a picture and reordering layers keep the references right. `npm test` 93 tests,
+  typecheck and `vite build` pass.
+- **End to end:** in the editor, Spiky-eared Pichu's front: the right ear's pivot dragged 2 pixels right and up with
+  the Pivot gizmo, a 12-frame key added after the ear's frame-60 key and turned to −45° with the Rotate gizmo, undo and
+  redo, Ctrl+S: two lines of `front_rig.json` changed. The `--hack` build passed `verify_dsi_rom.py`. In py-desmume
+  (a fresh boot of a copy of the user's save, the Pichu's summary captured every 2 frames over 760 frames), every
+  capture fits the edited rig's render at least as well as the original's (better on 266 of 380), and the wiggle
+  frames show the ear turned as the preview drew it. Reverted after.
+
+### 18.2 Where step 3 (the armature and curves) plugs in
+
+The views read the flat rig (`rigOf` of the document's data) and write it only through `model.ts`'s `Editor`
+(`set(path, value, phase)`, `replace(rig)`), and the preview draws only the flat rig. Step 3 adds a source layer
+beside the flat rig (an armature: parents per part, key poses with interpolation per channel, the bake step, by
+default 6 frames; kept in its own file next to the rig, or a field the build ignores), and:
+
+1. a bake, `bake(source, flat) -> flat`, which writes each part's track as held keys every step (parents' turn and
+   uniform scale composed into each child's key; a parent's non-uniform scale over a turned child warned of, as the
+   game can't shear);
+2. an `Editor` that edits the source and re-bakes on each change, so the preview, the timeline's baked blocks, the
+   checks and the size meter keep working unchanged on the bake's output, and Save writes both files;
+3. timeline rows that show the source's key poses and curves (a graph editor) above the baked blocks.
+
+A flat rig with no source opens as now (no parents, its held keys as they are). The size meter already measures the
+bake: a 2- or 3-frame step is visible against the 40 KB guidance before saving.
+
+### 18.3 Open
+
+- Not built: tweening, an armature and curves (step 3); hand-placing a rectangle's OBJs; editing the box (kept as it
+  is; the egg hatching and evolution centre by it); adding sequences or poses (the original's are kept; a pose is
+  edited part by part); a picture's `obj_attribute` (kept, or copied when a picture is added).
+- The preview doesn't draw rectangles past the sheet mirrored, as `mcss.render` doesn't (the game does; 6 original
+  sides rely on it, a warning in the checks).
+- A pose's idle parts are positions, shared by every pose: reordering one pose's layers moves the idle flags with the
+  part, which may change what they mean in another pose.
