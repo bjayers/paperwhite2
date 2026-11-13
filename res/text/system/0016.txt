@@ -1678,4 +1678,5 @@ Bank0016_Text_FoesUsedFusionFlare = The foe's {0102:0} used\nFusion Flare!
 Bank0016_Text_UsedFusionBolt = {0102:0} used\nFusion Bolt!
 Bank0016_Text_WildUsedFusionBolt = The wild {0102:0} used\nFusion Bolt!
 Bank0016_Text_FoesUsedFusionBolt = The foe's {0102:0} used\nFusion Bolt!
+\from{added_moves.used}
 \pad{34}

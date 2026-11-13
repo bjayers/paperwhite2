@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from tools.data.datajson import ROOT, DataError, load, load_schema  # noqa: E402
 from tools.data.gen_constants import load as load_list  # noqa: E402
-from tools.data import species_list  # noqa: E402
+from tools.data import move_list, species_list  # noqa: E402
 
 
 def to_json(line: str) -> str:
@@ -248,6 +248,11 @@ SOURCES = {
     "moves.name": lambda: [to_line(data["name"]) for data in moves()],
     "moves.name_upper": lambda: [upper(to_line(data["name"])) for data in moves()],
     "moves.description": lambda: [to_line(data["description"]) for data in moves()],
+    # Paper White 2: the battle's "used" messages of the added moves, three each (the player's, a wild and a foe's
+    # Pokémon, the originals' order), after the originals' written lines in bank 16 (tools/data/move_list.py)
+    "added_moves.used": lambda: [f"{whose}{{0102:0}} used\\n{to_line(data['name'])}!"
+                                 for data in moves()[move_list.FIRST_ADDED:]
+                                 for whose in ("", "The wild ", "The foe's ")],
     "items.name": lambda: [to_line(data["name"]) for data in items()],
     # From item 1: ITEM_NONE's are "???"
     "items.name_with_article": lambda: [item_with_article(data) for data in items()[1:]],
