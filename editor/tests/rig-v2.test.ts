@@ -150,12 +150,14 @@ test("parenting: a connected child's head follows its parent's tail; one keeping
   assert.deepEqual(bakedPoint(h, hop, 0, 1, 0, [0, 0]), [0, -28]);
 });
 
-test("the shear warning: a parent's uneven scale over a turned child; a quarter turn is exact", () => {
-  const sheared = source({ 0: [{ frame: 0, scale: [2, 1], curve: "constant" }], 1: [{ frame: 0, rotation: 30, curve: "constant" }] });
+test("the shear warning: a parent's uneven scale over a turned child with Inherit scale Full; a quarter turn is exact", () => {
+  const full = (src: V2) => ({ ...src, bones: src.bones.map((x, i) => (i === 1 ? { ...x, inherit_scale: "full" as const } : x)) });
+  const sheared = full(source({ 0: [{ frame: 0, scale: [2, 1], curve: "constant" }], 1: [{ frame: 0, rotation: 30, curve: "constant" }] }));
   const out = bakeV2(sheared);
   assert.ok(out.warnings.some((w) => w.includes("shear")), out.warnings.join("; "));
   assert.equal(out.shears.get(out.trackOf.get("0/1")!), 1);
-  const quarter = source({ 0: [{ frame: 0, scale: [2, 1], curve: "constant" }], 1: [{ frame: 0, rotation: 90, curve: "constant" }] });
+  assert.deepEqual(out.sheared, [1]);
+  const quarter = full(source({ 0: [{ frame: 0, scale: [2, 1], curve: "constant" }], 1: [{ frame: 0, rotation: 90, curve: "constant" }] }));
   assert.deepEqual(bakeV2(quarter).warnings, []);
 });
 

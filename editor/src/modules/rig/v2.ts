@@ -17,9 +17,9 @@
 import { forward, lengthOf, loops, keyAt, type Key, type KeyType, type Obj, type Pair, type Play, type Rectangle, type Rig, type Srt,
          type Track } from "./mcss.ts";
 import { blankPicture, generateObjs, isBlank, partName, signedDegrees } from "./model.ts";
-import { boundariesOf, constantTrack, cutsOf, flatKey, fuller, gcd, IDENTITY, inverse, keyOfMap, keysOfPieces, LONGEST, partMap, rounded,
-         segmentsOf, SHEAR, shift, sortedKeys, srtOfKey, srtOfValues, then, typeNeeded, valuesAt, type Curve, type Handle, type KeyPose, type Piece as Sample,
-         type Channel } from "./armature.ts";
+import { boundariesOf, constantTrack, cutsOf, flatKey, fuller, gcd, IDENTITY, inverse, keyOfMap, keysOfPieces, LONGEST, mapOf, partMap, rounded,
+         segmentsOf, SHEAR, shift, sortedKeys, srtOfKey, srtOfValues, then, typeNeeded, valuesAt, type Curve, type Handle, type KeyPose, type Map2,
+         type Piece as Sample, type Channel } from "./armature.ts";
 
 // ---------------------------------------------------------------- The format
 
@@ -64,6 +64,8 @@ export interface V2Bone {
   parent: number | null;
   /** The head locked to the parent's tail (and the bone's own move ignored); else it keeps its offset. */
   connected?: boolean;
+  /** How it takes its parent's scale (absent: inheritScaleOf's default). */
+  inherit_scale?: InheritScale;
   /** The default pose: what every sequence starts and ends at. */
   default?: Transform;
 }
@@ -183,6 +185,69 @@ export interface V2 {
   /** Tracks no pose plays (446 original sides have some), kept as they are. */
   kept_tracks?: Track[];
   [other: string]: unknown;
+}
+
+// ---------------------------------------------------------------- Inheriting a parent's scale (Blender's Inherit Scale)
+
+/** How a bone takes its parent's scale. Its place (its head where the parent's whole movement puts it) and its turn (the
+ * parent's plus its own) always follow; the scale:
+ * - `aligned`: the parent's x and y scale applied along the bone's own (turned) axes, multiplied into its own scale, so
+ *   it stretches along its own direction (tails, necks) and is always a turn and a scale the game draws exactly;
+ * - `full`: the parent's whole movement (its scale along the parent's axes): over a turned child an uneven scale is a
+ *   shear, which the game can't draw, so the bake keeps the nearest turn and scale and warns;
+ * - `none`: not inherited (a flip still is).
+ * They agree wherever the parent's scale is even (or a flip) or the bone isn't turned against it. */
+export type InheritScale = "full" | "aligned" | "none";
+export const INHERIT_SCALES: InheritScale[] = ["aligned", "full", "none"];
+
+/** A bone's mode as the file gives it, or the default: aligned for a bone with a parent, full for a root bone (the
+ * root's movement is the whole sprite's, which stretches as one picture). */
+export const inheritScaleOf = (bone: V2Bone | undefined): InheritScale =>
+  bone?.inherit_scale ?? (bone && bone.parent !== null ? "aligned" : "full");
+
+/** The mode a part is composed under its parent with: under a bone (`underBone`) the bone's mode; under the root's
+ * movement its own `inherit_scale`, else full (a bone whose parent the bake can't use moves as the root's). */
+export const inheritModeUnder = (bone: V2Bone | undefined, underBone: boolean): InheritScale =>
+  bone?.inherit_scale ?? (underBone ? "aligned" : "full");
+
+/** A linear map's turn (65536ths) and x and y scale (a shear left out). Either of a map's two readings (a half turn
+ * more with both scales negated) composes the same in inheritedWorld. */
+export function turnAndScale(m: Map2): [number, number, number] {
+  const { srt } = keyOfMap([m[0], m[1], m[2], m[3], 0, 0], [0, 0], 0);
+  return [srt[0], srt[1], srt[2]];
+}
+
+const signOf = (x: number) => (x < 0 ? -1 : 1);
+const applyMap = (m: Map2, x: number, y: number): [number, number] => [m[0] * x + m[1] * y + m[4], m[2] * x + m[3] * y + m[5]];
+
+/** A part's whole movement (from its own frame, pixels from its pivot, y up, to the sprite, y up): its own key `own`
+ * about its pivot, under its parent's map (`parent`, from the rest arrangement to the sprite, whose turn and scale are
+ * `parentTurnScale`) by `mode`. Full: the parent's map after its own. Aligned and none: its pivot moved by its own move,
+ * then where the parent's map puts that; its linear part the parent's turn, its flip, then its own turn and its own
+ * scale (times the parent's, aligned): R(parent) F R(own) S, never a shear. */
+export function inheritedWorld(own: Srt, pivot: Pair, parent: Map2, parentTurnScale: [number, number, number], mode: InheritScale): Map2 {
+  const local = partMap(own, pivot);
+  if (mode === "full") return then(local, parent);
+  const [turn, psx, psy] = parentTurnScale;
+  const sx = mode === "aligned" ? Math.abs(psx) * own[1] : own[1];
+  const sy = mode === "aligned" ? Math.abs(psy) * own[2] : own[2];
+  const linear = then(then(mapOf([own[0], sx, sy, 0, 0]), [signOf(psx), 0, 0, signOf(psy), 0, 0]), mapOf([turn, 1, 1, 0, 0]));
+  const [hx, hy] = applyMap(parent, local[4], local[5]);
+  return [linear[0], linear[1], linear[2], linear[3], hx, hy];
+}
+
+/** The key about a pivot that gives a part a whole movement `world` (its own frame to the sprite) under its parent's
+ * map by `mode` (inheritedWorld's inverse; `expected` the turn, 65536ths, to choose a mirror's way by), and how far it
+ * is from a turn and a scale (aligned and none can always give one exactly). */
+export function ownOfWorld(world: Map2, pivot: Pair, parent: Map2, parentTurnScale: [number, number, number], mode: InheritScale,
+                           expected: number): { srt: Srt; skew: number } {
+  if (mode === "full") return keyOfMap(then(world, inverse(parent)), pivot, expected);
+  const [turn, psx, psy] = parentTurnScale;
+  const [qx, qy] = applyMap(inverse(parent), world[4], world[5]);
+  const linear = then([world[0], world[1], world[2], world[3], 0, 0], then(mapOf([-turn, 1, 1, 0, 0]), [signOf(psx), 0, 0, signOf(psy), 0, 0]));
+  const { srt, skew } = keyOfMap(linear, [0, 0], expected);
+  const ax = mode === "aligned" ? Math.abs(psx) || 1e-12 : 1, ay = mode === "aligned" ? Math.abs(psy) || 1e-12 : 1;
+  return { srt: [srt[0], srt[1] / ax, srt[2] / ay, qx - pivot[0], -qy - pivot[1]], skew };
 }
 
 // ---------------------------------------------------------------- Snapping (the editor's rules; the format allows any frame)
@@ -365,6 +430,8 @@ export interface BakedV2 {
   warnings: string[];
   /** Per flat track: the keys baked with a shear approximated. */
   shears: Map<number, number>;
+  /** The bones some of whose keys were baked with a shear approximated (full mode), for Checks' one-click fix. */
+  sheared: number[];
   /** The flat track of each part of each sequence that has one, by `${sequence}/${bone}`. */
   trackOf: Map<string, number>;
 }
@@ -374,6 +441,7 @@ export interface BakedV2 {
 export function bakeV2(src: V2): BakedV2 {
   const warnings: string[] = [];
   const shears = new Map<number, number>();
+  const sheared = new Set<number>();
   const step0 = src.step ?? STEP;
   const clips = src.loop_clips ?? [];
 
@@ -494,6 +562,7 @@ export function bakeV2(src: V2): BakedV2 {
     const loop = loops(play);
     const step = lane?.step ?? seq.step ?? step0;
     const pivot = pivotIn(s, b);
+    const mode = parentTrack ? inheritModeUnder(bone, !fromRoot) : "full";
     const keys = keyPosesOf(b, lane);
     for (const k of lane?.keys ?? []) if (k.frame > frames) warnings.push(`${bone.name} in ${seq.name}: a key at frame ${k.frame}, past the sequence's ${frames}, never plays.`);
     const uses = (lane?.clips ?? []).filter((u) => {
@@ -555,8 +624,10 @@ export function bakeV2(src: V2): BakedV2 {
         if (!parentTrack) return { from: time, srt: rounded(own), head };
         const pk = keyAt(parentTrack, time);
         const ps = srtOfKey(pk.key, parentTrack.key_type);
-        // The parent's movement from its rest (its key about its pivot), after the part's own about its pivot
-        const world = then(partMap(own, pivot), then(inverse(parentRest), partMap(ps, parentPivot)));
+        // The parent's movement from its rest (its key about its pivot), after the part's own about its pivot, the parent's
+        // scale inherited by the bone's mode
+        const parentWorld = then(inverse(parentRest), partMap(ps, parentPivot));
+        const world = mode === "full" ? then(partMap(own, pivot), parentWorld) : inheritedWorld(own, pivot, parentWorld, [ps[0], ps[1], ps[2]], mode);
         const out = keyOfMap(world, pivot, own[0] + ps[0]);
         return { from: time, srt: rounded(out.srt), head, ...(out.skew > SHEAR ? { skew: true } : {}) };
       };
@@ -575,7 +646,8 @@ export function bakeV2(src: V2): BakedV2 {
     };
     if (counter.count) {
       shears.set(index, counter.count);
-      warnings.push(`${tracks[index]!.name}: ${counter.count} baked keys would need a shear the game can't draw (a parent's uneven scale over a turned child); they keep the nearest turn and scale. Keep ${fromRoot ? "the root" : p !== null ? src.bones[p].name : "the parent"}'s scale even, or the child unturned.`);
+      sheared.add(b);
+      warnings.push(`${tracks[index]!.name}: ${counter.count} baked keys would need a shear the game can't draw (a parent's uneven scale over a turned child, with Inherit scale Full); they keep the nearest turn and scale. Switch ${bone.name}'s Inherit scale to Aligned, or keep ${fromRoot ? "the root" : p !== null ? src.bones[p].name : "the parent"}'s scale even, or the child unturned.`);
     }
     state.set(id, "done");
   };
@@ -638,7 +710,7 @@ export function bakeV2(src: V2): BakedV2 {
     ...(src.kept?.extension !== undefined ? { extension: src.kept.extension } : {}),
     ...(src.kept?.picture_labels !== undefined ? { picture_labels: src.kept.picture_labels } : {}),
   };
-  return { rig, warnings, shears, trackOf };
+  return { rig, warnings, shears, sheared: [...sheared].sort((x, y) => x - y), trackOf };
 }
 
 // ---------------------------------------------------------------- Converting a flat rig (a vanilla sprite)
@@ -877,7 +949,7 @@ export function orderedV2(src: V2): V2 {
     ...src,
     pieces: src.pieces.map((p) => order(p, ["name", "rectangles", "objs", "obj_attribute"])),
     bones: src.bones.map((b) => order({ ...b, ...(b.default ? { default: order(b.default, ["piece", "hidden", "move", "rotation", "scale"]) } : {}) },
-                                      ["name", "head", "tail", "parent", "connected", "default"])),
+                                      ["name", "head", "tail", "parent", "connected", "inherit_scale", "default"])),
     sequences: src.sequences.map((s) => order({
       ...s,
       ...(s.layers ? { layers: s.layers.map((l) => order(l, ["bone", "head", "play", "track_of", "instance", "flags"])) } : {}),

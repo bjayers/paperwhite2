@@ -181,9 +181,11 @@ bakes to its flat rig exactly. The editor's compact layout (two spaces, a key a 
 - **Parents** (baked first; a circle is broken and warned of): a child's sample is its own movement about its pivot,
   then its parent's **baked** key's movement about the parent's pivot (the parent's track in the same sequence; the
   samples are also cut where the parent's keys change), turned back into a key about the child's pivot, as in section
-  19.3. Connected: the pivot is the parent's tail and the child's move is 0. A parent's uneven scale over a turned child
-  needs a shear: the nearest turn and scale, and the **shear warning** with the count (a quarter turn is exact). A
-  parent the sequence doesn't draw is warned of (the child moves as the root's).
+  19.3. Connected: the pivot is the parent's tail and the child's move is 0. How the parent's scale is taken is the
+  bone's **Inherit scale** ("Built: Inherit scale" below; Aligned by default since then, which never shears). Under
+  Full, a parent's uneven scale over a turned child needs a shear: the nearest turn and scale, and the **shear
+  warning** with the count (a quarter turn is exact). A parent the sequence doesn't draw is warned of (the child moves
+  as the root's).
 - **Pictures**: the pieces, then (only if a key or default is hidden and no piece is blank) one blank picture, Game
   Freak's (one empty rectangle at 256, −256).
 - **Loop clips**: cuts at each clip key's frame in every repetition (and at the clip's step where it curves), the clip's
@@ -782,3 +784,52 @@ placed picks change nothing; Align with default moves one piece only; Place move
 is copied. Tried in the editor on a scratch copy of Charmander (removed): a same-size piece made far from a foot's
 picture, keyed at 24 in Sequences (aligned, the notice shown, the warning icons), Place… dragging only that piece, Done,
 Align with default, Escape.
+
+## Built: Inherit scale (2026-11-14)
+
+**Why.** Applin's back keys `tail_1` (a root bone) to scale [1.25, 1.07] at 36 of Idle; `tail_2` (connected) and its
+children are turned against it, so the parent's uneven scale over them is a shear the game can't draw: five keys per
+track warned of. The user wants the whole tail to stretch as it does. Blender's answer is the bone's Inherit Scale.
+
+**The format.** A bone's `inherit_scale`: `"aligned"`, `"full"` or `"none"`, written only where it isn't the default:
+**aligned for a bone with a parent, full for a root bone** (under the root's keys, the whole sprite stretching as one
+picture). Aligned is the default because it is the same as Full wherever Full can be drawn (an even scale, a flip, an
+unturned child) and is always drawable where Full isn't. Existing rigs whose parented bones shear bake differently (and
+without the warning) until a bone is set back to Full; converted originals have no parents, so all 1,516 sides still
+bake back byte for byte.
+
+**The rules (`v2.ts`: `inheritedWorld`, `ownOfWorld`, `inheritScaleOf`, `inheritModeUnder`, `turnAndScale`).** A part's
+head always lands where the parent's whole movement puts its pivot plus its own move, and its turn is the parent's plus
+its own. Its linear part, with the parent's turn R, flip F (the signs of its scales) and scale |P|:
+- **full**: the parent's map after its own, R F |P| R(own) S(own), as before (byte for byte: tested against the old
+  bake on the user's Applin sides); a shear is baked as the nearest turn and scale with the shear warning, which now
+  names the bone and says to switch it to Aligned;
+- **aligned**: R F R(own) (|P| S(own)), the parent's x and y scale along the bone's own turned axes, never a shear;
+- **none**: R F R(own) S(own).
+Chains compose recursively: a child reads its parent's baked key's turn and scale (or, in the preview's `restMaps`, its
+parent's map's), so a grandchild under an aligned child gets the child's effective scale aligned to itself. Under the
+root's keys the mode is the bone's own `inherit_scale`, else full (also for a bone whose parent a sequence doesn't draw).
+- **Keep Transform** (`reparentKeep`) inverts the mode the bone has under its new parent (`ownOfWorld`): aligned and
+  none always find the pose exactly (the parent's scale divided out along the bone's axes, or left out).
+- **Moving a head or tail** (`shiftPivot`): the move's correction is (|P|⁻¹ R(own) S′ − 1) of the shift, S′ the scale on
+  the sprite, with the parent's scale where the pose is: the default pose's for the default, the posed parent's at each
+  key's frame for each key (every key, under aligned or none, channels or not); exact at the keys, as before.
+- The preview's posed bones and gizmos (`restMaps`, `posedMaps`) compose by the same rules; the Scale gizmo's axes are
+  the bone's own, which under Aligned are the ones the parent's stretch follows.
+
+**The page.** Rig setup, Bone panel: **Inherit scale: Aligned / Full / None**, each with its one-line hint (Aligned:
+"stretches along its own direction, as tails and necks do"). Checks: under a shear warning, **Switch to Aligned** sets
+every bone the bake sheared (`BakedV2.sheared`) to Aligned in one undo step.
+
+**Tests** (`tests/rig-inherit-scale.test.ts`, 8): the defaults and what is written; the field through both validators (another
+word refused by both); aligned under a parent scaled [2, 1]
+over a head turned 30° and an ear 20° more: no warning, the head at the full movement's (−4, −18), each quad a rectangle
+whose edges are the analytic turn and (2, 1) along its own axes, the ear's head on the head's tail; none (turned, not
+scaled); full's key equal to the old rule's and the shear named; the three modes baking the same rig under an even
+scale, a flip and an unturned child; the preview's posed corners on the bake's quads within rounding over a moving
+sequence under each mode; an aligned rig drawn by the editor as `mcss.render` draws it, pixel for pixel; `reparentKeep`
+keeping every frame's pixels under each mode (and writing a divided scale for Aligned, none for None); `moveHead` under
+a stretching aligned parent keeping the head's corners at its keys (more than 2 px off without the per-key correction).
+The v2 sweep: 1,516 sides, none differ. The user's Applin back (a copy) bakes with no warnings under the new default;
+its saved flat rig is the old (Full) bake, so the editor re-bakes it on the next save, and the res/ guard in
+`rig-v2.test.ts` fails on that side until it is saved.

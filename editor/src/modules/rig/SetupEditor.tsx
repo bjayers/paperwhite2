@@ -941,7 +941,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
           <StripSequencesSection view={view} onOpen={editSequence} onAdded={setClip} />
           <ClipSection view={view} clip={clip !== null && clip < clipsOf(src).length ? clip : null} onChoose={setClip} onOpen={editSequence} sizes={sizes} />
           <PauseSection view={view} />
-          <SetupChecks view={view} check={check} checking={checking} warnings={warnings} />
+          <SetupChecks view={view} check={check} checking={checking} warnings={warnings} sheared={baked?.baked?.sheared ?? []} />
         </aside>
       ) : clipEditView && editingClip !== null ? (
         <aside className="rig-side rig-inspector">
@@ -949,7 +949,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
                            onOpenSequence={(s, b) => { openSequence(s); setSel((x) => ({ ...x, bones: [b], keys: [] })); }} />
           <KeySection view={clipEditView} open={0} onMessage={setMessage} clip={editClip} />
           <LoopClipsSection view={view} chosen={clipChosen} editing={editingClip} onChoose={setClipChosen} onEdit={(c) => openClip(c)} />
-          <SetupChecks view={view} check={check} checking={checking} warnings={warnings} />
+          <SetupChecks view={view} check={check} checking={checking} warnings={warnings} sheared={baked?.baked?.sheared ?? []} />
         </aside>
       ) : sequencing ? (
         <aside className="rig-side rig-inspector">
@@ -958,7 +958,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
           <KeySection view={view} open={openSeq} onMessage={setMessage}
                       extra={sel.bones[0] !== undefined && src.bones[sel.bones[0]] ? <PartClipsRows view={view} sequence={openSeq} bone={sel.bones[0]} onEdit={(c) => openClip(c, sel.bones[0])} /> : null} />
           <LoopClipsSection view={view} chosen={clipChosen} editing={null} onChoose={setClipChosen} onEdit={(c) => openClip(c, sel.bones[0] ?? null)} />
-          <SetupChecks view={view} check={check} checking={checking} warnings={warnings} />
+          <SetupChecks view={view} check={check} checking={checking} warnings={warnings} sheared={baked?.baked?.sheared ?? []} />
         </aside>
       ) : (
         <aside className="rig-side rig-inspector">
@@ -968,7 +968,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
           <LayersSection view={view} />
           <PieceSection view={view} />
           <SequencesSection view={view} />
-          <SetupChecks view={view} check={check} checking={checking} warnings={warnings} />
+          <SetupChecks view={view} check={check} checking={checking} warnings={warnings} sheared={baked?.baked?.sheared ?? []} />
         </aside>
       )}
     </div>

@@ -200,6 +200,7 @@
                     "tail": {"$ref": "#/$defs/pair", "description": "Where connected children's heads are"},
                     "parent": {"anyOf": [{"type": "null"}, {"type": "integer", "minimum": 0}], "description": "The parent bone, or null for the root's"},
                     "connected": {"type": "boolean", "description": "true: the head is locked to the parent's tail and the bone's own move is ignored; else it keeps its offset"},
+                    "inherit_scale": {"enum": ["full", "aligned", "none"], "description": "How the bone takes its parent's scale (Blender's Inherit Scale). aligned (absent, for a bone with a parent): the parent's x and y scale along the bone's own turned axes, never a shear; full (absent, for a root bone, under the root's): the parent's whole movement, a shear the game can't draw approximated where an uneven scale is over a turned child; none: its place and turn follow the parent, its scale doesn't"},
                     "default": {"$ref": "#/$defs/transform"}
                 }
             }

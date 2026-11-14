@@ -10,12 +10,19 @@ import { sizeProblem } from "./model.ts";
 import { hue } from "./context.ts";
 import type { Pair } from "./mcss.ts";
 import { addBone, addBoneForPiece, alignPiece, boneTree, ownPiece, piecesOf, referencePiece, bonesShowing, connectedChildren, deleteBone, deletePiece, layersOfSetup, moveHead, moveLayer, moveTail,
-         ownLayerSequences, parentOf, pivotOf, removeRectangle, renameBone, renamePiece, reparentKeep, setBonePiece, setConnected, setDefault, setInLayers,
+         ownLayerSequences, parentOf, pivotOf, removeRectangle, renameBone, renamePiece, reparentKeep, setBonePiece, setConnected, setDefault, setInheritScale, setInLayers,
          wouldCycle } from "./setup.ts";
 import { uncovered } from "./SheetView.tsx";
 import { PieceThumb } from "./SetupSheet.tsx";
 import type { SetupView } from "./setupContext.ts";
-import { ROOT, type V2 } from "./v2.ts";
+import { INHERIT_SCALES, inheritScaleOf, ROOT, type InheritScale, type V2 } from "./v2.ts";
+
+/** Inherit scale's choices in the Bone panel, with what each does. */
+const INHERIT_LABELS: Record<InheritScale, { label: string; hint: string }> = {
+  aligned: { label: "Aligned", hint: "Aligned: stretches along its own direction, as tails and necks do (the parent's x and y scale along its own turned axes; never a shear)" },
+  full: { label: "Full", hint: "Full: the parent's whole stretch, along the parent's axes; over a turned bone an uneven one is a shear the game can't draw (the nearest is baked, and Checks warns)" },
+  none: { label: "None", hint: "None: follows its parent's place and turn, but keeps its own size" },
+};
 import { checkText } from "./checkText.ts";
 
 export function Row({ label, children, hint }: { label: string; children: ReactNode; hint?: ReactNode }) {
@@ -139,6 +146,14 @@ export function BoneSection({ view }: { view: SetupView }) {
               if (r.dropped) say(`${bone.name} is connected now: its own moves are locked (they were dropped), so it only turns and scales.`);
             }}>Connected</button>
             <button className={!connected ? "active" : ""} disabled={readOnly || p === null} onClick={() => commit(setConnected(src, b, false).src)}>Keep offset</button>
+          </span>
+        </Row>
+        <Row label="Inherit scale" hint={`${INHERIT_LABELS[inheritScaleOf(bone)].hint}${p === null ? ". A root bone takes the Root's scale (Full by default: the whole sprite stretches as one picture)" : ""}`}>
+          <span className="view-switch">
+            {INHERIT_SCALES.map((m) => (
+              <button key={m} className={inheritScaleOf(bone) === m ? "active" : ""} disabled={readOnly} title={INHERIT_LABELS[m].hint}
+                      onClick={() => commit(setInheritScale(src, b, m))}>{INHERIT_LABELS[m].label}</button>
+            ))}
           </span>
         </Row>
         <Row label="Head" hint={connected ? `the pivot: ${src.bones[p!].name}'s tail (connected), which moves with it` : "the pivot it turns and scales about (pixels from the feet, y down); the pictures stay where they are"}>
@@ -432,8 +447,17 @@ export function SequencesSection({ view }: { view: SetupView }) {
   );
 }
 
-export function SetupChecks({ view, check, checking, warnings }: { view: SetupView; check: RigCheck | null; checking: boolean; warnings: string[] }) {
-  const { src, art, sheet } = view;
+export function SetupChecks({ view, check, checking, warnings, sheared = [] }: { view: SetupView; check: RigCheck | null; checking: boolean; warnings: string[];
+                              sheared?: number[] }) {
+  const { src, art, sheet, commit, readOnly, say } = view;
+  // The shear warning's fix: the bones baked with a shear approximated (Inherit scale Full) switched to Aligned
+  const shearFix = sheared.filter((b) => src.bones[b] && inheritScaleOf(src.bones[b]) === "full");
+  const toAligned = () => {
+    let next = src;
+    for (const b of shearFix) next = setInheritScale(next, b, "aligned");
+    commit(next);
+    say(`${shearFix.map((b) => src.bones[b].name).join(", ")} now inherit scale Aligned: they stretch along their own direction, with no shear.`);
+  };
   const local: string[] = [];
   src.pieces.forEach((p) => p.rectangles.forEach((r, k) => {
     if (k > 0 && !r.size[0]) return;
@@ -455,6 +479,14 @@ export function SetupChecks({ view, check, checking, warnings }: { view: SetupVi
       <h5>Checks <span className="muted">{checking ? "checking…" : errors.length ? `${errors.length} errors: Save refuses` : all.length ? `${all.length} warnings` : "the build takes it"}</span></h5>
       {errors.length > 0 && <ul className="bsp-messages pkm-error">{errors.slice(0, 12).map((m, i) => <li key={i} title={`The check's words: ${m}`}>{checkText(m, src)}</li>)}</ul>}
       {all.length > 0 && <ul className="bsp-messages bsp-warning">{all.slice(0, 12).map((m, i) => <li key={i}>⚠ {m}</li>)}</ul>}
+      {shearFix.length > 0 && (
+        <div className="ow-section-actions">
+          <button disabled={readOnly} onClick={toAligned}
+                  title={`Set ${shearFix.map((b) => src.bones[b].name).join(", ")}'s Inherit scale to Aligned: the parent's stretch along each bone's own direction, which the game draws exactly`}>
+            Switch to Aligned{shearFix.length > 1 ? ` (${shearFix.length} bones)` : ""}
+          </button>
+        </div>
+      )}
       {!errors.length && !all.length && <p className="muted ow-note">No problems: the bake, mcss_rig.check (the game's limits) and the schema pass.</p>}
     </section>
   );
