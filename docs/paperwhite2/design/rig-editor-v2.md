@@ -89,3 +89,168 @@ The first editor stays reachable as an Advanced view until the new one covers ev
 - **One set of parts for every sequence**: no per-sequence duplicates (the `_a`/`_b` tracks). The game needs a track
   per part per action, so the save generates them (named consistently, e.g. `head_a`, `head_b`); the source and the
   editor only ever show the shared parts. A part a sequence doesn't move just holds its default pose there.
+
+## Built: step 1, the model and the bake (2026-11-14)
+
+The format and its bake, with no new UI yet: `editor/src/modules/rig/v2.ts` (the format's types, `bakeV2`,
+`convertToV2`, the snapping rules), `sizes.ts` (the size estimate), `res/pokemon/battle_sprite_rig_v2.schema.json`; the
+curve presets in `armature.ts` (`eased`). The first editor's armature (battle-sprites.md section 19) is unchanged.
+
+### The file: `<side>_rig_v2.json`
+
+A new file beside `<side>_rig.json`, not a new version of `_rig_source.json`: the first editor reads that one and stays
+reachable as the Advanced view, so the two never meet in one file. A side has one or the other, never both (tested);
+step 6 turns a first-editor armature into this. **The flat `<side>_rig.json` stays the build's only input**, written by
+the bake on save, as in battle-sprites.md section 19.1; `tests/rig-v2.test.ts` checks that every `_rig_v2.json` in res/
+bakes to its flat rig exactly. The editor's compact layout (two spaces, a key a line). An excerpt of a fresh rig:
+
+```json
+{
+  "$schema": "../battle_sprite_rig_v2.schema.json",
+  "format": 2, "side": "front", "step": 6,
+  "box": { "width": 31, "height": 45, "x": 4, "y": 3 }, "stop_flags": 0,
+  "pause": true, "keeps_moving": [ 2 ],
+  "pieces": [ { "name": "body", "rectangles": [ { "sheet": [ 56, 24 ], "size": [ 16, 16 ], "at": [ -11, 0 ] } ] }, ... ],
+  "bones": [
+    { "name": "body", "head": [ 4, -15 ], "tail": [ 0, -18 ], "parent": null, "default": { "piece": 0 } },
+    { "name": "head", "head": [ 0, -18 ], "tail": [ -3, -23 ], "parent": 0, "default": { "piece": 1 } },
+    { "name": "ear", "head": [ -3, -23 ], "tail": [ -6, -40 ], "parent": 1, "connected": true, "default": { "piece": 2 } }
+  ],
+  "layers": [ 1, 2, 0 ],
+  "sequences": [
+    { "name": "Idle", "frames": 24, "parts": [
+        { "bone": 0, "keys": [ { "frame": 12, "move": [ 0, -8 ], "curve": "back" } ] },
+        { "bone": 2, "clips": [ { "clip": 0 } ], "keys": [] } ] },
+    { "name": "Hop", "frames": 36, "parts": [ ... ] }
+  ],
+  "loop_clips": [ { "name": "twitch", "frames": 8, "keys": [ { "frame": 0 }, { "frame": 4, "rotation": 10 } ] } ],
+  "timeline": { "name": "stay", "blocks": [ { "sequence": 0 }, { "sequence": 0 }, { "sequence": 1 }, { "sequence": 0 } ] }
+}
+```
+
+- **Pieces** are the flat rig's pictures by number: a name, one or two rectangles, `at` placing each from the head of
+  the bone that shows it (y up), which is the piece's placement on its bone (step 2's Pivot tool moves the head and the
+  `at`s back, as `movePivot` does); `objs` only where they aren't `generate_objs`'s; `obj_attribute` (default 0).
+- **Bones, one set shared by every sequence**: `head` (the pivot, from the feet, y down), `tail`, `parent` (`null`:
+  the root), `connected` (the head is the parent's tail and the bone's own move is locked; otherwise it keeps its
+  offset), `default` (the default pose: `piece`, `hidden`, `move`, `rotation` in degrees, `scale`; absent fields are
+  identity, and hidden when there's no piece). The source never holds a part per action: the bake makes each
+  sequence's tracks.
+- **`layers`**: the rig's layer order, front to back (absent: the bones in order). Every sequence draws it.
+- **Sequences** (the game's actions): `name`, `frames` (the length, a multiple of 6 for the editor's own), optional
+  `step`, and `parts`: per bone its `keys` (`frame`, `piece`, `hidden`, `move`, `rotation`, `scale`, `curve`, per-channel
+  `curves` and Bézier `handles` as in section 19.2) and `clips`. A key's absent channel is the default pose's; its absent
+  `piece` is the one shown before (held, never tweened); `hidden: true` shows the blank picture until a key with a piece
+  or `hidden: false`. A key's absent `curve` is the file's `curve` (absent: `ease_in_out`).
+- **Curves**: constant, linear, ease in, out, in and out (sine), Bézier, and the presets, each a named function of the
+  share u (0 to 1) of the way to the next key, which the bake samples; they arrive at the next key with their effect:
+  **snap** 1 − (1 − u)⁵ (quintic ease out: three quarters of the way after a quarter), **back** Penner's ease-out back
+  (overshoot constant 1.70158: about 10% past the key, then back), **bounce** Penner's ease-out bounce (lands, bounces
+  three times, never past the key), **elastic** Penner's ease-out elastic (2^(−10u)·sin((10u − 0.75)·2π/3) + 1: swings
+  about the key, dying away).
+- **Loop clips** (`loop_clips`): `name`, `frames` (its own length) and `keys` on its own time (constant unless they name a
+  curve), placed on a part of a sequence by `{"clip": n, "start": f}`; it plays from the block's start (plus `start`),
+  looping. Its channels **add** to the part's (moves and turns added, scales multiplied), and a clip key with a piece
+  (or hidden) shows it over the part's until the next such clip key.
+- **The timeline**: the game's sequence 0, a strip of blocks, each `{"sequence": n}` playing that sequence from its
+  start (its parts restart: NNS restarts restarting parts at every sequence key) for `frames` (default: the sequence's
+  length; longer loops it). Instances are separate blocks and cost a 2-byte key each; editing a sequence changes every
+  instance (one pose, one set of tracks).
+- **Keeps moving**: `pause` (false: the sprite never pauses, the game's idle 0xff) and `keeps_moving` (bones), baked as
+  the idle parts: their places in `layers`.
+
+### The bake (`bakeV2(source)`: the flat rig, warnings, shears, each part's track; deterministic)
+
+- **Tracks**: one per part per sequence, for every bone the sequence draws (a part with no keys holds the default pose:
+  one key), named `<bone>_<letter>` (a to z, then the number; characters a label can't hold become `_`), **ordered by
+  sequence, then bone**. **Poses**: one per sequence, its parts the layers front to back at the bones' heads (a
+  connected bone's at its parent's tail), restarting. **Sequences**: the timeline's blocks as keys `{pose, frames}`; the
+  originals' other `strips` after it.
+- **A part's keys**: an implicit key at frame 0 at the default pose (with the file's curve) unless one is keyed there;
+  each key goes to the next by its curves; the last goes to the start key again at the length (a turn going on to it
+  rather than back, as in section 19.2), which is the default pose unless the start was keyed. Then sampled as section
+  19.3: every key starts a flat key of its own; inside its span a sample at each multiple of the step from the block's
+  start (and at every cut below), each held to the next, equal samples merged; turns to 65536ths, scales to 1/4096,
+  moves to whole pixels; key types grow plain, move, srt.
+- **The seam**: a sequence of length L bakes frames 0 to L − 1: samples at 0, 6, ... up to the last multiple of 6 below
+  L, each held 6 frames, so the flat track is L long and loops. Frame L is the next loop's frame 0, so the default pose
+  (the end key) is never held there: it is held once, at frame 0. A middle key at 12 of a 24-frame loop bakes 0, −6,
+  −12, −6 (eased in and out), not a second 0. A key placed at frame L itself (the end key, shown past the end, made
+  explicit by moving it) is the last segment's target and bakes to a key held 0 frames at the end, as 4,730 original
+  tracks end; it changes nothing the game shows.
+- **Parents** (baked first; a circle is broken and warned of): a child's sample is its own movement about its pivot,
+  then its parent's **baked** key's movement about the parent's pivot (the parent's track in the same sequence; the
+  samples are also cut where the parent's keys change), turned back into a key about the child's pivot, as in section
+  19.3. Connected: the pivot is the parent's tail and the child's move is 0. A parent's uneven scale over a turned child
+  needs a shear: the nearest turn and scale, and the **shear warning** with the count (a quarter turn is exact). A
+  parent the sequence doesn't draw is warned of (the child moves as the root's).
+- **Pictures**: the pieces, then (only if a key or default is hidden and no piece is blank) one blank picture, Game
+  Freak's (one empty rectangle at 256, −256).
+- **Loop clips**: cuts at each clip key's frame in every repetition (and at the clip's step where it curves), the clip's
+  values merged into each sample; a clip whose length doesn't divide the part's loop unrolls the track to both lengths'
+  least common multiple (at most 3,600 frames; warned of either way).
+- **Size**: `rigSizes(rig)` gives the five files' resident sizes exactly as `mcss_rig.files_from_rig` writes them
+  (tested against `rig_check.py`), for the meter against the ~40 KB guidance (`RESIDENT_GUIDANCE`); the archive's LZ11
+  size is left to `rig_check.py`.
+- **Snapping** (the editor's rules; the format takes any frame, so converted originals keep theirs): `snapFrame` (the
+  nearest multiple of 6, at least 0), `snapLength` (the nearest multiple of 6, at least 6), `bakedFrames` (the samples
+  of the seam rule).
+
+### Converting a vanilla sprite (`convertToV2`)
+
+Each pose a sequence, each track's keys constant keyframes at their starts (the turn unwrapped in degrees, a piece named
+only where it changes), the stay sequence the timeline, the others `strips`, the idle parts `keeps_moving`, and **one
+set of parts**: a pose's part is matched to a bone by its track's name without the action's letter (`head_a` and
+`head_b` are `head`), else by its place in the first pose (where that part's name isn't in the pose), else it is a new
+bone; the bones are ordered by the first track they play, so the usual track order is usually the original's. A part
+an action doesn't draw is absent from that sequence's layers. Where the originals don't follow the rules, a few
+originals-only fields keep them, written only where needed (counts over the 1,516 sides):
+
+| Field | Holds | Uses |
+| --- | --- | --- |
+| a part's `name` | its track's name where it isn't `<bone>_<letter>` (most originals' names: `body`, `bodyBa`) | 22,685 parts |
+| a part's `frames` | its own loop where it isn't the sequence's (a converted sequence is as long as its longest part) | 3,534 parts |
+| a part's `key_type`, `play`, `loop_start`, `bank_type` | the track's | |
+| a sequence's `layers` | its own nodes: `head` where the pivot isn't the bone's (1,305), `play: continue`, `track_of` [sequence, bone] for a track shared with another pose (2,028), `instance`, `flags` | 1,586 sequences |
+| a block's `frames`, `move`, `rotation`, `scale`, `flat` | the sequence key's (the whole sprite's place) | |
+| `track_order` | the tracks' order where it isn't by sequence, then bone | 527 sides |
+| `kept_tracks` | tracks no pose plays, as they are | 446 sides |
+| `strips` | sequences 1 on (stop, the egg's) | 101 sides |
+| `kept` | `info_padding`, `obj_mapping`, `extension`, `picture_labels` | 2 sides |
+| `idle_nodes` | the idle parts as they are, where `keeps_moving` can't give them | none needed |
+
+14,198 bones for the originals' 26,282 tracks. **Proven on all 1,516 sides** (every species, form, egg, Pokéstar group,
+front and back): each converts, is written as the file's text, passes the editor's validator and the build's, and bakes
+back to its flat rig **byte for byte with no warnings**, no exceptions (`npx tsx tests/v2-sweep.mts`, about 17 s).
+
+### Tests (`tests/rig-v2.test.ts`, 14 of `npm test`'s 152)
+
+The default pose (an empty sequence holds it; one middle key blends default, key, default; the seam; an explicit end
+key; a keyed start; a default that isn't the rest); snapping and the step; each curve preset's samples (back's 10%
+peak, elastic's swing, bounce never past) and a preset baked; connected against offset parenting at the analytic places
+(a 90° turn of the head carrying its tail and the connected ear to (5, −21), the ear's move locked, an offset child's
+move turned with its parent, a parent's move carrying both); the shear warning; a loop clip merged (pictures every 4
+frames, a move added, a start offset, an odd length unrolled); hidden keys; the timeline (blocks sharing a sequence,
+tracks named and ordered, poses, one edit changing every instance, determinism); the pause and the keeps-moving parts;
+Pichu, Budew, Charizard and Kyurem form 2 (front and back) converted and baked back byte for byte; the source through
+both validators (a bad curve refused by both); baked rigs through the build's rig validator and `mcss_rig.check`
+(`rig_check.py`), with `rigSizes` equal to its sizes; a baked fresh rig (parents, curves, a preset, a clip, a hidden
+key, two sequences on a four-block timeline) drawn by the editor's `render` against `mcss.render`
+(`tests/mcss_render_rig.py`) pixel for pixel at 22 times; and the guard over res/'s `_rig_v2.json` files.
+
+### What step 2 (the rig setup) builds on
+
+- Load a side's `_rig_v2.json` if it has one, else `convertToV2` of its flat rig (vanilla; step 6 for first-editor
+  armatures). Save: `bakeV2`, `mcss_rig.check` through the existing rig-check route, then write `<side>_rig.json` and
+  `<side>_rig_v2.json` (both documents in the one undo history, as in section 19.8). Start fresh: `emptyV2` plus a first
+  piece and bone. The server's Start fresh fix on the paused branch `worktree-agent-a9c612451c95305c3` (deleting a
+  side's source through the server) is needed then, for `_rig_v2.json` too; this step didn't take it.
+- Pieces are the `pieces` list. Moving a bone's head while moving its pieces' `at` back (as `movePivot`) keeps the
+  picture in place; a connected child's head follows its parent's tail, so moving a tail must move the connected
+  children's pieces back the same way. `layers` is the layer list; `default` is what the gizmos edit with no sequence.
+- `bakedPoint` gives a point of a bone on the sprite as the game draws it (for gizmos), `trackOf` maps a part of a
+  sequence to its flat track (for the preview's picking), `rigSizes` feeds the meter.
+- Open: converted sprites have every bone parented to the root (their keys already follow their parents by hand);
+  parenting one keeps it where it is only with a Keep Transform like section 19.4's `reparent`, which step 6 should
+  port. Converted tails are a guess (toward the first picture's middle). Nothing in res/ changes in this step, so the
+  ROM is unchanged and nothing was tried in the game.
