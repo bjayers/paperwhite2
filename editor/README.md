@@ -459,14 +459,16 @@ New species (`AddedSpecies.tsx`, docs/paperwhite2/design/new-species.md sections
 
 ## The Rig Editor
 
-**The new editor (2026-11-14, docs/paperwhite2/design/rig-editor-v2.md, "Built: step 2" to "Built: step 4")** is what **Edit rig…** and the
+**The new editor (2026-11-14, docs/paperwhite2/design/rig-editor-v2.md, "Built: step 2" to "Built: steps 5–6")** is what **Edit rig…** and the
 sidebar open (`src/modules/rig/SetupEditor.tsx`, its edits in `setup.ts`). It edits a side's source,
 `<side>_rig_v2.json` (`v2.ts`), and bakes it on every change into `<side>_rig.json`, the build's input. A side without a
 source opens as its flat rig converted (`convertToV2`, byte for byte), in memory: the first edit makes the file, so an
 untouched side writes nothing; Undo of that edit takes the file away again. Save runs the rig-check route on the bake
 and writes both files; Ctrl+Z and Ctrl+Y are one history over both (`history.ts`). A side with a first-editor armature
-(`_rig_source.json`) shows a notice: open it in the Advanced editor, or **Start fresh…** (which deletes the armature
-through the server). The header switches its three modes, **Rig setup**, **Sequences** and **Timeline** (remembered per
+(`_rig_source.json`) shows a notice: **Import into the new editor…** (`importArmature.ts`: its parents and key poses with
+their curves where they bake the same, the game's held keys where they don't, a report of which; the side bakes to the
+same flat rig, and the armature is deleted through the server), **Start fresh…**, or **Advanced (old editor)**. The
+header switches its three modes, **Rig setup**, **Sequences** and **Timeline** (remembered per
 viewer):
 
 - **Pieces** (the sheet card): drag on the sheet to cut a piece (Shift: the chosen piece's second rectangle); drag a
@@ -540,14 +542,34 @@ pauses, not one sequence) and its side panel edits the sprite as a whole (what p
   double-click to open), **Timeline** (clips, blocks and the loop's length; the chosen clip's sequence, **Repeats** ×N
   with −1 and +1, length, start, **Open**, **◀ Earlier**, **Later ▶**, **Delete clip**; the strip keeps one clip),
   **Battle pause** (**Pauses in battle**: on, the vanilla random pause; off, never, the game's 0xff; **Keeps moving** per
-  part: the idle parts, baked as their places in the rig's layers), **Checks**.
+  part: the idle parts, baked as their places in the rig's layers), **Checks**. An original's sequence its stop strip
+  plays (the battle's pause) says **in the stop strip**.
+
+**Loop clips (step 5)**: a part's short loop of its own (a fire's flicker, a blink, a twitch) playing under a sequence's
+keys (`loopClips.ts` for the edits, `LoopClipPanel.tsx`; the format's `loop_clips`, a lane's `clips`):
+
+- **Loop clips** (Sequences mode's side panel): + Loop clip (12 frames, keys every 3, opened for editing), Duplicate,
+  Delete (it comes off every part); each row's length, step, keys, the parts it's on and the bytes it adds. Drag a row
+  onto a part's row of the sequence timeline to place it there; double-click or **Edit** opens it.
+- **A clip open** replaces the sequence's views with the clip's: its preview on a part alone and on the sprite (the bake
+  of a sequence playing just the clip), its own timeline (the sequence timeline on the clip as a one-part sequence, its
+  keys snapping to its own step: **Keys every** 1, 2, 3 or 6), **Clip key** (picture over the part's, Hidden; moves and
+  turns added to the part's, scales multiplied; constant unless given a curve), the graph, and **Loop clip** (name, length
+  by its step, the step, **Shown on** the part the preview uses, **Placed on** with Open). Done or Escape goes back.
+- **Placed**: a part with clips gets a sub-row of bars under its keys, one per repetition (the first solid): drag them to
+  move the clip's start (by its step; Alt by frames), double-click to edit, ✕ to take it off. **Part** lists them with
+  their start, Edit and ✕, and **+ Loop clip…**. A clip whose length doesn't go into the sequence's is marked ⚠ (it
+  restarts with each play of the sequence; the bake unrolls the part's track to both lengths' least common multiple).
+- The bones are drawn with their clips (`posedMaps`, `partValues` with the clips); keying writes the part's own keys only.
+  Moving a head copies a clip another bone plays too and corrects its turned keys' moves; parenting keeps the clips.
 
 **The first editor, now the Advanced view.** One side of a battle sprite's rig (`src/modules/rig/`, `res/pokemon/<folder>/<side>_rig.json`; the design is
 docs/paperwhite2/design/battle-sprites.md sections 15 to 18), opened from a Battle sprite card's **Edit rig…** or the
 sidebar (`#tool/rig?folder=pichu/form_1&side=front`). The art stays a full 256×128 sheet drawn in Aseprite and brought
 in with the card's Import art; here the pictures are cut from it and moved. The header switches **Front** and
 **Back** (separate rigs; a • marks unsaved changes), the **Male** and **Female** sheet where there is one, and has
-**Copy front to back** (or back to front, with a confirm: the whole rig, as a starting point), **Start fresh…** (a minimal rig in place of this side's: one picture round the sheet's first piece of art, one part, the stay loop; with a confirm, undoable until saved; it deletes the side's armature, if any), the size of the five
+**← New editor** (since step 6 of the new editor it makes no new armatures and no fresh starts: a side without an armature
+edits its keys as the game stores them, Game keys; the new editor imports armatures), the size of the five
 files the build will write against the ~40 KB guidance (section 15.6) with the stay loop's length, **Revert** and
 **Save** (Ctrl+S). Save runs the build's checks first (`POST /api/battle-sprite/rig-check`, `server/python/rig_check.py`:
 `mcss_rig.check`, refusing errors) and then the validator; Ctrl+Z and Ctrl+Y undo and redo.

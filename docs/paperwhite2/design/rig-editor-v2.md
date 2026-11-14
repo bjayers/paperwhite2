@@ -565,3 +565,124 @@ opening Hop in Sequences mode. Nothing in res/ changed in this step.
 - `reparentKeep` and `moveHead` don't account for loop clips yet (a clip's move adds to the part's, so a moved head or a
   new parent changes what a clip's move means); `deleteBone` drops the bone's lane with its clip uses, and `deletePiece`
   already renumbers the pieces the clips' keys show.
+
+## Built: steps 5–6, loop clips and old rigs (2026-11-14)
+
+Loop clips are edited and placed in Sequences mode (no new mode: a clip lives on a part of a sequence); first-editor
+armatures import into the new editor; the guide covers the whole workflow; the first editor makes no new armatures. The
+format needed nothing new. The edits are pure functions of the source in `editor/src/modules/rig/loopClips.ts` and
+`importArmature.ts`; the page is `SetupEditor.tsx` with `LoopClipPanel.tsx`, and `SequenceTimeline.tsx` in a clip mode.
+
+### The rules (loopClips.ts, v2.ts)
+
+- **One reading of a clip.** The bake's clip sampling is `clipValues` (v2.ts: each placed clip at the block's time from
+  its start, looping; moves and turns added, scales multiplied, the last picture key at or before the clip's frame, else
+  its last one from the loop before), and `partValues(src, s, b, frame, true)` reads the clips through it, so the bones
+  drawn over the preview (`posedMaps`) stand where the game draws the part. Keying reads the part's own values (without the
+  clips), so a key never takes a clip's offset in.
+- **A clip is edited as a one-part sequence** (`clipSource`: the clip's keys on bone 0, the curve constant, the default
+  no change and no picture) and written back (`fromClipSource`), so the sequence timeline, the Part section, K, Delete,
+  moving, copying and pasting keys work on it unchanged. A clip always has a key at frame 0 (the format's clips start
+  there; deleting it leaves a bare `{ "frame": 0 }`, no change). A key holds only what it changes; a picture or Hidden
+  chosen on a key is always written.
+- **Its step**: `step` (1, 2, 3 or 6; new clips 3) is what its keys and its timeline's playhead snap to, and how often the
+  bake samples it where it curves (step 1's rule). Picture flicker usually wants 2 to 4 frames; sequences keep 6.
+- **The list**: `addLoopClip` (12 frames, step 3, a key at 0), `renameLoopClip`, `setClipFrames`, `setClipStep`,
+  `duplicateLoopClip`, `deleteLoopClip` (its placings with it, later clips renumbered). **Placing**: `placeClip` (a lane
+  made where the part has none), `setClipStart` (kept inside one clip length), `unplaceClip` (a lane left with nothing
+  of a drawn part goes, as `withLane` drops it). `clipFits` / `unrolledFrames` say when a clip's length doesn't go into
+  the sequence's (the bake unrolls the part's track to the least common multiple, up to 3,600 frames, and warns; each play
+  of the sequence restarts the clip part way); `clipCost` is the bytes a clip's placings add (baked with and without).
+- **The preview** (`clipPreviewSource`): the side with one sequence playing the clip on a part from frame 0, in its
+  default pose, alone (its parents baked but not drawn, so it stands where it does on the sprite) or on the sprite.
+- **`moveHead` with clips**: a clip another bone plays too is copied for the moved bone first (its uses there pointing to
+  the copy); the pieces its keys show are the bone's (`piecesOf`), so their `at` moves back with the others; a clip key
+  that turns or scales gets the move its turn and scale add to the default's spread (exact where the part's own keys don't
+  turn or scale away from the default, as in the tests). **`reparentKeep` with clips**: the part's own keys are sampled
+  from a bake whose clips are swapped for ones that change nothing but cut the samples at the same frames, so its own
+  curves are sampled where the bake samples them with the clips; the clips stay on the part. Exact where the new parent
+  differs from the old by a movement only (the originals' parts; tested), since a clip's move and turn add to the part's.
+
+### The page
+
+- **Loop clips** (Sequences mode's side panel, under Part): **+ Loop clip** (opens it), **Duplicate**, **Delete**; each
+  row's swatch, length, step, keys, the parts it's on and the bytes it adds; drag a row onto a part's row of the timeline
+  to place it there (the row is outlined while over it); double-click or **Edit** opens it.
+- **A clip open**: the main card shows **Loop clip: flicker** with **Done: back to Idle**, its preview on the part
+  **alone** and **on the sprite** (side by side, the part outlined), the transport by the clip's step and ◇ Key. The dock is
+  the sequence timeline on the clip (one row, the clip's name; **Snap N** its step) or its graph. The side panel:
+  **Loop clip** (Done; name; length with −step and +step; **Keys every** 1 2 3 6 with the explanation; **Shown on**, the
+  part previewed, by default where it's placed or the chosen part; **Placed on** with Open), **Clip key** (Key, Delete key;
+  the picture over the part's as thumbnails and Hidden, active by the clip's own reading; moves, turn, scale as changes;
+  the curve), the list. Escape (with no keys chosen) or Done goes back to the sequence.
+- **Placed clips**: a part with clips gets a sub-row (↻ loop clip) of bars under its keys, one per repetition over the
+  sequence (the first solid, the name and ✕ on it; dashed amber with ⚠ where the length doesn't go into the sequence's);
+  drag a bar to move the start (by the clip's step; Alt by frames), double-click to edit. **Part** lists the part's clips
+  (start, Edit, ✕) and **+ Loop clip…** places one.
+- The header's size meter is the bake's, so a placed flicker shows its cost there too.
+
+### Old rigs and polish (step 6)
+
+- **Importing a first-editor armature** (`importArmature(flat, arm)`): the flat rig the armature baked is converted
+  (`convertToV2`, byte for byte), then bone by bone, parents first: its parent is the bone of the parent track its tracks
+  name (a part parented in some sequences only, as the first editor parents per track, takes it in all: `reparentKeep`
+  writes its other sequences' keys under it), and where its armature track has that parent its lane takes the armature's
+  key poses (move, turn, scale, curves, Bézier handles; the picture named where it changes; absent channels identity in
+  both formats, the file's curve `constant` as the armature's). Each bone is kept only if its tracks bake exactly to the
+  flat rig's; else the converted keys parented keeping the transform; else the root with the converted keys (both
+  reported: the root's movement the first editor composes into parts, or a key read differently). Two different parents
+  leave it at the root (reported). The result says whether the whole bake equals the flat rig (tracks, poses, sequences,
+  pictures). The notice on such a side: **Import into the new editor…** (a confirm with the report; the armature deleted
+  through the server as Start fresh does; the source made by that edit, one undo step), **Start fresh…**, **Advanced (old
+  editor)**; after it, a card lists the report.
+- **The first editor's entry points**: it is reached only through **Advanced (old editor)** (Edit rig…, the sidebar and
+  the picker open the new one). It no longer makes armatures (`RETIRED_NEW_ARMATURES`: a side without one edits its keys
+  as the game stores them, Game keys; parenting there says to use the new editor), and its Start fresh and Copy from the
+  other side are gone (the new editor's); its header's **← New editor** goes back. It still edits a side's existing armature.
+- **? How rigs work**, rewritten for the finished workflow: pieces, bones and parents, the default pose (Rig setup);
+  sequences and keys with the **eyes and tilt** example, curves (Sequences); loop clips with the **fire flicker**
+  example; the timeline; the battle's pause (the flame keeps flickering); old rigs.
+- An original's sequence that its stop strip plays (the pause's sequence 1) says **in the stop strip**, not "not played".
+
+### Tests (`tests/rig-loopclips.test.ts` 5 and `tests/rig-import.test.ts` 4, of `npm test`'s 183)
+
+A clip edited through `clipSource` (keys at 0, 4 and 8 with pictures, a second K changing nothing, a keyed turn, a key
+moved, the key at 0 deleted leaving a bare one, the length from the grip); placed on the ear of Idle 48 (no warnings; the
+ear's pictures 2, 3, 4 every 4 frames over all 48, its moves and the other parts' tracks unchanged, `clipCost` equal to the
+sizes' difference, a start of 2, a move clip added to the body's eased hop at each sample, `partValues` with the clips
+equal to the bake's picture and move every frame, a 10-frame clip unrolled to 240 and warned, unplacing and deleting tidy);
+**the flame case**: the flicker on a keeps-moving ear, `Clock.pauseNow(64)`: for 63 frames the head and body keep their
+keys while the ear's picture goes 2, 3, 4 every 4 frames on through the pause, and without Keeps moving it freezes; moveHead
+on a part with a flicker (shared with the body, so copied), a turn-and-move clip started at 3 and its own keys, and
+reparentKeep to the root and back: every frame's pixels the same (48 frames rendered); the clip's preview alone standing
+where it does on the sprite. Import: an untouched armature as the vanilla conversion; Pichu's front with the head under
+the body, the ears under the head and an eased key (parents and the curve carried over, the same flat rig, the schema
+valid); Charmander's back with the head, tail and flame parented in its first sequence only and the flame eased (the
+parents in every sequence, the same flat rig); Budew's back. The vanilla sweep (`tests/v2-sweep.mts`) still converts and
+bakes back every side byte for byte.
+
+Also tried in the editor end to end (CDP; a scratch copy of Charmander in the worktree, `res/pokemon/rigtest`, removed
+after): Start fresh, four pieces cut (a body and three flames), a body and a flame bone, the flame the body's child; Idle 48
+with the body up 3 at 24; **+ Loop clip** "flicker", Keys every 2, flame 1, 2, 3 at 0, 4, 8 (the preview alone showing 3
+pictures while playing); Done; the clip dragged onto the flame's row (bars 0, 12, 24, 36; +120 bytes); Timeline mode, the
+flame's Keeps moving on, **Preview a battle pause**: through the pause the body's pixels stayed the same while the flame's
+area changed through the flicker; Ctrl+S writing both files (`loop_clips` as keyed, the flame's lane `clips: [{clip: 0}]`,
+`keeps_moving: [1]`). On the back, a scratch first-editor armature (made with `convertToArmature`, `reparent` and
+`keyPoseAt`, baked by the first editor): the notice, **Import into the new editor** (10 bones, 3 parented, 1 with its
+curve; bakes the same), saved: `back_rig_v2.json` written, `back_rig_source.json` gone, `back_rig.json` unchanged byte for
+byte. Charizard's front in Timeline mode: only its flame part (`hi`) keeps moving, outlined green in a pause preview;
+Accelgor's front: its stop strip's sequence says "in the stop strip". The guide; the Advanced view's header without Start
+fresh and Copy. Nothing in res/ changed.
+
+### Open
+
+- A keeps-moving child of a moving parent carries its parent's baked movement in its own track (the bake composes
+  parents into children), so in a pause it goes on moving as if its parent did while the parent stands still (seen as the
+  flame bobbing a pixel or two with the frozen body in the end-to-end test). The originals behave the same way (Charizard's
+  flame); keeping a flame's parent still in its sequence, or the flame on the root, avoids it.
+- A clip's turn or scale with a moved head is exact only where the part's own keys don't turn or scale away from its
+  default; a parent change that turns or scales relative to the old one changes what a clip's move means (both warned of
+  nowhere yet).
+- Clip keys show "the part's own picture" only by not having a picture: a clip can't return to the part's own picture
+  after a picture key except by naming that piece.
+- Untested in the game; nothing in res/ changed.
