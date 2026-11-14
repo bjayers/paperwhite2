@@ -13,7 +13,9 @@
 import { forward, keyAt, type Pair, type Rectangle } from "./mcss.ts";
 import { fixedScale } from "./model.ts";
 import { boundariesOf, constantTrack, IDENTITY, inverse, keyOfMap, mapOf, partMap, shift, srtOfKey, srtOfValues, then, type Map2 } from "./armature.ts";
-import { bakeV2, emptyV2, layersOf, orderedV2, rootTrack, STEP, type BakedV2, type Lane, type Transform, type V2, type V2Bone, type V2Key, type V2Piece } from "./v2.ts";
+import { bakeV2, emptyV2, inheritedWorld, inheritModeUnder, inheritScaleOf, layersOf, orderedV2, ownOfWorld, rootTrack, STEP, turnAndScale, type BakedV2, type InheritScale,
+         type Lane, type Transform, type V2, type V2Bone, type V2Key, type V2Piece } from "./v2.ts";
+import { posedMaps } from "./sequences.ts";
 
 // ---------------------------------------------------------------- Where things are in the default pose
 
@@ -73,8 +75,13 @@ export function restMaps(src: V2, poseOf: (b: number) => Transform | undefined =
     busy.add(b);
     const p = parentOf(src, b);
     const pivot = pivotOf(src, b);
-    const own = then(inverse(shiftUp(pivot)), partMap(srtOf(poseOf(b), !!src.bones[b].connected && p !== null), pivot));
-    const m = p === null ? (rootMap ? then(own, rootMap) : own) : then(own, of(p));
+    const srt = srtOf(poseOf(b), !!src.bones[b].connected && p !== null);
+    const own = then(inverse(shiftUp(pivot)), partMap(srt, pivot));
+    const parent = p === null ? rootMap : of(p);
+    // The parent's scale inherited by the bone's mode (v2.ts inheritedWorld), as the bake composes it
+    const mode = parent ? inheritModeUnder(src.bones[b], p !== null) : "full";
+    const m = !parent ? own : mode === "full" ? then(own, parent)
+      : then(inverse(shiftUp(pivot)), inheritedWorld(srt, pivot, parent, turnAndScale(parent), mode));
     busy.delete(b);
     out[b] = m;
     return m;
@@ -254,8 +261,8 @@ function ownPieces(src: V2, b: number, only?: number): { src: V2; pieces: number
 }
 
 /** Each lane of a bone, changed. */
-const mapLanes = (src: V2, b: number, change: (lane: Lane) => Lane): V2 => ({
-  ...src, sequences: src.sequences.map((seq) => ({ ...seq, parts: seq.parts.map((lane) => (lane.bone === b ? change(lane) : lane)) })),
+const mapLanes = (src: V2, b: number, change: (lane: Lane, s: number) => Lane): V2 => ({
+  ...src, sequences: src.sequences.map((seq, s) => ({ ...seq, parts: seq.parts.map((lane) => (lane.bone === b ? change(lane, s) : lane)) })),
 });
 
 // ---------------------------------------------------------------- Moving a bone's ends
@@ -273,15 +280,26 @@ function shiftPivot(src0: V2, b: number, delta: Pair): { src: V2; copied: number
     ...p, rectangles: p.rectangles.map((r) => (r.size[0] && r.size[1] ? { ...r, at: [r.at[0] - shiftUpBy[0], r.at[1] - shiftUpBy[1]] as Pair } : r)),
   }));
   src = { ...src, pieces };
-  // A turn and a scale carry the shift: the move changes by (R S - 1) of it
-  const spread = (rotation: number, scale: Pair): Pair => {
-    const moved = forward(shiftUpBy[0], shiftUpBy[1], [(rotation / 360) * 65536, scale[0], scale[1], 0, 0]);
-    return [moved[0] - shiftUpBy[0], -(moved[1] - shiftUpBy[1])];
-  };
+  // A turn and a scale carry the shift: the move changes by (R S - 1) of it. Aligned or none, the bone's scale on the
+  // sprite is its own times (aligned) the parent's along its own axes, which the parent's frame divides back out:
+  // (|P|^-1 R S' - 1), with the parent's scale |P| where the pose is (exact at the default and at each key)
   const bone = src.bones[b];
-  const locked = !!bone.connected && parentOf(src, b) !== null;
+  const p = parentOf(src, b);
+  const mode: InheritScale = p !== null ? inheritModeUnder(bone, true) : "full";
+  const parentScaleIn = (maps: Map2[]): Pair => {
+    if (mode === "full" || p === null || !maps[p]) return [1, 1];
+    const [, sx, sy] = turnAndScale(maps[p]);
+    return [Math.abs(sx) || 1, Math.abs(sy) || 1];
+  };
+  const spread = (rotation: number, scale: Pair, parentScale: Pair = [1, 1]): Pair => {
+    const [ax, ay] = mode === "aligned" ? parentScale : [1, 1];
+    const moved = forward(shiftUpBy[0], shiftUpBy[1], [(rotation / 360) * 65536, scale[0] * ax, scale[1] * ay, 0, 0]);
+    return [moved[0] / parentScale[0] - shiftUpBy[0], -(moved[1] / parentScale[1] - shiftUpBy[1])];
+  };
+  const locked = !!bone.connected && p !== null;
   const d = bone.default ?? {};
-  const dSpread = spread(d.rotation ?? 0, d.scale ?? [1, 1]);
+  const dSpread = spread(d.rotation ?? 0, d.scale ?? [1, 1], parentScaleIn(restMaps(src0)));
+  const perKey = mode !== "full";
   const newDefaultMove: Pair = addPair(d.move ?? [0, 0], dSpread);
   const bones = src.bones.map((x, i) => (i !== b ? x : {
     ...(locked ? x : withDefault(x, { ...d, move: newDefaultMove })),
@@ -289,9 +307,10 @@ function shiftPivot(src0: V2, b: number, delta: Pair): { src: V2; copied: number
   }));
   src = { ...src, bones };
   if (!locked) {
-    src = mapLanes(src, b, (lane) => ({ ...lane, keys: lane.keys.map((k) => {
-      if (k.rotation === undefined && k.scale === undefined && k.move === undefined) return k;
-      const s = spread(k.rotation ?? d.rotation ?? 0, k.scale ?? d.scale ?? [1, 1]);
+    src = mapLanes(src, b, (lane, sq) => ({ ...lane, keys: lane.keys.map((k) => {
+      // (aligned or none, a key without channels holds the default under the parent's scale at its frame: corrected too)
+      if (k.rotation === undefined && k.scale === undefined && k.move === undefined && !perKey) return k;
+      const s = spread(k.rotation ?? d.rotation ?? 0, k.scale ?? d.scale ?? [1, 1], perKey ? parentScaleIn(posedMaps(src0, sq, k.frame)) : undefined);
       const move = addPair(k.move ?? d.move ?? [0, 0], s);
       const next: V2Key = { ...k };
       if (samePair(move, newDefaultMove) && k.move === undefined) return next;
@@ -305,7 +324,7 @@ function shiftPivot(src0: V2, b: number, delta: Pair): { src: V2; copied: number
       ...clip, keys: clip.keys.map((k) => {
         if (k.rotation === undefined && k.scale === undefined) return k;
         const ds = d.scale ?? [1, 1], cs = k.scale ?? [1, 1];
-        const s = spread((d.rotation ?? 0) + (k.rotation ?? 0), [ds[0] * cs[0], ds[1] * cs[1]]);
+        const s = spread((d.rotation ?? 0) + (k.rotation ?? 0), [ds[0] * cs[0], ds[1] * cs[1]], parentScaleIn(restMaps(src0)));
         const extra: Pair = [s[0] - dSpread[0], s[1] - dSpread[1]];
         if (Math.abs(extra[0]) < 1e-9 && Math.abs(extra[1]) < 1e-9) return k;
         return { ...k, move: [tidy((k.move?.[0] ?? 0) + extra[0]), tidy((k.move?.[1] ?? 0) + extra[1])] as Pair };
@@ -468,7 +487,11 @@ export function wouldCycle(src: V2, b: number, parent: number | null): boolean {
 
 /** A map's movement about a pivot as a transform (degrees, the turn chosen nearest `expected`). */
 function transformOf(m: Map2, pivot: Pair, expectedDegrees: number, piece: Transform): Transform {
-  const { srt } = keyOfMap(m, pivot, (expectedDegrees / 360) * 65536);
+  return transformOfSrt(keyOfMap(m, pivot, (expectedDegrees / 360) * 65536).srt, expectedDegrees, piece);
+}
+
+/** A key's movement (65536ths) as a transform (degrees, the turn chosen nearest `expected`). */
+function transformOfSrt(srt: [number, number, number, number, number], expectedDegrees: number, piece: Transform): Transform {
   let deg = (srt[0] / 65536) * 360;
   while (deg - expectedDegrees > 180) deg -= 360;
   while (deg - expectedDegrees < -180) deg += 360;
@@ -509,11 +532,15 @@ export function reparentKeep(src: V2, b: number, parent: number | null): V2 {
     delete y.connected;
     return y;
   }) };
-  // The default pose: the same map from the rest arrangement, under the new parent's
+  // The default pose: the same map from the rest arrangement, under the new parent's, by the bone's Inherit scale there
+  // (aligned and none always find it exactly; full only where it needn't shear)
   const parentMapAfter = parent === null ? IDENTITY : restMaps(next)[parent];
-  const want = then(shiftUp(pivot), then(beforeMaps[b], inverse(parentMapAfter)));
+  const modeAfter = inheritModeUnder(next.bones[b], parent !== null);
   const d = bone.default ?? {};
-  const t = transformOf(want, pivot, d.rotation ?? 0, { ...(d.piece !== undefined ? { piece: d.piece } : {}), ...(d.hidden ? { hidden: true } : {}) });
+  const keepOf = (world: Map2, at: Pair, parentMap: Map2, mode: InheritScale, expectedDegrees: number, piece: Transform) =>
+    transformOfSrt(ownOfWorld(world, at, parentMap, turnAndScale(parentMap), mode, (expectedDegrees / 360) * 65536).srt, expectedDegrees, piece);
+  const t = keepOf(then(shiftUp(pivot), beforeMaps[b]), pivot, parentMapAfter, modeAfter, d.rotation ?? 0,
+    { ...(d.piece !== undefined ? { piece: d.piece } : {}), ...(d.hidden ? { hidden: true } : {}) });
   next = { ...next, bones: next.bones.map((x, i) => (i === b ? withDefault(x, t) : x)) };
 
   // Each sequence's keys of it, as constant keys where it or the new parent changes
@@ -557,12 +584,12 @@ export function reparentKeep(src: V2, b: number, parent: number | null): V2 {
     let shown: number | undefined = bone.default?.piece;
     let hiddenNow = bone.default?.hidden ?? bone.default?.piece === undefined;
     const keys: V2Key[] = samples.map(({ time, key: k, start }) => {
-      let world = partMap(srtOfKey(k, track.key_type), pivotHere);
+      const world = partMap(srtOfKey(k, track.key_type), pivotHere);
+      let tr: Transform;
       if (parentTrack) {
         const ps = srtOfKey(keyAt(parentTrack, time).key, parentTrack.key_type);
-        world = then(world, inverse(then(inverse(shiftUp(parentPivot)), partMap(ps, parentPivot))));
-      }
-      const tr = transformOf(world, pivotHere, turn, {});
+        tr = keepOf(world, pivotHere, then(inverse(shiftUp(parentPivot)), partMap(ps, parentPivot)), inheritModeUnder(next.bones[b], pTrack !== undefined), turn, {});
+      } else tr = transformOf(world, pivotHere, turn, {});
       turn = tr.rotation ?? 0;
       const out: V2Key = { frame: time };
       const picture = k.picture ?? 0;
@@ -627,6 +654,20 @@ export function setConnected(src: V2, b: number, on: boolean): { src: V2; droppe
     delete y.move;
     return y;
   }) })), dropped };
+}
+
+/** A bone's Inherit scale set (v2.ts InheritScale), written only where it isn't the default for the bone (aligned under a
+ * parent, full for a root bone). The bone is drawn by the new mode from then on: where its parent's scale is uneven
+ * over its turn the pictures change (that is the point: aligned stretches it along its own direction instead of
+ * shearing it). */
+export function setInheritScale(src: V2, b: number, mode: InheritScale): V2 {
+  const bone = src.bones[b];
+  if (!bone) return src;
+  const y: V2Bone = { ...bone };
+  delete y.inherit_scale;
+  if (inheritScaleOf(y) !== mode) y.inherit_scale = mode;
+  if (y.inherit_scale === bone.inherit_scale) return src;
+  return orderedV2({ ...src, bones: src.bones.map((x, i) => (i === b ? y : x)) });
 }
 
 // ---------------------------------------------------------------- Bones

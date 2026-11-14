@@ -841,3 +841,11 @@ bone shows it), with a notice. Rig setup's **Bone** panel lists the bone's **Pic
 keys swap in) with **Align with default**, **Place…** (drag only that picture on the preview; Done or Escape) and
 **+ Add picture…**; Sequences' Part panel marks unplaced pictures with a warning icon and an **Align** button. A piece's
 second rectangle is for one picture drawn in two rectangles, not for a swap: make a separate piece and pick it on a key.
+
+**Inherit scale (rig-editor-v2.md, "Built: Inherit scale")**: Rig setup's **Bone** panel sets how a bone takes its
+parent's scale, as Blender's Inherit Scale: **Aligned** (the default for a bone with a parent: it stretches along its own
+direction, as tails and necks do, and the game draws it exactly), **Full** (the parent's whole stretch along the parent's
+axes: over a turned bone an uneven one is a shear the game can't draw, baked as the nearest turn and scale and warned
+of; a root bone's default, under the Root) or **None** (its place and turn follow, its size doesn't). Checks offers
+**Switch to Aligned** for the bones a shear warning names. Keep Transform (parenting) and moving a head or tail keep the
+pictures under each mode.
