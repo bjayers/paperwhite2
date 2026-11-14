@@ -1,0 +1,300 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "A battle sprite's rig and animation (the Rig Editor's second version)",
+    "description": "One side's source in the user's terms, <side>_rig_v2.json beside <side>_rig.json: the pieces of the sheet, one set of parts (bones with a head and a tail, parents connected or keeping their offset, the default pose, the layer order) shared by every sequence, the sequences with each part's keyframes and curves, loop clips, the timeline of sequence blocks and the parts that keep moving in the battle's pause. The Rig Editor bakes it into the flat rig (a track per part per sequence, keys every 6 frames, a pose per sequence) and writes both files; the build reads only the flat rig (tools/paperwhite2/mcss_rig.py), so this file changes nothing in the ROM by itself. A side has this or the first armature (<side>_rig_source.json), not both. editor/src/modules/rig/v2.ts; docs/paperwhite2/design/rig-editor-v2.md, Built: step 1.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["format", "side", "box", "stop_flags", "pause", "keeps_moving", "pieces", "bones", "sequences", "timeline"],
+    "$defs": {
+        "pair": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2},
+        "int_pair": {"type": "array", "items": {"type": "integer"}, "minItems": 2, "maxItems": 2},
+        "curve": {
+            "enum": ["constant", "linear", "ease_in", "ease_out", "ease_in_out", "bezier", "snap", "back", "bounce", "elastic"],
+            "description": "How a channel goes from this key to the next: held, straight, eased (sine) at the start, the end or both, a Bezier curve through the handles, or a preset arriving at the next key with its effect: snap (most of the way at once), back (overshoots about 10% and returns), bounce (lands and bounces three times), elastic (swings about the key, dying away)"
+        },
+        "handle": {"$ref": "#/$defs/pair", "description": "A Bezier handle: frames and value from its key"},
+        "handles": {"type": "array", "items": {"$ref": "#/$defs/handle"}, "minItems": 2, "maxItems": 2,
+                    "description": "The left and the right handle"},
+        "channels_curve": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "A channel's own curve, where it differs from the key's",
+            "properties": {
+                "move_x": {"$ref": "#/$defs/curve"},
+                "move_y": {"$ref": "#/$defs/curve"},
+                "rotation": {"$ref": "#/$defs/curve"},
+                "scale_x": {"$ref": "#/$defs/curve"},
+                "scale_y": {"$ref": "#/$defs/curve"}
+            }
+        },
+        "channels_handles": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Bezier handles by channel; a channel without them has flat handles a third of the way to its neighbours",
+            "properties": {
+                "move_x": {"$ref": "#/$defs/handles"},
+                "move_y": {"$ref": "#/$defs/handles"},
+                "rotation": {"$ref": "#/$defs/handles"},
+                "scale_x": {"$ref": "#/$defs/handles"},
+                "scale_y": {"$ref": "#/$defs/handles"}
+            }
+        },
+        "flat_extra": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Originals only: fields the flat key held where a file differs (battle-sprites.md section 15.2), put on the first key this one bakes to",
+            "properties": {
+                "unused": {"type": "integer"},
+                "marker": {"type": "integer"},
+                "result_copy": {"type": "integer", "minimum": 1}
+            }
+        },
+        "key": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["frame"],
+            "description": "A keyframe: a part's values at a frame of the sequence (or loop clip). A channel it doesn't give is the default pose's (a loop clip's: none). Two keys at one frame bake to a key held 0 frames, and a key at the sequence's very end (the end key, shown past it) to a key held 0 frames at the end, as many originals have",
+            "properties": {
+                "frame": {"type": "integer", "minimum": 0, "maximum": 65535,
+                          "description": "From the sequence's start; the editor snaps it to 6 (converted originals keep theirs)"},
+                "piece": {"type": "integer", "minimum": 0, "maximum": 65535, "description": "The piece shown from here (held to the next key that names one, never tweened); absent: the one before"},
+                "hidden": {"type": "boolean", "description": "true: nothing shown from here (the blank picture); false: shown again"},
+                "move": {"$ref": "#/$defs/pair", "description": "Pixels from the head, in the parent's frame, x right, y down; baked to whole pixels"},
+                "rotation": {"type": "number", "description": "Degrees, clockwise, not wrapped (370 is a turn and 10 more); baked to 65536ths of a turn"},
+                "scale": {"$ref": "#/$defs/pair", "description": "x and y (negative mirrors), baked to multiples of 1/4096"},
+                "curve": {"$ref": "#/$defs/curve"},
+                "curves": {"$ref": "#/$defs/channels_curve"},
+                "handles": {"$ref": "#/$defs/channels_handles"},
+                "flat": {"$ref": "#/$defs/flat_extra"}
+            }
+        },
+        "transform": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "A bone's default pose: what every sequence starts at (frame 0) and ends at (its length). Absent fields: identity, and hidden without a piece",
+            "properties": {
+                "piece": {"type": "integer", "minimum": 0, "maximum": 65535},
+                "hidden": {"type": "boolean"},
+                "move": {"$ref": "#/$defs/pair"},
+                "rotation": {"type": "number"},
+                "scale": {"$ref": "#/$defs/pair"}
+            }
+        },
+        "rectangle": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["sheet", "size", "at"],
+            "properties": {
+                "sheet": {"$ref": "#/$defs/pair", "description": "The top left on the 256x128 sheet"},
+                "size": {"$ref": "#/$defs/pair"},
+                "at": {"$ref": "#/$defs/pair", "description": "The top left's place from the head of the bone that shows the piece, x right, y up (the piece's placement on its bone)"}
+            }
+        },
+        "obj": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["x", "y", "size", "tile", "attributes"],
+            "properties": {
+                "x": {"type": "integer"},
+                "y": {"type": "integer"},
+                "size": {"$ref": "#/$defs/int_pair"},
+                "tile": {"type": "integer", "minimum": 0},
+                "attributes": {"type": "array", "items": {"type": "integer"}, "minItems": 3, "maxItems": 3}
+            }
+        },
+        "key_type": {"enum": ["plain", "srt", "move"], "description": "The least key type the bake writes; it writes a fuller one where the keys need it"},
+        "play": {"enum": ["once", "loop", "pingpong", "pingpong_loop"]},
+        "step": {"type": "integer", "minimum": 1, "maximum": 60, "description": "Baked keys are held this many frames (Game Freak's: 6)"},
+        "strip": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "blocks"],
+            "description": "A strip of blocks: one of the game's sequences (multi-cell animation), each block a key showing one sequence's pose",
+            "properties": {
+                "name": {"type": "string", "pattern": "^[ -~]+$", "description": "Its label (stay, stop, CellAnime0)"},
+                "play": {"$ref": "#/$defs/play", "description": "Absent: loop"},
+                "key_type": {"$ref": "#/$defs/key_type", "description": "Absent: plain"},
+                "loop_start": {"type": "integer", "minimum": 0},
+                "bank_type": {"type": "integer", "minimum": 0},
+                "blocks": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["sequence"],
+                        "properties": {
+                            "sequence": {"type": "integer", "minimum": 0, "description": "The sequence it plays from its start (its parts restart)"},
+                            "frames": {"type": "integer", "minimum": 0, "maximum": 65535, "description": "How long it plays; absent: the sequence's length. Longer loops the sequence"},
+                            "move": {"$ref": "#/$defs/pair", "description": "The whole sprite's move (originals' sequence keys), pixels, y down"},
+                            "rotation": {"type": "number", "description": "The whole sprite's turn, degrees"},
+                            "scale": {"$ref": "#/$defs/pair"},
+                            "flat": {"$ref": "#/$defs/flat_extra"}
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "properties": {
+        "$schema": {"type": "string", "description": "This schema, for editors"},
+        "format": {"type": "integer", "enum": [2], "description": "The format's version: 2, the Rig Editor's second version"},
+        "side": {"enum": ["front", "back"]},
+        "step": {"$ref": "#/$defs/step"},
+        "curve": {"$ref": "#/$defs/curve", "description": "The curve of a key that names none, and of a part's start from the default pose; absent: ease_in_out (converted originals: constant)"},
+        "box": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["width", "height", "x", "y"],
+            "description": "The box the egg hatching and evolution centre the sprite by",
+            "properties": {
+                "width": {"type": "integer", "minimum": 0, "maximum": 65535},
+                "height": {"type": "integer", "minimum": 0, "maximum": 65535},
+                "x": {"type": "integer", "minimum": -32768, "maximum": 32767},
+                "y": {"type": "integer", "minimum": -32768, "maximum": 32767}
+            }
+        },
+        "stop_flags": {"type": "integer", "minimum": 0, "maximum": 255, "description": "Read by move effects; 1 = airborne (inferred)"},
+        "pause": {"type": "boolean", "description": "Whether the battle's random pause stops the sprite (false: it never pauses)"},
+        "keeps_moving": {"type": "array", "items": {"type": "integer", "minimum": 0},
+                         "description": "Bones that go on animating through the pause while the rest freezes (by their place in the rig's layers)"},
+        "idle_nodes": {"type": "array", "items": {"type": "integer", "minimum": 0, "maximum": 255},
+                       "description": "Originals only: the flat rig's idle parts as they are, where keeps_moving can't give them"},
+        "kept": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Originals only: the flat rig's storage fields where a file differs (section 15.2)",
+            "properties": {
+                "info_padding": {"type": "string", "pattern": "^([0-9a-f]{2})*$"},
+                "obj_mapping": {"type": "integer", "minimum": 0},
+                "extension": {"type": "integer", "minimum": 0},
+                "picture_labels": {"type": "array", "items": {"type": "string"}}
+            }
+        },
+        "pieces": {
+            "type": "array",
+            "description": "The pictures parts show, by number (the flat rig's pictures)",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "rectangles"],
+                "properties": {
+                    "name": {"type": "string"},
+                    "rectangles": {"type": "array", "items": {"$ref": "#/$defs/rectangle"}, "minItems": 1, "maxItems": 2,
+                                   "description": "One or two rectangles (the second drawn in front)"},
+                    "objs": {"type": "array", "items": {"$ref": "#/$defs/obj"}, "description": "The cell's OBJs where they aren't the ones the rectangles give (mcss_rig.generate_objs)"},
+                    "obj_attribute": {"type": "integer", "minimum": 0, "maximum": 65535, "description": "The cell's attribute (its bounding radius, inferred); absent: 0"}
+                }
+            }
+        },
+        "bones": {
+            "type": "array",
+            "description": "The parts, one set shared by every sequence (the bake makes each sequence's own tracks: head_a, head_b)",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "head", "tail", "parent"],
+                "properties": {
+                    "name": {"type": "string"},
+                    "head": {"$ref": "#/$defs/int_pair", "description": "The pivot, from the feet, x right, y down"},
+                    "tail": {"$ref": "#/$defs/pair", "description": "Where connected children's heads are"},
+                    "parent": {"anyOf": [{"type": "null"}, {"type": "integer", "minimum": 0}], "description": "The parent bone, or null for the root's"},
+                    "connected": {"type": "boolean", "description": "true: the head is locked to the parent's tail and the bone's own move is ignored; else it keeps its offset"},
+                    "default": {"$ref": "#/$defs/transform"}
+                }
+            }
+        },
+        "layers": {"type": "array", "items": {"type": "integer", "minimum": 0},
+                   "description": "The rig's layer order, front to back (bones); absent: the bones in order"},
+        "sequences": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Each a pose in the game (an action): its length and its parts' keyframes",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "frames", "parts"],
+                "properties": {
+                    "name": {"type": "string"},
+                    "frames": {"type": "integer", "minimum": 0, "maximum": 65535,
+                               "description": "Its length: baked over frames 0 to frames - 1, the default pose (or the end key) again at frames, which is the next loop's frame 0"},
+                    "step": {"$ref": "#/$defs/step"},
+                    "layers": {
+                        "type": "array",
+                        "description": "The parts it draws front to back, where they differ from the rig's",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["bone"],
+                            "properties": {
+                                "bone": {"type": "integer", "minimum": 0},
+                                "head": {"$ref": "#/$defs/int_pair", "description": "Originals: the pivot here, where it isn't the bone's"},
+                                "play": {"enum": ["restart", "continue"], "description": "Originals: continue plays the part on the strip's time instead of from the block's start"},
+                                "track_of": {"$ref": "#/$defs/int_pair", "description": "Originals: plays the track of another sequence's part, [sequence, bone]"},
+                                "instance": {"type": "integer", "minimum": 0, "maximum": 255},
+                                "flags": {"type": "integer", "minimum": 0, "maximum": 255}
+                            }
+                        }
+                    },
+                    "instances": {"type": "integer", "minimum": 0, "maximum": 65535},
+                    "parts": {
+                        "type": "array",
+                        "description": "Keyframes by part; a part with none holds the default pose",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["bone", "keys"],
+                            "properties": {
+                                "bone": {"type": "integer", "minimum": 0},
+                                "name": {"type": "string", "pattern": "^[!-~]+$", "description": "Originals: its track's name, where it isn't <bone>_<sequence letter>"},
+                                "key_type": {"$ref": "#/$defs/key_type"},
+                                "play": {"$ref": "#/$defs/play", "description": "Originals: the track's play mode; absent: loop"},
+                                "loop_start": {"type": "integer", "minimum": 0},
+                                "bank_type": {"type": "integer", "minimum": 0},
+                                "frames": {"type": "integer", "minimum": 0, "maximum": 65535, "description": "Originals: the part's own loop, where it isn't the sequence's length"},
+                                "step": {"$ref": "#/$defs/step"},
+                                "clips": {
+                                    "type": "array",
+                                    "description": "Loop clips playing on the part under its keys, from the block's start",
+                                    "items": {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": ["clip"],
+                                        "properties": {
+                                            "clip": {"type": "integer", "minimum": 0},
+                                            "start": {"type": "integer", "minimum": 0, "description": "Frames from the block's start to the clip's frame 0"}
+                                        }
+                                    }
+                                },
+                                "keys": {"type": "array", "items": {"$ref": "#/$defs/key"}}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "loop_clips": {
+            "type": "array",
+            "description": "Short looping clips placed on parts (fire through 2 or 3 pieces, a blink): their channels add to the part's (moves and turns added, scales multiplied) and a key with a piece or hidden shows it over the part's",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "frames", "keys"],
+                "properties": {
+                    "name": {"type": "string"},
+                    "frames": {"type": "integer", "minimum": 1, "maximum": 65535},
+                    "step": {"$ref": "#/$defs/step"},
+                    "keys": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/key"}, "description": "Keys on the clip's own time (constant unless they name a curve)"}
+                }
+            }
+        },
+        "timeline": {"$ref": "#/$defs/strip", "description": "The game's sequence 0 (stay), played all the time: blocks of sequences, like clips in a video editor"},
+        "strips": {"type": "array", "items": {"$ref": "#/$defs/strip"}, "description": "Originals: their other sequences (1 stop, the egg's), kept"},
+        "track_order": {
+            "type": "array",
+            "description": "Originals only: the flat tracks' order where the usual one (by sequence, then bone, then kept_tracks) isn't the original's; [sequence, bone] or [null, n] for kept_tracks[n]",
+            "items": {"type": "array", "minItems": 2, "maxItems": 2, "prefixItems": [{"anyOf": [{"type": "null"}, {"type": "integer", "minimum": 0}]}, {"type": "integer", "minimum": 0}]}
+        },
+        "kept_tracks": {"type": "array", "description": "Originals only: tracks no pose plays, kept as the flat rig has them (battle_sprite_rig.schema.json's track)", "items": {"type": "object"}}
+    }
+}
