@@ -459,7 +459,35 @@ New species (`AddedSpecies.tsx`, docs/paperwhite2/design/new-species.md sections
 
 ## The Rig Editor
 
-One side of a battle sprite's rig (`src/modules/rig/`, `res/pokemon/<folder>/<side>_rig.json`; the design is
+**The new editor (2026-11-14, docs/paperwhite2/design/rig-editor-v2.md, "Built: step 2")** is what **Edit rig…** and the
+sidebar open (`src/modules/rig/SetupEditor.tsx`, its edits in `setup.ts`). It edits a side's source,
+`<side>_rig_v2.json` (`v2.ts`), and bakes it on every change into `<side>_rig.json`, the build's input. A side without a
+source opens as its flat rig converted (`convertToV2`, byte for byte), in memory: the first edit makes the file, so an
+untouched side writes nothing; Undo of that edit takes the file away again. Save runs the rig-check route on the bake
+and writes both files; Ctrl+Z and Ctrl+Y are one history over both (`history.ts`). A side with a first-editor armature
+(`_rig_source.json`) shows a notice: open it in the Advanced editor, or **Start fresh…** (which deletes the armature
+through the server). For now the editor's mode is **Rig setup** (sequences come next):
+
+- **Pieces** (the sheet card): drag on the sheet to cut a piece (Shift: the chosen piece's second rectangle); drag a
+  rectangle to move it, its edges or corners to resize it, snapped to tiles (Alt: pixels) and to sizes the DS's OBJs can
+  be cut into. The pieces' list: thumbnail, name, sizes, the bones that show it, **+ Bone** (a bone showing it, the
+  picture standing on the feet) and delete.
+- **The preview** draws the default pose as MCSS does, with the bones from head (round end) to tail (small end),
+  Blender's octahedral shape, an offset child's dashed link to its parent. Tools: **Bones** (B: drag a head to move the
+  pivot with the pictures staying, a tail to point the bone with the connected children's heads following, a bone's
+  body to move it with its pictures, a picture to place it on its bone; drag on empty space to draw a new bone, Ctrl a
+  child of the chosen one), **Move** (G), **Rotate** (R), **Scale** (S, with X and Y handles and a ring) on the chosen
+  bones' default pose. Click chooses, Shift or Ctrl adds; Delete deletes the chosen bones.
+- **The side panel** (as the Ambients panel): **Bones**, the tree (drag a bone onto another to parent it keeping its
+  place, onto Root to free it; a chip toggles connected and offset); **Bone** (name, the piece it shows, parent, link,
+  head and tail); **Default pose** (move, turn, scale, Reset pose; the setup is the default pose, with no separate
+  step); **Layers** front to back (drag to reorder; Hide and Draw); **Piece** (name, rectangles, its place on its bone);
+  **Sequences** (read only); **Checks**.
+- The header: **Rig setup** (and Sequences, coming), **Front** and **Back**, the size against ~40 KB, Revert, Save;
+  **Copy front to back…** (on the back), **Start fresh…** (one piece round the sheet's first art and one bone), **Advanced
+  (old editor)** (the first editor, `&editor=old`, which warns on a side that has a source), **? How rigs work**.
+
+**The first editor, now the Advanced view.** One side of a battle sprite's rig (`src/modules/rig/`, `res/pokemon/<folder>/<side>_rig.json`; the design is
 docs/paperwhite2/design/battle-sprites.md sections 15 to 18), opened from a Battle sprite card's **Edit rig…** or the
 sidebar (`#tool/rig?folder=pichu/form_1&side=front`). The art stays a full 256×128 sheet drawn in Aseprite and brought
 in with the card's Import art; here the pictures are cut from it and moved. The header switches **Front** and

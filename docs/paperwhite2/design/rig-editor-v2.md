@@ -254,3 +254,107 @@ key, two sequences on a four-block timeline) drawn by the editor's `render` agai
   parenting one keeps it where it is only with a Keep Transform like section 19.4's `reparent`, which step 6 should
   port. Converted tails are a guess (toward the first picture's middle). Nothing in res/ changes in this step, so the
   ROM is unchanged and nothing was tried in the game.
+
+## Built: step 2, the rig setup (2026-11-14)
+
+The new editor is what **Edit rig…** and the sidebar open (`#tool/rig?folder=...&side=...`); the first editor is its
+**Advanced (old editor)** view (`&editor=old`), which warns on a side that has a `_rig_v2.json`. The page is
+`editor/src/modules/rig/SetupEditor.tsx` with `SetupPreview.tsx`, `SetupSheet.tsx`, `SetupPanel.tsx` and `SetupGuide.tsx`;
+every edit is a pure function of the source in `setup.ts`, and the side's files are `setupFiles.ts`.
+
+### Opening and saving a side
+
+- A side opens from its `_rig_v2.json`, else from `convertToV2` of its flat rig, **in memory**: the file is made by the
+  first edit (as part of that edit's undo step, the first editor's way of making an armature, so Ctrl+Z takes the file
+  away again and gives the flat rig back). An untouched vanilla side opened and saved writes nothing (tested on four
+  sides, and tried in the editor: an edit, undo, Save says "Nothing to save" and the file is unchanged).
+- Every change of the source is baked (`bakeV2`) into the flat rig's document without a step of its own, so the size,
+  the checks, Save and the Build button see what the game will get; one history over both (`history.ts`). Save checks
+  the bake with the rig-check route (`mcss_rig.check`), then writes `<side>_rig.json` and `<side>_rig_v2.json`, both sides
+  if both changed. The source is written as `orderedV2` in the compact layout with `$schema` first.
+- A side with a first-editor armature (`_rig_source.json`) opens read-only with a notice: the Advanced editor, or
+  **Start fresh…**, which deletes the armature through the server (`removable` in `server/weather.ts` now allows a
+  side's `_rig_source.json` and `_rig_v2.json`, never its flat rig; the first editor's Remove armature and Start fresh
+  say so when the server refuses, ported from the paused branch). Step 6 converts such armatures.
+
+### The rig setup's edits (`setup.ts`)
+
+- **Where things are**: `restMaps` gives each bone's map from the rest arrangement to the sprite in the default pose, the
+  bake's composition (its own movement about its pivot, then its parent's) without the files' rounding; `boneEnds` its
+  head and tail on the sprite; `restDelta` turns a drag on the sprite into a movement of the rest arrangement under a
+  map (a head under its parent's, a tail under its own). The preview draws `defaultPoseRig`: the source with one empty
+  sequence, every part holding its default, baked.
+- **A head** (`moveHead`): the pivot moves and every picture stays where it is: the pieces the bone shows (by default or
+  in a key) move their `at` back, a piece another bone shows too is copied for this one first, and the default's and
+  each key's move are corrected where they turn or scale (by (R S − 1) of the shift, as `movePivot`), so the bone's map
+  from the rest arrangement is unchanged and so are its children; the sequences' own pivots for it (converted
+  originals' per-action heads) move with it. Exact where the corrected moves are whole pixels (a turn of a quarter, a
+  scale of 2); otherwise the bake's rounding can shift a picture by a pixel. A connected bone's head is its parent's
+  tail, so dragging it moves that.
+- **A tail** (`moveTail`): the connected children's heads follow (their pivots move, their pictures staying, by the
+  same rule); their own tails stay where they are, as in Blender. A connected child turned or scaled in its default
+  can't keep its pictures exactly (its move is locked); they shift by (1 − R S) of the movement.
+- **A whole bone** (`moveBone`): head and tail with its pictures; the connected children's heads follow; a connected
+  bone can't move on its own. **A picture on its bone** (`movePieces`): the `at` of its pieces.
+- **Parenting** (`reparentKeep`, the first armature's `reparent` for this format): the bone keeps where it is. Its
+  default pose is written again relative to the new parent's (the same map from the rest arrangement), and each
+  sequence's keys of it as constant keys at each of its baked keys and each of the new parent's key starts, computed from
+  its baked track and the new parent's baked track (as section 19.4), keeping a key held 0 frames at the end and the
+  originals' extra key fields. A vanilla sprite's part parented this way bakes back to the same flat rig byte for byte
+  (Pichu's and Budew's back, tested); a parent's uneven scale over a turned child is warned of as a shear.
+- **Connected** (`setConnected`): the head moves to the parent's tail with the pictures staying, and the bone's own
+  moves are dropped (said so: they're locked); **Keep offset** keeps the head where it is.
+- **Bones**: `addBone` (in front of every layer, and in the sequences that keep their own layers and the tracks' order),
+  `addBoneForPiece` (its head where the picture stands on the feet, the middle of a piece centred on its head, or for a
+  piece another bone shows, a copy placed so the picture stays), `deleteBone` (its children to its parent keeping their
+  place, every bone number after it renumbered: parents, layers, lanes, `track_of`, keeps-moving, the tracks' order).
+  **Pieces**: `addPiece` (centred on its bone's head, `at` [−w/2, h/2], which also keeps the OBJs' offsets small),
+  `addRectangle` (placed beside the first as on the sheet), `setRectangle` (the piece's own `objs` dropped: they're
+  generated again), `deletePiece` (a bone or key that showed it shows nothing). **Layers**: `moveLayer`, `setInLayers`.
+- **Start fresh** (`freshV2`): `emptyV2`, one piece round the sheet's first art (`freshRectangle`), one bone showing
+  it, the head at its middle, the picture standing on the feet. **Copy front to back** (`copySide`, on the back): the
+  front's source with the side changed, the back keeping its box and stop flags.
+
+### The page
+
+- **Pieces** (the sheet card): drag on the sheet to cut a piece (Shift: the chosen piece's second rectangle); move and
+  resize snapped to tiles (Alt: pixels) and then to the nearest size the DS's OBJs can be cut into (`validSize`: a side
+  of 64 needs the other 32 or 64). The list: thumbnail, name, sizes, the bones showing it, + Bone, delete.
+- **The preview**: the default pose, bones as Blender's octahedral shape from the round head to the small tail, an offset
+  child's dashed link. **Bones** (B) drags heads, tails, bodies and pictures, and draws new bones on empty space (Ctrl: a
+  child of the chosen bone, connected when drawn from its tail); **Move** (G), **Rotate** (R, Shift 5°), **Scale**
+  (S: the X and Y handles and the ring from the paused first-editor branch) pose the chosen bones' default. The chosen
+  bones' ends and bodies are picked before the others'. Drags work in window coordinates, the canvas only growing
+  during a drag.
+- **The side panel**, as the Ambients panel: Bones (the tree; drag onto a bone to parent, onto Root to free; the
+  connected/offset chip), Bone (name, shows, parent, link, head, tail), Default pose (move, turn, scale, Reset pose, and
+  the one-line hint that the setup is the default pose), Layers (drag to reorder, Hide/Draw), Piece (name, rectangles,
+  its place on its bone), Sequences (read only), Checks (the bake's warnings, `mcss_rig.check`, rectangles' sizes, art
+  outside every piece).
+- **? How rigs work**: pieces, bones and their two ends, parenting connected or offset, layers, the default pose.
+
+### Tests (`tests/rig-setup.test.ts`, 6 of `npm test`'s 158)
+
+A head dragged keeps the default pose's pixels identical (at rest, turned a quarter, turned and scaled by 2 with a move;
+a root and a child bone; a shared piece copied); a tail dragged moves the connected ear's head, its file head and its
+baked pivot, keeps the pixels, and turning the parent then carries the ear's head with the tail (analytic place); the
+body's tail moves no one; a whole bone; a piece on its bone. Parenting keeps the transform (unparenting and parenting
+again a turned child of a turned and moved parent: the ends and the pixels the same), refuses a circle, and keeps
+Pichu's front and Budew's back baking to their files byte for byte. Connected keeps the pixels; deleting a bone
+renumbers and keeps the child's place; pieces added, a second rectangle, a bone for a piece standing on the feet, a
+piece deleted; a bone added to Kyurem's converted rig bakes with no warnings. Start fresh (two sizes) and Copy front to
+back pass both validators, and their bakes the rig validator and `rig_check.py`. An untouched vanilla side's
+conversion bakes to its file's text (four sides). Also tried in the editor (a scratch copy of Budew, removed): two
+rectangles drawn, two bones, parented in the outliner and connected, the body's tail dragged with the bud following,
+the default pose turned, saved (both files, which pass the res/ guard), undo and redo; the armature notice and Start
+fresh deleting it; Copy front to back.
+
+### What step 3 (sequences) builds on
+
+- The mode switch in the header (Rig setup | Sequences) and the read-only Sequences section become the sequences'
+  list; the page's `commit(next, phase)` already takes any source change as one step, drags amending it.
+- The gizmos' maths (`restMaps` under a pose: it takes the transform of each bone, so a key's values at the playhead
+  give the posed maps; `restDelta`, `axesOf`) and the preview's picking (`owners` through the layers to bones) carry
+  over to keying: a sequence's preview is `bakeV2` of the source at the playhead's frame instead of `defaultPoseRig`.
+- `reparentKeep` already rewrites keys; `moveHead` corrects keys' moves. Neither yet handles loop clips (step 5).
+- The size meter is `rigSizes` of the bake; the checks list the bake's warnings.
