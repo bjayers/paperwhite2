@@ -29,8 +29,12 @@ export interface SequenceView {
   clock: Clock;
   /** The frame keys go to: the start of the playhead's step with the snap, else its frame. */
   keyFrame: number;
-  /** Keys and the playhead snap to 6 (Alt bypasses it while dragging). */
+  /** Keys and the playhead snap to the step (Alt bypasses it while dragging). */
   snap: boolean;
+  /** The snap's step: 6, or a loop clip's own (1, 2, 3 or 6) while one is edited. */
+  step?: number;
+  /** The loop clip edited (Sequences mode's clip view, loopClips.ts clipSource), or undefined for a sequence. */
+  clip?: number;
   onion: boolean;
   /** Pauses the preview (keys are never made while it plays) and gives the frame keys go to. */
   keying(): number;

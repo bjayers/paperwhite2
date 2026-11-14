@@ -236,6 +236,25 @@
 .rig-sq-pic { padding: 2px; min-width: 30px; min-height: 30px; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; }
 .rig-sq-pic.active { outline: 2px solid var(--accent); }
 
+/* Loop clips (rig-editor-v2.md, "Built: step 5"): a part's clips under its keys, the list, the clip's own editor */
+.rig-sq-part.drop .rig-sq-lane { box-shadow: inset 0 0 0 2px var(--accent); }
+.rig-sq-cliprow .rig-sq-name { font-size: 11px; cursor: default; }
+.rig-sq-cliplane { cursor: default; background-color: color-mix(in srgb, var(--panel-2) 60%, transparent); }
+.rig-sq-clipbar { position: absolute; box-sizing: border-box; border-radius: 3px; opacity: 0.55; color: #fff; font-size: 10px; line-height: 12px;
+  overflow: hidden; white-space: nowrap; cursor: ew-resize; display: flex; align-items: center; gap: 3px; padding: 0 3px; border: 1px solid rgba(0, 0, 0, 0.35); z-index: 2; }
+.rig-sq-clipbar.first { opacity: 0.95; }
+.rig-sq-clipbar.unfit { border: 1px dashed #f0c75e; }
+.rig-sq-cliplabel { overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.rig-sq-clipx { padding: 0 3px; font-size: 9px; line-height: 10px; min-height: 0; margin-left: auto; background: rgba(0, 0, 0, 0.35); color: #fff; border: none; }
+.rig-clip-row { cursor: grab; }
+.rig-clip-row.editing { outline: 2px solid var(--accent); outline-offset: -2px; }
+.rig-clip-previews { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; justify-content: center; }
+.rig-clip-preview { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.rig-clip-uses { display: flex; flex-direction: column; gap: 3px; }
+.rig-clip-use { display: flex; align-items: center; gap: 6px; font-size: 12px; flex-wrap: wrap; }
+.rig-clip-uses .rig-clip-use .ow-number-box { width: 44px; }
+.rig-clip-uses .rig-clip-use .small { padding: 1px 6px; }
+
 /* Timeline mode (rig-editor-v2.md, "Built: step 4"): the strip of clips, the strip's preview and the battle's pause */
 .rig-strip-dock { flex: none; }
 .rig-strip { display: flex; flex-direction: column; user-select: none; -webkit-user-select: none; }

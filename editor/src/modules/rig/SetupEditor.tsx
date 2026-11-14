@@ -22,7 +22,9 @@ import { artBounds, freshRectangle, plainOf, rigOf, type Phase } from "./model.t
 import type { Art } from "./context.ts";
 import { RigHistory } from "./history.ts";
 import { isTyping, loadArt, store, stored } from "./RigEditor.tsx";
-import { bakeV2, convertToV2, type V2 } from "./v2.ts";
+import { bakeV2, convertToV2, STEP, type V2 } from "./v2.ts";
+import { clipPreviewSource, clipSource, clipStepOf, clipUses, fromClipSource } from "./loopClips.ts";
+import { LoopClipsSection, LoopClipSection, PartClipsRows } from "./LoopClipPanel.tsx";
 import { rigSizes, RESIDENT_GUIDANCE } from "./sizes.ts";
 import { copySide, defaultPoseRig, deleteBone, freshV2, restMaps, setDefault } from "./setup.ts";
 import { armaturePathOf, flatData, rigPathOf, v2Data, v2PathOf, v2SchemaFor, V2_LAYOUT, V2_SCHEMA_PATH, type Side } from "./setupFiles.ts";
@@ -94,7 +96,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
   const setGuideOpen = (open: boolean) => { setGuideOpenState(open); store(GUIDE_KEY, open ? "open" : "closed"); };
   // Sequences mode: the open sequence, the preview's clock, the snap, the dock
   const [mode, setModeState] = useState<Mode>(() => (MODES.find((m) => m === stored(MODE_KEY)) ?? "setup"));
-  const setMode = (m: Mode) => { setModeState(m); store(MODE_KEY, m); setMessage(null); };
+  const setMode = (m: Mode) => { setModeState(m); store(MODE_KEY, m); setMessage(null); setClipEdit(null); };
   const [open, setOpenState] = useState(0);
   const [snap, setSnapState] = useState(() => stored(SNAP_KEY) !== "off");
   const setSnap = (on: boolean) => { setSnapState(on); store(SNAP_KEY, on ? "on" : "off"); };
@@ -105,10 +107,15 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
   const [scale, setScaleState] = useState(() => Number(stored(SCALE_KEY)) || 8);
   const setScale = (n: number) => { setScaleState(n); store(SCALE_KEY, String(n)); };
   const [copied, setCopied] = useState<CopiedKeys | null>(null);
+  // Loop clips: the one edited on its own timeline (null: the open sequence), the one chosen in the list, the part it is
+  // previewed on, and the clip views' own selection (their one part, its keys)
+  const [clipEdit, setClipEdit] = useState<number | null>(null);
+  const [clipChosen, setClipChosen] = useState<number | null>(null);
+  const [clipPart, setClipPart] = useState<number | null>(null);
+  const [clipSel, setClipSel] = useState<SetupSelection>({ ...NO_SETUP_SELECTION, bones: [0] });
   const clockRef = useRef<Clock>(null as unknown as Clock);
   if (!clockRef.current) clockRef.current = new Clock();
   const clock = clockRef.current;
-  const keyFrame = useClock(clock, (st) => keyFrameOf(st.time, snap));
   const playing = useClock(clock, (st) => st.playing);
   // Timeline mode: the strip's own clock (the whole of sequence 0, with the battle's pauses), the chosen clip
   const stripClockRef = useRef<Clock>(null as unknown as Clock);
@@ -182,16 +189,38 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
   const sequencing = mode === "sequences" && !!src && src.sequences.length > 0;
   const openSeq = src ? Math.min(open, Math.max(0, src.sequences.length - 1)) : 0;
   const seqFrames = src?.sequences[openSeq]?.frames ?? 6;
-  const maps = useMemo(() => (src ? (sequencing ? posedMaps(src, openSeq, keyFrame) : restMaps(src)) : []), [src, sequencing, openSeq, keyFrame]);
+  // A loop clip edited (rig-editor-v2.md, "Built: step 5"): Sequences mode's views on the clip as a one-part sequence
+  // (loopClips.ts clipSource), its keys snapping to its own step, its preview on a part alone and on the sprite
+  const editingClip = sequencing && clipEdit !== null && src?.loop_clips?.[clipEdit] ? clipEdit : null;
+  const editClip = editingClip !== null ? src!.loop_clips![editingClip] : undefined;
+  const step = editClip ? clipStepOf(editClip) : STEP;
+  const activeFrames = editClip ? editClip.frames : seqFrames;
+  const keyFrame = useClock(clock, (st) => keyFrameOf(st.time, snap, step));
+  const clipPartShown = editingClip === null || !src?.bones.length ? 0
+    : clipPart !== null && src.bones[clipPart] ? clipPart : clipUses(src, editingClip)[0]?.bone ?? sel.bones[0] ?? 0;
+  const clipView = useMemo(() => (src && editingClip !== null ? clipSource(src, editingClip) : null), [src, editingClip]);
+  const clipPreviews = useMemo(() => {
+    if (!src || editingClip === null || !src.bones[clipPartShown]) return null;
+    try {
+      const alone = clipPreviewSource(src, editingClip, clipPartShown, true), sprite = clipPreviewSource(src, editingClip, clipPartShown, false);
+      return { alone, sprite, aloneRig: bakeV2(alone).rig, spriteRig: bakeV2(sprite).rig };
+    } catch {
+      return null;
+    }
+  }, [src, editingClip, clipPartShown]);
+  const maps = useMemo(() => (src ? (clipView ? restMaps(clipView) : sequencing ? posedMaps(src, openSeq, keyFrame) : restMaps(src)) : []), [src, clipView, sequencing, openSeq, keyFrame]);
   const preview = useMemo(() => (src ? defaultPoseRig(src) : null), [src]);
   const srcRef = useRef(src);
   srcRef.current = src;
+  const editingRef = useRef(editingClip);
+  editingRef.current = editingClip;
 
   // The preview of the open sequence: the side's bake with one strip playing it, looping at the game's speed
   const seqRig = useMemo(() => (sequencing && baked?.baked ? sequenceRig(baked.baked.rig, openSeq, seqFrames) : null), [sequencing, baked, openSeq, seqFrames]);
+  const playedRig = clipPreviews ? clipPreviews.spriteRig : seqRig;
   useEffect(() => {
-    if (seqRig) clock.setRig(seqRig);
-  }, [seqRig, clock]);
+    if (playedRig) clock.setRig(playedRig);
+  }, [playedRig, clock]);
   useEffect(() => {
     if (!sequencing || !toolActive) return;
     if (clock.state.playing) clock.start();
@@ -202,16 +231,37 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
     if (!sequencing) return;
     const wrap = () => {
       const t = clock.state.time;
-      if (t >= seqFrames) clock.seek(t % seqFrames);
+      if (t >= activeFrames) clock.seek(t % activeFrames);
     };
     wrap();
     return clock.subscribe(wrap);
-  }, [sequencing, clock, seqFrames]);
+  }, [sequencing, clock, activeFrames]);
   const openSequence = useCallback((s: number) => {
     setOpenState(s);
+    setClipEdit(null);
     clock.seek(0);
     setSel((x) => ({ ...x, keys: [] }));
   }, [clock]);
+  /** A loop clip opened on its own timeline (shown on a part: the one given, else where it's placed or the chosen one). */
+  const openClip = useCallback((c: number, b: number | null = null) => {
+    setClipEdit(c);
+    setClipChosen(c);
+    setClipPart(b);
+    setClipSel({ ...NO_SETUP_SELECTION, bones: [0] });
+    clock.seek(0);
+  }, [clock]);
+  const closeClip = useCallback(() => {
+    setClipEdit(null);
+    clock.seek(0);
+  }, [clock]);
+  /** The clip's views' edits, written back into the clip (loopClips.ts fromClipSource). */
+  const clipCommit = useCallback((next: V2, phase: Phase = "typed") => {
+    const cur = srcRef.current, c = editingRef.current;
+    if (!cur || c === null) return;
+    if (phase === "end") return;
+    commitRef.current(fromClipSource(cur, c, next), phase);
+  }, []);
+  const selectClip = useCallback((next: Partial<SetupSelection>) => setClipSel((x) => ({ ...x, ...next, bones: [0] })), []);
 
   // The strip's preview: the side's bake itself (its sequence 0 is the timeline as the battle plays it), looping
   const stripping = mode === "timeline" && !!src && src.sequences.length > 0;
@@ -241,13 +291,14 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
     openSequence(s);
   }, [openSequence]);
   /** Keys are never made while the preview plays: it pauses on the frame they go to. */
-  const keying = useCallback(() => pauseForKeying(clock, snap), [clock, snap]);
+  const keying = useCallback(() => pauseForKeying(clock, snap, step), [clock, snap, step]);
+  const edSeq = editingClip !== null ? 0 : openSeq;
   const pose = useMemo<PoseEdit>(() => (sequencing
-    ? (s0, b, change) => setKeyAt(s0, openSeq, b, keyFrame, (now) => change(now))
+    ? (s0, b, change) => setKeyAt(s0, edSeq, b, keyFrame, (now) => change(now))
     : (s0, b, change) => setDefault(s0, b, (t) => {
       const { piece: _p, hidden: _h, ...c } = change(t);
       return { ...t, ...c };
-    })), [sequencing, openSeq, keyFrame]);
+    })), [sequencing, edSeq, keyFrame]);
 
   // The bake kept in the flat rig's document (no step of its own), so the checks, the size, Save and the Build button
   // see what the game will get
@@ -288,6 +339,8 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
     else documents.replace(v2Path, data);
     history.current.note([v2Path], phase);
   }, [flatPath, v2Path]);
+  const commitRef = useRef(commit);
+  commitRef.current = commit;
 
   const select = useCallback((next: Partial<SetupSelection>) => setSel((s) => ({ ...s, ...next })), []);
 
@@ -375,8 +428,8 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
   };
 
   // Keys while the page is shown
-  const latest = useRef({ saveAll, sel, src, commit, readOnly, sequencing, openSeq, keying, copied, snap, seqFrames, stripping, clip, total });
-  latest.current = { saveAll, sel, src, commit, readOnly, sequencing, openSeq, keying, copied, snap, seqFrames, stripping, clip, total };
+  const latest = useRef({ saveAll, sel, src, commit, readOnly, sequencing, openSeq, keying, copied, snap, seqFrames, stripping, clip, total, edSrc: clipView ?? src, edSeq, edSel: editingClip !== null ? clipSel : sel, edCommit: editingClip !== null ? clipCommit : commit, edSetSel: editingClip !== null ? setClipSel : setSel, activeFrames, step, editingClip, closeClip });
+  latest.current = { saveAll, sel, src, commit, readOnly, sequencing, openSeq, keying, copied, snap, seqFrames, stripping, clip, total, edSrc: clipView ?? src, edSeq, edSel: editingClip !== null ? clipSel : sel, edCommit: editingClip !== null ? clipCommit : commit, edSetSel: editingClip !== null ? setClipSel : setSel, activeFrames, step, editingClip, closeClip };
   useEffect(() => {
     if (!toolActive) return;
     /** Timeline mode's keys: Space, the arrows (by 6), Home, Delete for the chosen clip, Escape. */
@@ -407,10 +460,10 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
     /** Sequences mode's keys: K and Shift+K, Delete for the chosen keys, Ctrl+C and Ctrl+V, Space, the arrows. */
     const sequenceKey = (e: KeyboardEvent, key: string): boolean => {
       const l = latest.current;
-      const cur = l.src;
+      const cur = l.edSrc;
       if (!l.sequencing || !cur) return false;
-      const s = l.openSeq;
-      const refs = liveRefs(cur, s, l.sel.keys.map(refOf));
+      const s = l.edSeq;
+      const refs = liveRefs(cur, s, l.edSel.keys.map(refOf));
       if (e.ctrlKey || e.metaKey) {
         if (key === "c" && refs.length && !isTyping(e.target)) {
           setCopied(copyKeys(cur, s, refs));
@@ -420,8 +473,8 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
         if (key === "v" && l.copied?.keys.length && !isTyping(e.target) && !l.readOnly) {
           const at = l.keying();
           const r = pasteKeys(cur, s, l.copied, at);
-          l.commit(r.src);
-          setSel((x) => ({ ...x, keys: r.refs.map(refId) }));
+          l.edCommit(r.src);
+          l.edSetSel((x) => ({ ...x, keys: r.refs.map(refId) }));
           setMessage(`Pasted ${r.refs.length} key${r.refs.length > 1 ? "s" : ""} at frame ${at}.`);
           return true;
         }
@@ -430,32 +483,36 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
       if (isTyping(e.target)) return false;
       if (key === "k" && !l.readOnly) {
         const at = l.keying();
-        const bones = e.shiftKey ? sequenceBones(cur, s) : l.sel.bones;
+        const bones = e.shiftKey ? sequenceBones(cur, s) : l.edSel.bones;
         if (!bones.length) { setMessage("Choose a part to key (or Shift+K for every part)."); return true; }
         const r = keyParts(cur, s, bones, at);
-        l.commit(r.src);
+        l.edCommit(r.src);
         setMessage(r.made ? `Keyed ${e.shiftKey ? "every part" : bones.map((b) => cur.bones[b].name).join(", ")} at frame ${at}.` : `Already keyed at frame ${at}.`);
         return true;
       }
       if ((key === "delete" || key === "x" || key === "backspace") && !l.readOnly) {
         if (!refs.length) { setMessage("Choose keys to delete (click, Shift-click, or drag a box on the timeline)."); return true; }
         const r = deleteKeys(cur, s, refs);
-        if (r.deleted) l.commit(r.src);
-        setSel((x) => ({ ...x, keys: [] }));
+        if (r.deleted) l.edCommit(r.src);
+        l.edSetSel((x) => ({ ...x, keys: [] }));
         setMessage(r.deleted ? `Deleted ${r.deleted} key${r.deleted > 1 ? "s" : ""} (Ctrl+Z brings ${r.deleted > 1 ? "them" : "it"} back).` : "The start and end keys are the default pose: they can't be deleted.");
         return true;
       }
       if (key === " ") { clock.play(); return true; }
       if (key === "arrowleft" || key === "arrowright") {
-        const by = (key === "arrowleft" ? -1 : 1) * (l.snap && !e.altKey ? 6 : 1);
-        const last = lastFrame(l.seqFrames, l.snap && !e.altKey);
+        const by = (key === "arrowleft" ? -1 : 1) * (l.snap && !e.altKey ? l.step : 1);
+        const last = lastFrame(l.activeFrames, l.snap && !e.altKey, l.step);
         const t = Math.floor(clock.state.time) + by;
         clock.step(0);
         clock.seek(t < 0 ? last : t > last ? 0 : t);
         return true;
       }
       if (key === "home") { clock.play(false); clock.seek(0); return true; }
-      if (key === "escape") { setSel((x) => ({ ...x, keys: [], bones: [] })); return true; }
+      if (key === "escape") {
+        if (l.editingClip !== null && !l.edSel.keys.length) { l.closeClip(); return true; }
+        l.edSetSel((x) => ({ ...x, keys: [], ...(l.editingClip !== null ? {} : { bones: [] }) }));
+        return true;
+      }
       return false;
     };
     const onKey = (e: KeyboardEvent) => {
@@ -506,6 +563,15 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
   const seqView: SequenceView | undefined = sequencing ? { sequence: openSeq, rig: seqRig, clock, keyFrame, snap, onion, keying } : undefined;
   const liveSel = sequencing ? { ...sel, keys: liveRefs(src, openSeq, sel.keys.map(refOf)).map(refId) } : sel;
   const view: SetupView = { src, maps, preview: preview?.baked ?? null, art, sheet, shiny, sel: liveSel, select, commit, say: setMessage, readOnly, seq: seqView, pose, copied };
+  // The clip's views: its one-part source, its own selection, its edits written back into the clip, its step
+  const clipEditView: SetupView | null = clipView && seqView && editingClip !== null ? {
+    ...view, src: clipView, preview: null, commit: clipCommit, select: selectClip,
+    sel: { ...clipSel, bones: [0], keys: liveRefs(clipView, 0, clipSel.keys.map(refOf)).map(refId) },
+    seq: { ...seqView, sequence: 0, rig: clipPreviews?.spriteRig ?? null, step, clip: editingClip },
+  } : null;
+  const dockView2 = clipEditView ?? view;
+  /** A preview of the clip on its part (a view whose selection outlines that part; clicks choose nothing). */
+  const clipPreviewView = (s: V2): SetupView => ({ ...view, src: s, sel: { ...NO_SETUP_SELECTION, bones: [clipPartShown] }, select: () => undefined });
   const shownTool: SetupTool = sequencing && tool === "bones" ? "move" : tool;
   const tools = sequencing ? SEQUENCE_TOOLS : SETUP_TOOLS;
   const sizes = baked?.baked ? rigSizes(baked.baked.rig) : null;
@@ -591,7 +657,52 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
               </div>
             </section>
           )}
-          {sequencing ? (
+          {clipEditView && editClip ? (
+            <div className="rig-main rig-main-sequence">
+              <section className="rig-card rig-preview">
+                <div className="rig-card-head">
+                  <h3>Loop clip: {editClip.name}</h3>
+                  <span className="muted small">{editClip.frames} frames, looping on {src.bones[clipPartShown]?.name ?? "a part"}, keys every {step}</span>
+                  <span className="spacer" />
+                  <button className="primary" onClick={closeClip} title="Back to the sequence's timeline (Escape)">Done: back to {openName}</button>
+                </div>
+                <div className="rig-stage">
+                  <div className="rig-clip-previews">
+                    {clipPreviews ? (
+                      <>
+                        <div className="rig-clip-preview">
+                          <StripPreview view={clipPreviewView(clipPreviews.alone)} rig={clipPreviews.aloneRig} clock={clock} zoom={zoom} feet={false} />
+                          <span className="muted small">{src.bones[clipPartShown]?.name} alone</span>
+                        </div>
+                        <div className="rig-clip-preview">
+                          <StripPreview view={clipPreviewView(clipPreviews.sprite)} rig={clipPreviews.spriteRig} clock={clock} zoom={zoom} feet={feet} />
+                          <span className="muted small">on the sprite (the default pose)</span>
+                        </div>
+                      </>
+                    ) : <p className="muted">The clip can't be previewed.</p>}
+                  </div>
+                </div>
+                <p className="muted ow-note">The clip loops on its part on its own, as the game bakes it; in a sequence it plays under the part's keys from the block's start.
+                  Key its pictures (or a small move, turn or scale) on its timeline below; Shown on (side panel) picks the part it's previewed on.</p>
+                <Transport clock={clock} frames={editClip.frames} snap={snap} playing={playing} step={step} />
+                <div className="rig-toggles">
+                  <span className="rig-keybuttons">
+                    <button disabled={readOnly} title="A key at the playhead (K): no change until you give it one" onClick={() => {
+                      const at = keying();
+                      const r = keyParts(clipView!, 0, [0], at);
+                      clipCommit(r.src);
+                      setMessage(r.made ? `Keyed ${editClip.name} at frame ${at}.` : `Already keyed at frame ${at}.`);
+                    }}>◇ Key <kbd>K</kbd></button>
+                  </span>
+                  <label className="ow-check"><input type="checkbox" checked={feet} onChange={(e) => setFeet(e.target.checked)} /> Feet</label>
+                  <label className="ow-check"><input type="checkbox" checked={shiny} onChange={(e) => setShiny(e.target.checked)} /> Shiny</label>
+                  <span className="view-switch">
+                    {[2, 3, 4, 5, 6].map((z) => <button key={z} className={zoom === z ? "active" : ""} onClick={() => setZoom(z)}>{z}×</button>)}
+                  </span>
+                </div>
+              </section>
+            </div>
+          ) : sequencing ? (
             <div className="rig-main rig-main-sequence">
               <section className="rig-card rig-preview">
                 <div className="rig-card-head">
@@ -705,10 +816,10 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
                   <button key={v} className={dockView === v ? "active" : ""} onClick={() => setDockView(v)}>{label}</button>
                 ))}
               </span>
-              <b>{openName}</b>
-              <span className="muted small">{seqFrames} frames</span>
-              <label className={`ow-check rig-snap${snap ? " on" : ""}`} title="The playhead, keys and the length snap to 6 frames (Game Freak's rhythm, the bake's step). Hold Alt while dragging to go by frames.">
-                <input type="checkbox" checked={snap} onChange={(e) => setSnap(e.target.checked)} /> Snap 6 <kbd>Alt</kbd>
+              {editClip ? <b>Loop clip: {editClip.name}</b> : <b>{openName}</b>}
+              <span className="muted small">{activeFrames} frames{editClip ? `, looping (in ${openName})` : ""}</span>
+              <label className={`ow-check rig-snap${snap ? " on" : ""}`} title={editClip ? `The playhead, keys and the length snap to the clip's own step, ${step} frames (Keys every, in the side panel). Hold Alt while dragging to go by frames.` : "The playhead, keys and the length snap to 6 frames (Game Freak's rhythm, the bake's step). Hold Alt while dragging to go by frames."}>
+                <input type="checkbox" checked={snap} onChange={(e) => setSnap(e.target.checked)} /> Snap {step} <kbd>Alt</kbd>
               </label>
               <span className="spacer" />
               {copied?.keys.length ? <span className="muted small">{copied.keys.length} key{copied.keys.length > 1 ? "s" : ""} copied (Ctrl+V pastes at the playhead)</span> : null}
@@ -720,13 +831,20 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
             <div className={`rig-dock-body ${dockView}`}>
               {dockView !== "graph" && (
                 <div className="rig-dock-pane">
-                  <SequenceTimeline view={view} scale={scale} />
-                  <p className="muted ow-note">Click a key to choose it (Shift or Ctrl: one more), drag empty space to box-select, drag chosen keys to move them in time,
-                    Delete deletes them, Ctrl+C and Ctrl+V copy them to the playhead. The hollow keys are the default pose: at 0, and the end key at {seqFrames}{" "}
-                    (drag it back to settle earlier). K keys the chosen parts, Shift+K every part; Space plays, the arrows step.</p>
+                  <SequenceTimeline view={dockView2} scale={scale} onEditClip={(c, b) => openClip(c, b)} />
+                  {editClip ? (
+                    <p className="muted ow-note">The clip's own timeline: K keys it at the playhead, then choose a picture (or a move, turn or scale) in Clip key. Its keys snap to {step}{" "}
+                      (Keys every, in the side panel). It loops: after frame {editClip.frames - 1} comes its frame 0 again (the hollow end key). Delete, Ctrl+C and Ctrl+V as
+                      in a sequence; Escape or Done goes back to {openName}.</p>
+                  ) : (
+                    <p className="muted ow-note">Click a key to choose it (Shift or Ctrl: one more), drag empty space to box-select, drag chosen keys to move them in time,
+                      Delete deletes them, Ctrl+C and Ctrl+V copy them to the playhead. The hollow keys are the default pose: at 0, and the end key at {seqFrames}{" "}
+                      (drag it back to settle earlier). K keys the chosen parts, Shift+K every part; Space plays, the arrows step. Drag a loop clip from the side panel
+                      onto a part's row to place it (its bars under the row: drag to move its start, double-click to edit it).</p>
+                  )}
                 </div>
               )}
-              {dockView !== "timeline" && <div className="rig-dock-pane"><SequenceGraph view={view} /></div>}
+              {dockView !== "timeline" && <div className="rig-dock-pane"><SequenceGraph view={dockView2} /></div>}
             </div>
           </section>
         )}
@@ -754,11 +872,21 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
           <PauseSection view={view} />
           <SetupChecks view={view} check={check} checking={checking} warnings={warnings} />
         </aside>
+      ) : clipEditView && editingClip !== null ? (
+        <aside className="rig-side rig-inspector">
+          <LoopClipSection view={view} clip={editingClip} part={clipPartShown} onPart={setClipPart} onDone={closeClip}
+                           onOpenSequence={(s, b) => { openSequence(s); setSel((x) => ({ ...x, bones: [b], keys: [] })); }} />
+          <KeySection view={clipEditView} open={0} onMessage={setMessage} clip={editClip} />
+          <LoopClipsSection view={view} chosen={clipChosen} editing={editingClip} onChoose={setClipChosen} onEdit={(c) => openClip(c)} />
+          <SetupChecks view={view} check={check} checking={checking} warnings={warnings} />
+        </aside>
       ) : sequencing ? (
         <aside className="rig-side rig-inspector">
           <SequenceListSection view={view} open={openSeq} onOpen={openSequence} />
           <SequenceSection view={view} open={openSeq} />
-          <KeySection view={view} open={openSeq} onMessage={setMessage} />
+          <KeySection view={view} open={openSeq} onMessage={setMessage}
+                      extra={sel.bones[0] !== undefined && src.bones[sel.bones[0]] ? <PartClipsRows view={view} sequence={openSeq} bone={sel.bones[0]} onEdit={(c) => openClip(c, sel.bones[0])} /> : null} />
+          <LoopClipsSection view={view} chosen={clipChosen} editing={null} onChoose={setClipChosen} onEdit={(c) => openClip(c, sel.bones[0] ?? null)} />
           <SetupChecks view={view} check={check} checking={checking} warnings={warnings} />
         </aside>
       ) : (
@@ -822,15 +950,15 @@ function StripTransport({ clock, src, total, battlePauses, onBattlePauses, keeps
 }
 
 /** Play, pause and step the open sequence (by 6 with the snap), and where the playhead is. */
-function Transport({ clock, frames, snap, playing }: { clock: Clock; frames: number; snap: boolean; playing: boolean }) {
+function Transport({ clock, frames, snap, playing, step: unit = 6 }: { clock: Clock; frames: number; snap: boolean; playing: boolean; step?: number }) {
   const time = useClock(clock, (st) => Math.floor(st.time));
-  const last = lastFrame(frames, snap);
+  const last = lastFrame(frames, snap, unit);
   const step = (by: number) => {
     const t = time + by;
     clock.step(0);
     clock.seek(t < 0 ? last : t > last ? 0 : t);
   };
-  const by = snap ? 6 : 1;
+  const by = snap ? unit : 1;
   return (
     <div className="rig-transport">
       <button onClick={() => { clock.play(false); clock.seek(0); }} title="To the start (Home)">⏮</button>
@@ -838,7 +966,7 @@ function Transport({ clock, frames, snap, playing }: { clock: Clock; frames: num
       <button className="primary" onClick={() => clock.play()} title="Play or pause (Space): the sequence loops at the game's 60 frames a second">{playing ? "⏸ Pause" : "▶ Play"}</button>
       <button onClick={() => step(by)} title={`On ${by} frame${by > 1 ? "s" : ""} (→)`}>{by} ▶</button>
       <span className="rig-time">frame <b>{time}</b> of {frames} <span className="muted">({(time / 60).toFixed(2)} s)</span></span>
-      <input type="range" min={0} max={Math.max(0, frames - 1)} step={snap ? 6 : 1} value={time} title="Scrub"
+      <input type="range" min={0} max={Math.max(0, frames - 1)} step={snap ? unit : 1} value={time} title="Scrub"
              onChange={(e) => { clock.play(false); clock.seek(Number(e.target.value)); }} />
     </div>
   );

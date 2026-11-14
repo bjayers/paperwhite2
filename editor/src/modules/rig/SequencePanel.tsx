@@ -3,12 +3,12 @@
 // length in steps of 6, Reset sequence), and the chosen part at the playhead (its key there, or its values there:
 // changing one keys it at the playhead's frame; the picture and Hidden per key; the curve to the next key).
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ScrubNumber, type ScrubPhase } from "../overworld/ScrubNumber.tsx";
 import { addSequence, cantDelete, deleteKeys, deleteSequence, duplicateSequence, keyCount, keyParts, laneOf, moveSequence, partValues, refId, renameSequence,
          resetSequence, sequenceBones, setCurve, setLength, START } from "./sequences.ts";
 import { parentOf } from "./setup.ts";
-import { snapLength, STEP, V2_CURVES, DEFAULT_CURVE } from "./v2.ts";
+import { clipPictureAt, snapLength, STEP, V2_CURVES, DEFAULT_CURVE, type LoopClip } from "./v2.ts";
 import { PieceThumb } from "./SetupSheet.tsx";
 import { addClip } from "./timeline.ts";
 import { NameInput, Row } from "./SetupPanel.tsx";
@@ -116,7 +116,9 @@ export function SequenceSection({ view, open }: { view: SetupView; open: number 
 
 // ---------------------------------------------------------------- The chosen part at the playhead
 
-export function KeySection({ view, open, onMessage }: { view: SetupView; open: number; onMessage(m: string): void }) {
+/** The chosen part at the playhead; with `clip`, the loop clip being edited (its one part: the values are changes to the
+ * part's, the picture shows over the part's until the clip's next picture, looping). `extra`: rows after the values. */
+export function KeySection({ view, open, onMessage, clip, extra }: { view: SetupView; open: number; onMessage(m: string): void; clip?: LoopClip; extra?: ReactNode }) {
   const { src, sel, select, commit, readOnly, seq: sv, art, sheet, shiny } = view;
   const b = sel.bones[0];
   const bone = b !== undefined ? src.bones[b] : undefined;
@@ -141,6 +143,10 @@ export function KeySection({ view, open, onMessage }: { view: SetupView; open: n
     );
   }
   const values = partValues(src, open, b, frame);
+  // (a loop clip's picture is the last picture key's, from the loop before where none is yet; none: the part's own)
+  const clipPicture = clip ? clipPictureAt({ ...clip, keys: laneOf(seq, b)?.keys ?? [] }, frame) : undefined;
+  const hiddenNow = clip ? !!clipPicture?.hidden : values.hidden;
+  const pieceNow = clip ? clipPicture?.piece : values.piece;
   const keyIndex = laneOf(seq, b)?.keys.findIndex((k) => k.frame === frame) ?? -1;
   const key = keyIndex >= 0 ? laneOf(seq, b)!.keys[keyIndex] : undefined;
   const connected = !!bone.connected && parentOf(src, b) !== null;
@@ -159,27 +165,28 @@ export function KeySection({ view, open, onMessage }: { view: SetupView; open: n
   const curve: Curve = key?.curve ?? src.curve ?? DEFAULT_CURVE;
   return (
     <section className="ow-panel-box ow-section">
-      <h5>Part <span className="muted">{bone.name} at frame {frame}{key ? ", keyed" : ", no key here"}{sel.bones.length > 1 ? ` (+${sel.bones.length - 1} chosen)` : ""}</span></h5>
+      <h5>{clip ? "Clip key" : "Part"} <span className="muted">{clip ? clip.name : bone.name} at frame {frame}{key ? ", keyed" : ", no key here"}{!clip && sel.bones.length > 1 ? ` (+${sel.bones.length - 1} chosen)` : ""}</span></h5>
       <div className="ow-section-actions">
         <button disabled={readOnly} onClick={keyHere} title="A key at the playhead for the chosen parts, from what they show there (K)">◇ Key <kbd>K</kbd></button>
-        <button disabled={readOnly} onClick={keyAll} title="A key for every part at the playhead (Shift+K)">◆ Key all parts <kbd>⇧K</kbd></button>
+        {!clip && <button disabled={readOnly} onClick={keyAll} title="A key for every part at the playhead (Shift+K)">◆ Key all parts <kbd>⇧K</kbd></button>}
         <button disabled={readOnly || !key} onClick={() => { commit(deleteKeys(src, open, [{ bone: b, index: keyIndex }]).src); select({ keys: [] }); }}
                 title="Delete this part's key at the playhead">Delete key</button>
       </div>
-      <p className="muted ow-note">{key ? "Its key at the playhead: changing a value changes it." : "Not keyed here: these are its values from the curves, and changing one keys it at the playhead."}</p>
+      <p className="muted ow-note">{clip ? "The clip's values are changes to the part's own (0, 0° and 1 change nothing); its keys hold to the next (constant) unless given a curve."
+        : key ? "Its key at the playhead: changing a value changes it." : "Not keyed here: these are its values from the curves, and changing one keys it at the playhead."}</p>
       <div className="ow-condition">
-        <Row label="Picture" hint="held until a key shows another (blinks, mouths); Hidden draws nothing">
+        <Row label="Picture" hint={clip ? `shown over the part's own picture until the clip's next picture key, looping${clipPicture ? "" : "; none chosen yet: the part's own"}` : "held until a key shows another (blinks, mouths); Hidden draws nothing"}>
           <span className="rig-sq-pictures">
-            <button className={`rig-sq-pic${values.hidden ? " active" : ""}`} disabled={readOnly} onClick={() => set(() => ({ hidden: true }), "typed")} title="Hidden: the part draws nothing from here">Hidden</button>
+            <button className={`rig-sq-pic${hiddenNow ? " active" : ""}`} disabled={readOnly} onClick={() => set(() => ({ hidden: true }), "typed")} title="Hidden: the part draws nothing from here">Hidden</button>
             {src.pieces.map((p, n) => (
-              <button key={n} className={`rig-sq-pic${!values.hidden && values.piece === n ? " active" : ""}`} disabled={readOnly} title={`${p.name}: show it from here`}
+              <button key={n} className={`rig-sq-pic${!hiddenNow && pieceNow === n ? " active" : ""}`} disabled={readOnly} title={`${p.name}: show it from here`}
                       onClick={() => set(() => ({ hidden: false, piece: n }), "typed")}>
                 <PieceThumb art={art} sheet={sheet} shiny={shiny} rectangles={p.rectangles} size={24} />
               </button>
             ))}
           </span>
         </Row>
-        <Row label="Move" hint={connected ? "locked: a connected bone's head stays on its parent's tail" : "pixels from the default pose's place, in its parent's frame"}>
+        <Row label="Move" hint={clip ? "pixels added to the part's move (none on a connected part: its head is locked)" : connected ? "locked: a connected bone's head stays on its parent's tail" : "pixels from the default pose's place, in its parent's frame"}>
           <ScrubNumber label="X" value={Math.round(values.move[0] * 100) / 100} step={0.25} digits={0} onChange={(n, ph) => !connected && set(() => ({ move: [Math.round(n), values.move[1]] }), ph)} />
           <ScrubNumber label="Y" value={Math.round(values.move[1] * 100) / 100} step={0.25} digits={0} onChange={(n, ph) => !connected && set(() => ({ move: [values.move[0], Math.round(n)] }), ph)} />
         </Row>
@@ -196,6 +203,7 @@ export function KeySection({ view, open, onMessage }: { view: SetupView; open: n
           </select>
           {frame === 0 && !key && <button className="small" disabled={readOnly} onClick={() => select({ keys: [refId({ bone: b, index: START })] })}>choose the start key</button>}
         </Row>
+        {extra}
       </div>
     </section>
   );
