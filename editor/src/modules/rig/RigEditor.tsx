@@ -16,12 +16,13 @@ import type { ToolProps } from "../types.ts";
 import { fileText, fromPlain, getIn, type JsonValue, type Layout } from "../../../shared/json.ts";
 import { readIndexedPng } from "../palettes/png.ts";
 import { parsePal } from "../palettes/pal.ts";
-import { lengthOf, type Rig } from "./mcss.ts";
-import { artBounds, dataOf, freshRig, rigOf, sizeProblem, type Editor, type Phase } from "./model.ts";
+import { keyAt, lengthOf, type Rig } from "./mcss.ts";
+import { artBounds, dataOf, freshRig, partClock, rigOf, sizeProblem, type Editor, type Phase } from "./model.ts";
 import { bake, convertToArmature, DEFAULT_STEP, sequenceStep, withBones, type Source } from "./armature.ts";
 import { Clock, SLOW } from "./player.ts";
-import { NO_SELECTION, useClock, type Art, type RigView, type Selection, type SourceEditor } from "./context.ts";
+import { NO_SELECTION, selectedParts, useClock, type Art, type RigView, type Selection, type SourceEditor } from "./context.ts";
 import { Preview, TOOLS, type Tool } from "./Preview.tsx";
+import { keyAtPlayhead } from "./keying.ts";
 import { SheetView, uncovered } from "./SheetView.tsx";
 import { TimeReadout, Timeline } from "./Timeline.tsx";
 import { GraphEditor } from "./GraphEditor.tsx";
@@ -45,6 +46,7 @@ const sourceData = (source: Source, schema: unknown): JsonValue =>
 /** The docked panel's height, per viewer (localStorage, which may be missing or refuse). */
 const DOCK_KEY = "paperwhite2.rig.dockHeight";
 const DOCK_VIEW_KEY = "paperwhite2.rig.dockView";
+const AUTOKEY_KEY = "paperwhite2.rig.autoKey";
 function stored(key: string): string | null {
   try {
     return window.localStorage.getItem(key);
@@ -162,6 +164,8 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
   const [guides, setGuides] = useState(true);
   const [follow, setFollow] = useState(true);
   const [tool, setTool] = useState<Tool>("move");
+  const [autoKey, setAutoKeyState] = useState(() => stored(AUTOKEY_KEY) !== "off");
+  const setAutoKey = (on: boolean) => { setAutoKeyState(on); store(AUTOKEY_KEY, on ? "on" : "off"); };
   const [message, setMessage] = useState<string | null>(null);
   const [check, setCheck] = useState<RigCheck | null>(null);
   const [checking, setChecking] = useState(false);
@@ -278,7 +282,12 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
     setMessage(`Removed the armature. Save to keep the rig as it baked.`);
   };
 
-  const select = useCallback((next: Partial<Selection>) => setSel((s) => ({ ...s, ...next })), []);
+  // (choosing another part or pose drops the extra chosen parts, unless the change says which are)
+  const select = useCallback((next: Partial<Selection>) => setSel((s) => ({
+    ...s, ...next,
+    more: next.more ?? ((next.part !== undefined && next.part !== s.part) || (next.pose !== undefined && next.pose !== s.pose) || next.root ? [] : s.more),
+  })), []);
+  const viewRef = useRef<RigView | null>(null);
 
   // The build's checks of the rig as it is now, a moment after each change
   const text = doc ? currentText(doc) : null;
@@ -358,6 +367,7 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
       else {
         const t = TOOLS.find((x) => x.key.toLowerCase() === key);
         if (t) setTool(t.tool);
+        else if (key === "k" && viewRef.current) { e.preventDefault(); setMessage(keyAtPlayhead(viewRef.current, e.shiftKey)); }
       }
     };
     window.addEventListener("keydown", onKey, true);
@@ -395,7 +405,8 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
   if (doc.data === null) return <div className="rig-page"><p className="pkm-error">{path} isn't in a layout the editor writes back; edit it as text.</p></div>;
 
   const view: RigView = { rig, editor, sel, select, clock: clock.current, art, sheet: art?.sheets[sheet] ? sheet : side, shiny,
-                          source, sourceEditor: source ? sourceEditor : null, baked, picking, setPicking, hidden, toggleHidden };
+                          source, sourceEditor: source ? sourceEditor : null, baked, picking, setPicking, hidden, toggleHidden, autoKey };
+  viewRef.current = view;
   const resizeDock = (e: React.PointerEvent) => {
     e.preventDefault();
     const startY = e.clientY, startHeight = dockHeight;
@@ -424,6 +435,7 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
 
   return (
     <div className="rig-page rig-docked">
+      <div className="rig-left">
       <div className="rig-upper">
       <header className="rig-head">
         <h2>Rig <span className="muted">{title}</span></h2>
@@ -464,13 +476,18 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
           <p className="muted ow-note">{TOOLS.find((t) => t.tool === tool)?.note} Click a part to choose it.</p>
           <Transport view={view} />
           <div className="rig-toggles">
+            <KeyButtons view={view} onMessage={setMessage} />
+            <label className="ow-check" title="A gizmo drag at a frame where no key begins starts one there (the key the playhead is in is split), as Blender's auto-key does; off, it changes the whole held key"><input type="checkbox" checked={autoKey} onChange={(e) => setAutoKey(e.target.checked)} /> Auto-key</label>
+          </div>
+          <EditingNote view={view} tool={tool} />
+          <div className="rig-toggles">
             <label className="ow-check"><input type="checkbox" checked={shiny} onChange={(e) => setShiny(e.target.checked)} /> Shiny</label>
             <label className="ow-check" title="The frames 6 before and 6 after, faded"><input type="checkbox" checked={onion} onChange={(e) => setOnion(e.target.checked)} /> Onion skin</label>
             <ClockToggles view={view} />
             <label className="ow-check"><input type="checkbox" checked={guides} onChange={(e) => setGuides(e.target.checked)} /> Feet</label>
             {source && <label className="ow-check" title="The armature's bones and their links to their parents and the root"><input type="checkbox" checked={showBones} onChange={(e) => setShowBones(e.target.checked)} /> Bones</label>}
             <span className="view-switch">
-              {[2, 3, 4].map((z) => <button key={z} className={zoom === z ? "active" : ""} onClick={() => setZoom(z)}>{z}×</button>)}
+              {[2, 3, 4, 5, 6].map((z) => <button key={z} className={zoom === z ? "active" : ""} onClick={() => setZoom(z)}>{z}×</button>)}
             </span>
           </div>
         </section>
@@ -491,7 +508,6 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
           <ChecksSection view={view} check={check} checking={checking} />
         </section>
 
-        <aside className="rig-side"><Inspector view={view} onTimeChanged={() => undefined} onConvert={convert} onRemoveArmature={() => void removeArmature()} /></aside>
       </div>
       </div>
 
@@ -509,6 +525,7 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
           <span className="view-switch">
             {rig.poses.map((_, i) => <button key={i} className={sel.pose === i ? "active" : ""} onClick={() => { setFollow(false); select({ pose: i, part: null, key: null }); }}>{i}</button>)}
           </span>
+          <KeyButtons view={view} onMessage={setMessage} />
           <label className="ow-check" title="Show the pose the playhead is in"><input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} /> follow the playhead</label>
           <span className="spacer" />
           <span className="muted small">zoom</span>
@@ -528,7 +545,41 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
           {dockView !== "timeline" && <div className="rig-dock-pane"><GraphEditor view={view} /></div>}
         </div>
       </section>
+      </div>
+      <aside className="rig-side"><Inspector view={view} onMessage={setMessage} onTimeChanged={() => undefined} onConvert={convert} onRemoveArmature={() => void removeArmature()} /></aside>
     </div>
+  );
+}
+
+/** Key at playhead for the chosen parts, and for every part of the pose (the pose workflow: set a key, move the parts, set a key). */
+function KeyButtons({ view, onMessage }: { view: RigView; onMessage(message: string): void }) {
+  return (
+    <span className="rig-keybuttons">
+      <button title="A key beginning at the playhead for the chosen part(s): splits the key the playhead is in, or makes one on an empty track (K)"
+              onClick={() => onMessage(keyAtPlayhead(view, false))}>◇ Key at playhead <kbd>K</kbd></button>
+      <button title="The same for every part of the pose shown: the pose workflow (position the parts, set a key; move the playhead, move the parts, set a key) (Shift+K)"
+              onClick={() => onMessage(keyAtPlayhead(view, true))}>◆ Key all parts <kbd>⇧K</kbd></button>
+    </span>
+  );
+}
+
+/** Which key a gizmo drag edits, and what auto-key does. */
+function EditingNote({ view, tool }: { view: RigView; tool: Tool }) {
+  useClock(view.clock, (s) => `${s.sequence}|${Math.floor(s.time)}`);
+  const { rig, sel, clock } = view;
+  if (view.source || sel.part === null || tool === "pivot") return null;
+  const c = partClock(rig, Math.min(clock.state.sequence, rig.sequences.length - 1), clock.frameTime, sel.pose, sel.part);
+  if (!c) return <p className="muted ow-note rig-editing">The playhead is in another pose than the one shown: the part isn't playing here.</p>;
+  const track = rig.tracks[c.track];
+  const at = keyAt(track, c.local);
+  const first = clock.frameTime - at.since;
+  const more = selectedParts(sel).length;
+  return (
+    <p className="muted ow-note rig-editing">
+      The gizmo edits <b>{track.name}</b> key {at.index} (frames {first}–{first + at.key.frames - 1}, picture {at.key.picture ?? 0})
+      {more > 1 ? ` and the same time's key of ${more - 1} other chosen part${more > 2 ? "s" : ""}` : ""}.
+      {at.since > 0 ? (view.autoKey ? ` Dragging now starts a new key at frame ${clock.frameTime} (Auto-key).` : " Auto-key is off: it changes the whole key.") : " The key begins here."}
+    </p>
   );
 }
 

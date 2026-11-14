@@ -7,9 +7,11 @@ import { boneStep, CHANNEL_LABELS, CURVES, sourceWithoutPicture, wouldCycle, typ
 import { animationOf, autoKey, localAt, setKeys, setParent, targetName, targetOf } from "./armatureEdit.ts";
 import { ScrubNumber, type ScrubPhase } from "../overworld/ScrubNumber.tsx";
 import { keyAt, lengthOf, sequenceKeyAt, type Key, type KeyType, type Pair, type Picture, type Rectangle, type Track } from "./mcss.ts";
-import { fixedScale, fromDegrees, generateObjs, keyAs, orderedKey, partName, pictureUses, removePicture, signedDegrees, sizeProblem,
-         trackUses, withRectangles, type Phase } from "./model.ts";
+import { copyPose, fixedScale, fromDegrees, generateObjs, keyAs, orderedKey, partClock, partName, pictureUses, removeKey, removePicture, resetKey, signedDegrees, sizeProblem,
+         trackUses, withHiddenPicture, withRectangles, type Phase } from "./model.ts";
 import { LayerList } from "./LayerList.tsx";
+import { PicturePicker } from "./PicturePicker.tsx";
+import { keyAtPlayhead, swapPicture } from "./keying.ts";
 import { hue, useClock, type RigView } from "./context.ts";
 
 const KEY_TYPES: { type: KeyType; label: string; note: string }[] = [
@@ -44,15 +46,16 @@ function PairInput({ value, labels, onChange, step = 0.25, digits = 0 }: {
   );
 }
 
-export function Inspector({ view, onTimeChanged, onConvert, onRemoveArmature }: { view: RigView; onTimeChanged(): void; onConvert(): void; onRemoveArmature(): void }) {
+export function Inspector({ view, onTimeChanged, onMessage, onConvert, onRemoveArmature }: { view: RigView; onTimeChanged(): void; onMessage(message: string): void; onConvert(): void; onRemoveArmature(): void }) {
   return (
     <div className="rig-inspector">
       <ArmatureSection view={view} onConvert={onConvert} onRemove={onRemoveArmature} />
+      <PosesSection view={view} onMessage={onMessage} />
       {!view.source && <LayerList view={view} />}
       {view.source && <KeyPoseSection view={view} />}
       {!view.sel.root && <PartSection view={view} />}
       {view.source && !view.sel.root && <BoneSection view={view} />}
-      {!view.source && <KeySection view={view} onTimeChanged={onTimeChanged} />}
+      {!view.source && <KeySection view={view} onTimeChanged={onTimeChanged} onMessage={onMessage} />}
       {!view.sel.root && <PictureSection view={view} />}
       {!view.source && <SequenceKeySection view={view} />}
     </div>
@@ -239,10 +242,9 @@ function KeyPoseSection({ view }: { view: RigView }) {
               </select>
             </Row>
           ) : (
-            <Row label="Picture" hint="shown from here (held, never tweened)">
-              <select value={key.picture ?? 0} onChange={(e) => { setKey({ picture: Number(e.target.value) }); select({ picture: Number(e.target.value), rectangle: 0 }); }}>
-                {rig.pictures.map((p, i) => <option key={i} value={i}>{i}: {p.rectangles.map((r) => `${r.size[0]}×${r.size[1]}`).join(" + ")}</option>)}
-              </select>
+            <Row label="Picture" hint="shown from here (held, never tweened); Hidden draws nothing">
+              <PicturePicker view={view} value={key.picture ?? 0} onPick={(n) => { setKey({ picture: n }); select({ picture: n, rectangle: 0 }); }}
+                onHide={() => { const h = withHiddenPicture(rig); if (h.rig !== rig) view.editor.set(["pictures"], h.rig.pictures); setKey({ picture: h.picture }); }} />
             </Row>
           )}
           <Row label="Move" hint={root ? "the whole sprite, pixels, y down" : "pixels from the pivot (in its parent's frame), y down; baked to whole pixels"}>
@@ -269,8 +271,10 @@ const round = (v: number, by: number) => Math.round(v * by) / by + 0;
 
 // ---------------------------------------------------------------- The key
 
-function KeySection({ view, onTimeChanged }: { view: RigView; onTimeChanged(): void }) {
+function KeySection({ view, onTimeChanged, onMessage }: { view: RigView; onTimeChanged(): void; onMessage(message: string): void }) {
   const { rig, sel, select, editor, clock } = view;
+  // (the playhead, for the key it is in)
+  useClock(clock, (s) => `${s.sequence}|${Math.floor(s.time)}`);
   const part = sel.part !== null ? rig.poses[sel.pose]?.parts[sel.part] : undefined;
   if (!part) {
     return (
@@ -300,9 +304,23 @@ function KeySection({ view, onTimeChanged }: { view: RigView; onTimeChanged(): v
     return keyAt(track, part.play === "restart" ? at.since : clock.frameTime);
   };
   const length = lengthOf(track);
+  const hereClock = partClock(rig, Math.min(clock.state.sequence, rig.sequences.length - 1), clock.frameTime, sel.pose, sel.part!);
+  const hereKey = hereClock ? keyAt(rig.tracks[hereClock.track], hereClock.local) : null;
   return (
     <section className="ow-panel-box ow-section">
       <h5>Key <span className="muted">{track.name}{key ? `, key ${index} of ${track.keys.length}` : ""} · {track.keys.length} keys, {length} frames ({track.play})</span></h5>
+      <div className="ow-section-actions">
+        <button className="primary" title="A key beginning at the playhead for the chosen part(s): splits the key the playhead is in, or makes one on an empty track (K)"
+                onClick={() => onMessage(keyAtPlayhead(view, false))}>◇ Key at playhead (K)</button>
+        <button title="The same for every part of the pose (Shift+K): the pose workflow" onClick={() => onMessage(keyAtPlayhead(view, true))}>◆ Key all parts</button>
+      </div>
+      <div className="ow-condition">
+        <Row label="Picture" hint={`from the playhead on (frame ${clock.frameTime}${hereKey ? `, key ${hereKey.index}` : ""}): a key that holds another picture swaps it in; picking splits the key if the playhead is inside it`}>
+          <PicturePicker view={view} value={hereKey?.key.picture ?? 0}
+            onPick={(n) => onMessage(swapPicture(view, n))}
+            onHide={() => { const h = withHiddenPicture(rig); onMessage(swapPicture(view, h.picture, h.rig)); }} />
+        </Row>
+      </div>
       {key ? (
         <>
           <div className="ow-section-actions">
@@ -317,10 +335,15 @@ function KeySection({ view, onTimeChanged }: { view: RigView; onTimeChanged(): v
                 onTimeChanged();
               }}>Split at playhead</button>
             <button title="A new key after this one, held 6 frames, showing what it shows" onClick={() => setKeys([...track.keys.slice(0, index! + 1), orderedKey({ ...key, frames: 6 }), ...track.keys.slice(index! + 1)], index! + 1)}>+ Key after</button>
-            <button disabled={track.keys.length < 2} title="Removes the key; the keys after it start earlier" onClick={() => setKeys(track.keys.filter((_, i) => i !== index), Math.max(0, index! - 1))}>Delete</button>
+            <button title={track.keys.length < 2 ? "A track needs at least one key (the game plays it): Reset puts this key back to resting (no move, turn or scale)" : "Removes the key; the keys after it start earlier"}
+              onClick={() => {
+                const next = removeKey(track, index!);
+                if (next) setKeys(next, Math.max(0, index! - 1));
+                else editor.set(path(index!), orderedKey(resetKey(key, track.key_type)));
+              }}>{track.keys.length < 2 ? "Reset" : "Delete"}</button>
           </div>
           <div className="ow-condition">
-            <Row label="Picture" hint={`of ${rig.pictures.length}: what the part shows`}>
+            <Row label="This key" hint={`picture, of ${rig.pictures.length}; the picker above changes the key at the playhead`}>
               <select value={key.picture ?? 0} onChange={(e) => { setKey({ picture: Number(e.target.value) }); select({ picture: Number(e.target.value), rectangle: 0 }); }}>
                 {rig.pictures.map((p, i) => <option key={i} value={i}>{i}: {p.rectangles.map((r) => `${r.size[0]}×${r.size[1]}`).join(" + ")}</option>)}
               </select>
@@ -587,6 +610,58 @@ function SequenceKeySection({ view }: { view: RigView }) {
             <PairInput value={key.move ?? [0, 0]} labels={["x", "y"]} onChange={(v, p) => setKey({ move: [Math.round(v[0]), Math.round(v[1])] }, p)} />
           </Row>
         )}
+      </div>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------- Poses
+
+/** Copying a pose to another (or making a new pose from one): its parts, pivots, layer order and which tracks they play. */
+function PosesSection({ view, onMessage }: { view: RigView; onMessage(message: string): void }) {
+  const { rig, sel, editor, select, source } = view;
+  const [from, setFrom] = useState<number | null>(null);
+  const [to, setTo] = useState<number | "new">("new");
+  const [duplicate, setDuplicate] = useState(true);
+  const a = Math.min(from ?? sel.pose, rig.poses.length - 1);
+  const b = to === "new" || to === a || to >= rig.poses.length ? "new" : to;
+  const dup = duplicate && !source;
+  const run = () => {
+    if (b !== "new" && !confirm(`Replace pose ${b} (${rig.poses[b].parts.length} parts) with a copy of pose ${a} (${rig.poses[a].parts.length} parts)? `
+      + `${dup ? "Its parts get copies of pose " + a + "'s tracks, so its animation can differ." : "Both poses play the same tracks, so editing one's animation changes both."} Undo takes it back.`)) return;
+    const target = b === "new" ? rig.poses.length : b;
+    const next = copyPose(rig, a, target, dup);
+    if (dup) editor.replace(next);
+    else {
+      editor.set(["poses"], next.poses);
+      if (JSON.stringify(next.idle_parts) !== JSON.stringify(rig.idle_parts)) editor.set(["idle_parts"], next.idle_parts);
+    }
+    select({ pose: target, part: null, key: null });
+    onMessage(`${b === "new" ? `Made pose ${target}` : `Pose ${target} is now`} a copy of pose ${a}${dup ? " with tracks of its own" : ", playing the same tracks"}.${b === "new" ? " Show it in a sequence key (Pose, in the Sequence key panel, or the timeline's pose row) to see it play." : ""} Save to keep it.`);
+  };
+  return (
+    <section className="ow-panel-box ow-section">
+      <h5>Poses <span className="muted">{rig.poses.length}</span></h5>
+      <div className="ow-condition">
+        <Row label="Copy pose" hint="its parts, pivots, layer order and the tracks they play">
+          <select value={a} onChange={(e) => setFrom(Number(e.target.value))}>
+            {rig.poses.map((p, i) => <option key={i} value={i}>pose {i} ({p.parts.length} parts)</option>)}
+          </select>
+          <span className="muted">to</span>
+          <select value={b} onChange={(e) => setTo(e.target.value === "new" ? "new" : Number(e.target.value))}>
+            <option value="new">a new pose</option>
+            {rig.poses.map((p, i) => i === a ? null : <option key={i} value={i}>pose {i} (replaces it)</option>)}
+          </select>
+        </Row>
+        <Row label="Tracks" hint={source ? "with an armature the copy plays the same tracks (their bones are shared)" : dup ? "pose copies get their own tracks: animate them differently without changing the original" : "the same tracks: an edit to a key shows in both poses"}>
+          <span className="view-switch">
+            <button className={dup ? "active" : ""} disabled={!!source} onClick={() => setDuplicate(true)}>Duplicate the tracks</button>
+            <button className={!dup ? "active" : ""} onClick={() => setDuplicate(false)}>Share the tracks</button>
+          </span>
+        </Row>
+      </div>
+      <div className="ow-section-actions">
+        <button className="primary" disabled={rig.poses.length < 1} onClick={run}>{b === "new" ? `+ New pose (copy of pose ${a})` : `Copy pose ${a} to pose ${b}…`}</button>
       </div>
     </section>
   );

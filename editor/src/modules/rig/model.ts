@@ -169,6 +169,187 @@ export function dropLayer(rig: Rig, pose: number, from: number, to: number): { r
   return { rig: moveLayer(rig, pose, from, to), selected: to };
 }
 
+// ---------------------------------------------------------------- Hidden pictures
+
+/** A picture that draws nothing: every rectangle without a width or height. Game Freak's sprites hide a part this way
+ * (106 sides key a part onto a picture whose first rectangle is empty, `size [0, 0]`, `at [256, -256]`; MCSS draws no
+ * quad for it), so a key showing one is how a part is turned off for a while and another turned on (wings flapping). */
+export const isBlank = (picture: Picture | undefined) => !!picture && picture.rectangles.every((r) => !r.size[0] || !r.size[1]);
+
+/** The blank picture as Game Freak's are written (one empty rectangle, no OBJs). */
+export const blankPicture = (): Picture => ({ rectangles: [{ sheet: [0, 0], size: [0, 0], at: [256, -256] }], objs: [], obj_attribute: 0 });
+
+/** The rig with a blank picture to show (the first it has, else one added at the end) and its number. */
+export function withHiddenPicture(rig: Rig): { rig: Rig; picture: number } {
+  const found = rig.pictures.findIndex((p) => isBlank(p));
+  if (found >= 0) return { rig, picture: found };
+  return { rig: { ...rig, pictures: [...rig.pictures, blankPicture()] }, picture: rig.pictures.length };
+}
+
+// ---------------------------------------------------------------- Keys at the playhead
+
+/** What a key of a track type holds when new or reset: the picture held `frames`, no turn, scale 1, no move. */
+export function plainKey(type: KeyType, picture: number, frames: number): Key {
+  return keyAs({ picture, frames }, type);
+}
+
+/** A key set back to resting (no move, no turn, scale 1), keeping its picture and how long it is held. */
+export function resetKey(key: Key, type: KeyType): Key {
+  return plainKey(type, key.picture ?? 0, key.frames);
+}
+
+/** The keys without the one at `index`, or null when it is the track's last (the game needs a key to play). */
+export function removeKey(track: Track, index: number): Key[] | null {
+  if (track.keys.length < 2 || index < 0 || index >= track.keys.length) return null;
+  return track.keys.filter((_, i) => i !== index);
+}
+
+/** The track's keys with one beginning exactly at `local` on the track's own clock, and that key's place: the key the
+ * time is in is split in two there (the same on both sides), a track that plays once has its last key held up to the
+ * time and a copy after it, an empty track is given one. `created` is false when a key began there already. */
+export function keyStartingAt(track: Track, local: number, picture = 0, frames = 6): { keys: Key[]; index: number; created: boolean } {
+  const keys = track.keys.slice();
+  local = Math.max(0, Math.floor(local));
+  if (!keys.length) return { keys: [plainKey(track.key_type, picture, Math.max(frames, local + frames))], index: 0, created: true };
+  const length = lengthOf(track);
+  if (!loops(track.play) && local >= length) {
+    const last = keys[keys.length - 1];
+    if (local > length) keys[keys.length - 1] = orderedKey({ ...last, frames: last.frames + (local - length) });
+    keys.push(orderedKey({ ...keys[keys.length - 1], frames }));
+    return { keys, index: keys.length - 1, created: true };
+  }
+  const at = keyAt(track, local);
+  if (at.since <= 0) return { keys, index: at.index, created: false };
+  keys.splice(at.index, 1, orderedKey({ ...keys[at.index], frames: at.since }), orderedKey({ ...keys[at.index], frames: keys[at.index].frames - at.since }));
+  return { keys, index: at.index + 1, created: true };
+}
+
+/** A part's track and the track's own time at a time of the sequence (as the preview plays it), or null when the
+ * sequence isn't showing the pose then. */
+export function partClock(rig: Rig, sequence: number, time: number, pose: number, part: number): { track: number; local: number } | null {
+  const seq = rig.sequences[sequence];
+  const p = rig.poses[pose]?.parts[part];
+  if (!seq || !p) return null;
+  const at = sequenceKeyAt(seq, time);
+  if ((at.key.pose ?? 0) !== pose) return null;
+  return { track: p.track, local: p.play === "restart" ? at.since : time };
+}
+
+export interface KeyedParts {
+  rig: Rig;
+  /** The key each part now has beginning at the playhead. */
+  targets: { part: number; track: number; index: number; created: boolean }[];
+  /** Parts the sequence isn't showing the pose of at that time. */
+  skipped: number[];
+}
+
+/** A key at the playhead for each of these parts of a pose: its track gets a key beginning there. A track played by two
+ * of the parts is keyed once (the second finds the key the first made). */
+export function keyPartsAt(rig: Rig, sequence: number, time: number, pose: number, parts: number[]): KeyedParts {
+  let next = rig;
+  const targets: KeyedParts["targets"] = [];
+  const skipped: number[] = [];
+  for (const part of parts) {
+    const c = partClock(next, sequence, time, pose, part);
+    if (!c) { skipped.push(part); continue; }
+    const made = keyStartingAt(next.tracks[c.track], c.local);
+    if (made.created) next = { ...next, tracks: next.tracks.map((t, i) => (i === c.track ? { ...t, keys: made.keys } : t)) };
+    targets.push({ part, track: c.track, index: made.index, created: made.created });
+  }
+  return { rig: next, targets, skipped };
+}
+
+/** A track showing `picture` from `local` (its own clock) on: the key beginning there (split off if need be) shows it. */
+export function swapPictureAt(rig: Rig, trackIndex: number, local: number, picture: number): { rig: Rig; index: number } {
+  const made = keyStartingAt(rig.tracks[trackIndex], local, picture);
+  const keys = made.keys.map((k, i) => (i === made.index ? orderedKey({ ...k, picture }) : k));
+  return { rig: { ...rig, tracks: rig.tracks.map((t, i) => (i === trackIndex ? { ...t, keys } : t)) }, index: made.index };
+}
+
+/** The keys at these places changed by `change` (given each as `base` has it, so a drag's moves don't add up), written
+ * as their track's key type holds them. The places are tracks' keys; a track once. */
+export function changeKeys(base: Rig, targets: { track: number; index: number }[], change: (key: Key, type: KeyType) => Key): Rig {
+  const by = new Map<number, Set<number>>();
+  for (const t of targets) by.set(t.track, (by.get(t.track) ?? new Set()).add(t.index));
+  if (!by.size) return base;
+  return { ...base, tracks: base.tracks.map((track, i) => {
+    const at = by.get(i);
+    if (!at) return track;
+    return { ...track, keys: track.keys.map((k, j) => (at.has(j) ? keyAs(orderedKey(change(k, track.key_type)), track.key_type) : k)) };
+  }) };
+}
+
+/** The keys moved `delta` pixels (x right, y down). A plain track's keys hold no move and are left; `left` counts them. */
+export function moveKeys(base: Rig, targets: { track: number; index: number }[], delta: Pair): { rig: Rig; left: number } {
+  const movable = targets.filter((t) => base.tracks[t.track]?.key_type !== "plain");
+  return { rig: changeKeys(base, movable, (key) => ({ ...key, move: [Math.round((key.move?.[0] ?? 0) + delta[0]), Math.round((key.move?.[1] ?? 0) + delta[1])] })),
+           left: targets.length - movable.length };
+}
+
+/** The keys turned `degrees` (clockwise on the screen) about a point of the sprite: each part turns, and swings round
+ * the point as a rigid group would. `origins` are where each key's own origin (its pivot plus its move) is in the sprite
+ * (pixels, x right, y down), and `about` the point; only srt tracks can turn. Returns the rig and the keys left. */
+export function turnKeysAbout(base: Rig, targets: { track: number; index: number; origin: Pair }[], about: Pair, degrees: number): { rig: Rig; left: number } {
+  const turnable = targets.filter((t) => base.tracks[t.track]?.key_type === "srt");
+  const a = (degrees / 180) * Math.PI, cos = Math.cos(a), sin = Math.sin(a);
+  const by = new Map(turnable.map((t) => [`${t.track}/${t.index}`, t.origin] as const));
+  let rig = base;
+  for (const t of turnable) {
+    const [ox, oy] = by.get(`${t.track}/${t.index}`)!;
+    const dx = ox - about[0], dy = oy - about[1];
+    // (y down: a positive angle turns clockwise on the screen)
+    const swing: Pair = [dx * cos - dy * sin - dx, dx * sin + dy * cos - dy];
+    rig = changeKeys(rig, [t], (key) => ({ ...key, rotation: fromDegrees(signedDegrees(key.rotation ?? 0) + degrees),
+                                           move: [Math.round((key.move?.[0] ?? 0) + swing[0]), Math.round((key.move?.[1] ?? 0) + swing[1])] }));
+  }
+  return { rig, left: targets.length - turnable.length };
+}
+
+// ---------------------------------------------------------------- Poses
+
+const POSE_LETTERS = "abcdef";
+
+/** A track's name for another pose: head_a for pose 1 is head_b; other names get the letter added; made unique. */
+function trackNameFor(name: string, pose: number, taken: Set<string>): string {
+  const letter = pose < POSE_LETTERS.length ? POSE_LETTERS[pose] : String(pose);
+  const m = /^(.+)_[a-f]$/.exec(name);
+  const base = m ? m[1] : name;
+  let candidate = `${base}_${letter}`;
+  for (let n = 2; taken.has(candidate); n++) candidate = `${base}_${letter}${n}`;
+  return candidate;
+}
+
+/** Pose `to` made a copy of pose `from`: its parts, pivots, layer order and the tracks they play (the same tracks, so
+ * both poses animate alike; or, with `duplicate`, a copy of each track for pose `to`, so its animation can differ
+ * without changing pose `from`'s). `to` may be one past the poses: a new pose. The idle parts are by layer and stay. */
+export function copyPose(rig: Rig, from: number, to: number, duplicate: boolean): Rig {
+  const source = rig.poses[from];
+  if (!source || to < 0 || to > rig.poses.length || from === to) throw new Error(`can't copy pose ${from} to pose ${to}`);
+  let tracks = rig.tracks;
+  let remap = new Map<number, number>();
+  if (duplicate) {
+    const taken = new Set(rig.tracks.map((t) => t.name));
+    const copies: Track[] = [];
+    for (const p of source.parts) {
+      if (remap.has(p.track)) continue;
+      const original = rig.tracks[p.track];
+      const name = trackNameFor(original.name, to, taken);
+      taken.add(name);
+      remap.set(p.track, rig.tracks.length + copies.length);
+      copies.push({ ...original, name, keys: original.keys.map((k) => ({ ...k })) });
+    }
+    tracks = [...rig.tracks, ...copies];
+  } else {
+    remap = new Map();
+  }
+  const copy = { ...source, parts: source.parts.map((p) => ({ ...p, pivot: [...p.pivot] as Pair, track: remap.get(p.track) ?? p.track })) };
+  const poses = to === rig.poses.length ? [...rig.poses, copy] : rig.poses.map((p, i) => (i === to ? copy : p));
+  // (the idle parts are layers: any now past every pose's parts go)
+  const most = Math.max(...poses.map((p) => p.parts.length));
+  const idle = rig.idle_parts === null ? null : rig.idle_parts.filter((n) => n < most);
+  return { ...rig, tracks, poses, idle_parts: idle };
+}
+
 // ---------------------------------------------------------------- Starting fresh
 
 /** The bounds of the first piece of art on a sheet (palette indices, 256 by 128; 0 clear): left, top, width, height, or

@@ -8,15 +8,16 @@
 .rig-status.dirty { color: var(--warning); }
 .rig-message { margin: 0; font-size: 13px; }
 
-.rig-main { display: grid; grid-template-columns: auto minmax(540px, 1fr) 380px; gap: 10px; align-items: start; }
+.rig-main { display: grid; grid-template-columns: auto minmax(360px, 1fr); gap: 10px; align-items: start; }
 .rig-card { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; background: var(--panel); min-width: 0; }
 .rig-card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
 .rig-card-head h3 { margin: 0; font-size: 14px; }
-.rig-side { max-height: calc(100vh - 160px); overflow: auto; }
+/* The side panel runs the page's full height at the right with its own scroll; the dock sits under the rest, to its left */
+.rig-side { overflow-y: auto; overflow-x: hidden; min-height: 0; padding-right: 2px; }
 .rig-inspector .ow-section:first-child { margin-top: 0; }
 
 .rig-stage { display: flex; justify-content: center; background: repeating-conic-gradient(var(--panel-2) 0% 25%, var(--panel) 0% 50%) 50% / 16px 16px;
-  border: 1px solid var(--border); border-radius: 6px; padding: 8px; overflow: auto; max-width: 720px; }
+  border: 1px solid var(--border); border-radius: 6px; padding: 8px; overflow: auto; max-width: 900px; }
 .rig-preview-canvas, .rig-sheet-canvas { image-rendering: pixelated; display: block; touch-action: none; user-select: none; }
 .rig-sheet-scroll { overflow: auto; border: 1px solid var(--border); border-radius: 6px; background: repeating-conic-gradient(var(--panel-2) 0% 25%, var(--panel) 0% 50%) 50% / 16px 16px; }
 .rig-transport { display: flex; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
@@ -84,7 +85,8 @@
 .rig-picker-list { display: flex; flex-wrap: wrap; gap: 6px; }
 
 /* The docked panel at the page's bottom (the timeline, the graph editor), as tall as its top edge is dragged */
-.rig-page.rig-docked { overflow: hidden; padding-bottom: 8px; }
+.rig-page.rig-docked { overflow: hidden; padding-bottom: 8px; display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 10px; }
+.rig-left { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
 .rig-upper { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 10px; }
 .rig-dock { flex: none; position: relative; display: flex; flex-direction: column; padding-top: 12px; }
 .rig-dock-handle { position: absolute; top: -5px; left: 0; right: 0; height: 12px; cursor: ns-resize; z-index: 5; }
@@ -130,3 +132,20 @@
 .rig-graph-canvas { position: absolute; inset: 0; display: block; touch-action: none; user-select: none; }
 .rig-channel { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
 .rig-channel-swatch { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
+
+/* No text selection while scrubbing the playhead, dragging a key's edge or a graph point */
+.rig-timeline, .rig-graph, .rig-tl-grid { user-select: none; -webkit-user-select: none; }
+
+/* Keys at the playhead, the picture picker, copying poses */
+.rig-keybuttons { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.rig-keybuttons kbd { font-size: 10px; opacity: 0.7; margin-left: 4px; }
+.rig-editing { margin: 4px 0 0; }
+.rig-picker-grid { display: flex; flex-wrap: wrap; gap: 4px; max-height: 170px; overflow: auto; padding: 4px; border: 1px solid var(--border); border-radius: 6px; }
+.rig-pic { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 3px; border: 1px solid var(--border); border-radius: 4px; background: var(--panel-2);
+  color: var(--text); cursor: pointer; font-size: 11px; min-width: 44px; }
+.rig-pic.active { outline: 2px solid #ffd33d; outline-offset: -1px; }
+.rig-pic.hidden-pic { border-style: dashed; justify-content: center; }
+.rig-key-thumb { height: 20px; width: 20px; flex: none; margin-left: 2px; background: rgba(255, 255, 255, 0.85); border-radius: 2px; image-rendering: pixelated; }
+.rig-key.blank { background: repeating-linear-gradient(45deg, var(--hue) 0 3px, transparent 3px 6px); border-style: dashed; }
+.rig-outliner-row.multi { background: color-mix(in srgb, var(--selected) 55%, transparent); }
+.rig-part-name.multi { background: color-mix(in srgb, var(--selected) 55%, transparent); }

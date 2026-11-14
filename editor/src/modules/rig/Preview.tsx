@@ -3,9 +3,10 @@
 // pivot (the pose's), or the current key's move, turn or scale (the key the part shows at the playhead).
 
 import { useEffect, useMemo, useRef } from "react";
-import { compose, forward, frameQuads, keyAt, loopCanvas, quadCorners, render, sequenceKeyAt, srtOf, type Canvas, type Pair, type Srt } from "./mcss.ts";
-import { fixedScale, keyAs, orderedKey, partKeyAt, type Phase } from "./model.ts";
-import { hue, paletteWords, useClock, type RigView } from "./context.ts";
+import { compose, forward, frameQuads, keyAt, loopCanvas, quadCorners, render, sequenceKeyAt, srtOf, type Canvas, type Pair, type Rig, type Srt } from "./mcss.ts";
+import { changeKeys, fixedScale, keyAs, keyPartsAt, moveKeys, orderedKey, partClock, partKeyAt, turnKeysAbout, type Phase } from "./model.ts";
+import { pickPart } from "./keying.ts";
+import { hue, paletteWords, selectedParts, useClock, type RigView } from "./context.ts";
 import { keyPoseAt, wouldCycle, type KeyPose } from "./armature.ts";
 import { animationOf, autoKey, localAt, setParent, type Target } from "./armatureEdit.ts";
 
@@ -40,6 +41,19 @@ export const TOOLS: { tool: Tool; label: string; key: string; note: string }[] =
 
 const ONION = 6;
 
+/** A gizmo drag over the chosen parts' keys at the playhead (flat rigs): the rig as it was when it began, with the keys
+ * Auto-key split off, and where each key is; every move is worked out from that, so moves don't add up. */
+interface GroupDrag {
+  tool: Tool;
+  start: Pair;
+  center: Pair;
+  inverse: [number, number, number, number];
+  base: Rig;
+  targets: { track: number; index: number; origin: Pair }[];
+  primary: { track: number; index: number };
+  moved: boolean;
+}
+
 interface Drag {
   tool: Tool;
   start: Pair;
@@ -67,6 +81,7 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
   const owners = useRef<Uint8Array | null>(null);
   const drag = useRef<Drag | null>(null);
   const armature = useRef<ArmatureDrag | null>(null);
+  const group = useRef<GroupDrag | null>(null);
 
   const draw = () => {
     const el = canvas.current;
@@ -123,6 +138,7 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
     delete el.dataset.center;
     delete el.dataset.pivot;
     delete el.dataset.root;
+    delete el.dataset.group;
     const toScreen = ([x, y]: Pair): Pair => [(st.originX + x) * z, (st.originY - y) * z];
     if (v.source && b) drawBones(ctx, v, seq, time, state.pose, toScreen, z);
     if (v.source && v.sel.root) {
@@ -149,9 +165,37 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
       ctx.moveTo(...a); ctx.lineTo(...b); ctx.lineTo(...d); ctx.lineTo(...c); ctx.closePath();
       ctx.stroke();
     }
+    // The other chosen parts: dashed outlines
+    const others = v.sel.more.filter((m) => m !== part);
+    if (others.length) {
+      ctx.setLineDash([3, 3]);
+      for (const m of others) {
+        for (const quad of state.quads.filter((q) => q.part === m)) {
+          const [a, b, c, d] = quadCorners(quad).map(toScreen);
+          ctx.strokeStyle = hue(m);
+          ctx.beginPath();
+          ctx.moveTo(...a); ctx.lineTo(...b); ctx.lineTo(...d); ctx.lineTo(...c); ctx.closePath();
+          ctx.stroke();
+        }
+      }
+      ctx.setLineDash([]);
+    }
     const geometry = partGeometry(v, seq, time, state.pose, part);
     if (!geometry) return;
     const pivot = toScreen(geometry.pivotPoint), center = toScreen(geometry.center);
+    if (others.length && (tl === "rotate" || tl === "move")) {
+      // (the group's centre: what Rotate turns them about)
+      const centers = [part, ...others].map((m) => partGeometry(v, seq, time, state.pose, m)?.center).filter((c): c is Pair => !!c);
+      const g = toScreen([centers.reduce((n, c) => n + c[0], 0) / centers.length, centers.reduce((n, c) => n + c[1], 0) / centers.length]);
+      el.dataset.group = `${Math.round(g[0])},${Math.round(g[1])}`;
+      ctx.strokeStyle = "#ff7ab6";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(g[0], g[1], 5, 0, Math.PI * 2);
+      ctx.moveTo(g[0] - 9, g[1]); ctx.lineTo(g[0] + 9, g[1]);
+      ctx.moveTo(g[0], g[1] - 9); ctx.lineTo(g[0], g[1] + 9);
+      ctx.stroke();
+    }
     // (where the gizmo is, for scripts that drive the page)
     el.dataset.center = `${Math.round(center[0])},${Math.round(center[1])}`;
     el.dataset.pivot = `${Math.round(pivot[0])},${Math.round(pivot[1])}`;
@@ -246,7 +290,14 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
     const handle = part !== null ? partGeometry(v, seq, time, state.pose, part) : null;
     const near = handle && [handle.center, handle.pivotPoint].some(([x, y]) =>
       Math.hypot((st.originX + x) * z - at[0], (st.originY - y) * z - at[1]) <= (tl === "rotate" || tl === "scale" ? 32 : 12));
+    // Shift or Ctrl-click on a part adds it to (or takes it from) the chosen parts, with no drag
+    if (hit && !v.source && (e.shiftKey || e.ctrlKey || e.metaKey)) {
+      const pick = pickPart(v.sel, hit - 1, e);
+      if (pick) { v.select({ pose: state.pose, ...pick }); return; }
+    }
     if (hit && hit - 1 !== part && !near) part = hit - 1;
+    // A part already among several chosen ones is dragged with them, the main part staying the main one
+    if (part !== null && v.sel.part !== null && part !== v.sel.part && selectedParts(v.sel).includes(part)) part = v.sel.part;
     if (part === null) {
       if (!hit) v.select({ part: null, key: null, root: false, keyPose: null });
       return;
@@ -254,6 +305,7 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
     const geometry = partGeometry(v, seq, time, state.pose, part);
     if (!geometry) return;
     const changedPart = part !== v.sel.part || v.sel.root;
+    const together = !v.source && tl !== "pivot" && !changedPart ? selectedParts(v.sel) : [part];
     v.select({ pose: state.pose, part, key: { track: geometry.track, index: geometry.keyIndex }, picture: geometry.picture, sequenceKey: null, root: false,
                ...(changedPart ? { keyPose: null } : {}) });
     if (v.source && tl !== "pivot") {
@@ -277,6 +329,14 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
       onMessage(`This part's track (${v.rig.tracks[geometry.track].name}) keys ${type === "plain" ? "only a picture" : "only a move"}: give its keys turns and scales under Key (Key type: turn, scale and move) to ${tl} it.`);
       return;
     }
+    if (tl !== "pivot") {
+      startGroupDrag(e, v, state.pose, together, tl, at, seq, time, geometry);
+      return;
+    }
+    if (tl !== "pivot" && (type === "plain" || (type === "move" && tl !== "move"))) {
+      onMessage(`This part's track (${v.rig.tracks[geometry.track].name}) keys ${type === "plain" ? "only a picture" : "only a move"}: give its keys turns and scales under Key (Key type: turn, scale and move) to ${tl} it.`);
+      return;
+    }
     onMessage(null);
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     const [a, b, c, d] = compose([geometry.whole]);
@@ -288,6 +348,74 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
       pivot: v.rig.poses[state.pose].parts[part].pivot,
       original: { ...v.rig.tracks[geometry.track].keys[geometry.keyIndex] }, moved: false,
     };
+  };
+
+  /** Starts a gizmo drag over the chosen parts' keys at the playhead: with Auto-key on, a key begins at the playhead for
+   * each (the key it is in is split there) when the drag first moves; off, the keys they hold at the playhead change. */
+  const startGroupDrag = (e: React.PointerEvent, v: RigView, pose: number, parts: number[], tl: Tool, at: Pair, seq: number, time: number,
+                          main: NonNullable<ReturnType<typeof partGeometry>>) => {
+    const works = (k: number) => {
+      const c = partClock(v.rig, seq, time, pose, k);
+      const type = c ? v.rig.tracks[c.track].key_type : null;
+      return !!c && (type === "srt" || (type === "move" && tl === "move"));
+    };
+    const usable = parts.filter(works);
+    const made = v.autoKey ? keyPartsAt(v.rig, seq, time, pose, usable) : null;
+    const base = made ? made.rig : v.rig;
+    const keyOf = (k: number) => {
+      if (made) return made.targets.find((t) => t.part === k);
+      const c = partClock(v.rig, seq, time, pose, k)!;
+      return { part: k, track: c.track, index: keyAt(v.rig.tracks[c.track], c.local).index, created: false };
+    };
+    const [a, b, c, d] = compose([main.whole]);
+    const det = a * d - b * c || 1;
+    const inverse: [number, number, number, number] = [d / det, -b / det, -c / det, a / det];
+    const geometries = usable.map((k) => [k, partGeometry(v, seq, time, pose, k)] as const).filter(([, g]) => !!g);
+    const gx = geometries.reduce((n, [, g]) => n + g!.center[0], 0) / geometries.length;
+    const gy = geometries.reduce((n, [, g]) => n + g!.center[1], 0) / geometries.length;
+    const st = latest.current.stage, z = latest.current.zoom;
+    const targets = geometries.map(([k, g]) => {
+      const key = keyOf(k)!;
+      // (each key's origin from the group's centre, in the keys' own frame: y down, back through the whole sprite's turn)
+      const rx = g!.center[0] - gx, ry = g!.center[1] - gy;
+      return { track: key.track, index: key.index, origin: [inverse[0] * rx + inverse[1] * ry, -(inverse[2] * rx + inverse[3] * ry)] as Pair };
+    });
+    const first = keyOf(parts[0]) ?? targets[0];
+    onMessage(parts.length > usable.length ? `${parts.length - usable.length} of the chosen parts' tracks can't ${tl} (give their keys turns and scales under Key); the rest do.` : null);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    const centre: Pair = tl === "rotate" && usable.length > 1 ? [(st.originX + gx) * z, (st.originY - gy) * z] : [(st.originX + main.center[0]) * z, (st.originY - main.center[1]) * z];
+    group.current = { tool: tl, start: at, center: centre, inverse, base, targets, primary: { track: first.track, index: first.index }, moved: false };
+  };
+
+  const onGroupMove = (e: React.PointerEvent, g: GroupDrag) => {
+    const { view: v, zoom: z } = latest.current;
+    const at = fromEvent(e);
+    const sx = (at[0] - g.start[0]) / z, sy = -(at[1] - g.start[1]) / z;
+    const [ia, ib, ic, id] = g.inverse;
+    const dx = ia * sx + ib * sy, dy = ic * sx + id * sy;
+    let next: Rig;
+    if (g.tool === "move") {
+      if (!g.moved && Math.round(dx) === 0 && Math.round(dy) === 0) return;
+      next = moveKeys(g.base, g.targets, [dx, -dy]).rig;
+    } else if (g.tool === "rotate") {
+      const a0 = Math.atan2(g.start[1] - g.center[1], g.start[0] - g.center[0]);
+      const a1 = Math.atan2(at[1] - g.center[1], at[0] - g.center[0]);
+      let degrees = ((a1 - a0) * 180) / Math.PI;
+      if (e.shiftKey) degrees = Math.round(degrees / 5) * 5;
+      if (!g.moved && degrees === 0) return;
+      next = turnKeysAbout(g.base, g.targets, [0, 0], degrees).rig;
+    } else {
+      const r0 = Math.hypot(g.start[0] - g.center[0], g.start[1] - g.center[1]) || 1;
+      const ratio = Math.hypot(at[0] - g.center[0], at[1] - g.center[1]) / r0;
+      if (!g.moved && Math.abs(ratio - 1) < 0.01) return;
+      next = changeKeys(g.base, g.targets, (key) => {
+        const scale = key.scale ?? [1, 1];
+        return { ...key, scale: [e.ctrlKey ? scale[0] : fixedScale(scale[0] * ratio), e.shiftKey ? scale[1] : fixedScale(scale[1] * ratio)] };
+      });
+    }
+    v.editor.replace(next, g.moved ? "move" : "start");
+    if (!g.moved) v.select({ key: g.primary });
+    g.moved = true;
   };
 
   /** Starts a gizmo drag that keys an armature's bone (or root) at the playhead. */
@@ -342,6 +470,10 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
       onArmatureMove(e, armature.current);
       return;
     }
+    if (group.current) {
+      onGroupMove(e, group.current);
+      return;
+    }
     const d = drag.current;
     if (!d) return;
     const { view: v, zoom: z } = latest.current;
@@ -384,6 +516,7 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
   const onUp = () => {
     drag.current = null;
     armature.current = null;
+    group.current = null;
   };
 
   return (
