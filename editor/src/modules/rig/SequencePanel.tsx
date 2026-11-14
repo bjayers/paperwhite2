@@ -10,6 +10,7 @@ import { addSequence, cantDelete, deleteKeys, deleteSequence, duplicateSequence,
 import { parentOf } from "./setup.ts";
 import { snapLength, STEP, V2_CURVES, DEFAULT_CURVE } from "./v2.ts";
 import { PieceThumb } from "./SetupSheet.tsx";
+import { addClip } from "./timeline.ts";
 import { NameInput, Row } from "./SetupPanel.tsx";
 import type { SetupView } from "./setupContext.ts";
 import type { Curve } from "./armature.ts";
@@ -64,14 +65,18 @@ export function SequenceListSection({ view, open, onOpen }: { view: SetupView; o
               <span className="muted">{seq.frames} f · {seconds(seq.frames)}</span>
               <span className="muted">{keys ? `${keys} key${keys > 1 ? "s" : ""}` : "default pose"}</span>
               <span className="spacer" />
-              <span className="muted" title={uses ? `The timeline (the game's stay loop) plays it ${uses} time${uses > 1 ? "s" : ""}: the timeline strip comes in the next step`
-                : "The timeline (the game's stay loop) doesn't play it yet: the timeline strip comes in the next step"}>{uses ? `played ×${uses}` : "not played"}</span>
+              <span className={uses ? "muted" : "rig-not-played"} title={uses ? `The timeline (the game's stay loop) plays it ${uses} time${uses > 1 ? "s" : ""} a loop (Timeline at the top arranges it)`
+                : "The timeline (the game's stay loop) doesn't play it, so the battle never shows it"}>{uses ? `played ×${uses}` : "not played"}</span>
+              {!uses && (
+                <button className="small" disabled={readOnly} title="Add it to the timeline (at the end), so the battle plays it"
+                        onClick={(e) => { e.stopPropagation(); commit(addClip(src, i)); say(`Added ${seq.name} at the end of the timeline (Timeline at the top arranges it).`); }}>+ Add</button>
+              )}
             </div>
           );
         })}
       </div>
-      <p className="muted ow-note">Every sequence starts and ends at the default pose (the rig setup). The game plays the timeline's blocks;
-        a sequence that isn't on it is kept but not shown in battle until the timeline strip (next step) places it.</p>
+      <p className="muted ow-note">Every sequence starts and ends at the default pose (the rig setup). The game plays the timeline's clips
+        (Timeline at the top); a sequence that isn't on it is kept but never shown in battle.</p>
     </section>
   );
 }

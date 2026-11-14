@@ -235,3 +235,28 @@
 .rig-sq-pictures { display: flex; flex-wrap: wrap; gap: 4px; }
 .rig-sq-pic { padding: 2px; min-width: 30px; min-height: 30px; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; }
 .rig-sq-pic.active { outline: 2px solid var(--accent); }
+
+/* Timeline mode (rig-editor-v2.md, "Built: step 4"): the strip of clips, the strip's preview and the battle's pause */
+.rig-strip-dock { flex: none; }
+.rig-strip { display: flex; flex-direction: column; user-select: none; -webkit-user-select: none; }
+.rig-strip-scroll { overflow-x: auto; overflow-y: hidden; border: 1px solid var(--border); border-radius: 6px; }
+.rig-strip-inner { position: relative; }
+.rig-strip-ruler { position: relative; height: 22px; }
+.rig-strip-end { position: absolute; top: 2px; margin-left: -7px; font-size: 12px; color: var(--muted); pointer-events: none; }
+.rig-strip-lane { position: relative; height: 54px; background: var(--panel-2); }
+.rig-strip-lane.dropping { background: color-mix(in srgb, var(--accent) 12%, var(--panel-2)); }
+.rig-clip { position: absolute; top: 6px; height: 42px; box-sizing: border-box; border: 2px solid; border-radius: 5px; color: #fff; overflow: hidden;
+  cursor: grab; display: flex; flex-direction: column; justify-content: center; padding: 0 6px; font-size: 12px; text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6); }
+.rig-clip.selected { outline: 2px solid #ffd33d; outline-offset: 1px; z-index: 2; }
+.rig-clip.playing { filter: brightness(1.25); }
+.rig-clip-label { position: relative; z-index: 1; white-space: nowrap; display: flex; gap: 6px; align-items: baseline; }
+.rig-clip-count { font-weight: 700; background: rgba(0, 0, 0, 0.35); border-radius: 3px; padding: 0 4px; }
+.rig-clip-frames { position: relative; z-index: 1; font-size: 10px; opacity: 0.85; white-space: nowrap; }
+.rig-clip-cut { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed rgba(255, 255, 255, 0.55); }
+.rig-clip-now { position: absolute; top: 0; bottom: 0; background: rgba(255, 255, 255, 0.18); }
+.rig-strip-drop { position: absolute; top: 2px; bottom: 2px; width: 4px; border-radius: 2px; background: var(--accent); pointer-events: none; z-index: 4; }
+.rig-strip-stage { position: relative; display: inline-block; }
+.rig-pause-badge { position: absolute; left: 6px; top: 6px; background: rgba(20, 24, 32, 0.8); color: #9be9a8; border-radius: 4px; padding: 2px 8px; font-size: 12px; white-space: nowrap; }
+.rig-pause-tools { margin-top: 6px; }
+.rig-not-played { font-size: 11px; color: #d4a72c; font-weight: 600; }
+.rig-sub-head { margin: 10px 0 4px; font-size: 12px; }

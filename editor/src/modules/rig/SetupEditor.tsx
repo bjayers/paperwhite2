@@ -38,6 +38,10 @@ import { copyKeys, deleteKeys, keyFrameOf, keyParts, lastFrame, liveRefs, pasteK
 import { SequenceTimeline } from "./SequenceTimeline.tsx";
 import { SequenceGraph } from "./SequenceGraph.tsx";
 import { KeySection, SequenceListSection, SequenceSection } from "./SequencePanel.tsx";
+import { cantDeleteClip, clipAt, clipsOf, deleteClip, keepsMovingOf, stripFrames } from "./timeline.ts";
+import { StripTimeline } from "./StripTimeline.tsx";
+import { StripPreview } from "./StripPreview.tsx";
+import { ClipSection, PauseSection, StripSequencesSection } from "./StripPanel.tsx";
 import "./rig.css";
 
 const SIDES: Side[] = ["front", "back"];
@@ -49,7 +53,10 @@ const SNAP_KEY = "paperwhite2.rig2.snap";
 const DOCK_KEY = "paperwhite2.rig2.dockHeight";
 const DOCK_VIEW_KEY = "paperwhite2.rig2.dockView";
 const SCALE_KEY = "paperwhite2.rig2.timelineScale";
-type Mode = "setup" | "sequences";
+const STRIP_SCALE_KEY = "paperwhite2.rig2.stripScale";
+const BATTLE_PAUSES_KEY = "paperwhite2.rig2.battlePauses";
+type Mode = "setup" | "sequences" | "timeline";
+const MODES: Mode[] = ["setup", "sequences", "timeline"];
 type DockView = "timeline" | "graph" | "both";
 /** The tools of Sequences mode: the gizmos, which key the chosen parts at the playhead. */
 const SEQUENCE_TOOLS = SETUP_TOOLS.filter((t) => t.tool !== "bones").map((t) => ({
@@ -86,7 +93,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
   const [guideOpen, setGuideOpenState] = useState(() => stored(GUIDE_KEY) === "open");
   const setGuideOpen = (open: boolean) => { setGuideOpenState(open); store(GUIDE_KEY, open ? "open" : "closed"); };
   // Sequences mode: the open sequence, the preview's clock, the snap, the dock
-  const [mode, setModeState] = useState<Mode>(() => (stored(MODE_KEY) === "sequences" ? "sequences" : "setup"));
+  const [mode, setModeState] = useState<Mode>(() => (MODES.find((m) => m === stored(MODE_KEY)) ?? "setup"));
   const setMode = (m: Mode) => { setModeState(m); store(MODE_KEY, m); setMessage(null); };
   const [open, setOpenState] = useState(0);
   const [snap, setSnapState] = useState(() => stored(SNAP_KEY) !== "off");
@@ -103,6 +110,16 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
   const clock = clockRef.current;
   const keyFrame = useClock(clock, (st) => keyFrameOf(st.time, snap));
   const playing = useClock(clock, (st) => st.playing);
+  // Timeline mode: the strip's own clock (the whole of sequence 0, with the battle's pauses), the chosen clip
+  const stripClockRef = useRef<Clock>(null as unknown as Clock);
+  if (!stripClockRef.current) stripClockRef.current = new Clock();
+  const stripClock = stripClockRef.current;
+  const [clip, setClip] = useState<number | null>(null);
+  const [stripScale, setStripScaleState] = useState(() => Number(stored(STRIP_SCALE_KEY)) || 3);
+  const setStripScale = (n: number) => { setStripScaleState(n); store(STRIP_SCALE_KEY, String(n)); };
+  const [battlePauses, setBattlePausesState] = useState(() => stored(BATTLE_PAUSES_KEY) === "on");
+  const setBattlePauses = (on: boolean) => { setBattlePausesState(on); store(BATTLE_PAUSES_KEY, on ? "on" : "off"); };
+  stripClock.pauses = battlePauses;
 
   // One history for the page over the source and its bake (history.ts): the source made by the first edit is part of
   // that edit's step, so undoing it takes the file away again (hidden, for redo) and gives the flat rig back
@@ -195,6 +212,34 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
     clock.seek(0);
     setSel((x) => ({ ...x, keys: [] }));
   }, [clock]);
+
+  // The strip's preview: the side's bake itself (its sequence 0 is the timeline as the battle plays it), looping
+  const stripping = mode === "timeline" && !!src && src.sequences.length > 0;
+  const stripRig = stripping ? baked?.baked?.rig ?? null : null;
+  const total = src ? stripFrames(src) : 0;
+  useEffect(() => {
+    if (stripRig) stripClock.setRig(stripRig);
+  }, [stripRig, stripClock]);
+  useEffect(() => {
+    if (!stripping || !toolActive) return;
+    if (stripClock.state.playing) stripClock.start();
+    return () => stripClock.stop();
+  }, [stripping, stripClock, toolActive]);
+  useEffect(() => {
+    if (!stripping || !total) return;
+    const wrap = () => {
+      const st = stripClock.state;
+      if (!st.pause && st.sequence === 0 && st.time >= total) stripClock.seek(st.time % total);
+    };
+    wrap();
+    return stripClock.subscribe(wrap);
+  }, [stripping, stripClock, total]);
+  /** A clip's sequence opened for editing: Sequences mode. */
+  const editSequence = useCallback((s: number) => {
+    setModeState("sequences");
+    store(MODE_KEY, "sequences");
+    openSequence(s);
+  }, [openSequence]);
   /** Keys are never made while the preview plays: it pauses on the frame they go to. */
   const keying = useCallback(() => pauseForKeying(clock, snap), [clock, snap]);
   const pose = useMemo<PoseEdit>(() => (sequencing
@@ -330,10 +375,35 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
   };
 
   // Keys while the page is shown
-  const latest = useRef({ saveAll, sel, src, commit, readOnly, sequencing, openSeq, keying, copied, snap, seqFrames });
-  latest.current = { saveAll, sel, src, commit, readOnly, sequencing, openSeq, keying, copied, snap, seqFrames };
+  const latest = useRef({ saveAll, sel, src, commit, readOnly, sequencing, openSeq, keying, copied, snap, seqFrames, stripping, clip, total });
+  latest.current = { saveAll, sel, src, commit, readOnly, sequencing, openSeq, keying, copied, snap, seqFrames, stripping, clip, total };
   useEffect(() => {
     if (!toolActive) return;
+    /** Timeline mode's keys: Space, the arrows (by 6), Home, Delete for the chosen clip, Escape. */
+    const stripKey = (e: KeyboardEvent, key: string): boolean => {
+      const l = latest.current;
+      if (!l.stripping || !l.src || e.ctrlKey || e.metaKey || isTyping(e.target)) return false;
+      if (key === " ") { stripClock.play(); return true; }
+      if (key === "arrowleft" || key === "arrowright") {
+        const last = Math.max(0, l.total - 1);
+        const t = Math.floor(stripClock.state.time) + (key === "arrowleft" ? -6 : 6);
+        stripClock.step(0);
+        stripClock.seek(t < 0 ? Math.floor(last / 6) * 6 : t > last ? 0 : t, 0);
+        return true;
+      }
+      if (key === "home") { stripClock.play(false); stripClock.seek(0, 0); return true; }
+      if ((key === "delete" || key === "backspace" || key === "x") && !l.readOnly) {
+        if (l.clip === null) { setMessage("Choose a clip on the timeline to delete it."); return true; }
+        const why = cantDeleteClip(l.src, l.clip);
+        if (why) { setMessage(why); return true; }
+        l.commit(deleteClip(l.src, l.clip));
+        setClip(null);
+        setMessage("Deleted the clip (Ctrl+Z brings it back).");
+        return true;
+      }
+      if (key === "escape") { setClip(null); setSel((x) => ({ ...x, bones: [] })); return true; }
+      return false;
+    };
     /** Sequences mode's keys: K and Shift+K, Delete for the chosen keys, Ctrl+C and Ctrl+V, Space, the arrows. */
     const sequenceKey = (e: KeyboardEvent, key: string): boolean => {
       const l = latest.current;
@@ -390,7 +460,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
     };
     const onKey = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
-      if (!e.altKey && sequenceKey(e, key)) {
+      if (!e.altKey && (sequenceKey(e, key) || stripKey(e, key))) {
         e.preventDefault();
         e.stopPropagation();
         return;
@@ -412,7 +482,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
       if (isTyping(e.target) || e.altKey) return;
       const t = (latest.current.sequencing ? SEQUENCE_TOOLS : SETUP_TOOLS).find((x) => x.key.toLowerCase() === key);
       if (t) { setTool(t.tool); return; }
-      if (latest.current.sequencing) return;
+      if (latest.current.sequencing || latest.current.stripping) return;
       const { sel: s, src: cur, readOnly: ro } = latest.current;
       if ((key === "delete" || key === "x") && s.bones.length && cur && !ro) {
         e.preventDefault();
@@ -425,7 +495,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [toolActive, flatPath, clock]);
+  }, [toolActive, flatPath, clock, stripClock]);
 
   if (loadError) return <div className="rig-page"><p className="pkm-error">{loadError}</p></div>;
   if (!flatDoc || (!src && !(converted instanceof Error))) return <div className="rig-page"><p className="muted">Reading {flatPath}…</p></div>;
@@ -464,7 +534,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
   const warnings = [...(baked?.error ? [`The rig can't be baked: ${baked.error}`] : []), ...(baked?.baked?.warnings ?? []), ...(preview?.error ? [preview.error] : [])];
 
   return (
-    <div className={`rig-page rig-docked rig-setup${sequencing ? " rig-sequences" : ""}`}>
+    <div className={`rig-page rig-docked rig-setup${sequencing || stripping ? " rig-sequences" : ""}`}>
       <div className="rig-left">
         <div className="rig-upper">
           <header className="rig-head">
@@ -472,6 +542,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
             <span className="view-switch rig-mode" title="What the editor edits: the rig setup (pieces, bones, the default pose), or the sequences (Idle, Hop, ...) and their keyframes">
               <button className={mode === "setup" ? "active" : ""} onClick={() => setMode("setup")}>Rig setup <span className="muted small">pieces, bones, default pose</span></button>
               <button className={mode === "sequences" ? "active" : ""} onClick={() => setMode("sequences")}>Sequences <span className="muted small">keyframes</span></button>
+              <button className={mode === "timeline" ? "active" : ""} onClick={() => setMode("timeline")} title="The loop the battle plays: sequences laid out as clips, and the battle's pause">Timeline <span className="muted small">what the battle plays</span></button>
             </span>
             <span className="view-switch" title="Front and back are separate rigs">
               {SIDES.map((s) => (
@@ -561,6 +632,27 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
                 </div>
               </section>
             </div>
+          ) : stripping ? (
+            <div className="rig-main rig-main-sequence">
+              <section className="rig-card rig-preview">
+                <div className="rig-card-head">
+                  <h3>Timeline</h3>
+                  <span className="muted small">{total} frames ({(total / 60).toFixed(2)} s), looping at the game's speed: exactly what the battle plays</span>
+                </div>
+                <div className="rig-stage">
+                  <StripPreview view={view} rig={stripRig} clock={stripClock} zoom={zoom} feet={feet} />
+                </div>
+                <StripTransport clock={stripClock} src={src} total={total} battlePauses={battlePauses} onBattlePauses={setBattlePauses} keeps={keepsMovingOf(src).length} />
+                <div className="rig-toggles">
+                  <label className="ow-check"><input type="checkbox" checked={feet} onChange={(e) => setFeet(e.target.checked)} /> Feet</label>
+                  <label className="ow-check"><input type="checkbox" checked={shiny} onChange={(e) => setShiny(e.target.checked)} /> Shiny</label>
+                  <span className="view-switch">
+                    {[2, 3, 4, 5, 6].map((z) => <button key={z} className={zoom === z ? "active" : ""} onClick={() => setZoom(z)}>{z}×</button>)}
+                  </span>
+                  <span className="muted small">Click a part to choose it (its Keeps moving is in the side panel).</span>
+                </div>
+              </section>
+            </div>
           ) : (
           <div className="rig-main">
             <section className="rig-card rig-preview">
@@ -638,8 +730,31 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
             </div>
           </section>
         )}
+        {stripping && (
+          <section className="rig-card rig-dock rig-strip-dock">
+            <div className="rig-card-head">
+              <b>Timeline</b>
+              <span className="muted small">the game's stay loop · {clipsOf(src).length} clips · {total} frames · {sizes ? `${sizes.multi_animations} bytes` : "—"}</span>
+              <span className="spacer" />
+              <span className="muted small">zoom</span>
+              <span className="view-switch">
+                {[1, 2, 3, 4, 6].map((z) => <button key={z} className={stripScale === z ? "active" : ""} onClick={() => setStripScale(z)}>{z}</button>)}
+              </span>
+            </div>
+            <StripTimeline view={view} clock={stripClock} scale={stripScale} chosen={clip} onChoose={setClip} onOpen={editSequence} />
+            <p className="muted ow-note">Drag a sequence from the side panel onto the strip to add it there; drag a clip to move it; click to choose it (Delete deletes it),
+              double-click to edit its sequence (every clip of it changes). Clips of one sequence in a row are one clip ×N. Space plays, the arrows step by 6.</p>
+          </section>
+        )}
       </div>
-      {sequencing ? (
+      {stripping ? (
+        <aside className="rig-side rig-inspector">
+          <StripSequencesSection view={view} onOpen={editSequence} onAdded={setClip} />
+          <ClipSection view={view} clip={clip !== null && clip < clipsOf(src).length ? clip : null} onChoose={setClip} onOpen={editSequence} sizes={sizes} />
+          <PauseSection view={view} />
+          <SetupChecks view={view} check={check} checking={checking} warnings={warnings} />
+        </aside>
+      ) : sequencing ? (
         <aside className="rig-side rig-inspector">
           <SequenceListSection view={view} open={openSeq} onOpen={openSequence} />
           <SequenceSection view={view} open={openSeq} />
@@ -658,6 +773,51 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
         </aside>
       )}
     </div>
+  );
+}
+
+/** Play, pause and step the whole strip (by 6), where the playhead is and which clip plays; the battle's pauses (random,
+ * as the battle rolls them at each loop's end) and "Preview a battle pause" (one now, as it starts at a loop's end). */
+function StripTransport({ clock, src, total, battlePauses, onBattlePauses, keeps }: {
+  clock: Clock; src: V2; total: number; battlePauses: boolean; onBattlePauses(on: boolean): void; keeps: number;
+}) {
+  const st = useClock(clock, (s) => s);
+  const time = Math.floor(st.time);
+  const last = Math.max(0, total - 1);
+  const step = (by: number) => {
+    const t = time + by;
+    clock.step(0);
+    clock.seek(t < 0 ? Math.floor(last / 6) * 6 : t > last ? 0 : t, 0);
+  };
+  const at = st.pause ? null : clipAt(src, time);
+  const k = at ? clipsOf(src)[at.clip] : undefined;
+  const name = k ? src.sequences[k.sequence]?.name : null;
+  const why = !src.pause ? "Pauses in battle is off (side panel): this sprite never pauses." : null;
+  return (
+    <>
+      <div className="rig-transport">
+        <button onClick={() => { clock.play(false); clock.seek(0, 0); }} title="To the start (Home)">⏮</button>
+        <button onClick={() => step(-6)} title="Back 6 frames (←)">◀ 6</button>
+        <button className="primary" onClick={() => clock.play()} title="Play or pause (Space): the strip loops at the game's 60 frames a second">{st.playing ? "⏸ Pause" : "▶ Play"}</button>
+        <button onClick={() => step(6)} title="On 6 frames (→)">6 ▶</button>
+        <span className="rig-time">
+          {st.pause ? <>battle pause <b>{Math.floor(st.pause.elapsed)}</b> of {st.pause.wait}</>
+            : <>frame <b>{time}</b> of {total} <span className="muted">({(time / 60).toFixed(2)} s){name ? ` · ${name}${k!.count > 1 ? ` ${at!.instance + 1} of ${k!.count}` : ""}, frame ${at!.since}` : ""}</span></>}
+        </span>
+        <input type="range" min={0} max={last} step={6} value={st.pause ? 0 : Math.min(time, last)} title="Scrub the strip"
+               onChange={(e) => { clock.play(false); clock.seek(Number(e.target.value), 0); }} />
+      </div>
+      <div className="rig-toggles rig-pause-tools">
+        <button disabled={!!why} className={st.pause ? "active" : ""} onClick={() => (st.pause ? clock.seek(0, 0) : clock.pauseNow())}
+                title={why ?? "Plays one battle pause now, as the battle starts it at a loop's end: the sprite stops, only the Keeps moving parts go on, for 48, 56 or 64 frames. Press again to end it."}>
+          {st.pause ? "■ End the pause" : "⏸ Preview a battle pause"}
+        </button>
+        <label className="ow-check" title={why ?? "At each loop's end, a roll as the battle's (1 in 3, then 1 in 2, then surely) starts a pause"}>
+          <input type="checkbox" checked={battlePauses && !why} disabled={!!why} onChange={(e) => onBattlePauses(e.target.checked)} /> Random pauses, as in battle
+        </label>
+        <span className="muted small">{why ?? (keeps ? `${keeps} part${keeps > 1 ? "s" : ""} keep${keeps > 1 ? "" : "s"} moving during a pause (outlined green)` : "No part keeps moving: the whole sprite freezes during a pause")}</span>
+      </div>
+    </>
   );
 }
 
