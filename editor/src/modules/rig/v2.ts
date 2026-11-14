@@ -210,6 +210,40 @@ export function headOf(src: V2, bone: number): Pair {
 const degreesTo65536 = (degrees: number) => (degrees / 360) * 65536;
 const lcm = (a: number, b: number) => (a / gcd(a, b)) * b;
 
+// ---------------------------------------------------------------- A part's keys as the bake reads them
+
+/** A lane's keys as key poses (the first armature's, which the sampling shares): the implicit start at the default
+ * pose (unless a key is at frame 0), the pictures resolved (held from key to key; `pictureOf` gives the picture shown
+ * for the piece shown and whether it is hidden), every channel given (a connected bone's move locked to 0). The bake
+ * and the editor's keyframing both read a part's keys through this. */
+export function lanePoses(src: V2, b: number, lane: Lane | undefined, locked: boolean,
+                          pictureOf: (shown: number | undefined, hidden: boolean) => number): KeyPose[] {
+  const bone = src.bones[b];
+  const d = bone.default ?? {};
+  const defaultCurve = src.curve ?? DEFAULT_CURVE;
+  let shown = d.piece;
+  let hidden = d.hidden ?? d.piece === undefined;
+  const pictureNow = () => pictureOf(shown, hidden);
+  const values = (k: Transform) => ({
+    move: (locked ? [0, 0] : k.move ?? d.move ?? [0, 0]) as Pair,
+    rotation: k.rotation ?? d.rotation ?? 0,
+    scale: (k.scale ?? d.scale ?? [1, 1]) as Pair,
+  });
+  const explicit = sortedKeys((lane?.keys ?? []) as KeyPose[]) as unknown as V2Key[];
+  const out: KeyPose[] = [];
+  if (!explicit.some((k) => k.frame === 0)) out.push({ frame: 0, picture: pictureNow(), ...values({}), curve: defaultCurve });
+  for (const k of explicit) {
+    if (k.piece !== undefined) { shown = k.piece; hidden = false; }
+    if (k.hidden !== undefined) hidden = k.hidden;
+    const pose: KeyPose = { frame: k.frame, picture: pictureNow(), ...values(k), curve: k.curve ?? defaultCurve };
+    if (k.curves) pose.curves = k.curves;
+    if (k.handles) pose.handles = k.handles;
+    if (k.flat) pose.flat = k.flat;
+    out.push(pose);
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------- The bake
 
 export interface BakedV2 {
@@ -227,7 +261,6 @@ export function bakeV2(src: V2): BakedV2 {
   const warnings: string[] = [];
   const shears = new Map<number, number>();
   const step0 = src.step ?? STEP;
-  const defaultCurve = src.curve ?? DEFAULT_CURVE;
   const clips = src.loop_clips ?? [];
 
   // ---- Pictures: the pieces, and a blank one for hidden keys when the pieces have none
@@ -301,34 +334,8 @@ export function bakeV2(src: V2): BakedV2 {
     return p !== null && !cyclic.has(b) && src.bones[p] && p !== b ? p : null;
   };
 
-  /** A lane's keys as key poses (the first armature's, which the sampling shares): the implicit start at the default
-   * pose, the pictures resolved (held from key to key, hidden showing the blank picture), every channel given. */
-  const keyPosesOf = (b: number, lane: Lane | undefined): KeyPose[] => {
-    const bone = src.bones[b];
-    const d = bone.default ?? {};
-    const locked = !!bone.connected && parentOf(b) !== null;
-    let shown = d.piece;
-    let hidden = d.hidden ?? d.piece === undefined;
-    const pictureNow = () => (hidden || shown === undefined ? blankPictureIndex() : shown);
-    const values = (k: Transform) => ({
-      move: (locked ? [0, 0] : k.move ?? d.move ?? [0, 0]) as Pair,
-      rotation: k.rotation ?? d.rotation ?? 0,
-      scale: (k.scale ?? d.scale ?? [1, 1]) as Pair,
-    });
-    const explicit = sortedKeys((lane?.keys ?? []) as KeyPose[]) as unknown as V2Key[];
-    const out: KeyPose[] = [];
-    if (!explicit.some((k) => k.frame === 0)) out.push({ frame: 0, picture: pictureNow(), ...values({}), curve: defaultCurve });
-    for (const k of explicit) {
-      if (k.piece !== undefined) { shown = k.piece; hidden = false; }
-      if (k.hidden !== undefined) hidden = k.hidden;
-      const pose: KeyPose = { frame: k.frame, picture: pictureNow(), ...values(k), curve: k.curve ?? defaultCurve };
-      if (k.curves) pose.curves = k.curves;
-      if (k.handles) pose.handles = k.handles;
-      if (k.flat) pose.flat = k.flat;
-      out.push(pose);
-    }
-    return out;
-  };
+  const keyPosesOf = (b: number, lane: Lane | undefined): KeyPose[] =>
+    lanePoses(src, b, lane, !!src.bones[b].connected && parentOf(b) !== null, (shown, hidden) => (hidden || shown === undefined ? blankPictureIndex() : shown));
 
   /** A clip's keys as key poses (channels relative, curve constant unless named), and its pictures by frame. */
   const clipPoses = clips.map((clip) => sortedKeys(clip.keys.map((k) => ({ frame: k.frame, move: k.move ?? [0, 0], rotation: k.rotation ?? 0,
