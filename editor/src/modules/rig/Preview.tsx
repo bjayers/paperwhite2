@@ -4,11 +4,11 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { compose, forward, frameQuads, keyAt, loopCanvas, quadCorners, render, sequenceKeyAt, srtOf, type Canvas, type Pair, type Rig, type Srt } from "./mcss.ts";
-import { changeKeys, fixedScale, keyAs, keyPartsAt, moveKeys, orderedKey, partClock, partKeyAt, turnKeysAbout, type Phase } from "./model.ts";
+import { changeKeys, fixedScale, keyAs, keyPartsAt, moveKeys, orderedKey, partClock, partKeyAt, restRig, turnKeysAbout, type Phase } from "./model.ts";
 import { pickPart } from "./keying.ts";
 import { hue, paletteWords, selectedParts, useClock, type RigView } from "./context.ts";
-import { keyPoseAt, wouldCycle, type KeyPose } from "./armature.ts";
-import { animationOf, autoKey, localAt, setParent, type Target } from "./armatureEdit.ts";
+import { convertToArmature, keyPoseAt, movePivot, type KeyPose, type Source } from "./armature.ts";
+import { animationOf, autoKey, localAt, type Target } from "./armatureEdit.ts";
 
 /** A gizmo drag keying an armature's bone or root: the key poses when it began, the key pose at the playhead. */
 interface ArmatureDrag {
@@ -22,7 +22,12 @@ interface ArmatureDrag {
   frame: number;
   key: KeyPose;
   moved: boolean;
+  /** The sprite has no armature yet: the first move makes one (as part of this drag's step). */
+  convert: boolean;
 }
+
+/** The battle's idle pause as drawn: none in Edit mode, which has no time. */
+const idleOf = (v: RigView) => (v.mode === "edit" ? undefined : v.clock.idle());
 
 /** The whole sprite's movement at a time (the sequence key's: the root as baked). */
 function wholeAt(v: RigView, sequence: number, time: number): Srt {
@@ -33,11 +38,14 @@ function wholeAt(v: RigView, sequence: number, time: number): Srt {
 export type Tool = "pivot" | "move" | "rotate" | "scale";
 
 export const TOOLS: { tool: Tool; label: string; key: string; note: string }[] = [
-  { tool: "pivot", label: "Pivot", key: "P", note: "Drag to move the part's pivot, where it turns and scales about (the pose's, for every key)." },
+  { tool: "pivot", label: "Pivot", key: "P", note: "Drag to move the part's pivot, where it turns and scales about. The picture stays where it is on screen: the pivot moves and what the game stores relative to it moves back, for every key of every action." },
   { tool: "move", label: "Move", key: "G", note: "Drag to move the part in the current key." },
   { tool: "rotate", label: "Rotate", key: "R", note: "Drag round the part's pivot to turn it in the current key (Shift: 5° steps)." },
   { tool: "scale", label: "Scale", key: "S", note: "Drag away from the pivot or towards it to scale the part in the current key (Shift: only across, Ctrl: only up and down)." },
 ];
+
+/** Pose mode's gizmos (the Pivot is Edit mode's). */
+export const POSE_TOOLS = TOOLS.filter((t) => t.tool !== "pivot");
 
 const ONION = 6;
 
@@ -67,6 +75,9 @@ interface Drag {
   pivot: Pair;
   original: Record<string, unknown>;
   moved: boolean;
+  /** Edit mode's pivot drag: the real rig and armature as the drag began, every move worked out from them. */
+  baseRig?: Rig;
+  baseSource?: Source | null;
 }
 
 export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessage }: {
@@ -76,8 +87,12 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
   const sequence = useClock(clock, (s) => s.sequence);
   const stage: Canvas = useMemo(() => loopCanvas(rig, Math.min(sequence, rig.sequences.length - 1)), [rig, sequence]);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const latest = useRef({ view, zoom, onion, guides, tool, stage, bones });
-  latest.current = { view, zoom, onion, guides, tool, stage, bones };
+  // Edit mode draws the sprite at rest (no keys, no time); what is drawn and measured is `shown`, what is edited `actual`
+  const edit = view.mode === "edit";
+  const rest = useMemo(() => (edit ? restRig(rig, view.sel.pose) : null), [edit, rig, view.sel.pose]);
+  const shown: RigView = rest ? { ...view, rig: rest } : view;
+  const latest = useRef({ view: shown, actual: view, zoom, onion, guides, tool, stage, bones });
+  latest.current = { view: shown, actual: view, zoom, onion, guides, tool, stage, bones };
   const owners = useRef<Uint8Array | null>(null);
   const drag = useRef<Drag | null>(null);
   const armature = useRef<ArmatureDrag | null>(null);
@@ -94,7 +109,7 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
     const words = paletteWords(v.shiny ? (v.art?.shiny ?? []) : (v.art?.normal ?? []));
     const { sequence: seq } = v.clock.state;
     const time = v.clock.frameTime;
-    const idle = v.clock.idle();
+    const idle = idleOf(v);
     if (g) {
       ctx.strokeStyle = "rgba(128,128,128,0.45)";
       ctx.setLineDash([4, 4]);
@@ -140,7 +155,7 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
     delete el.dataset.root;
     delete el.dataset.group;
     const toScreen = ([x, y]: Pair): Pair => [(st.originX + x) * z, (st.originY - y) * z];
-    if (v.source && b) drawBones(ctx, v, seq, time, state.pose, toScreen, z);
+    if ((v.source || v.mode === "edit") && b) drawBones(ctx, v, seq, time, state.pose, toScreen, z);
     if (v.source && v.sel.root) {
       // The root's gizmo at the feet, where the whole sprite has moved them
       const o = toScreen(forward(0, 0, wholeAt(v, seq, time)));
@@ -248,7 +263,11 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
 
   const onDown = (e: React.PointerEvent) => {
     e.preventDefault();
-    const { view: v, zoom: z, stage: st, tool: tl } = latest.current;
+    // (preventing the press keeps the focus where it was: a field's, or a checkbox's: let go of it, so the keys go to the page)
+    const focused = document.activeElement as HTMLElement | null;
+    if (focused && focused !== document.body && focused !== canvas.current && /^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(focused.tagName)) focused.blur();
+    let { view: v } = latest.current;
+    const { actual, zoom: z, stage: st, tool: tl } = latest.current;
     const at = fromEvent(e);
     const col = Math.floor(at[0] / z), row = Math.floor(at[1] / z);
     const hit = owners.current && col >= 0 && row >= 0 && col < st.width && row < st.height ? owners.current[row * st.width + col] : 0;
@@ -257,19 +276,16 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
     const seq = v.clock.state.sequence;
     let state;
     try {
-      state = frameQuads(v.rig, seq, time, v.clock.idle());
+      state = frameQuads(v.rig, seq, time, idleOf(v));
     } catch {
       return;
     }
     // Choosing a bone's parent: the part clicked
-    if (v.picking !== null && v.source) {
+    if (v.picking !== null) {
       if (hit) {
         const parent = v.rig.poses[state.pose].parts[hit - 1].track;
-        if (parent === v.picking || wouldCycle(v.source, v.picking, parent)) onMessage(`${v.rig.tracks[parent].name} can't be ${v.rig.tracks[v.picking].name}'s parent: they'd go round in a circle.`);
-        else {
-          setParent(v, v.picking, parent);
-          onMessage(`${v.rig.tracks[v.picking].name} is now parented to ${v.rig.tracks[parent].name}.`);
-        }
+        if (parent === v.picking) onMessage(`${v.rig.tracks[parent].name} can't be its own parent.`);
+        else onMessage(actual.parentBone(v.picking, parent));
       }
       v.setPicking(null);
       return;
@@ -281,7 +297,7 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
       const close = Math.hypot((st.originX + origin[0]) * z - at[0], (st.originY - origin[1]) * z - at[1]) <= (tl === "move" || tl === "pivot" ? 20 : 40);
       if (close || !hit) {
         if (tl === "pivot") return;
-        startArmatureDrag(e, { kind: "root", sequence: seq }, tl, at, [(st.originX + origin[0]) * z, (st.originY - origin[1]) * z], [1, 0, 0, 1]);
+        startArmatureDrag(e, { kind: "root", sequence: seq }, tl, at, [(st.originX + origin[0]) * z, (st.originY - origin[1]) * z], [1, 0, 0, 1], v, false);
         return;
       }
     }
@@ -306,8 +322,12 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
     if (!geometry) return;
     const changedPart = part !== v.sel.part || v.sel.root;
     const together = !v.source && tl !== "pivot" && !changedPart ? selectedParts(v.sel) : [part];
-    v.select({ pose: state.pose, part, key: { track: geometry.track, index: geometry.keyIndex }, picture: geometry.picture, sequenceKey: null, root: false,
+    v.select({ pose: state.pose, part, key: v.mode === "edit" ? null : { track: geometry.track, index: geometry.keyIndex }, picture: geometry.picture, sequenceKey: null, root: false,
                ...(changedPart ? { keyPose: null } : {}) });
+    // A sprite with no armature, posed in Pose mode: the first change makes one (as it is, byte for byte), so key poses and
+    // curves are there; until the first move, nothing is converted
+    const convert = !v.source && v.mode === "pose" && !v.gameKeys && tl !== "pivot";
+    if (convert) v = { ...v, source: convertToArmature(v.rig), sourceEditor: null };
     if (v.source && tl !== "pivot") {
       // The armature: the gizmo keys the bone at the playhead, in its parent's frame (as Blender poses a bone)
       const parent = v.source.bones[geometry.track]?.parent ?? null;
@@ -321,7 +341,7 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
       const [a, b, c, d] = linear;
       const det = a * d - b * c || 1;
       startArmatureDrag(e, { kind: "bone", track: geometry.track }, tl, at, [(st.originX + geometry.center[0]) * z, (st.originY - geometry.center[1]) * z],
-                        [d / det, -b / det, -c / det, a / det]);
+                        [d / det, -b / det, -c / det, a / det], v, convert);
       return;
     }
     const type = v.rig.tracks[geometry.track].key_type;
@@ -341,12 +361,15 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     const [a, b, c, d] = compose([geometry.whole]);
     const det = a * d - b * c || 1;
+    // (in the window's coordinates: the canvas grows and shifts as the part's pictures move out of the loop's box)
+    const box = canvas.current!.getBoundingClientRect();
     drag.current = {
-      tool: tl, start: at, inverse: [d / det, -b / det, -c / det, a / det],
-      center: [(st.originX + geometry.center[0]) * z, (st.originY - geometry.center[1]) * z],
+      tool: tl, start: [box.left + at[0], box.top + at[1]], inverse: [d / det, -b / det, -c / det, a / det],
+      center: [box.left + (st.originX + geometry.center[0]) * z, box.top + (st.originY - geometry.center[1]) * z],
       pose: state.pose, part, track: geometry.track, key: geometry.keyIndex,
       pivot: v.rig.poses[state.pose].parts[part].pivot,
       original: { ...v.rig.tracks[geometry.track].keys[geometry.keyIndex] }, moved: false,
+      baseRig: actual.rig, baseSource: actual.source,
     };
   };
 
@@ -419,8 +442,7 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
   };
 
   /** Starts a gizmo drag that keys an armature's bone (or root) at the playhead. */
-  const startArmatureDrag = (e: React.PointerEvent, target: Target, tl: Tool, at: Pair, center: Pair, inverse: [number, number, number, number]) => {
-    const { view: v } = latest.current;
+  const startArmatureDrag = (e: React.PointerEvent, target: Target, tl: Tool, at: Pair, center: Pair, inverse: [number, number, number, number], v: RigView, convert: boolean) => {
     const anim = animationOf(v, target);
     if (!anim) return;
     onMessage(null);
@@ -431,11 +453,12 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
     // In the window's coordinates: the canvas grows and shifts as the keyed sprite moves out of its loop's box
     const r = canvas.current!.getBoundingClientRect();
     armature.current = { tool: tl, target, start: [r.left + at[0], r.top + at[1]], center: [r.left + center[0], r.top + center[1]], inverse, base, frame,
-                         key: existing.keys[existing.index], moved: false };
+                         key: existing.keys[existing.index], moved: false, convert };
   };
 
   const onArmatureMove = (e: React.PointerEvent, d: ArmatureDrag) => {
-    const { view: v, zoom: z } = latest.current;
+    let { view: v } = latest.current;
+    const { zoom: z } = latest.current;
     const at: Pair = [e.clientX, e.clientY];
     const sx = (at[0] - d.start[0]) / z, sy = -(at[1] - d.start[1]) / z;
     const [ia, ib, ic, id] = d.inverse;
@@ -460,6 +483,17 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
       const scale = k.scale ?? [1, 1];
       patch = { scale: [e.ctrlKey ? scale[0] : fixedScale(scale[0] * ratio), e.shiftKey ? scale[1] : fixedScale(scale[1] * ratio)] };
     }
+    if (!d.moved) {
+      // (no change yet: nothing is made, and a sprite without an armature isn't converted by a click)
+      const now: Record<string, unknown> = { move: k.move ?? [0, 0], rotation: k.rotation ?? 0, scale: k.scale ?? [1, 1] };
+      if (Object.entries(patch).every(([f, val]) => JSON.stringify(val) === JSON.stringify(now[f]))) return;
+    }
+    if (d.convert) {
+      const made = latest.current.actual.ensureArmature(true);
+      if (!made) return;
+      v = made;
+      d.convert = false;
+    }
     const index = autoKey(v, d.target, d.base, (key) => ({ ...key, ...patch }), d.moved ? "move" : "start", d.frame);
     if (!d.moved) v.select({ keyPose: index });
     d.moved = true;
@@ -477,7 +511,7 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
     const d = drag.current;
     if (!d) return;
     const { view: v, zoom: z } = latest.current;
-    const at = fromEvent(e);
+    const at: Pair = [e.clientX, e.clientY];
     // The screen's change in the sprite's pixels (y up), undone through the whole sprite's turn and scale
     const sx = (at[0] - d.start[0]) / z, sy = -(at[1] - d.start[1]) / z;
     const [ia, ib, ic, id] = d.inverse;
@@ -486,9 +520,14 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
     const key = d.original as { rotation?: number; scale?: Pair; move?: Pair };
     const type = v.rig.tracks[d.track].key_type;
     if (d.tool === "pivot") {
-      const pivot: Pair = [Math.round(d.pivot[0] + dx), Math.round(d.pivot[1] - dy)];
-      if (pivot[0] === v.rig.poses[d.pose].parts[d.part].pivot[0] && pivot[1] === v.rig.poses[d.pose].parts[d.part].pivot[1]) return;
-      v.editor.set(["poses", d.pose, "parts", d.part, "pivot"], pivot, phase);
+      // The pivot moves and the picture stays where it is: what the game stores relative to the pivot (the rectangles'
+      // `at`, and the keys' moves where they turn) moves back by the same (movePivot). Worked out from the rig as the drag
+      // began, so the moves don't add up; the real rig is edited, not the rest pose that is drawn.
+      const delta: Pair = [Math.round(dx), Math.round(-dy)];
+      if (!d.moved && !delta[0] && !delta[1]) return;
+      const done = movePivot(d.baseRig!, d.pose, d.part, delta, d.baseSource ?? null);
+      latest.current.actual.commit({ rig: done.rig, ...(done.source ? { source: done.source } : {}) }, phase);
+      if (done.copied && !d.moved) onMessage(`Another track (an action's other part) shows ${done.copied === 1 ? "this picture" : "these pictures"} too: this part got ${done.copied === 1 ? "its own copy" : "its own copies"}, so the other keeps its pivot.`);
     } else {
       let next: Record<string, unknown> = { ...key };
       if (d.tool === "move") {
@@ -557,9 +596,8 @@ export function partGeometry(v: RigView, sequence: number, time: number, pose: n
  * it) toward its picture's middle, a dashed line from each to its parent's tail (or to the root at the feet). */
 function drawBones(ctx: CanvasRenderingContext2D, v: RigView, sequence: number, time: number, pose: number, toScreen: (p: Pair) => Pair, z: number) {
   const source = v.source;
-  if (!source) return;
   const parts = v.rig.poses[pose]?.parts ?? [];
-  const state = frameQuads(v.rig, sequence, time, v.clock.idle());
+  const state = frameQuads(v.rig, sequence, time, idleOf(v));
   const joints = new Map<number, { head: Pair; tail: Pair; part: number }>();
   parts.forEach((p, k) => {
     const g = partGeometry(v, sequence, time, pose, k);
@@ -576,8 +614,9 @@ function drawBones(ctx: CanvasRenderingContext2D, v: RigView, sequence: number, 
   ctx.lineWidth = 1;
   ctx.strokeStyle = "rgba(240, 199, 94, 0.75)";
   for (const [track, j] of joints) {
-    const parent = source.bones[track]?.parent ?? null;
-    const to = parent !== null ? joints.get(parent)?.tail : root;
+    const parent = source?.bones[track]?.parent ?? null;
+    // (Edit mode links a bone to its parent's pivot, the joint it hangs from; a sprite with no parents has no links)
+    const to = parent !== null ? (v.mode === "edit" ? joints.get(parent)?.head : joints.get(parent)?.tail) : source ? root : undefined;
     if (!to) continue;
     ctx.beginPath();
     ctx.moveTo(...j.head);

@@ -1113,3 +1113,38 @@ commits).
 - Copy front to back is off for a side with an armature (remove it first); Add form copies the flat rig only, so a new
   form starts without an armature (convert it there).
 - Not tested on hardware or in battle (the summary only); the jump edit was about 8 KB.
+
+### 19.8 Edit and Pose mode, parenting without Convert (2026-11-13)
+
+The user (a Blender animator) couldn't tell where a pivot or a parent was set and where a pose was keyed, lost Ctrl+Z in armature
+mode, and found the Pivot tool just moving the part. The Rig Editor now works in two modes, switched in the header or with Tab
+(`editor/README.md`, The Rig Editor):
+
+- **Edit mode** is the rest setup with no time: the preview draws each part as its track begins (`restRig`, never saved), and the
+  dock is gone. Its one tool is **Pivot**; the sheet, layers, parenting and the Part and Picture panels live here. Nothing is keyed.
+  **Pose mode** is the timeline, auto-key, the gizmos Move, Rotate and Scale (no Pivot), curves and the bake, with a legend
+  **Key poses (yours)** above **Baked keys (what the game plays, every 6 frames)**.
+- **The Pivot tool keeps the picture where it is** (`movePivot`, `armature.ts`). The bug was that the pivot is also where the game
+  places a part (the part is drawn through key, then pivot), so changing only `pivot` moved the picture. Now the pivot moves by d and
+  every rectangle of the part's pictures moves its `at` by -d (a picture another track shows is copied for this one); a key that turns
+  or scales gets its move changed by (R·S - 1)·d, so every key of every action draws exactly where it did (a whole-pixel rounding at
+  most; keys with no turn or scale exactly), flat or in the armature's key poses. Every part that plays the track moves with it.
+- **No Convert button.** The first parenting, or the first key pose made in Pose mode (a gizmo drag that changes something, K, the
+  Root chosen), makes the armature (`convertToArmature`, byte-identical by design) and says so; it is part of the step that made it,
+  so Ctrl+Z takes it away (`history.ts`) and Ctrl+Y brings it back. **Remove armature** stays; **Game keys** (Pose mode, no armature)
+  is the advanced raw-key view. New key poses go to the next by a chosen curve (ease in and out by default), and the held key before them
+  does too, so a start and an end key pose fill in the in-betweens every 6 frames (with key poses 6 apart, as Game Freak's are,
+  this changes nothing the game plays).
+- **Actions and the sequence:** in the UI a pose is an *Action*. The Stay / Stop row is like Blender's NLA strip: each block plays one
+  action for N frames. Dragging a block's right edge changes only how long that action plays (with an armature the key poses from
+  its end on move along and the loop grows: `resizeBlock`); each part's track loops inside it at its own length. The shown action
+  follows the chosen block.
+- **The undo bug:** Ctrl+Z was ignored whenever a checkbox, a slider or a list had the focus (the page's keys treated every `<input>`
+  as typing), and a press on the preview, which prevents the browser's default, left the focus on the Auto-key checkbox or the scrub bar
+  the user had just used; so "after I move something" it did nothing. Reproduced over CDP (a drag, then Ctrl+Z with the checkbox focused:
+  no change). Now only a text box stops it, a press on the preview blurs a focused field, and the history is one list of steps each naming
+  the documents it touched (a pivot is both files), skipping steps with nothing left to undo.
+- **Proven:** `editor/tests/rig-modes.test.ts` (Pivot keeps every quad in every frame of both actions of Pichu and Spiky-eared
+  Pichu, with a shared track, a shared picture and an armature; parenting a flat rig bakes back byte for byte; undo and redo of a
+  gizmo drag, an auto-key split, a two-document pivot and an automatic conversion restore both files' text exactly; the NLA block);
+  and over CDP the guide's eyes-and-tilt example end to end.

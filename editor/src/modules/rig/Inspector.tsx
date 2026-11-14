@@ -2,16 +2,17 @@
 // chosen (the key, the part, the picture, the sequence's key), each with its actions at its top, a label column beside
 // the controls, numbers in the user's units (degrees, pixels, frames) whose labels drag; then the sprite's own settings.
 
-import { useState, type ReactNode } from "react";
-import { boneStep, CHANNEL_LABELS, CURVES, sourceWithoutPicture, wouldCycle, type Channel, type Curve, type KeyPose } from "./armature.ts";
-import { animationOf, autoKey, localAt, setKeys, setParent, targetName, targetOf } from "./armatureEdit.ts";
+import { useRef, useState, type ReactNode } from "react";
+import type { Source } from "./armature.ts";
+import { boneStep, CHANNEL_LABELS, CURVES, movePivot, sourceWithoutPicture, wouldCycle, type Channel, type Curve, type KeyPose } from "./armature.ts";
+import { animationOf, autoKey, localAt, setKeys, targetName, targetOf } from "./armatureEdit.ts";
 import { ScrubNumber, type ScrubPhase } from "../overworld/ScrubNumber.tsx";
-import { keyAt, lengthOf, sequenceKeyAt, type Key, type KeyType, type Pair, type Picture, type Rectangle, type Track } from "./mcss.ts";
+import { keyAt, lengthOf, sequenceKeyAt, type Key, type KeyType, type Pair, type Picture, type Rectangle, type Rig, type Track } from "./mcss.ts";
 import { copyPose, fixedScale, fromDegrees, generateObjs, keyAs, orderedKey, partClock, partName, pictureUses, removeKey, removePicture, resetKey, signedDegrees, sizeProblem,
          trackUses, withHiddenPicture, withRectangles, type Phase } from "./model.ts";
 import { LayerList } from "./LayerList.tsx";
 import { PicturePicker } from "./PicturePicker.tsx";
-import { keyAtPlayhead, swapPicture } from "./keying.ts";
+import { keyAtPlayhead, pickPart, swapPicture } from "./keying.ts";
 import { hue, useClock, type RigView } from "./context.ts";
 
 const KEY_TYPES: { type: KeyType; label: string; note: string }[] = [
@@ -46,51 +47,63 @@ function PairInput({ value, labels, onChange, step = 0.25, digits = 0 }: {
   );
 }
 
-export function Inspector({ view, onTimeChanged, onMessage, onConvert, onRemoveArmature }: { view: RigView; onTimeChanged(): void; onMessage(message: string): void; onConvert(): void; onRemoveArmature(): void }) {
+export function Inspector({ view, onMessage, onRemoveArmature }: { view: RigView; onTimeChanged(): void; onMessage(message: string): void; onRemoveArmature(): void }) {
+  const edit = view.mode === "edit";
+  const raw = !view.source && view.gameKeys;
   return (
     <div className="rig-inspector">
-      <ArmatureSection view={view} onConvert={onConvert} onRemove={onRemoveArmature} />
-      <PosesSection view={view} onMessage={onMessage} />
-      {!view.source && <LayerList view={view} />}
-      {view.source && <KeyPoseSection view={view} />}
-      {!view.sel.root && <PartSection view={view} />}
-      {view.source && !view.sel.root && <BoneSection view={view} />}
-      {!view.source && <KeySection view={view} onTimeChanged={onTimeChanged} onMessage={onMessage} />}
-      {!view.sel.root && <PictureSection view={view} />}
-      {!view.source && <SequenceKeySection view={view} />}
+      {edit ? (
+        <>
+          <OutlinerSection view={view} onRemove={onRemoveArmature} onMessage={onMessage} />
+          <LayerList view={view} />
+          <PartSection view={view} />
+          <BoneSection view={view} onMessage={onMessage} />
+          <PictureSection view={view} />
+        </>
+      ) : (
+        <>
+          <PosesSection view={view} onMessage={onMessage} />
+          <OutlinerSection view={view} onRemove={onRemoveArmature} onMessage={onMessage} />
+          {view.source ? <KeyPoseSection view={view} /> : raw ? <KeySection view={view} onTimeChanged={() => undefined} onMessage={onMessage} /> : <NoArmatureNote />}
+          {view.source && <BoneSection view={view} onMessage={onMessage} />}
+          {view.source && <SequenceSection view={view} />}
+          {raw && <SequenceKeySection view={view} />}
+        </>
+      )}
     </div>
   );
 }
 
-// ---------------------------------------------------------------- The armature: the outliner
+function NoArmatureNote() {
+  return (
+    <section className="ow-panel-box ow-section">
+      <h5>Key pose <span className="muted">choose a part</span></h5>
+      <p className="muted ow-note">Click a part on the preview and drag Move, Rotate or Scale (or press K) to set its key pose at the playhead. The first one makes
+        an armature of this sprite (it plays exactly as before until you change something, and Ctrl+Z takes it away); then a start and an end key pose with a curve
+        between fill in the keys every 6 frames. Parenting is in Edit mode (Tab). Game keys, under the preview, edits the game's own keys instead.</p>
+    </section>
+  );
+}
 
-function ArmatureSection({ view, onConvert, onRemove }: { view: RigView; onConvert(): void; onRemove(): void }) {
-  const { rig, source, sourceEditor, sel, select } = view;
+// ---------------------------------------------------------------- The outliner: parents (Edit mode) and choosing (both)
+
+function OutlinerSection({ view, onRemove, onMessage }: { view: RigView; onRemove(): void; onMessage(message: string): void }) {
+  const { rig, source, sel, select } = view;
+  const edit = view.mode === "edit";
   const [drag, setDrag] = useState<number | null>(null);
   const [over, setOver] = useState<number | "root" | null>(null);
-  if (!source || !sourceEditor) {
-    return (
-      <section className="ow-panel-box ow-section">
-        <h5>Armature <span className="muted">none: the rig's keys are edited as the game holds them</span></h5>
-        <div className="ow-section-actions">
-          <button className="primary" onClick={onConvert} title="Makes an armature from this rig: each part a bone of the root's, at its pivot, its keys held key poses. It bakes back to the rig exactly, until you parent and key it.">Convert to armature</button>
-        </div>
-        <p className="muted ow-note">An armature parents the parts (root, body, head, ears…) and poses them like Blender's bones, with curves between key poses;
-          the editor bakes it into each part's own keys every 6 frames (Game Freak's rhythm), as the game plays them.</p>
-      </section>
-    );
-  }
   const pose = rig.poses[sel.pose];
   const parts = pose?.parts ?? [];
   const inPose = new Map(parts.map((p, k) => [p.track, k] as const));
-  const parentOf = (track: number) => source.bones[track]?.parent ?? null;
+  const parentOf = (track: number) => source?.bones[track]?.parent ?? null;
   const children = (parent: number | null) => parts.map((p, k) => [p, k] as const).filter(([p]) => {
     const up = parentOf(p.track);
     return parent === null ? up === null || !inPose.has(up) : up === parent;
   });
+  const cycle = (track: number, parent: number | null) => (source ? wouldCycle(source, track, parent) : track === parent);
   const parentTo = (track: number, parent: number | null) => {
-    if (parent !== null && wouldCycle(source, track, parent)) return;
-    setParent(view, track, parent);
+    if (parent === parentOf(track) || cycle(track, parent)) return;
+    onMessage(view.parentBone(track, parent) ?? "");
   };
   const rows: ReactNode[] = [];
   const walk = (parent: number | null, depth: number, seen: Set<number>) => {
@@ -100,17 +113,17 @@ function ArmatureSection({ view, onConvert, onRemove }: { view: RigView; onConve
       const up = parentOf(p.track);
       rows.push(
         <div key={k} className={`rig-outliner-row${sel.part === k && !sel.root ? " selected" : ""}${over === p.track ? " drop" : ""}`} style={{ paddingLeft: 8 + depth * 16 }}
-             draggable onDragStart={(e) => { setDrag(p.track); e.dataTransfer.effectAllowed = "link"; }} onDragEnd={() => { setDrag(null); setOver(null); }}
-             onDragOver={(e) => { if (drag !== null && drag !== p.track && !wouldCycle(source, drag, p.track)) { e.preventDefault(); setOver(p.track); } }}
+             draggable={edit} onDragStart={(e) => { setDrag(p.track); e.dataTransfer.effectAllowed = "link"; }} onDragEnd={() => { setDrag(null); setOver(null); }}
+             onDragOver={(e) => { if (edit && drag !== null && drag !== p.track && !cycle(drag, p.track)) { e.preventDefault(); setOver(p.track); } }}
              onDragLeave={() => setOver(null)}
-             onDrop={(e) => { e.preventDefault(); if (drag !== null) parentTo(drag, p.track); setDrag(null); setOver(null); }}
-             onClick={() => select({ part: k, root: false, key: null, keyPose: null, sequenceKey: null, picture: rig.tracks[p.track]?.keys[0]?.picture ?? null })}
-             title={`${rig.tracks[p.track]?.name}: drag onto another bone to parent it there, onto the root to unparent it`}>
+             onDrop={(e) => { e.preventDefault(); if (edit && drag !== null) parentTo(drag, p.track); setDrag(null); setOver(null); }}
+             onClick={(e) => select(pickPart(sel, k, e) ?? { part: k, more: [], root: false, key: null, keyPose: null, sequenceKey: null, picture: rig.tracks[p.track]?.keys[0]?.picture ?? null })}
+             title={`${rig.tracks[p.track]?.name}${edit ? ": drag onto another part to parent it there, onto the root to unparent it" : ""}`}>
           <span className="rig-tree-line">{depth ? "└" : "·"}</span>
           <span className="rig-swatch" style={{ background: hue(k) }} />
           <b>{partName(rig.tracks[p.track])}</b>
           <span className="muted">{rig.tracks[p.track]?.name}</span>
-          {up !== null && !inPose.has(up) && <span className="muted">(parent {rig.tracks[up]?.name}, not in this pose)</span>}
+          {up !== null && !inPose.has(up) && <span className="muted">(parent {rig.tracks[up]?.name}, not in this action)</span>}
         </div>,
       );
       walk(p.track, depth + 1, seen);
@@ -119,70 +132,114 @@ function ArmatureSection({ view, onConvert, onRemove }: { view: RigView; onConve
   walk(null, 1, new Set());
   return (
     <section className="ow-panel-box ow-section">
-      <h5>Armature <span className="muted">pose {sel.pose}: {parts.length} bones · baked every {source.step} frames</span></h5>
-      <div className="ow-section-actions">
-        <button onClick={onRemove} title="Back to editing the rig's keys flat (they keep what the armature baked)">Remove armature</button>
-      </div>
+      <h5>{edit ? "Parenting" : "Parts"} <span className="muted">action {sel.pose}: {parts.length} parts{source ? ` · baked every ${source.step} frames` : " · no armature yet"}</span></h5>
+      {source && (
+        <div className="ow-section-actions">
+          <button onClick={onRemove} title="Back to editing the rig's keys flat (they keep what the armature baked)">Remove armature</button>
+        </div>
+      )}
       <div className="rig-outliner">
         <div className={`rig-outliner-row${sel.root ? " selected" : ""}${over === "root" ? " drop" : ""}`}
-             onDragOver={(e) => { if (drag !== null) { e.preventDefault(); setOver("root"); } }} onDragLeave={() => setOver(null)}
-             onDrop={(e) => { e.preventDefault(); if (drag !== null) parentTo(drag, null); setDrag(null); setOver(null); }}
-             onClick={() => select({ root: true, part: null, key: null, keyPose: null, sequenceKey: null })}
-             title="The root: the whole sprite (the sequence's move, turn and scale, about the feet). Drop a bone here to unparent it.">
+             onDragOver={(e) => { if (edit && drag !== null) { e.preventDefault(); setOver("root"); } }} onDragLeave={() => setOver(null)}
+             onDrop={(e) => { e.preventDefault(); if (edit && drag !== null) parentTo(drag, null); setDrag(null); setOver(null); }}
+             onClick={() => {
+               if (edit) return;
+               // (choosing the Root to key the whole sprite: a sprite with no armature gets one)
+               const v = view.source ? view : view.gameKeys ? null : view.ensureArmature();
+               if (v) select({ root: true, part: null, key: null, keyPose: null, sequenceKey: null });
+             }}
+             title={edit ? "The root: the whole sprite. Drop a part here to unparent it." : "The root: the whole sprite (the sequence's move, turn and scale, about the feet). Click to choose it and key the whole sprite."}>
           <span className="rig-bone-icon">◆</span><b>Root</b><span className="muted">the whole sprite, about the feet</span>
         </div>
         {rows}
       </div>
-      <div className="ow-condition">
-        <Row label="Bake every" hint="frames each baked key is held, unless a sequence or bone says otherwise (Game Freak: 6)">
-          <select value={source.step} onChange={(e) => sourceEditor.set(["step"], Number(e.target.value))}>
-            {[1, 2, 3, 4, 5, 6, 8, 10, 12].map((n) => <option key={n} value={n}>{n} frame{n > 1 ? "s" : ""}</option>)}
-          </select>
-        </Row>
-      </div>
-      <p className="muted ow-note">Drag a bone onto another to parent it (onto Root to unparent), or pick its parent under Bone. A child follows its parent's
-        turn, scale and move as Blender's bones do; the bake writes that into the child's own keys, as the game has no parents. Parenting keeps the part where
-        it is (Blender's Keep Transform): its key poses are written again relative to the parent, so only what you key on the parent from then on moves it.</p>
+      {edit ? (
+        <p className="muted ow-note">Drag a part onto another to parent it (onto Root to unparent), or use Pick parent under Bone. A child follows its parent's turn,
+          scale and move as Blender's bones do; the bake writes that into the child's own keys, as the game has no parents. Parenting keeps the part where it is
+          (Keep Transform). The first parent makes an armature of the sprite; it plays exactly as before.</p>
+      ) : (
+        <p className="muted ow-note">Click a part to pose it. Parents are set in Edit mode (Tab). Root poses the whole sprite.</p>
+      )}
     </section>
   );
 }
 
 // ---------------------------------------------------------------- The bone
 
-function BoneSection({ view }: { view: RigView }) {
+function BoneSection({ view, onMessage }: { view: RigView; onMessage(message: string): void }) {
   const { rig, source, sourceEditor, sel, picking, setPicking } = view;
+  const edit = view.mode === "edit";
   const part = sel.part !== null ? rig.poses[sel.pose]?.parts[sel.part] : undefined;
-  if (!source || !sourceEditor || !part) return null;
+  if (!part || (!edit && (!source || !sourceEditor))) return null;
   const t = part.track;
-  const bone = source.bones[t];
-  if (!bone) return null;
-  const others = rig.tracks.map((tr, i) => [tr, i] as const).filter(([, i]) => i !== t && !wouldCycle(source, t, i));
+  const bone = source?.bones[t];
+  const others = rig.tracks.map((tr, i) => [tr, i] as const).filter(([, i]) => i !== t && !(source && wouldCycle(source, t, i)));
   return (
     <section className="ow-panel-box ow-section">
-      <h5>Bone <span className="muted">{rig.tracks[t].name} · {bone.keys.length} key poses over {bone.frames} frames</span></h5>
-      <div className="ow-section-actions">
-        <button className={picking === t ? "primary" : ""} onClick={() => setPicking(picking === t ? null : t)} title="Then click the parent's part on the preview">{picking === t ? "Click the parent on the preview… (cancel)" : "Pick parent on the preview"}</button>
-      </div>
+      <h5>{edit ? "Bone" : "Bone"} <span className="muted">{rig.tracks[t].name}{bone ? ` · ${bone.keys.length} key poses over ${bone.frames} frames` : ""}</span></h5>
+      {edit && (
+        <div className="ow-section-actions">
+          <button className={picking === t ? "primary" : ""} onClick={() => setPicking(picking === t ? null : t)} title="Then click the parent's part on the preview">{picking === t ? "Click the parent on the preview… (cancel)" : "Pick parent on the preview"}</button>
+        </div>
+      )}
       <div className="ow-condition">
-        <Row label="Parent" hint="it turns, scales and moves with its parent, about the parent's pivot">
-          <select value={bone.parent ?? -1} onChange={(e) => setParent(view, t, Number(e.target.value) < 0 ? null : Number(e.target.value))}>
-            <option value={-1}>Root (none)</option>
-            {others.map(([tr, i]) => <option key={i} value={i}>{i}: {tr.name}</option>)}
-          </select>
-        </Row>
-        <Row label="Loop" hint={`frames of the track's loop (key poses from 0 to ${bone.frames}; one at the end lasts 0, as Game Freak's do)`}>
-          <ScrubNumber label="⇔" value={bone.frames} step={0.2} digits={0} onChange={(n, p) => sourceEditor.set(["bones", t, "frames"], Math.max(0, Math.min(65535, Math.round(n))), phaseOf(p))} />
-        </Row>
-        <Row label="Bake every" hint={`its own step, else the sequence's (now ${boneStep(source, rig, t)} frames)`}>
-          <select value={bone.step ?? 0} onChange={(e) => sourceEditor.set(["bones", t, "step"], Number(e.target.value) || undefined)}>
-            <option value={0}>the sequence's</option>
-            {[1, 2, 3, 4, 5, 6, 8, 10, 12].map((n) => <option key={n} value={n}>{n} frame{n > 1 ? "s" : ""}</option>)}
-          </select>
-        </Row>
-        <Row label="Baked as" hint="the key type the bake writes: the least that holds its keys">
-          <span className="muted">{rig.tracks[t].key_type === "srt" ? "turn, scale and move" : rig.tracks[t].key_type === "move" ? "move" : "picture"} · {rig.tracks[t].keys.length} keys</span>
+        {edit && (
+          <Row label="Parent" hint="it turns, scales and moves with its parent, about the parent's pivot; it stays where it is when you parent it">
+            <select value={bone?.parent ?? -1} onChange={(e) => onMessage(view.parentBone(t, Number(e.target.value) < 0 ? null : Number(e.target.value)) ?? "")}>
+              <option value={-1}>Root (none)</option>
+              {others.map(([tr, i]) => <option key={i} value={i}>{i}: {tr.name}</option>)}
+            </select>
+          </Row>
+        )}
+        {!edit && source && bone && sourceEditor && (
+          <>
+            <Row label="Loop" hint={`frames of this part's own loop (key poses from 0 to ${bone.frames}; one at the end lasts 0, as Game Freak's do): the part loops inside the action at this length`}>
+              <ScrubNumber label="⇔" value={bone.frames} step={0.2} digits={0} onChange={(n, p) => sourceEditor.set(["bones", t, "frames"], Math.max(0, Math.min(65535, Math.round(n))), phaseOf(p))} />
+            </Row>
+            <Row label="Bake every" hint={`its own step, else the sequence's (now ${boneStep(source, rig, t)} frames)`}>
+              <select value={bone.step ?? 0} onChange={(e) => sourceEditor.set(["bones", t, "step"], Number(e.target.value) || undefined)}>
+                <option value={0}>the sequence's</option>
+                {[1, 2, 3, 4, 5, 6, 8, 10, 12].map((n) => <option key={n} value={n}>{n} frame{n > 1 ? "s" : ""}</option>)}
+              </select>
+            </Row>
+            <Row label="Baked as" hint="the key type the bake writes: the least that holds its keys">
+              <span className="muted">{rig.tracks[t].key_type === "srt" ? "turn, scale and move" : rig.tracks[t].key_type === "move" ? "move" : "picture"} · {rig.tracks[t].keys.length} keys</span>
+            </Row>
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------- The sequence (Pose mode, armature)
+
+/** The shown sequence as the NLA strip it is: blocks that each play an action for N frames, and its loop length. */
+function SequenceSection({ view }: { view: RigView }) {
+  const { rig, source, sourceEditor, clock } = view;
+  const n = useClock(clock, (s) => Math.min(s.sequence, rig.sequences.length - 1));
+  const seq = rig.sequences[n];
+  const src = source?.sequences[n];
+  if (!source || !sourceEditor || !seq || !src) return null;
+  let at = 0;
+  return (
+    <section className="ow-panel-box ow-section">
+      <h5>Sequence <span className="muted">{n === 0 ? "Stay" : n === 1 ? "Stop" : `Sequence ${n}`} · {seq.name}</span></h5>
+      <div className="ow-condition">
+        <Row label="Loop" hint="how long the whole sequence runs before it starts again; the Root's key poses are on this time">
+          <ScrubNumber label="⇔" value={src.frames} step={0.5} digits={0} onChange={(v, p) => sourceEditor.set(["sequences", n, "frames"], Math.max(1, Math.min(65535, Math.round(v))), phaseOf(p))} />
         </Row>
       </div>
+      <div className="rig-nla">
+        {seq.keys.map((k, i) => {
+          const from = at;
+          at += k.frames;
+          return <span key={i} className="rig-nla-block" title={`Block ${i}: action ${k.pose ?? 0} for ${k.frames} frames (from ${from}), as the bake makes it`}>action {k.pose ?? 0} · {k.frames}</span>;
+        })}
+      </div>
+      <p className="muted ow-note">Like Blender's NLA strip: each block plays one action for N frames. Drag a block's right edge on the timeline to change how long that
+        action plays (the blocks after it move along); each part's track keeps looping at its own length inside it. The blocks come from the Root's key poses
+        (the action each one shows).</p>
     </section>
   );
 }
@@ -399,6 +456,21 @@ function KeySection({ view, onTimeChanged, onMessage }: { view: RigView; onTimeC
 
 // ---------------------------------------------------------------- The part
 
+/** A part's pivot as two numbers: moving it keeps what the part draws where it is (movePivot), as the Pivot tool does. */
+function PivotInput({ view, pose, part }: { view: RigView; pose: number; part: number }) {
+  const base = useRef<{ rig: Rig; source: Source | null } | null>(null);
+  const current = view.rig.poses[pose].parts[part].pivot;
+  const change = (target: Pair, phase: Phase) => {
+    if (phase === "start" || phase === "typed" || !base.current) base.current = { rig: view.rig, source: view.source };
+    const b = base.current;
+    const from = b.rig.poses[pose].parts[part].pivot;
+    const done = movePivot(b.rig, pose, part, [target[0] - from[0], target[1] - from[1]], b.source);
+    view.commit({ rig: done.rig, ...(done.source ? { source: done.source } : {}) }, phase);
+    if (phase === "end" || phase === "typed") base.current = null;
+  };
+  return <PairInput value={current} labels={["x", "y"]} onChange={(v, p) => change([Math.round(v[0]), Math.round(v[1])], p)} />;
+}
+
 function PartSection({ view }: { view: RigView }) {
   const { rig, sel, select, editor } = view;
   const pose = rig.poses[sel.pose];
@@ -464,8 +536,8 @@ function PartSection({ view }: { view: RigView }) {
         <Row label="Name" hint="the track's label, which names the part (head_a: the head in pose a)">
           <input className="rig-name-input" value={track?.name ?? ""} onChange={(e) => editor.set(["tracks", part.track, "name"], e.target.value)} />
         </Row>
-        <Row label="Pivot" hint="where it turns and scales about, in pixels from the feet, x right, y down; or drag it with the Pivot tool">
-          <PairInput value={part.pivot} labels={["x", "y"]} onChange={(v, p) => set("pivot", [Math.round(v[0]), Math.round(v[1])], p)} />
+        <Row label="Pivot" hint="where it turns and scales about, in pixels from the feet, x right, y down; or drag it with the Pivot tool. The picture stays where it is on screen.">
+          <PivotInput view={view} pose={sel.pose} part={k} />
         </Row>
         <Row label="Track time" hint={part.play === "restart" ? "starts again each time the sequence shows this pose" : "runs on the sequence's time, so switching poses keeps its phase"}>
           <span className="view-switch">
@@ -641,9 +713,9 @@ function PosesSection({ view, onMessage }: { view: RigView; onMessage(message: s
   };
   return (
     <section className="ow-panel-box ow-section">
-      <h5>Poses <span className="muted">{rig.poses.length}</span></h5>
+      <h5>Actions <span className="muted">{rig.poses.length} (the file's poses)</span></h5>
       <div className="ow-condition">
-        <Row label="Copy pose" hint="its parts, pivots, layer order and the tracks they play">
+        <Row label="Copy action" hint="its parts, pivots, layer order and the tracks they play">
           <select value={a} onChange={(e) => setFrom(Number(e.target.value))}>
             {rig.poses.map((p, i) => <option key={i} value={i}>pose {i} ({p.parts.length} parts)</option>)}
           </select>

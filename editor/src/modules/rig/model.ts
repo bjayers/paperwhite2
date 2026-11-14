@@ -350,6 +350,24 @@ export function copyPose(rig: Rig, from: number, to: number, duplicate: boolean)
   return { ...rig, tracks, poses, idle_parts: idle };
 }
 
+// ---------------------------------------------------------------- The rest pose
+
+/** The rig as Edit mode shows it: no time, every part at rest, which is how its track begins. Each track is one key (its
+ * first visible key: the picture, and the turn, scale and move it starts with; none for a part the artist drew to rest) and
+ * each sequence holds `pose` for ever, so the preview draws the pictures where their pivots and rectangles put them, and
+ * the pivot gizmo sits on what the setup alone decides. Never saved. */
+export function restRig(rig: Rig, pose: number): Rig {
+  const shown = Math.min(pose, rig.poses.length - 1);
+  return {
+    ...rig,
+    tracks: rig.tracks.map((t) => {
+      const first = t.keys.find((k) => !isBlank(rig.pictures[k.picture ?? 0])) ?? t.keys[0];
+      return { ...t, key_type: "srt", play: "loop", keys: [{ picture: first?.picture ?? 0, frames: 1, rotation: first?.rotation ?? 0, scale: first?.scale ?? [1, 1], move: first?.move ?? [0, 0] }] };
+    }),
+    sequences: rig.sequences.map((s) => ({ ...s, key_type: "plain", play: "loop", keys: [{ pose: shown, frames: 1 }] })),
+  };
+}
+
 // ---------------------------------------------------------------- Starting fresh
 
 /** The bounds of the first piece of art on a sheet (palette indices, 256 by 128; 0 clear): left, top, width, height, or

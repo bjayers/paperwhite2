@@ -61,7 +61,7 @@ export function localAt(view: RigView, t: Target, time = view.clock.frameTime): 
 export function autoKey(view: RigView, t: Target, base: KeyPose[], change: (key: KeyPose) => KeyPose, phase: Phase, frame = localAt(view, t)): number {
   const anim = animationOf(view, t);
   if (!anim) return -1;
-  const { keys, index } = keyPoseAt(base, frame, anim.frames, anim.loop, change);
+  const { keys, index } = keyPoseAt(base, frame, anim.frames, anim.loop, change, view.newCurve);
   setKeys(view, t, keys, phase);
   return index;
 }

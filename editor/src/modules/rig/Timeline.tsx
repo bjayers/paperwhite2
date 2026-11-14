@@ -12,7 +12,7 @@ import { Thumb } from "./LayerList.tsx";
 import { pickPart } from "./keying.ts";
 import { hue, selectedParts, useClock, type RigView } from "./context.ts";
 import { keyPoseTimes, setKeys, type Target } from "./armatureEdit.ts";
-import { curveOf, type KeyPose } from "./armature.ts";
+import { curveOf, resizeBlock, type KeyPose } from "./armature.ts";
 
 const NAME_WIDTH = 210;
 
@@ -126,6 +126,45 @@ export function Timeline({ view, scale, follow }: { view: RigView; scale: number
     window.addEventListener("pointerup", up);
   };
 
+  // With an armature the sequence's blocks are baked in pieces (a key every 6 frames while the root moves): a run of
+  // pieces that show one action is one block, and its last piece takes the handle
+  const blockEnds = useMemo(() => {
+    const ends = new Map<number, { from: number; to: number }>();
+    let run: { from: number; to: number; last: number } | null = null;
+    for (const s of segments) {
+      const prev: typeof segments[number] | undefined = segments[s.key - 1];
+      if (run && prev && prev.pose === s.pose) { run.to = s.to; run.last = s.key; }
+      else { if (run) ends.set(run.last, { from: run.from, to: run.to }); run = { from: s.from, to: s.to, last: s.key }; }
+    }
+    if (run) ends.set(run.last, { from: run.from, to: run.to });
+    return ends;
+  }, [segments]);
+  /** Drag the end of a block of the armature's sequence: the key poses from its end on move along, and the loop grows or
+   * shrinks (like an NLA strip's length: only how long the action plays changes). */
+  const blockDrag = (e: React.PointerEvent, from: number, to: number) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const src = view.source?.sequences[sequence];
+    const sourceEditor = view.sourceEditor;
+    if (!src || !sourceEditor) return;
+    const start = e.clientX;
+    let moved = false;
+    const move = (ev: PointerEvent) => {
+      let length = Math.max(1, to - from + Math.round((ev.clientX - start) / scale));
+      if (ev.shiftKey) length = Math.max(6, Math.round(length / 6) * 6);
+      const delta = from + length - to;
+      if (!moved && !delta) return;
+      sourceEditor.set(["sequences", sequence], resizeBlock(src, to, delta), moved ? "move" : "start");
+      moved = true;
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
+
   const spansOf = (k: number): Span[] => {
     const part = parts[k];
     const track = rig.tracks[part.track];
@@ -177,7 +216,7 @@ export function Timeline({ view, scale, follow }: { view: RigView; scale: number
             {segments.map((s) => (
               <div key={s.key} className={`rig-key rig-seq-key${sel.sequenceKey === s.key ? " selected" : ""}${s.pose === pose ? " shown" : ""}`}
                    style={{ left: s.from * scale, width: Math.max((s.to - s.from) * scale, 3), ["--hue" as string]: hue(s.pose + 3, 45, 45) }}
-                   title={`Key ${s.key}: pose ${s.pose} for ${s.to - s.from} frames (from ${s.from})`}
+                   title={`Block ${s.key}: action ${s.pose} for ${s.to - s.from} frames (from ${s.from})`}
                    onMouseDown={(e) => {
                      e.stopPropagation();
                      e.preventDefault();
@@ -185,14 +224,16 @@ export function Timeline({ view, scale, follow }: { view: RigView; scale: number
                      clock.seek(s.from);
                      select({ sequenceKey: s.key, key: null, pose: Math.min(s.pose, rig.poses.length - 1) });
                    }}>
-                <span className="rig-key-text">pose {s.pose} · {s.to - s.from}</span>
+                <span className="rig-key-text">action {s.pose} · {s.to - s.from}</span>
                 {!source && <span className="rig-key-edge" onPointerDown={(e) => edgeDrag(e, ["sequences", sequence, "keys", s.key], s.to - s.from)} />}
+                {source && blockEnds.has(s.key) && <span className="rig-key-edge" title="Drag to change how long this action plays (the blocks after it move along; Shift: steps of 6)"
+                  onPointerDown={(e) => blockDrag(e, blockEnds.get(s.key)!.from, blockEnds.get(s.key)!.to)} />}
               </div>
             ))}
             <Playhead view={view} scale={scale} length={length} />
           </div>
 
-          <div className="rig-tl-name rig-tl-head muted small">pose {pose}: {parts.length} parts, front to back</div>
+          <div className="rig-tl-name rig-tl-head muted small">action {pose}: {parts.length} parts, front to back</div>
           <div className="rig-tl-lane rig-tl-pose" style={{ width }}>
             {segments.filter((s) => s.pose === pose).map((s) => (
               <span key={s.key} className="rig-pose-span" style={{ left: s.from * scale, width: (s.to - s.from) * scale }} />
@@ -260,7 +301,7 @@ export function Timeline({ view, scale, follow }: { view: RigView; scale: number
                       {(span.to - span.from) * scale >= 44 && (rig.pictures[key.picture ?? 0] && !isBlank(rig.pictures[key.picture ?? 0])
                         ? <Thumb view={view} picture={key.picture ?? 0} size={20} className="rig-key-thumb" /> : null)}
                       <span className="rig-key-text">{isBlank(rig.pictures[key.picture ?? 0]) ? "hidden" : `#${key.picture ?? 0}`}{turn ? ` ${turn}` : ""}</span>
-                      {!source && !span.pass && !span.held && <span className="rig-key-edge" onPointerDown={(e) => edgeDrag(e, ["tracks", part.track, "keys", span.key], key.frames)} />}
+                      {!source && view.gameKeys && !span.pass && !span.held && <span className="rig-key-edge" onPointerDown={(e) => edgeDrag(e, ["tracks", part.track, "keys", span.key], key.frames)} />}
                     </div>
                   );
                 })}

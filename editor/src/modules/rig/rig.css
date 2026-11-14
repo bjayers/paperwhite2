@@ -149,3 +149,25 @@
 .rig-key.blank { background: repeating-linear-gradient(45deg, var(--hue) 0 3px, transparent 3px 6px); border-style: dashed; }
 .rig-outliner-row.multi { background: color-mix(in srgb, var(--selected) 55%, transparent); }
 .rig-part-name.multi { background: color-mix(in srgb, var(--selected) 55%, transparent); }
+
+/* Edit and Pose mode, the guide, the legend over the timeline (2026-11-13) */
+.rig-column { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.rig-facts { padding-top: 4px; }
+.rig-mode button { font-weight: 600; padding: 4px 14px; }
+.rig-mode button.active { background: var(--accent); color: #fff; }
+.rig-mode .small { margin-left: 4px; font-weight: normal; }
+.rig-mode button.active .muted { color: rgba(255, 255, 255, 0.8); }
+.rig-preview.rig-mode-edit { border-color: #d29922; }
+.rig-preview.rig-mode-pose { border-color: var(--accent); }
+.rig-actions { display: inline-flex; align-items: center; gap: 6px; }
+.rig-guide { border-color: var(--accent); }
+.rig-guide-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 4px 22px; font-size: 13px; line-height: 1.45; }
+.rig-guide-body h4 { margin: 4px 0; font-size: 13px; }
+.rig-guide-body p { margin: 4px 0; }
+.rig-guide-body ol { margin: 4px 0; padding-left: 20px; }
+.rig-guide-body li { margin: 3px 0; }
+.rig-tl-legend { display: flex; flex-wrap: wrap; gap: 4px 22px; font-size: 12px; padding: 2px 4px 4px; }
+.rig-diamond-legend { display: inline-block; width: 9px; height: 9px; transform: rotate(45deg); background: #a5d6a7; border: 1px solid #222; vertical-align: middle; margin-right: 2px; }
+.rig-block-legend { display: inline-block; width: 18px; height: 9px; background: hsl(210 55% 42%); border-radius: 2px; vertical-align: middle; margin-right: 2px; }
+.rig-nla { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+.rig-nla-block { padding: 2px 8px; border-radius: 4px; background: var(--panel-2); border: 1px solid var(--border); font-size: 12px; }

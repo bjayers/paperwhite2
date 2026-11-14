@@ -83,7 +83,7 @@ export function LayerList({ view }: { view: RigView }) {
       <p className="muted ow-note">Front to back, the layer order. Click to choose a part (as clicking the preview does), drag to reorder (idle parts follow);
         the eye hides a part in the preview only, to see what is behind it. <b>Shift-click</b> (a range) or <b>Ctrl-click</b> (one more) chooses several parts:
         the Move gizmo then moves all of them, Rotate turns them about the group's centre, and Key at playhead keys them together.
-        To move or turn the whole sprite, or parent parts so one follows another, use Convert to armature (Armature, above): its Root moves the whole sprite, and a child follows its parent.</p>
+        Parenting is in the Parenting section above (Edit mode); to move or turn the whole sprite, choose Root in Pose mode.</p>
     </section>
   );
 }

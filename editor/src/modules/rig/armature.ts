@@ -19,8 +19,8 @@
 // - Rotation and uniform scale compose exactly; a parent's non-uniform scale over a turned child would need a shear,
 //   which MCSS can't draw: the bake keeps the nearest turn and scale and warns.
 
-import { keyAt, lengthOf, loops, type Key, type KeyType, type Pair, type Rig, type Srt, type Track } from "./mcss.ts";
-import { fixedScale, orderedKey, signedDegrees } from "./model.ts";
+import { forward, keyAt, lengthOf, loops, type Key, type KeyType, type Pair, type Rig, type Srt, type Track } from "./mcss.ts";
+import { fixedScale, isBlank, orderedKey, pictureUses, signedDegrees, withRectangles } from "./model.ts";
 
 // ---------------------------------------------------------------- The source
 
@@ -641,7 +641,7 @@ export function boneOf(track: Track): Bone {
 
 /** A key pose list with one at a frame: the one there (the last of several) changed, or a new one with the values the
  * curves give there, its curve the key pose's before it. Returns the list and the key pose's place. */
-export function keyPoseAt(keys: KeyPose[], frame: number, frames: number, loop: boolean, change: (key: KeyPose) => KeyPose): { keys: KeyPose[]; index: number } {
+export function keyPoseAt(keys: KeyPose[], frame: number, frames: number, loop: boolean, change: (key: KeyPose) => KeyPose, smooth?: Curve): { keys: KeyPose[]; index: number } {
   const sorted = sortedKeys(keys);
   let at = -1;
   for (let i = 0; i < sorted.length; i++) if (sorted[i].frame === frame) at = i;
@@ -664,7 +664,17 @@ export function keyPoseAt(keys: KeyPose[], frame: number, frames: number, loop: 
   const index = sorted.findIndex((k) => k.frame > frame);
   const next = sorted.slice();
   const place = index < 0 ? next.length : index;
-  next.splice(place, 0, orderedKeyPose(change(fresh)));
+  const changed = orderedKeyPose(change(fresh));
+  // A key pose made in Pose mode goes to the next by the smooth curve asked for, and the held one before it, which had
+  // nothing to go by, does too: two key poses in a row fill in the in-betweens (baked every 6 frames). Where key poses are
+  // 6 frames apart, as Game Freak's are, this changes nothing the game plays.
+  if (smooth && smooth !== "constant") {
+    changed.curve = smooth;
+    delete changed.curves;
+    const prev = next[i];
+    if (prev && (prev.curve ?? "constant") === "constant" && !prev.curves) next[i] = { ...prev, curve: smooth };
+  }
+  next.splice(place, 0, changed);
   return { keys: next, index: place };
 }
 
@@ -779,4 +789,69 @@ export function wouldCycle(source: Source, bone: number, parent: number | null):
     p = source.bones[p]?.parent ?? null;
   }
   return false;
+}
+
+// ---------------------------------------------------------------- Moving a pivot
+
+/** A part's pivot moved by `delta` (pixels, x right, y down) while everything it draws stays where it is on screen, in
+ * every key: the pivot is where the game places the part and turns it about, so it moves, and what the game stores
+ * relative to it moves back: the part's pictures' rectangles (`at`), and for each key that turns or scales, its move,
+ * so that key's picture is exactly where it was. A picture the track shares with another track is copied for this one.
+ * Every part (in any pose) that plays the track moves with it. With an armature, the key poses are corrected the same
+ * way (the bake then gives the flat keys). Returns the rig, the source, and the pictures that were copied. */
+export function movePivot(rig: Rig, pose: number, part: number, delta: Pair, source: Source | null = null): { rig: Rig; source: Source | null; copied: number } {
+  const track = rig.poses[pose]?.parts[part]?.track;
+  if (track === undefined || (!delta[0] && !delta[1])) return { rig, source, copied: 0 };
+  const [dx, dy] = delta;
+  // (the movement in the files' units: y up for a point of a picture, y down for a move)
+  const up: Pair = [dx, -dy];
+  const poses = rig.poses.map((p) => ({ ...p, parts: p.parts.map((q) => (q.track === track ? { ...q, pivot: [q.pivot[0] + dx, q.pivot[1] + dy] as Pair } : q)) }));
+  // The pictures this track shows, moved back (copied first when another track shows them too)
+  const shown = new Set<number>();
+  for (const key of rig.tracks[track].keys) if (key.picture !== undefined && !isBlank(rig.pictures[key.picture])) shown.add(key.picture);
+  for (const bone of source ? [source.bones[track]] : []) for (const k of bone?.keys ?? []) if (k.picture !== undefined && !isBlank(rig.pictures[k.picture])) shown.add(k.picture);
+  const pictures = rig.pictures.slice();
+  const remap = new Map<number, number>();
+  for (const n of shown) {
+    const others = pictureUses(rig, n).some((u) => u.track !== track) || (source?.bones ?? []).some((b, i) => i !== track && b.keys.some((k) => k.picture === n));
+    const moved = withRectangles(rig.pictures[n], rig.pictures[n].rectangles.map((r) => (r.size[0] && r.size[1] ? { ...r, at: [r.at[0] - up[0], r.at[1] - up[1]] as Pair } : r)));
+    if (others) {
+      remap.set(n, pictures.length);
+      pictures.push(moved);
+    } else pictures[n] = moved;
+  }
+  const picture = (n: number | undefined) => (n === undefined ? undefined : remap.get(n) ?? n);
+  // What a key's turn and scale do to the shift of the origin: its move changes by (R S - 1) of the shift
+  const spread = (rotation65536: number, scale: Pair): Pair => {
+    const moved = forward(up[0], up[1], [rotation65536, scale[0], scale[1], 0, 0]);
+    return [moved[0] - up[0], moved[1] - up[1]];
+  };
+  let tracks = rig.tracks;
+  if (!source || !source.bones[track]) {
+    tracks = rig.tracks.map((t, i) => (i !== track ? t : { ...t, keys: t.keys.map((k) => {
+      const key = { ...k, ...(k.picture !== undefined ? { picture: picture(k.picture) } : {}) };
+      if (t.key_type !== "srt") return orderedKey(key);
+      const [sx, sy] = spread(k.rotation ?? 0, k.scale ?? [1, 1]);
+      const move = k.move ?? [0, 0];
+      return orderedKey({ ...key, move: [Math.round(move[0] + sx), Math.round(move[1] - sy)] });
+    }) }));
+  }
+  let next: Source | null = source;
+  if (source && source.bones[track]) {
+    next = { ...source, bones: source.bones.map((b, i) => (i !== track ? b : { ...b, keys: b.keys.map((k) => {
+      const key: KeyPose = { ...k, ...(k.picture !== undefined ? { picture: picture(k.picture) } : {}) };
+      const [sx, sy] = spread(((k.rotation ?? 0) / 360) * 65536, k.scale ?? [1, 1]);
+      if (!sx && !sy) return key;
+      const move = k.move ?? [0, 0];
+      return orderedKeyPose({ ...key, move: [tidyMove(move[0] + sx), tidyMove(move[1] - sy)] });
+    }) })) };
+  }
+  return { rig: { ...rig, pictures, tracks, poses }, source: next, copied: remap.size };
+}
+
+/** A source sequence with the block that ends at `to` made `delta` frames longer (or shorter): the key poses from its end
+ * on move along and the loop grows by as much, so only how long that action plays changes, as an NLA strip's length does. */
+export function resizeBlock(seq: SourceSequence, to: number, delta: number): SourceSequence {
+  if (!delta) return seq;
+  return { ...seq, frames: Math.max(1, seq.frames + delta), keys: seq.keys.map((k) => (k.frame >= to ? { ...k, frame: Math.max(0, k.frame + delta) } : k)) };
 }

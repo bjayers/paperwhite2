@@ -1,7 +1,8 @@
 // Keys at the playhead and choosing several parts: the actions the Key at playhead buttons and shortcut (K), the layer
 // list, the timeline and the preview share. The pure parts are in model.ts (keyPartsAt, swapPictureAt, copyPose).
 
-import { autoKey, animationOf, localAt } from "./armatureEdit.ts";
+import { animationOf, localAt } from "./armatureEdit.ts";
+import { keyPoseAt, orderedKeyPose } from "./armature.ts";
 import { selectedParts, type RigView, type Selection } from "./context.ts";
 import type { Rig } from "./mcss.ts";
 import { keyPartsAt, partClock, swapPictureAt } from "./model.ts";
@@ -9,8 +10,23 @@ import { keyPartsAt, partClock, swapPictureAt } from "./model.ts";
 /** A key beginning at the playhead for the chosen parts (or, `all`, every part of the pose shown): the key the playhead
  * is in is split there (same on both sides), a track with none gets one, a key already beginning there is just chosen.
  * Works on an empty or full track. With an armature it makes key poses on the bones. Returns what to tell the user. */
-export function keyAtPlayhead(view: RigView, all: boolean): string {
+export function keyAtPlayhead(start: RigView, all: boolean): string {
+  // (Pose mode on a sprite with no armature: the first key pose makes one, so there are key poses to key)
+  let view = start;
+  if (!view.source && view.mode === "pose" && !view.gameKeys && (all || view.sel.part !== null)) view = view.ensureArmature(true) ?? view;
   const { rig, sel, clock, editor, select } = view;
+  // The Root chosen (the whole sprite): a key pose on the sequence's, which the root's gizmos and Turn, Move and Scale write
+  if (sel.root && view.source && view.sourceEditor && !all) {
+    clock.play(false);
+    const n = Math.min(clock.state.sequence, rig.sequences.length - 1);
+    const target = { kind: "root" as const, sequence: n };
+    const anim = animationOf(view, target);
+    if (!anim) return "The root has no key poses here.";
+    const { keys, index } = keyPoseAt(view.source.sequences[n].keys, localAt(view, target, clock.frameTime), anim.frames, anim.loop, (key) => key, view.newCurve);
+    view.commit({ source: { ...view.source, sequences: view.source.sequences.map((s, i) => (i === n ? { ...s, keys: keys.map(orderedKeyPose) } : s)) } });
+    select({ keyPose: index });
+    return `A key pose for the whole sprite (the Root) at frame ${clock.frameTime}; it holds what the curves give there. Set its Turn, Move or Scale in the Key pose panel, or with the gizmos.`;
+  }
   const pose = sel.pose;
   const count = rig.poses[pose]?.parts.length ?? 0;
   const parts = all ? Array.from({ length: count }, (_, i) => i) : selectedParts(sel);
@@ -18,18 +34,24 @@ export function keyAtPlayhead(view: RigView, all: boolean): string {
   clock.play(false);
   const time = clock.frameTime;
   const sequence = Math.min(clock.state.sequence, rig.sequences.length - 1);
-  if (view.source) {
+  if (view.source && view.sourceEditor) {
+    // One step for all the parts: the key poses made on a working copy of the armature, written once
+    let working = view.source;
     let made = 0;
+    let first = -1;
     for (const k of parts) {
       const part = rig.poses[pose].parts[k];
       const target = { kind: "bone" as const, track: part.track };
       const anim = animationOf(view, target);
       if (!anim) continue;
-      const index = autoKey(view, target, anim.keys, (key) => key, "typed", localAt(view, target, time));
+      const { keys, index } = keyPoseAt(working.bones[part.track].keys, localAt(view, target, time), anim.frames, anim.loop, (key) => key, view.newCurve);
+      working = { ...working, bones: working.bones.map((b, i) => (i === part.track ? { ...b, keys: keys.map(orderedKeyPose) } : b)) };
       made++;
-      if (k === parts[0]) select({ keyPose: index });
+      if (k === parts[0]) first = index;
     }
-    return `Key poses at frame ${time} for ${made} bone${made === 1 ? "" : "s"} (one already there is just chosen).`;
+    view.commit({ source: working });
+    if (first >= 0) select({ keyPose: first });
+    return `Key poses at frame ${time} for ${made} bone${made === 1 ? "" : "s"} (one already there is just chosen). They hold what the curves give there (new ones go to the next by the curve chosen under New key poses); move the part with a gizmo to change them.`;
   }
   const result = keyPartsAt(rig, sequence, time, pose, parts);
   if (!result.targets.length) return `The playhead (frame ${time}) isn't in pose ${pose}, so its parts aren't playing: move it into the pose, or choose the pose the playhead is in.`;

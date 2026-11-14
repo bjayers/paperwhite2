@@ -109,6 +109,26 @@ class DocumentStore {
     this.changed();
   }
 
+  /** Takes a held document out of the store as it is, history and all, for restore() to bring back (a tool undoing the
+   * creation of a file it made, and redoing it). */
+  stash(path: string): Document | undefined {
+    const doc = this.docs.get(path);
+    if (doc) this.close(path);
+    return doc;
+  }
+
+  restore(doc: Document) {
+    this.put(doc);
+  }
+
+  canUndo(path: string): boolean {
+    return (this.docs.get(path)?.past.length ?? 0) > 0;
+  }
+
+  canRedo(path: string): boolean {
+    return (this.docs.get(path)?.future.length ?? 0) > 0;
+  }
+
   /** Closes a tab; the caller asks first when it has unsaved changes. */
   close(path: string) {
     this.docs.delete(path);

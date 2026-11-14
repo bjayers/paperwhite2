@@ -47,6 +47,7 @@ export function ScrubNumber({ value, onChange, step = 1, label, digits = 2 }: {
                setTyped(ok ? null : e.target.value);
                if (ok) onChange(n, "typed");
              }}
+             onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") (e.target as HTMLElement).blur(); }}
              onBlur={() => setTyped(null)} />
     </span>
   );

@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import type { Rig } from "./mcss.ts";
 import type { Editor, Phase } from "./model.ts";
-import type { Baked, Source } from "./armature.ts";
+import type { Baked, Curve, Source } from "./armature.ts";
 import type { Clock, ClockState } from "./player.ts";
 
 export interface Selection {
@@ -41,6 +41,9 @@ export interface Art {
   shiny: [number, number, number][];
 }
 
+/** Edit mode sets a sprite up at rest (pictures, parts, pivots, parents); Pose mode animates it (key poses, curves). */
+export type Mode = "edit" | "pose";
+
 export interface RigView {
   /** The flat rig: the file's, or with an armature what the armature bakes to. */
   rig: Rig;
@@ -62,6 +65,19 @@ export interface RigView {
   /** Tracks hidden in the preview by the layer list's eyes (editor only, never saved). */
   hidden: ReadonlySet<number>;
   toggleHidden(track: number): void;
+  mode: Mode;
+  /** The raw game keys of a sprite with no armature, edited as the game holds them (the advanced view). */
+  gameKeys: boolean;
+  /** Edits the flat rig and/or the armature as one step (a drag's later moves amend it). */
+  commit(next: { rig?: Rig; source?: Source }, phase?: Phase): void;
+  /** The view with an armature: the side's, or one made now from the flat rig (converted as it is, byte for byte) and said so,
+   * as part of the step being made (`joinNext`: the edit that follows). Null when the rig isn't loaded. */
+  ensureArmature(joinNext?: boolean, apply?: (source: Source) => Source): RigView | null;
+  /** Parents a part's bone (null: to the root), keeping the part where it is; makes the armature first if there is none.
+   * Returns what to tell the user, or null. */
+  parentBone(bone: number, parent: number | null): string | null;
+  /** The curve a new key pose gets (and the one before it, if that was held). */
+  newCurve: Curve;
   /** Gizmo drags at a frame where no key begins start one there (split off the key the playhead is in). */
   autoKey: boolean;
 }

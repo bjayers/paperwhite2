@@ -469,6 +469,35 @@ files the build will write against the ~40 KB guidance (section 15.6) with the s
 **Save** (Ctrl+S). Save runs the build's checks first (`POST /api/battle-sprite/rig-check`, `server/python/rig_check.py`:
 `mcss_rig.check`, refusing errors) and then the validator; Ctrl+Z and Ctrl+Y undo and redo.
 
+- **Edit mode and Pose mode (2026-11-13; Tab switches, the header's Edit | Pose, remembered per viewer):** the editor works as
+  Blender does. **Edit mode** is the rest setup, with no time (the preview draws each part as its track begins and the
+  dock is gone): the **Sheet** and the pictures, the **layers**, each part's **Pivot**, and **parenting**. Its one tool is
+  **Pivot** (P): dragging it (or typing the Part panel's Pivot) moves the pivot and the part's picture **stays where it is
+  on screen**: the pivot is where the game places a part and turns it about, so the rectangles' `at` (and, for a key that turns
+  or scales, that key's move) move back by the same, in every key of every action (`armature.ts`, `movePivot`; a picture another
+  track shows is copied for this one; every part that plays the track moves with it). Parenting: drag a part onto another in
+  **Parenting** (the outliner; onto Root to unparent), pick the parent under **Bone**, or **Pick parent on the preview**; the part
+  stays where it is. Nothing is keyed in Edit mode, and K, G, R and S say so. **Pose mode** animates: the Move, Rotate and Scale
+  gizmos (G, R, S) key the chosen part (or the Root) at the playhead, with the timeline, **Auto-key**, the Graph Editor and the bake.
+  Pose mode's dock leads with a legend: **Key poses (yours)** (the diamonds) above **Baked keys (what the game plays, every 6
+  frames)** (the blocks, read only). **New key poses** (ease in and out by default, or linear, ease in, ease out, held) is the curve
+  a key pose made in Pose mode goes to the next by, so a start and an end key pose fill in the in-betweens.
+- **No Convert button:** the first time you parent a part, or key one in Pose mode (a gizmo drag that changes something, K, or choosing
+  the Root), a side with no armature gets one (`convertToArmature`: it bakes back to the file byte for byte, so it plays exactly as
+  before until something changes), with a line saying so. It is part of the step that made it: Ctrl+Z takes the armature away again
+  (`history.ts`), Ctrl+Y brings it back. **Remove armature** (Parenting panel) goes back to flat keys. **Game keys** (under the preview,
+  Pose mode, a side with no armature) is the advanced view: the game's own held keys edited as stored, with the Key, Layers and
+  sequence-key panels of the flat editor (the Pivot and parenting are Edit mode's in both).
+- **Actions and the sequence:** in the panels and hints a pose is an **Action** (the file keeps "pose"): a set of parts with pivots and
+  layers, each playing its own track. The **Stay / Stop** row is like Blender's NLA strip: each block plays one action for N frames;
+  drag a block's right edge (Shift: steps of 6) to change how long that action plays (with an armature the blocks after it move along and the
+  loop grows, `resizeBlock`; a run of pieces showing one action is one block), and each part's track keeps looping inside it at its own
+  length (Bone, Loop). Choosing a block chooses its action. The Sequence panel has the sequence's loop length.
+- **? How rigs work:** a collapsible guide in the header (the two modes, key poses and baked keys, actions, and the eyes-and-tilt example
+  worked through).
+- **Undo:** one history for the page across the flat rig and the armature (`history.ts`): a drag, an auto-key split, a pivot (both files),
+  a parenting or an automatic conversion is one step; a step with nothing left to undo is skipped, not a dead key press; a checkbox, a
+  slider or a list with the focus doesn't stop Ctrl+Z (only a text box does), and a press on the preview lets go of a focused field.
 - **Layout:** the side panel runs the page's full height at the right with its own scroll; the docked timeline and graph
   sit under the preview and sheet, to its left (drag the dock's top edge to resize it). Dragging on the timeline never
   selects text; the ruler and empty lane space scrub the playhead while held.
@@ -489,8 +518,8 @@ files the build will write against the ~40 KB guidance (section 15.6) with the s
 - **Several parts:** Shift-click (a range) or Ctrl-click (one more) in the layer list, the timeline's names or the
   preview chooses several parts (dashed outlines; a pink cross is the group's centre). The Move gizmo moves all their
   keys at the playhead, Rotate turns them about the group's centre, Scale scales each about its own pivot, Key at
-  playhead keys them together; plain tracks (picture-only keys) are left, and the message says so. Convert to armature
-  gives a Root that moves the whole sprite, and parenting.
+  playhead keys them together; plain tracks (picture-only keys) are left, and the message says so (Game keys view). An armature
+  (made by the first parenting or key pose) gives a Root that moves the whole sprite, and parents.
 - **Poses:** the **Poses** section copies a pose's parts, pivots, layer order and tracks to another pose, or makes a
   new pose from it. **Duplicate the tracks** gives the copy tracks of its own (named by pose letter), so its animation
   can differ; **Share the tracks** plays the same ones (an edit shows in both; the only choice with an armature). One
@@ -536,11 +565,11 @@ show the bake, as the game will play it; Save writes the baked `<side>_rig.json`
 armature. The build reads only the flat rig, and `tests/armature.test.ts` fails if a flat rig in res/ isn't what its
 armature bakes.
 
-- **Convert to armature** (the side panel's Armature section): each part a bone of the root's, at its pivot, its keys
-  held key poses; it bakes back to the rig byte for byte (all 1,506 sides). **Remove armature** deletes the file (the
-  rig keeps what it baked).
-- **Outliner:** the Root (the whole sprite: the sequence's move, turn and scale about the feet, and the pose each key
-  shows) and the shown pose's bones as a tree. Drag a bone onto another to parent it, onto Root to unparent it; or
+- **The armature is made for you** (see Edit and Pose mode above; there is no Convert button): each part a bone of the root's, at its
+  pivot, its keys held key poses; it bakes back to the rig byte for byte (all 1,506 sides). **Remove armature** deletes the file
+  (the rig keeps what it baked).
+- **Outliner** (Parenting in Edit mode, Parts in Pose mode): the Root (the whole sprite: the sequence's move, turn and scale about the feet, and
+  the pose each key shows) and the shown action's bones as a tree. In Edit mode drag a bone onto another to parent it, onto Root to unparent it; or
   choose its parent under **Bone**, or **Pick parent on the preview**. Parenting keeps the part where it is (Blender's
   Keep Transform): its key poses are written again relative to the parent, so only the parent's keys from then on
   move it. A child follows its parent's turn, scale and move; rotation and even scale bake exactly, and a parent's
