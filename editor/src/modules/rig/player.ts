@@ -9,7 +9,8 @@
 import { lengthOf, type Idle, type Rig } from "./mcss.ts";
 
 export const GAME_FPS = 60;
-const PAUSES = [48, 56, 64];
+/** The pause's lengths in frames, one chosen at random (BtlvMcss_IdleTask). */
+export const PAUSES = [48, 56, 64];
 /** 0x555 / 0x1000, the battle's speed for a Pokémon asleep or otherwise slowed. */
 export const SLOW = 0x555 / 0x1000;
 
@@ -76,6 +77,21 @@ export class Clock {
 
   step(by: number) {
     this.set({ playing: false, pause: null, time: Math.max(0, Math.floor(this.state.time) + by) });
+  }
+
+  /** Whether the rig can pause at all (its idle parts aren't the game's 0xff "never"). */
+  canPause() {
+    return !!this.rig && this.rig.idle_parts !== null;
+  }
+
+  /** The battle's pause now, as it starts at the end of a loop when the roll wins: sequence 1 if there is one, else the
+   * stay loop's start, stopped, with only the idle parts going on, for `wait` frames (48, 56 or 64 at random), then the
+   * loop again. Plays the clock. */
+  pauseNow(wait = PAUSES[Math.floor(Math.random() * 3)]) {
+    if (!this.canPause()) return;
+    this.idleCount = 3;
+    this.set({ sequence: this.rig!.sequences.length > 1 ? 1 : 0, time: 0, pause: { elapsed: 0, wait }, playing: true });
+    this.start();
   }
 
   start() {
