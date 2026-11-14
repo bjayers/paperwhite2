@@ -355,12 +355,20 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
   const removeArmature = async (confirmed = false) => {
     const d = documents.get(sourcePath);
     if (!d || (!confirmed && !confirm(`Remove this side's armature (${side}_rig_source.json)? The rig keeps its keys as they bake now, and edits flat again (the Game keys view).`))) return;
-    if (d.savedText) await api.removeFile(sourcePath);
+    if (d.savedText) {
+      try {
+        await api.removeFile(sourcePath);
+      } catch (e) {
+        setMessage(`Couldn't remove ${side}_rig_source.json: ${(e as Error).message}`);
+        return false;
+      }
+    }
     await documents.reload(sourcePath);
     history.current.forget(sourcePath);
     stashed.current = undefined;
     setSel((s) => ({ ...s, root: false, keyPose: null }));
     setMessage(`Removed the armature. Save to keep the rig as it baked.`);
+    return true;
   };
   const setMode = (m: Mode) => {
     setModeState(m);
@@ -482,7 +490,7 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
     if (!confirm(`Start this ${side} rig fresh? Everything on this side is replaced by one picture (a rectangle round the sheet's first piece of art), one part holding it `
       + `and the stay loop; the sheet stays as it is.${hasSource ? ` The side's armature (${side}_rig_source.json) is deleted, which Undo does not bring back.` : ""} `
       + `Undo takes the rig back until you save.`)) return;
-    if (hasSource) await removeArmature(true);
+    if (hasSource && !(await removeArmature(true))) return;
     const sheetPixels = art?.sheets[side];
     editor.replace(freshRig(side, sheetPixels ? artBounds(sheetPixels) : null));
     setSel(NO_SELECTION);

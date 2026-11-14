@@ -150,6 +150,12 @@ test("the server reads CALENDAR_ZONE_MAX from the packer, else 24", () => {
   assert.ok(!removable("res/field/weather_calendar/weather_calendar.schema.json"));
   assert.ok(!removable("res/field/zones/route_19.json"));
   assert.ok(removable("res/paperwhite2/encounters/species/pikachu.json"));
+  // A battle sprite side's rig source (either editor's), never its flat rig, a schema or a path out of res/pokemon
+  assert.ok(removable("res/pokemon/applin/front_rig_source.json"));
+  assert.ok(removable("res/pokemon/pichu/form_1/back_rig_v2.json"));
+  assert.ok(!removable("res/pokemon/pichu/front_rig.json"));
+  assert.ok(!removable("res/pokemon/battle_sprite_rig_v2.schema.json"));
+  assert.ok(!removable("res/pokemon/../field/front_rig_v2.json"));
 });
 
 test("indoors is an area without exterior: every calendar zone is outdoors, gyms aren't", () => {
