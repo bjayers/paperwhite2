@@ -459,14 +459,15 @@ New species (`AddedSpecies.tsx`, docs/paperwhite2/design/new-species.md sections
 
 ## The Rig Editor
 
-**The new editor (2026-11-14, docs/paperwhite2/design/rig-editor-v2.md, "Built: step 2" and "Built: step 3")** is what **Edit rig…** and the
+**The new editor (2026-11-14, docs/paperwhite2/design/rig-editor-v2.md, "Built: step 2" to "Built: step 4")** is what **Edit rig…** and the
 sidebar open (`src/modules/rig/SetupEditor.tsx`, its edits in `setup.ts`). It edits a side's source,
 `<side>_rig_v2.json` (`v2.ts`), and bakes it on every change into `<side>_rig.json`, the build's input. A side without a
 source opens as its flat rig converted (`convertToV2`, byte for byte), in memory: the first edit makes the file, so an
 untouched side writes nothing; Undo of that edit takes the file away again. Save runs the rig-check route on the bake
 and writes both files; Ctrl+Z and Ctrl+Y are one history over both (`history.ts`). A side with a first-editor armature
 (`_rig_source.json`) shows a notice: open it in the Advanced editor, or **Start fresh…** (which deletes the armature
-through the server). The header switches its two modes, **Rig setup** and **Sequences** (remembered per viewer):
+through the server). The header switches its three modes, **Rig setup**, **Sequences** and **Timeline** (remembered per
+viewer):
 
 - **Pieces** (the sheet card): drag on the sheet to cut a piece (Shift: the chosen piece's second rectangle); drag a
   rectangle to move it, its edges or corners to resize it, snapped to tiles (Alt: pixels) and to sizes the DS's OBJs can
@@ -483,7 +484,7 @@ through the server). The header switches its two modes, **Rig setup** and **Sequ
   head and tail); **Default pose** (move, turn, scale, Reset pose; the setup is the default pose, with no separate
   step); **Layers** front to back (drag to reorder; Hide and Draw); **Piece** (name, rectangles, its place on its bone);
   **Sequences** (a summary; Sequences mode keys them); **Checks**.
-- The header: **Rig setup** and **Sequences**, **Front** and **Back**, the size against ~40 KB, Revert, Save;
+- The header: **Rig setup**, **Sequences** and **Timeline**, **Front** and **Back**, the size against ~40 KB, Revert, Save;
   **Copy front to back…** (on the back), **Start fresh…** (one piece round the sheet's first art and one bone), **Advanced
   (old editor)** (the first editor, `&editor=old`, which warns on a side that has a source), **? How rigs work**.
 
@@ -515,8 +516,31 @@ default pose (`sequences.ts` for the edits, `SequenceTimeline.tsx`, `SequenceGra
   undo step), **Part** (the chosen part at the playhead: Key, Key all parts, Delete key; its picture (thumbnails, Hidden),
   move, turn and scale, from its key there or its curves, changing one keys it; its curve to the next), **Checks**.
 - A key holds only what it changes (an absent channel is the default pose's), so edits of the rig setup still carry
-  into every sequence. Placing sequences on the battle's timeline (the strip of blocks) is step 4; a new sequence is kept
-  but isn't played in battle until then.
+  into every sequence. A sequence on no clip of the timeline shows **not played** in the list, with **+ Add** (it goes
+  at the end of the timeline).
+
+**Timeline mode (step 4)**: the loop the battle plays (the game's sequence 0, "stay") as a strip of clips, like a video
+editor's, and the battle's pause (`timeline.ts` for the edits, `StripTimeline.tsx`, `StripPreview.tsx`, `StripPanel.tsx`).
+A third mode rather than a dock tab, because its preview plays something different (the whole strip with the battle's
+pauses, not one sequence) and its side panel edits the sprite as a whole (what plays, what keeps moving).
+
+- **The strip** (the dock): a clip is one sequence played several times in a row (Idle ×4), as wide as it plays, in the
+  sequence's colour, its instances divided; a clip always plays its whole sequence (the game's blocks restart it), and
+  editing the sequence changes every clip of it. Drag a sequence from the side panel onto the strip to add it there
+  (beside a clip of the same sequence it joins it), drag a clip to move it, click to choose it (Delete deletes it,
+  Escape lets go), double-click to open its sequence in Sequences mode. The ruler and the playhead run over the whole
+  strip (press or drag: by 6), ↻ marks the loop's end; zoom 1–6. The header gives the strip's bytes.
+- **The preview** plays the whole strip from the bake itself (its sequence 0 is the strip), looping at 60 frames a second,
+  the playing clip lit on the strip and named under the preview (Idle 3 of 4, frame 24). Play and pause (Space), step by
+  6 (the arrows), Home, scrub; Feet, Shiny, 2–6×; click a part to choose it. **Preview a battle pause** plays one pause
+  now, as the battle starts it at a loop's end (`Clock.pauseNow`: the sprite at the loop's start, stopped, only the
+  Keeps moving parts going on, outlined green, for 48, 56 or 64 frames; press again to end it); **Random pauses, as in
+  battle** rolls one at each loop's end as `BtlvMcss_OnAnimationEnd` does (1 in 3, then 2, then surely).
+- **The side panel**: **Sequences** (drag onto the strip, or **+ Add** at its end; how often each plays, **not played**;
+  double-click to open), **Timeline** (clips, blocks and the loop's length; the chosen clip's sequence, **Repeats** ×N
+  with −1 and +1, length, start, **Open**, **◀ Earlier**, **Later ▶**, **Delete clip**; the strip keeps one clip),
+  **Battle pause** (**Pauses in battle**: on, the vanilla random pause; off, never, the game's 0xff; **Keeps moving** per
+  part: the idle parts, baked as their places in the rig's layers), **Checks**.
 
 **The first editor, now the Advanced view.** One side of a battle sprite's rig (`src/modules/rig/`, `res/pokemon/<folder>/<side>_rig.json`; the design is
 docs/paperwhite2/design/battle-sprites.md sections 15 to 18), opened from a Battle sprite card's **Edit rig…** or the

@@ -47,8 +47,16 @@ export function SetupGuide({ onClose }: { onClose(): void }) {
           <p>The <b>Graph</b> shows the chosen parts' curves and, faint underneath, the steps the game holds every 6 frames. A key's curve says how
             it goes on to the next: ease in and out by default, linear, constant (held), Bézier with handles, or a preset: <b>Snap</b>, <b>Back</b>
             (past the key and back), <b>Bounce</b> or <b>Elastic</b>.</p>
-          <p className="muted">Save writes the rig and the game's keys made from it; the preview is those keys, as the battle plays them.
-            Placing sequences on the battle's timeline comes next.</p>
+          <p className="muted">Save writes the rig and the game's keys made from it; the preview is those keys, as the battle plays them.</p>
+        </div>
+        <div>
+          <h4>8. The timeline</h4>
+          <p>In <b>Timeline</b> (the switch at the top) the strip at the bottom is the loop the battle plays: clips of your sequences, like a video
+            editor's (Idle ×4, Hop, ...). Drag a sequence onto it, drag clips to reorder them, set a clip's repeats; a clip always plays its whole
+            sequence, and editing a sequence changes every clip of it. A sequence on no clip is never shown in battle.</p>
+          <h4>9. The battle's pause</h4>
+          <p>Now and then, at the end of a loop, the battle stops the sprite for about a second. <b>Keeps moving</b> on a part lets it go on
+            animating then (a flame, a blink); <b>Pauses in battle</b> off means it never stops. <b>Preview a battle pause</b> shows one.</p>
         </div>
       </div>
     </section>

@@ -468,3 +468,100 @@ converted keys (4-frame keys, two sequences) playing as before. Nothing in res/ 
 - Open: loop clips (step 5) aren't shown or edited; `reparentKeep` and `moveHead` don't touch them either. Keys hold
   absolute values per channel (as the format says), so changing a default pose's channel that a key also holds doesn't
   move that key.
+
+## Built: step 4, the timeline strip and the battle pause (2026-11-14)
+
+The header's third mode, **Timeline** (beside Rig setup and Sequences, remembered per viewer): the loop the battle plays
+as a strip of clips in the dock, its preview at game speed with the battle's pause, and the side panel's sequences, the
+chosen clip and the pause. A mode rather than a dock tab in Sequences, because what it previews differs (the whole strip
+with the pauses, not the open sequence on its own) and its panel edits the sprite as a whole (what plays, what keeps
+moving); double-clicking a clip goes to Sequences with that sequence open. Every edit is a pure function of the source in
+`editor/src/modules/rig/timeline.ts`; the page is `SetupEditor.tsx` with `StripTimeline.tsx`, `StripPreview.tsx` and
+`StripPanel.tsx`. The save path is unchanged (the bake in the flat rig's document, Save through the rig-check route,
+both files, one undo history). The format needed nothing new: the strip is `timeline.blocks`, the pause `pause` and
+`keeps_moving`, as step 1 defined them.
+
+### The rules (timeline.ts)
+
+- **A clip is a run of equal blocks** (`clipsOf`): the blocks in a row that play the same sequence are one clip with a
+  count, the user's "Idle ×4". Each block is still one instance, one key of the game's sequence 0 (`{pose, frames}`); the
+  sequence's pose and tracks are stored once, so editing it changes every instance and a repeat costs one 8-byte key (and
+  its 2-byte result, shared). Blocks of an original with their own fields (`frames`, `move`, ...) join only blocks equal
+  to them. (Not the format's `clips`, which are a part's loop clips: step 5.)
+- **No trimming**: a clip plays its sequence's full length, since the game's blocks restart the sequence's parts; an
+  editor-made block has no `frames`, so it follows the sequence's length when that changes. An original's block keeps its
+  own `frames` (shown as such).
+- **Edits**: `addClip` (at the end, or before a clip; beside a clip of the same sequence it joins it), `setRepeat` (×n,
+  at least 1), `moveClip` (before another clip, or to the end; two runs of one sequence that come to touch are one clip),
+  `deleteClip` (all its instances; refused for the last clip, as the strip is the battle's loop: `cantDeleteClip`).
+  `stripFrames` is the loop's length, `clipAt` the clip, instance and frame at a time of the strip (looping), `playCount`
+  how often a sequence plays.
+- **The pause**: `setPause` (Pauses in battle: false bakes `idle_parts: null`, the game's 0xff, and keeps the
+  keeps-moving parts for when it's on again), `setKeepsMoving` (a bone in or out of `keeps_moving`; an original's kept
+  `idle_nodes` become bones first: `keepsMovingOf`). The bake gives the idle parts as the bones' places in the rig's
+  layers (step 1).
+- **The pause's simulation** is the first editor's (`player.ts`'s Clock, `BtlvMcss_OnAnimationEnd` and
+  `BtlvMcss_IdleTask`): at a loop's end a roll (1 in 3, then 2, then surely) starts the pause; the strip's time stands at
+  the loop's start (sequence 1 where an original has a stop strip), only the idle parts' tracks go on (from the block's
+  start plus the pause's frames), for 48, 56 or 64 frames, then the loop again. `Clock.pauseNow` starts one on demand,
+  as it starts at a loop's end.
+
+### The page
+
+- **The strip** (the dock, full width left of the side panel): clips as wide as they play, in their sequence's colour,
+  the instances divided by dashes, the name and ×N, the frames; the ruler (press or drag: the playhead, by 6), ↻ at the
+  loop's end, the playhead over the whole strip, the clip and instance playing lit. Drag a sequence from the side panel
+  onto the strip (a marker shows where it goes), drag a clip to move it, click to choose it (Delete deletes it, Escape
+  lets go), double-click to open its sequence. The header: clips, frames, the strip's bytes; zoom 1–6.
+- **The preview** (`StripPreview`): the bake itself, whose sequence 0 is the strip, drawn by `render` on a canvas that
+  holds every frame of the loop (so it doesn't jump), at 60 frames a second on its own Clock. Play and pause (Space),
+  ±6 (the arrows), Home, scrub; under it the frame, the clip, which instance and its frame. **Preview a battle pause**
+  (again: end it) and **Random pauses, as in battle**; during a pause a badge counts its frames and the parts that keep
+  moving are outlined green ("everything frozen" when none). Feet, Shiny, 2–6×; a click chooses the part under it.
+- **The side panel** (Ambients layout): **Sequences** (each with its colour, length, keys, played ×N or **not played**,
+  **+ Add**; drag onto the strip; double-click to open), **Timeline** (clips, blocks, the loop's length; the chosen clip:
+  Open, ◀ Earlier, Later ▶, Delete clip; its sequence, **Repeats** ×N with −1 and +1, its length, where it starts), **Battle
+  pause** (**Pauses in battle** On/Off; **Keeps moving** per part, in the bones' tree, for the parts the rig draws),
+  **Checks**. The size meter in the header is `rigSizes` of the bake, which is the strip's.
+- Sequences mode's list: a sequence on no clip shows **not played** and **+ Add** (to the end of the timeline).
+- **? How rigs work** gained The timeline and The battle's pause.
+
+### Tests (`tests/rig-timeline.test.ts`, 6 of `npm test`'s 174)
+
+Clips added, repeated, moved and deleted as `timeline.blocks` and the baked sequence 0 (Idle ×4 + Hop:
+`[0,0,0,0,1]`, keys `{pose 0, 48}` ×4 and `{pose 1, 36}`; joining beside a clip of the same sequence; Idle ×4, Hop,
+Idle ×3 with Hop moved first making Idle ×7; the last clip kept; an original's 240-frame block not joining plain ones;
+`clipAt` across instances and the loop); clip edits as single undo steps of `RigHistory` with the bake following; one edit
+of Idle changing all four instances' rendered frames (no extra tracks or poses, the hop untouched); **the strip's preview
+equal to `mcss.render`** of the bake through the five files (`tests/mcss_render_rig.py`) pixel for pixel at 16 times over
+the whole strip and past its loop; Pauses in battle and Keeps moving baked to `idle_parts` (the ear the second layer:
+`[1]`; off: `null`; an original's `idle_nodes` turned into bones); and the pause's simulation (`pauseNow(56)`: for 55
+frames the head and body keep their keys and the strip's time stands at 0 while the keeps-moving ear goes through its
+keys, then the loop again at 0; with none keeping moving everything is frozen; with Pauses off no pause starts, forced or
+random; the random roll, won, starting a 48-frame pause at the loop's end).
+
+Also tried in the editor end to end (a scratch copy of Budew in the worktree, removed after; CDP): Start fresh, three
+bones (bud connected to the body, a foot keeping its offset); **Idle** 48 with the bud turned 25° at 24, **Hop** 36 with
+the body up 14 at 18 (Hop showing **not played**); in Timeline, Idle ×4 by +1, Hop dragged from the list onto the strip's
+end, dragged to the front and back with Later ▶; Idle added with + Add, chosen and deleted with Delete, Ctrl+Z and Ctrl+Y;
+the bud's Keeps moving on; the strip played (Idle 3 of 4, then Hop, lit); **Preview a battle pause** (48 or 56 frames:
+the badge counting, the bud outlined green and turning, the canvas's pixels changing through the pause while the rest
+stood, then the loop again); Ctrl+S writing both files (`timeline.blocks` `[0,0,0,0,1]`, `keeps_moving` `[0]`, the flat
+rig's `idle_parts` `[2]` and its sequence 0 the five blocks), which pass the res/ guard; double-clicking Hop's clip
+opening Hop in Sequences mode. Nothing in res/ changed in this step.
+
+### What step 5 (loop clips) builds on
+
+- The format already holds them (`loop_clips`, a lane's `clips: [{clip, start}]`) and the bake merges them into each
+  part's track (step 1); nothing in the editor shows or edits them yet. Name them **loop clips** in the UI: "clip" on the
+  timeline strip means a run of blocks (`timeline.ts`).
+- A loop clip lives on a part's lane in a sequence, so its natural home is the Sequences mode's timeline (a sub-row or a
+  bar under the part's keys) with its own small editor for its keys on its own time; `sequenceRig` and the step-3 preview
+  already play whatever the bake gives, clips included, and `partValues`/`lanePoses` don't include them yet.
+- **Keeps moving with a loop clip** is the flame case: during the pause an idle part plays its baked track on, and a loop
+  clip is merged into that track, so a keeps-moving part with a flicker clip flickers through the pause with no more work
+  (the Timeline mode's Preview a battle pause shows it). A clip that doesn't divide its sequence's loop unrolls the track
+  (warned, up to 3,600 frames), which the size meter shows.
+- `reparentKeep` and `moveHead` don't account for loop clips yet (a clip's move adds to the part's, so a moved head or a
+  new parent changes what a clip's move means); `deleteBone` drops the bone's lane with its clip uses, and `deletePiece`
+  already renumbers the pieces the clips' keys show.
