@@ -71,7 +71,7 @@
   ],
   "tracks": [
     {
-      "name": "body",
+      "name": "apple",
       "key_type": "srt",
       "play": "loop",
       "keys": [
@@ -103,7 +103,7 @@
       ]
     },
     {
-      "name": "foot_r",
+      "name": "eye_r",
       "key_type": "srt",
       "play": "loop",
       "keys": [
@@ -136,7 +136,7 @@
       ]
     },
     {
-      "name": "foot_l",
+      "name": "eye_l",
       "key_type": "srt",
       "play": "loop",
       "keys": [
@@ -252,43 +252,43 @@
       "keys": [ { "picture": 0, "frames": 324, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 16 ] } ]
     },
     {
-      "name": "part7",
+      "name": "apple_front",
       "key_type": "srt",
       "play": "loop",
       "keys": [ { "picture": 1, "frames": 324, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 15 ] } ]
     },
     {
-      "name": "part8",
+      "name": "shine_1",
       "key_type": "srt",
       "play": "loop",
       "keys": [ { "picture": 4, "frames": 324, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 18 ] } ]
     },
     {
-      "name": "part9",
+      "name": "shine_2",
       "key_type": "srt",
       "play": "loop",
       "keys": [ { "picture": 5, "frames": 324, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 17 ] } ]
     },
     {
-      "name": "part10",
+      "name": "tail_2",
       "key_type": "srt",
       "play": "loop",
       "keys": [ { "picture": 6, "frames": 324, "rotation": 0, "scale": [ 1, 1 ], "move": [ 23, 28 ] } ]
     },
     {
-      "name": "part11",
+      "name": "tail_1",
       "key_type": "srt",
       "play": "loop",
       "keys": [ { "picture": 7, "frames": 324, "rotation": 0, "scale": [ 1, 1 ], "move": [ 21, 28 ] } ]
     },
     {
-      "name": "part12",
+      "name": "tail_3",
       "key_type": "srt",
       "play": "loop",
       "keys": [ { "picture": 8, "frames": 324, "rotation": 0, "scale": [ 1, 1 ], "move": [ 25, 27 ] } ]
     },
     {
-      "name": "part13",
+      "name": "tail_4",
       "key_type": "srt",
       "play": "loop",
       "keys": [ { "picture": 9, "frames": 324, "rotation": 0, "scale": [ 1, 1 ], "move": [ 30, 31 ] } ]
