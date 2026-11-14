@@ -17,13 +17,25 @@
       "obj_attribute": 19
     },
     {
-      "rectangles": [ { "sheet": [ 64, 0 ], "size": [ 16, 32 ], "at": [ -8, 7 ] } ],
-      "objs": [ { "x": -16, "y": -23, "size": [ 16, 32 ], "tile": 8, "attributes": [ 768, 0, 0 ] } ],
+      "rectangles": [
+        { "sheet": [ 64, 32 ], "size": [ 16, 32 ], "at": [ -8, 7 ] },
+        { "sheet": [ 64, 0 ], "size": [ 16, 32 ], "at": [ -8, 7 ] }
+      ],
+      "objs": [
+        { "x": -16, "y": -23, "size": [ 16, 32 ], "tile": 8, "attributes": [ 1792, 0, 0 ] },
+        { "x": -16, "y": -23, "size": [ 16, 32 ], "tile": 136, "attributes": [ 768, 0, 0 ] }
+      ],
       "obj_attribute": 9
     },
     {
-      "rectangles": [ { "sheet": [ 80, 0 ], "size": [ 16, 32 ], "at": [ -8, 6 ] } ],
-      "objs": [ { "x": -16, "y": -22, "size": [ 16, 32 ], "tile": 10, "attributes": [ 768, 0, 0 ] } ],
+      "rectangles": [
+        { "sheet": [ 80, 32 ], "size": [ 16, 32 ], "at": [ -8, 6 ] },
+        { "sheet": [ 80, 0 ], "size": [ 16, 32 ], "at": [ -8, 6 ] }
+      ],
+      "objs": [
+        { "x": -16, "y": -22, "size": [ 16, 32 ], "tile": 10, "attributes": [ 1792, 0, 0 ] },
+        { "x": -16, "y": -22, "size": [ 16, 32 ], "tile": 138, "attributes": [ 768, 0, 0 ] }
+      ],
       "obj_attribute": 8
     },
     {
@@ -37,14 +49,8 @@
       "obj_attribute": 19
     },
     {
-      "rectangles": [
-        { "sheet": [ 16, 48 ], "size": [ 16, 16 ], "at": [ -16, 28 ] },
-        { "sheet": [ 32, 48 ], "size": [ 16, 16 ], "at": [ -16, 28 ] }
-      ],
-      "objs": [
-        { "x": -24, "y": -36, "size": [ 16, 16 ], "tile": 196, "attributes": [ 1792, 0, 0 ] },
-        { "x": -24, "y": -36, "size": [ 16, 16 ], "tile": 194, "attributes": [ 768, 0, 0 ] }
-      ],
+      "rectangles": [ { "sheet": [ 32, 48 ], "size": [ 16, 16 ], "at": [ -16, 28 ] } ],
+      "objs": [ { "x": -24, "y": -36, "size": [ 16, 16 ], "tile": 196, "attributes": [ 768, 0, 0 ] } ],
       "obj_attribute": 19
     },
     {
@@ -267,7 +273,7 @@
       "name": "part10",
       "key_type": "srt",
       "play": "loop",
-      "keys": [ { "picture": 6, "frames": 324, "rotation": 0, "scale": [ 1, 1 ], "move": [ 21, 28 ] } ]
+      "keys": [ { "picture": 6, "frames": 324, "rotation": 0, "scale": [ 1, 1 ], "move": [ 23, 28 ] } ]
     },
     {
       "name": "part11",
