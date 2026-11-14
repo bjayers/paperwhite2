@@ -1,0 +1,77 @@
+{
+  "$schema": "../battle_sprite_rig_v2.schema.json",
+  "format": 2,
+  "side": "back",
+  "step": 6,
+  "box": { "width": 96, "height": 64, "x": 0, "y": 0 },
+  "stop_flags": 0,
+  "pause": true,
+  "keeps_moving": [],
+  "pieces": [
+    { "name": "apple_front", "rectangles": [ { "sheet": [ 0, 0 ], "size": [ 32, 32 ], "at": [ -15, 28 ] } ] },
+    { "name": "apple_back", "rectangles": [ { "sheet": [ 32, 0 ], "size": [ 32, 32 ], "at": [ -15, 28 ] } ] },
+    { "name": "eye_l", "rectangles": [ { "sheet": [ 64, 0 ], "size": [ 16, 32 ], "at": [ -13, 26 ] } ] },
+    { "name": "eye_r", "rectangles": [ { "sheet": [ 80, 0 ], "size": [ 16, 32 ], "at": [ -2, 26 ] } ] },
+    { "name": "tail_1", "rectangles": [ { "sheet": [ 32, 32 ], "size": [ 16, 16 ], "at": [ -11, 4 ] } ] },
+    { "name": "tail_2", "rectangles": [ { "sheet": [ 32, 48 ], "size": [ 16, 16 ], "at": [ -11, 10 ] } ] },
+    { "name": "tail_2_b", "rectangles": [ { "sheet": [ 16, 48 ], "size": [ 16, 16 ], "at": [ -8, 9 ] } ] },
+    { "name": "tail_3", "rectangles": [ { "sheet": [ 48, 32 ], "size": [ 16, 16 ], "at": [ -10, 12 ] } ] },
+    { "name": "tail_4", "rectangles": [ { "sheet": [ 48, 48 ], "size": [ 16, 16 ], "at": [ -5, 11 ] } ] }
+  ],
+  "bones": [
+    { "name": "apple_front", "head": [ 0, 0 ], "tail": [ 0, -19 ], "parent": null, "default": { "piece": 0 } },
+    { "name": "apple_back", "head": [ 0, 0 ], "tail": [ 0, -9 ], "parent": 0, "default": { "piece": 1 } },
+    { "name": "eye_l", "head": [ -1, -19 ], "tail": [ -8, -33 ], "parent": null, "default": { "piece": 2 } },
+    { "name": "eye_r", "head": [ -1, -19 ], "tail": [ 5, -33 ], "parent": null, "default": { "piece": 3 } },
+    { "name": "tail_1", "head": [ -4, -9 ], "tail": [ -9, -1 ], "parent": null, "default": { "piece": 4 } },
+    {
+      "name": "tail_2",
+      "head": [ -9, -1 ],
+      "tail": [ -18, 1 ],
+      "parent": 4,
+      "connected": true,
+      "default": { "piece": 5 }
+    },
+    { "name": "tail_3", "head": [ -12, -2 ], "tail": [ -17, -7 ], "parent": 5, "default": { "piece": 7 } },
+    { "name": "tail_4", "head": [ -12, -2 ], "tail": [ -8, -7 ], "parent": 5, "default": { "piece": 8 } }
+  ],
+  "layers": [ 7, 6, 5, 4, 3, 2, 0, 1 ],
+  "sequences": [
+    {
+      "name": "Idle",
+      "frames": 72,
+      "root": { "keys": [ { "frame": 18, "rotation": 11.9 }, { "frame": 54, "rotation": -9.4 } ] },
+      "parts": [
+        {
+          "bone": 2,
+          "keys": [
+            { "frame": 18, "rotation": -4.2 },
+            { "frame": 36, "rotation": 6.95, "scale": [ 1, 1.145751953125 ] },
+            { "frame": 54, "rotation": 18.1 }
+          ]
+        },
+        {
+          "bone": 3,
+          "keys": [
+            { "frame": 18, "rotation": -15.1 },
+            { "frame": 36, "rotation": -4.45, "scale": [ 1, 1.145751953125 ] },
+            { "frame": 54, "rotation": 6.2 }
+          ]
+        },
+        {
+          "bone": 4,
+          "keys": [
+            { "frame": 18, "rotation": -17.9 },
+            { "frame": 36, "rotation": 0.9, "scale": [ 1.2509765625, 1.07080078125 ] },
+            { "frame": 54, "rotation": 19.7 }
+          ]
+        },
+        { "bone": 5, "keys": [ { "frame": 18, "piece": 5, "rotation": 17.2 }, { "frame": 54, "rotation": 6.1 } ] },
+        { "bone": 6, "keys": [ { "frame": 36, "rotation": -21.3 } ] },
+        { "bone": 7, "keys": [ { "frame": 36, "rotation": 23.5 } ] }
+      ]
+    }
+  ],
+  "loop_clips": [],
+  "timeline": { "name": "stay", "blocks": [ { "sequence": 0 } ] }
+}

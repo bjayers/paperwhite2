@@ -48,7 +48,7 @@
         "sprite_offset": 0
     },
     "color": "COLOR_GREEN",
-    "asymmetric": true,
+    "asymmetric": false,
     "palette_forms": false,
     "base_exp": 170,
     "height": 4,

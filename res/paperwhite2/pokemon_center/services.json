@@ -107,7 +107,8 @@
             "SPECIES_KYUREM",
             "SPECIES_KELDEO",
             "SPECIES_MELOETTA",
-            "SPECIES_GENESECT"
+            "SPECIES_GENESECT",
+            "SPECIES_HYDRAPPLE"
         ],
         "excluded_forms": [
             {
