@@ -11,7 +11,7 @@
 // at the playhead (view.pose): a press pauses the preview first, so nothing is keyed while it plays.
 
 import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
-import { canvasOf, frameQuads, quadBox, render, type Canvas, type Pair } from "./mcss.ts";
+import { frameQuads, quadBox, render, type Canvas, type Pair } from "./mcss.ts";
 import { fixedScale } from "./model.ts";
 import { hue, paletteWords } from "./context.ts";
 import { addBone, axesOf, boneEnds, moveBone, moveHead, movePieces, moveTail, parentMapOf, parentOf, restDelta } from "./setup.ts";
@@ -19,6 +19,10 @@ import type { Clock } from "./player.ts";
 import { pickBone, type SetupView } from "./setupContext.ts";
 import { layersOf, type V2 } from "./v2.ts";
 import type { Map2 } from "./armature.ts";
+
+/** The preview's stage: 192x176 sprite pixels, the feet 96 from the left and 144 from the top (a battle sprite stands
+ * on its feet and rises up to about 128 pixels; the box is wider than the 96x96 stills to leave room to work) */
+const STAGE: Canvas = { width: 192, height: 176, originX: 96, originY: 144 };
 
 export type SetupTool = "bones" | "move" | "rotate" | "scale";
 
@@ -100,7 +104,6 @@ export function SetupPreview({ view, zoom, tool, showBones, feet }: { view: Setu
   const { src, maps, preview, art, sheet, shiny, sel } = view;
   const canvasEl = useRef<HTMLCanvasElement>(null);
   const drag = useRef<Drag | null>(null);
-  const kept = useRef<Canvas | null>(null);
   const viewRef = useRef(view);
   viewRef.current = view;
   const pixels = art?.sheets[sheet];
@@ -111,31 +114,13 @@ export function SetupPreview({ view, zoom, tool, showBones, feet }: { view: Setu
   const shownTime = seq ? time : 0;
   const layers = useMemo(() => (seq ? layersOf(src, seq.sequence) : layersOf({ ...src, sequences: [{ name: "", frames: 6, parts: [] }] }, 0))
     .map((l) => l.bone).filter((b) => src.bones[b]), [src, seq?.sequence]);
-  const keptFor = useRef("");
 
-  // The canvas: the pictures, the bones and the feet with a margin; while a drag goes on it only grows, so it doesn't jump
+  // The canvas: a fixed stage with the feet at the same place, whatever is drawn and while anything is dragged, so the
+  // sprite never jumps and a piece or bone end dragged far off can't grow the page (it is simply drawn past the edge)
   const frame = useMemo(() => {
     if (!rig || !pixels) return null;
     try {
-      const boxes = frameQuads(rig, 0, shownTime).quads.map(quadBox);
-      boxes.push([-12, 12, 0, 12]);
-      src.bones.forEach((_, b) => {
-        const e = boneEnds(src, maps, b);
-        for (const p of [e.head, e.tail]) boxes.push([p[0], p[0], -p[1], -p[1]]);
-      });
-      const c0 = canvasOf(boxes);
-      const margin = 24;
-      let c: Canvas = { width: c0.width + 2 * margin, height: c0.height + 2 * margin, originX: c0.originX + margin, originY: c0.originY + margin };
-      // (a sequence's canvas only grows while it plays, so the sprite doesn't jump; the rig setup's while dragging)
-      const id = seq ? `${seq.sequence}` : "";
-      const k = keptFor.current === id ? kept.current : null;
-      keptFor.current = id;
-      if (k && (drag.current || seq)) {
-        const left = Math.min(-c.originX, -k.originX), top = Math.min(-c.originY, -k.originY);
-        const right = Math.max(c.width - c.originX, k.width - k.originX), bottom = Math.max(c.height - c.originY, k.height - k.originY);
-        c = { width: right - left, height: bottom - top, originX: -left, originY: -top };
-      }
-      kept.current = c;
+      const c: Canvas = STAGE;
       const main = render(rig, pixels, 0, shownTime, c, undefined, { owners: true });
       const length = seq ? (rig.sequences[0]?.keys[0]?.frames ?? 1) : 1;
       const onion = seq?.onion ? [shownTime - ONION, shownTime + ONION].map((t) => render(rig, pixels, 0, ((t % length) + length) % length, c)) : [];
