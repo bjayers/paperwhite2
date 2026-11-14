@@ -70,8 +70,24 @@
         { "bone": 6, "keys": [ { "frame": 36, "rotation": -21.3 } ] },
         { "bone": 7, "keys": [ { "frame": 36, "rotation": 23.5 } ] }
       ]
+    },
+    {
+      "name": "hop",
+      "frames": 48,
+      "root": { "keys": [ { "frame": 24, "move": [ 0, -6 ], "rotation": -10.5 } ] },
+      "parts": [
+        { "bone": 2, "keys": [ { "frame": 24, "scale": [ 1, 1.307861328125 ] } ] },
+        { "bone": 3, "keys": [ { "frame": 24, "scale": [ 1, 1.307861328125 ] } ] },
+        { "bone": 4, "keys": [ { "frame": 24, "move": [ -1, -1 ], "rotation": -23.6, "scale": [ 1.26123046875, 1 ] } ] },
+        { "bone": 5, "keys": [ { "frame": 24, "rotation": 10.6 } ] },
+        { "bone": 6, "keys": [ { "frame": 24, "rotation": -16.3 } ] },
+        { "bone": 7, "keys": [ { "frame": 24, "rotation": 25.4 } ] }
+      ]
     }
   ],
   "loop_clips": [],
-  "timeline": { "name": "stay", "blocks": [ { "sequence": 0 } ] }
+  "timeline": {
+    "name": "stay",
+    "blocks": [ { "sequence": 0 }, { "sequence": 0 }, { "sequence": 0 }, { "sequence": 0 }, { "sequence": 1 }, { "sequence": 1 } ]
+  }
 }
