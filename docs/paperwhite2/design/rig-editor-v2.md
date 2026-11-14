@@ -86,3 +86,6 @@ The first editor stays reachable as an Advanced view until the new one covers ev
 - Keeps-moving parts are wanted (fire, blinks), and loop clips inside sequences.
 - Sequence lengths are multiples of 6; the playhead and keyframes snap to 6.
 - Applin's earlier practice rig isn't carried over; the user starts Applin fresh in the new editor.
+- **One set of parts for every sequence**: no per-sequence duplicates (the `_a`/`_b` tracks). The game needs a track
+  per part per action, so the save generates them (named consistently, e.g. `head_a`, `head_b`); the source and the
+  editor only ever show the shared parts. A part a sequence doesn't move just holds its default pose there.
