@@ -29,7 +29,8 @@ import { LoopClipsSection, LoopClipSection, PartClipsRows } from "./LoopClipPane
 import { importArmature, type ArmatureImport } from "./importArmature.ts";
 import type { Source } from "./armature.ts";
 import { rigSizes, RESIDENT_GUIDANCE } from "./sizes.ts";
-import { copySide, defaultPoseRig, deleteBone, freshV2, moveDefaultPose, restMaps, setDefault } from "./setup.ts";
+import { SECOND_RECTANGLE_HINT } from "./SetupPanel.tsx";
+import { copySide, defaultPoseRig, deleteBone, freshV2, moveDefaultPose, restMaps, setBonePiece, setDefault } from "./setup.ts";
 import { armaturePathOf, flatData, rigPathOf, v2Data, v2PathOf, v2SchemaFor, V2_LAYOUT, V2_SCHEMA_PATH, type Side } from "./setupFiles.ts";
 import { NO_SETUP_SELECTION, type PoseEdit, type SequenceView, type SetupSelection, type SetupView } from "./setupContext.ts";
 import { SETUP_TOOLS, SetupPreview, type SetupTool } from "./SetupPreview.tsx";
@@ -213,7 +214,25 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
     }
   }, [src, editingClip, clipPartShown]);
   const maps = useMemo(() => (src ? (clipView ? restMaps(clipView) : sequencing ? posedMaps(src, openSeq, keyFrame) : restMaps(src)) : []), [src, clipView, sequencing, openSeq, keyFrame]);
-  const preview = useMemo(() => (src ? defaultPoseRig(src) : null), [src]);
+  // A picture being placed (the Bone panel's Place…) is shown on its bone in the preview, instead of what the bone shows
+  const [placing, setPlacing] = useState<{ bone: number; piece: number } | null>(null);
+  const placedRef = useRef(new Set<string>());
+  const placingRef = useRef<typeof placing>(null);
+  placingRef.current = placing;
+  const placed = useMemo(() => ({
+    has: (b: number, n: number) => placedRef.current.has(`${b}:${n}`),
+    add: (b: number, n: number) => { placedRef.current.add(`${b}:${n}`); },
+    pictures: (b: number) => [...placedRef.current].map((k) => k.split(":").map(Number)).filter(([x]) => x === b).map(([, n]) => n),
+  }), []);
+  const placingNow = src && placing && src.bones[placing.bone] && src.pieces[placing.piece] && !sequencing ? placing : null;
+  const preview = useMemo(() => (src ? defaultPoseRig(placingNow ? setBonePiece(src, placingNow.bone, placingNow.piece) : src) : null), [src, placingNow]);
+  useEffect(() => {
+    if (!placing) return;
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") { e.stopImmediatePropagation(); setPlacing(null); } };
+    window.addEventListener("keydown", key, true);
+    return () => window.removeEventListener("keydown", key, true);
+  }, [placing]);
+  useEffect(() => { if (placing && (sequencing || sel.bones[0] !== placing.bone)) setPlacing(null); }, [placing, sequencing, sel.bones]);
   const srcRef = useRef(src);
   srcRef.current = src;
   const editingRef = useRef(editingClip);
@@ -300,9 +319,9 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
   const pose = useMemo<PoseEdit>(() => (sequencing
     ? (s0, b, change) => setKeyAt(s0, edSeq, b, keyFrame, (now) => change(now))
     // (the rig setup's Root: the whole default pose about the feet, from where the drag started)
-    : (s0, b, change) => b === ROOT ? moveDefaultPose(s0, (({ piece: _p, hidden: _h, ...c }) => c)(change({ move: [0, 0], rotation: 0, scale: [1, 1] })))
+    : (s0, b, change) => b === ROOT ? moveDefaultPose(s0, (({ piece: _p, hidden: _h, placed: _q, ...c }) => c)(change({ move: [0, 0], rotation: 0, scale: [1, 1] })))
     : setDefault(s0, b, (t) => {
-      const { piece: _p, hidden: _h, ...c } = change(t);
+      const { piece: _p, hidden: _h, placed: _q, ...c } = change(t);
       return { ...t, ...c };
     })), [sequencing, edSeq, keyFrame]);
 
@@ -586,7 +605,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
         latest.current.commit(next);
         setSel((x) => ({ ...x, bones: [] }));
         setMessage(`Deleted ${s.bones.filter((b) => b >= 0).map((b) => cur.bones[b]?.name).join(", ")} (Ctrl+Z brings ${s.bones.length > 1 ? "them" : "it"} back).`);
-      } else if (key === "escape") setSel((x) => ({ ...x, bones: [] }));
+      } else if (key === "escape" && !placingRef.current) setSel((x) => ({ ...x, bones: [] }));
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
@@ -600,7 +619,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
   const sheet = art?.sheets[sheetName] ? sheetName : side;
   const seqView: SequenceView | undefined = sequencing ? { sequence: openSeq, rig: seqRig, clock, keyFrame, snap, onion, keying } : undefined;
   const liveSel = sequencing ? { ...sel, keys: liveRefs(src, openSeq, sel.keys.map(refOf)).map(refId) } : sel;
-  const view: SetupView = { src, maps, preview: preview?.baked ?? null, art, sheet, shiny, sel: liveSel, select, commit, say: setMessage, readOnly, seq: seqView, pose, copied };
+  const view: SetupView = { src, maps, preview: preview?.baked ?? null, art, sheet, shiny, sel: liveSel, select, commit, say: setMessage, readOnly, seq: seqView, pose, copied, placed, placing: placingNow, setPlacing };
   // The clip's views: its one-part source, its own selection, its edits written back into the clip, its step
   const clipEditView: SetupView | null = clipView && seqView && editingClip !== null ? {
     ...view, src: clipView, preview: null, commit: clipCommit, select: selectClip,
@@ -852,6 +871,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
                 <div className="rig-sheet-scroll"><SetupSheet view={view} zoom={sheetZoom} /></div>
                 <p className="muted ow-note">Drag on the sheet to cut a new piece (Shift: the chosen piece's second rectangle). Drag a rectangle to move it, an edge
                   or corner to resize it: whole tiles (Alt: single pixels), and sizes the DS can draw. The chosen piece is yellow; the chosen bone's pieces in colour.</p>
+                <p className="muted ow-note">{SECOND_RECTANGLE_HINT}</p>
                 <PieceList view={view} />
               </section>
             </div>

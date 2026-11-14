@@ -834,3 +834,10 @@ A module is a folder in `src/modules/` with a `module.tsx` whose default export 
 
 Modules change data only through the props they are given (`edit`, `replace`); saving, undo, validation and changes
 on disk are the shell's. Build them around the schemas, so the editor and the build agree about every format.
+
+**Picture swaps (rig-editor-v2.md, "Built: picture swaps")**: choosing a picture on a key puts a piece no bone shows yet
+where the bone's default picture is (same top left, or centred when the sizes differ; copied for the bone where another
+bone shows it), with a notice. Rig setup's **Bone** panel lists the bone's **Pictures** (the default and every picture its
+keys swap in) with **Align with default**, **Place…** (drag only that picture on the preview; Done or Escape) and
+**+ Add picture…**; Sequences' Part panel marks unplaced pictures with a warning icon and an **Align** button. A piece's
+second rectangle is for one picture drawn in two rectangles, not for a swap: make a separate piece and pick it on a key.

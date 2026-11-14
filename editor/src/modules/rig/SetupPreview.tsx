@@ -14,7 +14,7 @@ import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { frameQuads, quadBox, render, type Canvas, type Pair } from "./mcss.ts";
 import { fixedScale } from "./model.ts";
 import { hue, paletteWords } from "./context.ts";
-import { addBone, axesOf, boneEnds, mapOfPart, moveBone, moveHead, movePieces, moveTail, parentMapOf, parentOf, partHead, restDelta } from "./setup.ts";
+import { addBone, axesOf, boneEnds, mapOfPart, moveBone, moveHead, movePiece, movePieces, moveTail, parentMapOf, parentOf, partHead, restDelta } from "./setup.ts";
 import type { Clock } from "./player.ts";
 import { pickBone, type SetupView } from "./setupContext.ts";
 import { layersOf, ROOT, type V2 } from "./v2.ts";
@@ -67,7 +67,7 @@ function scaleRatios(grab: ScaleGrab, center: Pair, start: Pair, at: Pair, lock:
 // ---------------------------------------------------------------- Drawing
 
 interface Drag {
-  kind: "head" | "tail" | "body" | "pieces" | "new" | "move" | "rotate" | "scale";
+  kind: "head" | "tail" | "body" | "pieces" | "place" | "new" | "move" | "rotate" | "scale";
   bone: number;
   bones: number[];
   base: V2;
@@ -328,6 +328,13 @@ export function SetupPreview({ view, zoom, tool, showBones, feet }: { view: Setu
         return;
       }
     }
+    if (v.placing) {
+      // Placing a picture: dragging the bone's picture moves only that piece (nothing else is picked meanwhile)
+      const owner = frame.owners?.[Math.floor(p[1] / zoom) * frame.width + Math.floor(p[0] / zoom)];
+      if (owner && layers[owner - 1] === v.placing.bone) begin({ kind: "place", bone: v.placing.bone, bones: [v.placing.bone], center: p });
+      else v.say("Drag the picture to place it; Done or Escape ends.");
+      return;
+    }
     const hit = hitAt(p);
     if (!hit) {
       if (tool === "bones" && !v.seq) {
@@ -384,6 +391,9 @@ export function SetupPreview({ view, zoom, tool, showBones, feet }: { view: Setu
     } else if (d.kind === "pieces") {
       const r = restDelta(d.maps[b], delta);
       next = movePieces(base, b, roundPair([r[0], -r[1]])).src;
+    } else if (d.kind === "place" && v.placing) {
+      const r = restDelta(d.maps[b], delta);
+      next = movePiece(base, b, v.placing.piece, roundPair([r[0], -r[1]])).src;
     } else if (d.kind === "new") {
       const parent = d.parent ?? null;
       const head = d.connected && parent !== null ? base.bones[parent].tail : roundPair(d.from!);

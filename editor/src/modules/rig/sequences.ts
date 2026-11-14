@@ -16,7 +16,7 @@
 import { CHANNELS, valuesAt, type Channel, type Curve, type Handle, type KeyPose, type Map2 } from "./armature.ts";
 import { loops, type Pair, type Rig } from "./mcss.ts";
 import { fixedScale } from "./model.ts";
-import { freeName, parentOf, restMaps } from "./setup.ts";
+import { freeName, parentOf, placeForPick, restMaps } from "./setup.ts";
 import { CLIP_VIEW, clipValues, DEFAULT_CURVE, lanePoses, layersOf, playedStrips, ROOT, STEP, type Lane, type Layer, type Transform, type V2, type V2Key, type V2Sequence } from "./v2.ts";
 
 // ---------------------------------------------------------------- Keys and their names
@@ -218,10 +218,19 @@ function writeKey(src: V2, b: number, old: V2Key, now: PartValues, next: PartVal
 
 /** A part keyed at a frame: the key there changed, or one made from the part's values there (so making it changes
  * nothing until `change` does). `change` gets the values at the frame and returns the ones to change. */
-export function setKeyAt(src: V2, s: number, b: number, frame: number, change: (now: PartValues) => Partial<PartValues> = () => ({})): V2 {
-  if (!src.sequences[s] || !hasPart(src, b)) return src;
+export function setKeyAt(src0: V2, s: number, b: number, frame: number, change: (now: PartValues) => Partial<PartValues> & { placed?: boolean } = () => ({})): V2 {
+  if (!src0.sequences[s] || !hasPart(src0, b)) return src0;
+  let src = src0;
   const now = partValues(src, s, b, frame);
-  const next = { ...now, ...change(now) };
+  const { placed, ...changed } = change(now);
+  let next: PartValues = { ...now, ...changed };
+  // A picture the bone doesn't show anywhere yet is put where the bone's picture is first (a swap is a texture change:
+  // the new picture in the same place), copied for the bone where another bone shows it
+  if (b !== ROOT && !placed && !next.hidden && next.piece !== undefined && next.piece !== now.piece && !(src as { [CLIP_VIEW]?: boolean })[CLIP_VIEW]) {
+    const put = placeForPick(src, b, next.piece);
+    src = put.src;
+    next = { ...next, piece: put.piece };
+  }
   // A side converted from the game's own keys holds them ("constant" for the file); a key the user makes there eases
   // instead, from the default pose at the start too, so a pose keyed in between is blended to and back
   const holds = (src.curve ?? DEFAULT_CURVE) === "constant" && !(src as { [CLIP_VIEW]?: boolean })[CLIP_VIEW];

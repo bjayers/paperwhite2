@@ -225,8 +225,8 @@ export function bonesShowing(src: V2, n: number): number[] {
 }
 
 /** The source with each of a bone's pieces that another bone shows too copied for this one, and the copies' numbers. */
-function ownPieces(src: V2, b: number): { src: V2; pieces: number[]; copied: number } {
-  const shown = [...piecesOf(src, b)].filter((n) => src.pieces[n]);
+function ownPieces(src: V2, b: number, only?: number): { src: V2; pieces: number[]; copied: number; remap: Map<number, number> } {
+  const shown = [...piecesOf(src, b)].filter((n) => src.pieces[n] && (only === undefined || n === only));
   const remap = new Map<number, number>();
   const pieces = src.pieces.slice();
   for (const n of shown) {
@@ -235,7 +235,7 @@ function ownPieces(src: V2, b: number): { src: V2; pieces: number[]; copied: num
       pieces.push({ ...clone(src.pieces[n]), name: freeName(pieces.map((p) => p.name), `${src.pieces[n].name} (${src.bones[b].name})`) });
     }
   }
-  if (!remap.size) return { src, pieces: shown, copied: 0 };
+  if (!remap.size) return { src, pieces: shown, copied: 0, remap };
   const re = (n: number | undefined) => (n === undefined ? undefined : remap.get(n) ?? n);
   const next: V2 = {
     ...src, pieces,
@@ -250,7 +250,7 @@ function ownPieces(src: V2, b: number): { src: V2; pieces: number[]; copied: num
     ...clip, keys: clip.keys.map((k) => (k.piece !== undefined ? { ...k, piece: re(k.piece) } : k)),
   }));
   if (next.kept?.picture_labels) delete next.kept;
-  return { src: next, pieces: shown.map((n) => remap.get(n) ?? n), copied: remap.size };
+  return { src: next, pieces: shown.map((n) => remap.get(n) ?? n), copied: remap.size, remap };
 }
 
 /** Each lane of a bone, changed. */
@@ -366,6 +366,83 @@ export function movePieces(src0: V2, b: number, deltaUp: Pair): { src: V2; copie
     ...p, rectangles: p.rectangles.map((r) => ({ ...r, at: [r.at[0] + deltaUp[0], r.at[1] + deltaUp[1]] as Pair })),
   }));
   return { src: { ...own.src, pieces }, copied: own.copied };
+}
+
+// ---------------------------------------------------------------- A bone's pictures (swaps)
+
+/** A piece's rectangles as one box on its bone (x right, y up from the head): left, top, right, bottom; null when blank. */
+export function pieceBox(piece: V2Piece | undefined): [number, number, number, number] | null {
+  const rs = (piece?.rectangles ?? []).filter((r) => r.size[0] && r.size[1]);
+  if (!rs.length) return null;
+  return [Math.min(...rs.map((r) => r.at[0])), Math.max(...rs.map((r) => r.at[1])),
+          Math.max(...rs.map((r) => r.at[0] + r.size[0])), Math.min(...rs.map((r) => r.at[1] - r.size[1]))];
+}
+
+/** The piece a bone's other pictures are placed against: what it shows by default, else the first its keys show. */
+export function referencePiece(src: V2, b: number): number | undefined {
+  const d = src.bones[b]?.default?.piece;
+  if (d !== undefined && src.pieces[d]) return d;
+  return [...piecesOf(src, b)].find((n) => src.pieces[n]);
+}
+
+/** Whether a piece is not placed for a bone yet: the bone doesn't show it by default or in any key (so nothing has put it
+ * where this bone's picture is) and there's a picture of the bone to place it against. A piece that another bone shows
+ * is placed for that bone, not for this one. */
+export function unplacedFor(src: V2, b: number, n: number): boolean {
+  if (!src.bones[b] || !src.pieces[n] || piecesOf(src, b).has(n)) return false;
+  const ref = referencePiece(src, b);
+  return ref !== undefined && ref !== n && !!pieceBox(src.pieces[ref]);
+}
+
+/** A piece made this bone's own: copied for it where another bone shows it too (a piece the bone shows already has this
+ * bone's references pointed at the copy; one it doesn't show yet is just copied, to be shown by a key). */
+export function ownPiece(src: V2, b: number, n: number): { src: V2; piece: number; copied: boolean } {
+  const others = bonesShowing(src, n).some((o) => o !== b);
+  if (!others || !src.pieces[n]) return { src, piece: n, copied: false };
+  if (piecesOf(src, b).has(n)) {
+    const own = ownPieces(src, b, n);
+    return { src: own.src, piece: own.remap.get(n) ?? n, copied: !!own.copied };
+  }
+  const pieces = [...src.pieces, { ...clone(src.pieces[n]), name: freeName(src.pieces.map((p) => p.name), `${src.pieces[n].name} (${src.bones[b].name})`) }];
+  return { src: { ...src, pieces }, piece: pieces.length - 1, copied: true };
+}
+
+/** A piece moved by `delta` (x right, y up) on its bone: only that piece's `at`s, nothing else the bone shows. */
+export function shiftPiece(src: V2, n: number, delta: Pair): V2 {
+  if ((!delta[0] && !delta[1]) || !src.pieces[n]) return src;
+  return { ...src, pieces: src.pieces.map((p, i) => (i !== n ? p : { ...p, rectangles: p.rectangles.map((r) => ({ ...r, at: [r.at[0] + delta[0], r.at[1] + delta[1]] as Pair })) })) };
+}
+
+/** A picture of a bone moved on it by `delta` (x right, y up): copied for the bone first where another bone shows it too.
+ * The piece's number afterwards is given (a copy has a new one). */
+export function movePiece(src0: V2, b: number, n: number, delta: Pair): { src: V2; piece: number; copied: boolean } {
+  const own = ownPiece(src0, b, n);
+  return { src: shiftPiece(own.src, own.piece, delta), piece: own.piece, copied: own.copied };
+}
+
+/** A piece placed where the bone's reference picture is: the same top left from the head when the two boxes are the same
+ * size, else the same centre (rounded to a pixel). Copied for the bone first where another bone shows it. `note` says
+ * what was done, for the notice. */
+export function alignPiece(src0: V2, b: number, n: number): { src: V2; piece: number; copied: boolean; note: string | null } {
+  const ref = referencePiece(src0, b);
+  const refBox = ref !== undefined ? pieceBox(src0.pieces[ref]) : null;
+  if (ref === undefined || ref === n || !refBox || !pieceBox(src0.pieces[n])) return { src: src0, piece: n, copied: false, note: null };
+  const own = ownPiece(src0, b, n);
+  const box = pieceBox(own.src.pieces[own.piece])!;
+  const same = box[2] - box[0] === refBox[2] - refBox[0] && box[1] - box[3] === refBox[1] - refBox[3];
+  const delta: Pair = same ? [refBox[0] - box[0], refBox[1] - box[1]]
+    : [Math.round((refBox[0] + refBox[2]) / 2 - (box[0] + box[2]) / 2), Math.round((refBox[1] + refBox[3]) / 2 - (box[1] + box[3]) / 2)];
+  const src = shiftPiece(own.src, own.piece, delta);
+  const name = src.pieces[own.piece].name;
+  return { src, piece: own.piece, copied: own.copied,
+           note: `${own.copied ? `Copied ${src0.pieces[n].name} for ${src0.bones[b].name} (another bone shows it) and placed` : `Placed`} ${name} where ${src0.pieces[ref].name} is${same ? "" : " (centred: the sizes differ)"}.` };
+}
+
+/** A piece a key is about to show: placed where the bone's picture is when it isn't placed for the bone yet. */
+export function placeForPick(src: V2, b: number, n: number): { src: V2; piece: number; note: string | null } {
+  if (!unplacedFor(src, b, n)) return { src, piece: n, note: null };
+  const r = alignPiece(src, b, n);
+  return { src: r.src, piece: r.piece, note: r.note };
 }
 
 /** A bone's default pose changed (the gizmos, the fields): `change` gets the default as it is, every channel given. */

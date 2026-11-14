@@ -747,3 +747,38 @@ the check. The preview of a source with root turn, move and uneven scale keys an
 bake pixel for pixel at 13 times (the sprite moving in most of them); the head freed to the root keeping its transform
 draws the same within the rounding. Rig setup's Root moving and turning the whole default pose. `isRigFile`. The sweep:
 all 1,516 sides still byte for byte.
+
+## Built: picture swaps (2026-11-14)
+
+**The bug.** A piece's `at` places it from the head of the bone that shows it and is per piece. A swap piece nothing had
+placed (two rectangles made for one tail, "up" and "down") sat wherever its own `at` put it, and the UI had no way to
+place a piece a bone shows only through keys. A swap should be a texture change: the new picture where the old one was.
+
+**The rules (`setup.ts`: `pieceBox`, `referencePiece`, `unplacedFor`, `ownPiece`, `movePiece`, `alignPiece`, `placeForPick`).**
+- A piece is **unplaced for a bone** when the bone shows it neither by default nor in any key (its own or its loop
+  clips') and the bone has a reference picture: its default piece, else the first its keys show. A piece another bone
+  shows is placed for that bone, not for this one.
+- **Auto-align**: `setKeyAt` (so every route that picks a picture on a key) first aligns an unplaced piece to the reference
+  and writes the key with it: same top left from the head when the two pieces' boxes (both rectangles together) are the
+  same size, else the same centre (rounded). One undo step; the notice says "Placed tail_down where tail_up is." A piece
+  another bone shows is copied for this bone first ("tail_down (tail)"), the copy aligned and the key pointing at it.
+  Hidden keys, loop-clip views and a pick flagged `placed` leave pieces alone. After the first pick the piece is shown by
+  the bone, so later picks never move it again (a piece no key shows any more counts as unplaced again).
+- **Rig setup, Bone panel, Pictures**: the default and every piece the bone's keys show (thumbnail, name, default or "in
+  keys"), each with **Align with default** and **Place…**; **+ Add picture…** aligns a chosen piece and lists it (pictures
+  added or placed this session, not yet in a key, are remembered by the editor only while it is open, and a pick of them
+  keeps their place). **Place…** shows that piece on the bone in the preview (`setBonePiece` on a temporary source) and
+  dragging it moves only that piece's `at` (`movePiece`; the Bones tool's picture drag, `movePieces`, moves all of a
+  bone's). **Done** or Escape ends (Escape no longer deselects meanwhile); choosing another bone or Sequences ends it.
+  A piece shown by two bones is copied first, as `moveHead` does, with a notice.
+- **Sequences, Part, Picture**: pieces not yet placed for the bone carry a warning icon (its tooltip says what picking does)
+  and, if no bone shows them at all, an **Align** button that places them without showing them.
+- The second-rectangle hint (a piece can be two rectangles drawn as one picture; for a swap make a separate piece and
+  pick it on a key) is in the Rig setup's sheet card and the Piece panel.
+
+**Tests** (`tests/rig-swap.test.ts`, 5): a pick aligns the piece and the swapped frame covers exactly the default's pixels
+(and without the alignment it doesn't), a second pick leaves a nudged piece alone; a different size is centred, hidden and
+placed picks change nothing; Align with default moves one piece only; Place moves only that piece's `at`; a shared piece
+is copied. Tried in the editor on a scratch copy of Charmander (removed): a same-size piece made far from a foot's
+picture, keyed at 24 in Sequences (aligned, the notice shown, the warning icons), Place… dragging only that piece, Done,
+Align with default, Escape.

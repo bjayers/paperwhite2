@@ -7,7 +7,7 @@ import { useState, type ReactNode } from "react";
 import { ScrubNumber, type ScrubPhase } from "../overworld/ScrubNumber.tsx";
 import { addSequence, cantDelete, deleteKeys, deleteSequence, duplicateSequence, keyCount, keyParts, laneOf, moveSequence, partLabel, partValues, refId, renameSequence,
          resetSequence, sequenceBones, setCurve, setLength, START } from "./sequences.ts";
-import { parentOf } from "./setup.ts";
+import { alignPiece, bonesShowing, parentOf, referencePiece, unplacedFor } from "./setup.ts";
 import { clipPictureAt, ROOT, snapLength, STEP, V2_CURVES, DEFAULT_CURVE, type LoopClip } from "./v2.ts";
 import { PieceThumb } from "./SetupSheet.tsx";
 import { addClip, inOtherStrips, unplayedLabel, unplayedTitle } from "./timeline.ts";
@@ -152,6 +152,7 @@ export function KeySection({ view, open, onMessage, clip, extra }: { view: Setup
   const clipPicture = clip ? clipPictureAt({ ...clip, keys: laneOf(seq, b)?.keys ?? [] }, frame) : undefined;
   const hiddenNow = clip ? !!clipPicture?.hidden : values.hidden;
   const pieceNow = clip ? clipPicture?.piece : values.piece;
+  const checkPlace = !clip && !isRoot;
   const keyIndex = laneOf(seq, b)?.keys.findIndex((k) => k.frame === frame) ?? -1;
   const key = keyIndex >= 0 ? laneOf(seq, b)!.keys[keyIndex] : undefined;
   const connected = !isRoot && !!bone.connected && parentOf(src, b) !== null;
@@ -185,13 +186,26 @@ export function KeySection({ view, open, onMessage, clip, extra }: { view: Setup
         {!isRoot && <Row label="Picture" hint={clip ? `shown over the part's own picture until the clip's next picture key, looping${clipPicture ? "" : "; none chosen yet: the part's own"}` : "held until a key shows another (blinks, mouths); Hidden draws nothing"}>
           <span className="rig-sq-pictures">
             <button className={`rig-sq-pic${hiddenNow ? " active" : ""}`} disabled={readOnly} onClick={() => set(() => ({ hidden: true }), "typed")} title="Hidden: the part draws nothing from here">Hidden</button>
-            {src.pieces.map((p, n) => (
-              <button key={n} className={`rig-sq-pic${!hiddenNow && pieceNow === n ? " active" : ""}`} disabled={readOnly} title={`${p.name}: show it from here`}
-                      onClick={() => set(() => ({ hidden: false, piece: n }), "typed")}>
-                <PieceThumb art={art} sheet={sheet} shiny={shiny} rectangles={p.rectangles} size={24} />
-              </button>
-            ))}
+            {src.pieces.map((p, n) => {
+              const unplaced = checkPlace && unplacedFor(src, b, n) && !view.placed?.has(b, n);
+              return (
+                <button key={n} className={`rig-sq-pic${!hiddenNow && pieceNow === n ? " active" : ""}`} disabled={readOnly}
+                        title={unplaced ? `${p.name}: not placed on ${bone.name} yet. Showing it puts it where ${src.pieces[referencePiece(src, b)!].name} is.` : `${p.name}: show it from here`}
+                        onClick={() => {
+                          const note = unplaced ? alignPiece(src, b, n).note : null;
+                          set(() => ({ hidden: false, piece: n, placed: !!view.placed?.has(b, n) }), "typed");
+                          if (note) onMessage(note);
+                        }}>
+                  <PieceThumb art={art} sheet={sheet} shiny={shiny} rectangles={p.rectangles} size={24} />
+                  {unplaced && <span className="rig-unplaced">⚠</span>}
+                </button>
+              );
+            })}
           </span>
+          {checkPlace && src.pieces.map((p, n) => (unplacedFor(src, b, n) && !view.placed?.has(b, n) && !bonesShowing(src, n).length ? (
+            <button key={n} className="small" disabled={readOnly} title={`Put ${p.name} where ${src.pieces[referencePiece(src, b)!].name} is on ${bone.name}, without showing it`}
+                    onClick={() => { const r = alignPiece(src, b, n); commit(r.src); view.placed?.add(b, r.piece); if (r.note) onMessage(r.note); }}>⚠ Align {p.name}</button>
+          ) : null))}
         </Row>}
         <Row label="Move" hint={isRoot ? "pixels the whole sprite moves, x right, y down" : clip ? "pixels added to the part's move (none on a connected part: its head is locked)" : connected ? "locked: a connected bone's head stays on its parent's tail" : "pixels from the default pose's place, in its parent's frame"}>
           <ScrubNumber label="X" value={Math.round(values.move[0] * 100) / 100} step={0.25} digits={0} onChange={(n, ph) => !connected && set(() => ({ move: [Math.round(n), values.move[1]] }), ph)} />

@@ -9,7 +9,7 @@ import { ScrubNumber, type ScrubPhase } from "../overworld/ScrubNumber.tsx";
 import { sizeProblem } from "./model.ts";
 import { hue } from "./context.ts";
 import type { Pair } from "./mcss.ts";
-import { addBone, addBoneForPiece, boneTree, bonesShowing, connectedChildren, deleteBone, deletePiece, layersOfSetup, moveHead, moveLayer, moveTail,
+import { addBone, addBoneForPiece, alignPiece, boneTree, ownPiece, piecesOf, referencePiece, bonesShowing, connectedChildren, deleteBone, deletePiece, layersOfSetup, moveHead, moveLayer, moveTail,
          ownLayerSequences, parentOf, pivotOf, removeRectangle, renameBone, renamePiece, reparentKeep, setBonePiece, setConnected, setDefault, setInLayers,
          wouldCycle } from "./setup.ts";
 import { uncovered } from "./SheetView.tsx";
@@ -41,7 +41,10 @@ export function NameInput({ value, onCommit, disabled }: { value: string; onComm
                 onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") setTyped(null); }} />;
 }
 
-const phaseOf = (p: ScrubPhase) => p;
+export const SECOND_RECTANGLE_HINT = "A piece can be two rectangles drawn together as one picture (e.g. a shape the DS can't cut as one rectangle, or eyes over a head). "
+  + "For a picture swap, make a separate piece instead and pick it on a key.";
+
+const phaseOf =(p: ScrubPhase) => p;
 
 // ---------------------------------------------------------------- The chosen bone
 
@@ -115,6 +118,7 @@ export function BoneSection({ view }: { view: SetupView }) {
             {src.pieces.map((x, i) => <option key={i} value={i}>{x.name}</option>)}
           </select>
         </Row>
+        <PicturesRows view={view} b={b} />
         <Row label="Parent" hint="changing it keeps the bone where it is (Keep Transform); it follows its parent from then on">
           <select value={p ?? -1} disabled={readOnly} onChange={(e) => {
             const next = Number(e.target.value) < 0 ? null : Number(e.target.value);
@@ -147,6 +151,65 @@ export function BoneSection({ view }: { view: SetupView }) {
         </Row>
       </div>
     </section>
+  );
+}
+
+/** The bone's pictures: what it shows by default and in any key, each placed against the default (Align with default) or
+ * dragged into place on the preview (Place…); an alternate picture can be added before any key shows it. */
+function PicturesRows({ view, b }: { view: SetupView; b: number }) {
+  const { src, commit, readOnly, say, art, sheet, shiny, placed, placing, setPlacing } = view;
+  const ref = referencePiece(src, b);
+  const shown = piecesOf(src, b);
+  const list = [...new Set([...(ref !== undefined ? [ref] : []), ...shown, ...(placed?.pictures(b) ?? [])])].filter((n) => src.pieces[n]);
+  const align = (n: number) => {
+    const r = alignPiece(src, b, n);
+    if (!r.note) { say(ref === undefined ? "This bone shows no picture to align with." : "Nothing to align."); return; }
+    commit(r.src);
+    placed?.add(b, r.piece);
+    say(r.note);
+  };
+  const place = (n: number) => {
+    const o = ownPiece(src, b, n);
+    if (o.copied) { commit(o.src); say(`Copied ${src.pieces[n].name} for ${src.bones[b].name} (another bone shows it).`); }
+    placed?.add(b, o.piece);
+    setPlacing?.({ bone: b, piece: o.piece });
+    if (!o.copied) say(`Placing ${src.pieces[o.piece].name}: drag it on the preview. Done or Escape ends.`);
+  };
+  const addable = src.pieces.map((p, n) => [p, n] as const).filter(([, n]) => !list.includes(n));
+  return (
+    <Row label="Pictures" hint="the default and every picture a key swaps in; each swapped picture sits where the default is (Align), or drag it into place (Place…). Pick the swap itself on a key in Sequences.">
+      <div className="rig-bone-pictures">
+        {list.map((n) => {
+          const p = src.pieces[n];
+          const active = placing?.bone === b && placing.piece === n;
+          return (
+            <div key={n} className={`rig-bone-picture${active ? " active" : ""}`}>
+              <PieceThumb art={art} sheet={sheet} shiny={shiny} rectangles={p.rectangles} size={28} />
+              <b>{p.name}</b>
+              <span className="muted">{n === ref ? "default" : shown.has(n) ? "in keys" : "not in a key yet"}</span>
+              <span className="spacer" />
+              {n !== ref && <button className="small" disabled={readOnly || ref === undefined} onClick={() => align(n)}
+                                    title="Put this picture where the default picture is (top left to top left, or centre to centre when the sizes differ)">Align with default</button>}
+              {active
+                ? <button className="small primary" onClick={() => setPlacing?.(null)} title="Done placing (Escape)">Done</button>
+                : <button className="small" disabled={readOnly || !!placing} onClick={() => place(n)}
+                          title="Show this picture on the bone in the preview, then drag it into place">Place…</button>}
+            </div>
+          );
+        })}
+        <select value="" disabled={readOnly || !addable.length} onChange={(e) => {
+          if (e.target.value === "") return;
+          const n = Number(e.target.value);
+          const r = alignPiece(src, b, n);
+          if (r.note) { commit(r.src); say(r.note); }
+          else say(`${src.pieces[n].name} added; there is no default picture to align with, so use Place….`);
+          placed?.add(b, r.piece);
+        }}>
+          <option value="">+ Add picture…</option>
+          {addable.map(([p, n]) => <option key={n} value={n}>{p.name}</option>)}
+        </select>
+      </div>
+    </Row>
   );
 }
 
@@ -323,6 +386,7 @@ export function PieceSection({ view }: { view: SetupView }) {
         <button disabled={readOnly || piece.rectangles.length < 2} onClick={() => { commit(removeRectangle(src, n, 1)); select({ rectangle: 0 }); }}>Remove second rectangle</button>
         <button disabled={readOnly} onClick={() => { commit(deletePiece(src, n)); select({ piece: null }); }}>Delete piece</button>
       </div>
+      <p className="muted ow-note">{SECOND_RECTANGLE_HINT}</p>
       <div className="ow-condition">
         <Row label="Name"><NameInput value={piece.name} disabled={readOnly} onCommit={(name) => commit(renamePiece(src, n, name))} /></Row>
         {piece.rectangles.map((r, k) => (

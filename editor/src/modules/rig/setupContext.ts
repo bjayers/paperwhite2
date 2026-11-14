@@ -44,7 +44,7 @@ export interface SequenceView {
 export interface PoseValues { move: [number, number]; rotation: number; scale: [number, number] }
 /** What the gizmos and the pose fields change: the default pose in the rig setup, the open sequence's key at the
  * playhead in Sequences (made from the values there). */
-export type PoseEdit = (src: V2, b: number, change: (now: PoseValues) => Partial<PoseValues> & Pick<Transform, "piece" | "hidden">) => V2;
+export type PoseEdit = (src: V2, b: number, change: (now: PoseValues) => Partial<PoseValues> & Pick<Transform, "piece" | "hidden"> & { placed?: boolean }) => V2;
 
 export interface SetupView {
   src: V2;
@@ -66,6 +66,13 @@ export interface SetupView {
   /** The Sequences mode's, or undefined in the rig setup. */
   seq?: SequenceView;
   pose: PoseEdit;
+  /** Pictures placed on a bone in this session without a key showing them yet: picking one on a key leaves its place
+   * alone (setup.ts placeForPick would put it where the bone's picture is). */
+  placed?: { has(b: number, piece: number): boolean; add(b: number, piece: number): void; pictures(b: number): number[] };
+  /** A picture being placed on its bone (Rig setup: the Bone panel's Place…): the preview shows it on the bone, and
+   * dragging it on the preview moves only that piece. */
+  placing?: { bone: number; piece: number } | null;
+  setPlacing?(next: { bone: number; piece: number } | null): void;
   /** Keys copied with Ctrl+C, pasted at the playhead with Ctrl+V. */
   copied?: CopiedKeys | null;
 }

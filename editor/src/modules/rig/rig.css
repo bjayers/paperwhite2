@@ -281,3 +281,9 @@
 .rig-not-played { font-size: 11px; color: #d4a72c; font-weight: 600; }
 .rig-sub-head { margin: 10px 0 4px; font-size: 12px; }
 .rig-import-report { margin: 4px 0 6px 18px; padding: 0; font-size: 12px; display: flex; flex-direction: column; gap: 2px; }
+
+.rig-bone-pictures { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+.rig-bone-picture { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 2px 4px; border-radius: 4px; }
+.rig-bone-picture.active { outline: 2px solid var(--accent); }
+.rig-sq-pic { position: relative; }
+.rig-sq-pic .rig-unplaced { position: absolute; top: -5px; right: -3px; font-size: 11px; }
