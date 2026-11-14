@@ -24,7 +24,10 @@ import { fixedScale, isBlank, orderedKey, pictureUses, signedDegrees, withRectan
 
 // ---------------------------------------------------------------- The source
 
-export type Curve = "constant" | "linear" | "ease_in" | "ease_out" | "ease_in_out" | "bezier";
+export type Curve = "constant" | "linear" | "ease_in" | "ease_out" | "ease_in_out" | "bezier" | Preset;
+/** The Rig Editor version 2's presets (rig-editor-v2.md, Built: step 1): named curves the bake samples, each arriving at
+ * the next key with its effect (Blender's "ease out" for its dynamic curves). Not in the first armature's schema. */
+export type Preset = "snap" | "back" | "bounce" | "elastic";
 export const CURVES: { curve: Curve; label: string }[] = [
   { curve: "constant", label: "Constant" }, { curve: "linear", label: "Linear" }, { curve: "ease_in", label: "Ease in" },
   { curve: "ease_out", label: "Ease out" }, { curve: "ease_in_out", label: "Ease in and out" }, { curve: "bezier", label: "Bézier" },
@@ -77,9 +80,9 @@ export interface Source {
 /** Game Freak's rhythm. */
 export const DEFAULT_STEP = 6;
 /** The longest a bone's bake is unrolled to (its loop and its parent's), in frames. */
-const LONGEST = 3600;
+export const LONGEST = 3600;
 /** The skew (sine of its angle) above which a baked key is warned of as a shear the game can't draw. */
-const SHEAR = 0.01;
+export const SHEAR = 0.01;
 
 // ---------------------------------------------------------------- Channels and curves
 
@@ -151,6 +154,26 @@ export function eased(curve: Curve, u: number): number {
     case "ease_out": return Math.sin((u * Math.PI) / 2);
     case "ease_in_out": return (1 - Math.cos(u * Math.PI)) / 2;
     case "bezier": return u;
+    // Most of the way at once, then settling (quintic ease out): 0.67 of the way after a fifth
+    case "snap": return 1 - (1 - u) ** 5;
+    // Past the key by about 10% and back (Penner's ease out back, overshoot 1.70158)
+    case "back": {
+      const c1 = 1.70158, c3 = c1 + 1;
+      return 1 + c3 * (u - 1) ** 3 + c1 * (u - 1) ** 2;
+    }
+    // Lands on the key and bounces three times, less each time (Penner's ease out bounce)
+    case "bounce": {
+      const n = 7.5625, d = 2.75;
+      if (u < 1 / d) return n * u * u;
+      if (u < 2 / d) return n * (u -= 1.5 / d) * u + 0.75;
+      if (u < 2.5 / d) return n * (u -= 2.25 / d) * u + 0.9375;
+      return n * (u -= 2.625 / d) * u + 0.984375;
+    }
+    // Overshoots and swings about the key, dying away (Penner's ease out elastic, three swings)
+    case "elastic":
+      if (u <= 0) return 0;
+      if (u >= 1) return 1;
+      return 2 ** (-10 * u) * Math.sin((u * 10 - 0.75) * ((2 * Math.PI) / 3)) + 1;
   }
 }
 
@@ -201,10 +224,10 @@ export function valuesAt(keys: KeyPose[], t: number, frames: number, loop: boole
 /** An affine map, y up: x' = a x + b y + e, y' = c x + d y + f (mcss.ts's Affine). */
 export type Map2 = [number, number, number, number, number, number];
 
-const IDENTITY: Map2 = [1, 0, 0, 1, 0, 0];
+export const IDENTITY: Map2 = [1, 0, 0, 1, 0, 0];
 
 /** A key's movement (rotation in 65536ths, possibly fractional) as MCSS applies it (mcss.ts affineOf). */
-function mapOf(t: Srt): Map2 {
+export function mapOf(t: Srt): Map2 {
   const [rot, sx, sy, mx, my] = t;
   const angle = (rot / 65536) * 2 * Math.PI;
   const sin = -Math.sin(angle), cos = Math.cos(angle);
@@ -212,27 +235,27 @@ function mapOf(t: Srt): Map2 {
 }
 
 /** p then q: q(p(x)). */
-function then(p: Map2, q: Map2): Map2 {
+export function then(p: Map2, q: Map2): Map2 {
   const [a, b, c, d, e, f] = p;
   const [A, B, C, D, E, F] = q;
   return [A * a + B * c, A * b + B * d, C * a + D * c, C * b + D * d, A * e + B * f + E, C * e + D * f + F];
 }
 
-function inverse(m: Map2): Map2 {
+export function inverse(m: Map2): Map2 {
   const [a, b, c, d, e, f] = m;
   const det = a * d - b * c || 1e-12;
   const ia = d / det, ib = -b / det, ic = -c / det, id = a / det;
   return [ia, ib, ic, id, -(ia * e + ib * f), -(ic * e + id * f)];
 }
 
-const shift = (x: number, y: number): Map2 => [1, 0, 0, 1, x, y];
+export const shift = (x: number, y: number): Map2 => [1, 0, 0, 1, x, y];
 
 /** A part's whole movement, y up: its key's, then to its pivot (y down in the rig). */
-const partMap = (key: Srt, pivot: Pair): Map2 => then(mapOf(key), shift(pivot[0], -pivot[1]));
+export const partMap = (key: Srt, pivot: Pair): Map2 => then(mapOf(key), shift(pivot[0], -pivot[1]));
 
 /** The key that gives a part a movement about its pivot, rounded as the files hold it, and how far it is from being a
  * turn and a scale (a shear's skew, 0 for none). `expected` is the turn (65536ths) to choose a mirror's way by. */
-function keyOfMap(m: Map2, pivot: Pair, expected: number): { srt: Srt; skew: number } {
+export function keyOfMap(m: Map2, pivot: Pair, expected: number): { srt: Srt; skew: number } {
   const [a, b, c, d, e, f] = then(m, shift(-pivot[0], pivot[1]));
   const length = Math.hypot(a, c) || 1e-12;
   const options = [1, -1].map((sign) => {
@@ -250,34 +273,34 @@ function keyOfMap(m: Map2, pivot: Pair, expected: number): { srt: Srt; skew: num
 }
 
 /** A float movement rounded as a key holds it: 65536ths, 1/4096ths of scale, whole pixels. */
-function rounded(t: Srt): Srt {
+export function rounded(t: Srt): Srt {
   const turn = ((Math.round(t[0]) % 65536) + 65536) % 65536;
   return [turn, fixedScale(t[1]) + 0, fixedScale(t[2]) + 0, Math.round(t[3]) + 0, Math.round(t[4]) + 0];
 }
 
 /** Key pose values as a movement (rotation in 65536ths, fractional). */
-const srtOfValues = (v: Values): Srt => [(v.rotation / 360) * 65536, v.scale[0], v.scale[1], v.move[0], v.move[1]];
+export const srtOfValues = (v: Values): Srt => [(v.rotation / 360) * 65536, v.scale[0], v.scale[1], v.move[0], v.move[1]];
 
 /** A flat key's movement, by its track's type. */
-function srtOfKey(key: Key, type: KeyType): Srt {
+export function srtOfKey(key: Key, type: KeyType): Srt {
   if (type === "srt") return [key.rotation ?? 0, key.scale?.[0] ?? 1, key.scale?.[1] ?? 1, key.move?.[0] ?? 0, key.move?.[1] ?? 0];
   if (type === "move") return [0, 1, 1, key.move?.[0] ?? 0, key.move?.[1] ?? 0];
   return [0, 1, 1, 0, 0];
 }
 
 const TYPE_ORDER: KeyType[] = ["plain", "move", "srt"];
-const fuller = (a: KeyType, b: KeyType) => (TYPE_ORDER.indexOf(a) >= TYPE_ORDER.indexOf(b) ? a : b);
-const typeNeeded = (t: Srt): KeyType => (t[0] !== 0 || t[1] !== 1 || t[2] !== 1 ? "srt" : t[3] !== 0 || t[4] !== 0 ? "move" : "plain");
+export const fuller = (a: KeyType, b: KeyType) => (TYPE_ORDER.indexOf(a) >= TYPE_ORDER.indexOf(b) ? a : b);
+export const typeNeeded = (t: Srt): KeyType => (t[0] !== 0 || t[1] !== 1 || t[2] !== 1 ? "srt" : t[3] !== 0 || t[4] !== 0 ? "move" : "plain");
 
 /** A flat key of a type: picture or pose, frames, then the type's fields, then the kept extras. */
-function flatKey(head: { picture?: number; pose?: number }, frames: number, t: Srt, type: KeyType, extra?: Record<string, number>): Key {
+export function flatKey(head: { picture?: number; pose?: number }, frames: number, t: Srt, type: KeyType, extra?: Record<string, number>): Key {
   const key: Key = { ...head, frames };
   if (type === "srt") Object.assign(key, { rotation: t[0], scale: [t[1], t[2]], move: [t[3], t[4]] });
   else if (type === "move") key.move = [t[3], t[4]];
   return orderedKey({ ...key, ...(extra ?? {}) });
 }
 
-const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
+export const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a);
 
 // ---------------------------------------------------------------- The bake
 
@@ -292,7 +315,7 @@ export interface Baked {
 }
 
 /** A sample of a baked span: from a frame, the movement held there. */
-interface Piece { from: number; srt: Srt; head: { picture?: number; pose?: number }; skew?: boolean }
+export interface Piece { from: number; srt: Srt; head: { picture?: number; pose?: number }; skew?: boolean }
 
 /** The step a sequence bakes at. */
 export const sequenceStep = (source: Source, n: number) => source.sequences[n]?.step ?? source.step ?? DEFAULT_STEP;
@@ -312,11 +335,11 @@ export function boneStep(source: Source, rig: Rig, track: number): number {
 }
 
 /** Key poses in frame order (stable, so key poses at one frame keep theirs). */
-const sortedKeys = (keys: KeyPose[]) => keys.map((k, i) => [k, i] as const).sort((a, b) => a[0].frame - b[0].frame || a[1] - b[1]).map(([k]) => k);
+export const sortedKeys = (keys: KeyPose[]) => keys.map((k, i) => [k, i] as const).sort((a, b) => a[0].frame - b[0].frame || a[1] - b[1]).map(([k]) => k);
 
 /** The spans a key pose list bakes into over `length` frames of its own time (repeated each `frames` when longer):
  * each key pose's from its frame to the next's, a key pose at the very end lasting 0. */
-function segmentsOf(keys: KeyPose[], frames: number, length: number) {
+export function segmentsOf(keys: KeyPose[], frames: number, length: number) {
   const out: { index: number; from: number; to: number; base: number }[] = [];
   if (frames <= 0) {
     keys.forEach((_, i) => out.push({ index: i, from: 0, to: 0, base: 0 }));
@@ -336,17 +359,17 @@ function segmentsOf(keys: KeyPose[], frames: number, length: number) {
 }
 
 /** Pieces of a span: cut at each multiple of the step and at the cuts given, a sample at each piece's start. */
-function cutsOf(from: number, to: number, step: number, cuts: number[]): number[] {
+export function cutsOf(from: number, to: number, step: number, cuts: number[]): number[] {
   const points = new Set<number>([from]);
   for (let g = Math.ceil((from + 1) / step) * step; g < to; g += step) points.add(g);
   for (const c of cuts) if (c > from && c < to) points.add(c);
   return [...points].sort((a, b) => a - b);
 }
 
-const sameSrt = (a: Srt, b: Srt) => a.every((v, i) => v === b[i]);
+export const sameSrt = (a: Srt, b: Srt) => a.every((v, i) => v === b[i]);
 
 /** The flat keys of pieces: each held to the next's start (or the span's end), equal neighbours merged. */
-function keysOfPieces(pieces: Piece[], to: number, type: KeyType, extra?: Record<string, number>, skewed?: { count: number }): Key[] {
+export function keysOfPieces(pieces: Piece[], to: number, type: KeyType, extra?: Record<string, number>, skewed?: { count: number }): Key[] {
   const out: { piece: Piece; frames: number }[] = [];
   pieces.forEach((piece, i) => {
     const end = i + 1 < pieces.length ? pieces[i + 1].from : to;
@@ -359,7 +382,7 @@ function keysOfPieces(pieces: Piece[], to: number, type: KeyType, extra?: Record
 }
 
 /** The frames at which a baked track's keys start, over `length` frames of its time. */
-function boundariesOf(track: Track, length: number): number[] {
+export function boundariesOf(track: Track, length: number): number[] {
   const total = lengthOf(track);
   if (!total) return [];
   const out: number[] = [];
@@ -374,7 +397,7 @@ function boundariesOf(track: Track, length: number): number[] {
   return out;
 }
 
-const constantTrack = (track: Track) => track.keys.every((k) => sameSrt(srtOfKey(k, track.key_type), srtOfKey(track.keys[0], track.key_type)));
+export const constantTrack = (track: Track) => track.keys.every((k) => sameSrt(srtOfKey(k, track.key_type), srtOfKey(track.keys[0], track.key_type)));
 
 /** Whether every value a sequence's key pose segment shows of the root is the same, rounded. */
 function rootConstant(keys: KeyPose[], i: number, from: number, to: number, frames: number, loop: boolean): boolean {
@@ -597,7 +620,7 @@ export function bake(source: Source, flat: Rig): Baked {
 
 /** Key poses for a flat track's (or sequence's) keys: one at each key's start, held (constant), the turn in degrees
  * unwrapped from the key before. */
-function keyPosesOf(track: Track, field: "picture" | "pose"): KeyPose[] {
+export function keyPosesOf(track: Track, field: "picture" | "pose"): KeyPose[] {
   let frame = 0;
   let turn = 0;
   return track.keys.map((key) => {
