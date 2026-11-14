@@ -1,12 +1,13 @@
-// The new Rig Editor's guide ("? How rigs work") for the rig setup: pieces, bones with their two ends, parenting
-// connected or keeping the offset, the layers and the default pose. Sequences and the timeline come with step 3.
+// The new Rig Editor's guide ("? How rigs work"): pieces, bones with their two ends, parenting connected or keeping the
+// offset, the layers and the default pose (the rig setup), then sequences and their keyframes (step 3). The timeline
+// strip comes with step 4.
 
 export function SetupGuide({ onClose }: { onClose(): void }) {
   return (
     <section className="rig-card rig-guide">
       <div className="rig-card-head">
         <h3>How rigs work</h3>
-        <span className="muted small">the rig setup</span>
+        <span className="muted small">the rig setup, then sequences</span>
         <span className="spacer" />
         <button onClick={onClose}>Close</button>
       </div>
@@ -29,8 +30,25 @@ export function SetupGuide({ onClose }: { onClose(): void }) {
           <h4>4. The default pose</h4>
           <p>Move (G), Rotate (R) and Scale (S) pose the chosen bones. What you see is the <b>default pose</b>: every sequence starts and ends
             at it, so the setup is all it takes. Front and back are separate rigs; on the back, <b>Copy front to back</b> starts it from the front.</p>
-          <p className="muted">The game can't bend or skew a piece: a bend is a chain of connected bones, or pictures drawn bent and swapped.
-            Sequences (Idle, Hop, ...) and the timeline come next; Save writes the rig and the game's keys made from it.</p>
+          <p className="muted">The game can't bend or skew a piece: a bend is a chain of connected bones, or pictures drawn bent and swapped.</p>
+        </div>
+        <div>
+          <h4>5. Sequences</h4>
+          <p>In <b>Sequences</b> (the switch at the top) each sequence (Idle, Hop, ...) is a loop of the same bones. It starts at the default pose
+            (the hollow key at 0) and comes back to it at its end (the hollow end key, one step past the last frame the game holds, since it is
+            the next loop's start). With no keys a part holds the default pose; a key between makes it go there and back; add as many as you like.</p>
+          <h4>6. Keys</h4>
+          <p>Put the playhead on a frame and pose the chosen parts with Move, Rotate or Scale: that keys them there (the preview pauses first).
+            <b>K</b> keys the chosen parts as they are, <b>Shift+K</b> every part. Lengths, keys and the playhead go by 6 frames (<b>Snap 6</b>;
+            Alt for single frames), the game's rhythm. Box-select keys on the timeline, drag them in time, Delete them, Ctrl+C and Ctrl+V them.</p>
+        </div>
+        <div>
+          <h4>7. Curves</h4>
+          <p>The <b>Graph</b> shows the chosen parts' curves and, faint underneath, the steps the game holds every 6 frames. A key's curve says how
+            it goes on to the next: ease in and out by default, linear, constant (held), Bézier with handles, or a preset: <b>Snap</b>, <b>Back</b>
+            (past the key and back), <b>Bounce</b> or <b>Elastic</b>.</p>
+          <p className="muted">Save writes the rig and the game's keys made from it; the preview is those keys, as the battle plays them.
+            Placing sequences on the battle's timeline comes next.</p>
         </div>
       </div>
     </section>

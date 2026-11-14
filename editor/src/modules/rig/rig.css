@@ -187,3 +187,51 @@
 .rig-layer-no { width: 16px; text-align: right; font-variant-numeric: tabular-nums; }
 .rig-piece-list { margin-top: 8px; max-height: 260px; }
 .rig-setup .ow-condition { grid-template-columns: 84px 1fr; }
+
+/* The new Rig Editor's Sequences mode (rig-editor-v2.md, "Built: step 3"): the preview alone above, the sequence's
+   timeline and graph editor in the dock at the bottom left of the side panel */
+.rig-main.rig-main-sequence { grid-template-columns: minmax(0, 1fr); }
+.rig-sequences .rig-preview .rig-stage { min-height: 220px; }
+.rig-snap { padding: 1px 8px; border-radius: 6px; border: 1px solid var(--border); }
+.rig-snap.on { border-color: var(--accent); }
+.rig-time { font-variant-numeric: tabular-nums; font-size: 12px; min-width: 150px; }
+.rig-sq-timeline { flex: 1; min-height: 0; display: flex; flex-direction: column; user-select: none; -webkit-user-select: none; }
+.rig-sq-scroll { overflow: auto; flex: 1; min-height: 0; border: 1px solid var(--border); border-radius: 6px; }
+.rig-sq-grid { display: grid; grid-template-columns: var(--name) 1fr; font-size: 12px; }
+.rig-sq-name { position: sticky; left: 0; z-index: 4; background: var(--panel); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 5px; padding: 0 6px; height: 24px; box-sizing: border-box; overflow: hidden; white-space: nowrap; cursor: pointer; }
+.rig-sq-name.selected { background: var(--selected); }
+.rig-sq-name.multi { background: color-mix(in srgb, var(--selected) 55%, transparent); }
+.rig-sq-head { cursor: default; font-variant-numeric: tabular-nums; }
+.rig-sq-label { overflow: hidden; text-overflow: ellipsis; }
+.rig-sq-ruler { position: relative; background: var(--panel-2); border-bottom: 1px solid var(--border); cursor: col-resize; }
+.rig-sq-body { position: relative; }
+.rig-sq-row { display: grid; grid-template-columns: var(--name) 1fr; height: 24px; }
+.rig-sq-row.chosen .rig-sq-lane { background: color-mix(in srgb, var(--selected) 35%, transparent); }
+.rig-sq-lane { position: relative; height: 24px; box-sizing: border-box; border-bottom: 1px solid var(--border); cursor: crosshair;
+  background-image: repeating-linear-gradient(to right, transparent 0, transparent calc(var(--step, 48px) - 1px), rgba(128, 128, 128, 0.1) calc(var(--step, 48px) - 1px)); }
+.rig-sq-lane.summary { background-color: var(--panel-2); }
+.rig-sq-key { position: absolute; top: 6px; width: 10px; height: 10px; margin-left: -6px; transform: rotate(45deg); background: #a5d6a7; border: 1px solid #222;
+  cursor: ew-resize; z-index: 2; }
+.rig-sq-key.curve-constant { background: #8b949e; }
+.rig-sq-key.curve-linear { background: #79c0ff; }
+.rig-sq-key.curve-bezier { background: #f0c75e; }
+.rig-sq-key.curve-snap, .rig-sq-key.curve-back, .rig-sq-key.curve-bounce, .rig-sq-key.curve-elastic { background: #f0a1d8; }
+.rig-sq-key.implicit { background: transparent; border: 1.5px solid #c9d1d9; }
+.rig-sq-key.summary { background: #d0d7de; }
+.rig-sq-key.past { opacity: 0.45; }
+.rig-sq-key.selected { outline: 2px solid #ffd33d; outline-offset: 1px; opacity: 1; }
+.rig-sq-key.implicit.selected { border-color: #ffd33d; }
+.rig-sq-past { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(45deg, rgba(128, 128, 128, 0.16) 0 4px, transparent 4px 8px);
+  pointer-events: none; }
+.rig-sq-past.rows { z-index: 1; }
+.rig-sq-length { position: absolute; top: 2px; height: 18px; width: 16px; margin-left: -8px; text-align: center; line-height: 18px; font-size: 11px;
+  border-radius: 4px; background: var(--accent); color: #111; cursor: ew-resize; z-index: 3; }
+.rig-sq-playhead-cap { position: absolute; bottom: 0; width: 10px; height: 8px; margin-left: -5px; background: #e5534b; clip-path: polygon(0 0, 100% 0, 50% 100%);
+  pointer-events: none; }
+.rig-sq-box { position: absolute; border: 1px dashed #ffd33d; background: rgba(255, 211, 61, 0.08); pointer-events: none; z-index: 5; }
+.rig-curve-buttons { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 12px; }
+.rig-curve-buttons .view-switch button { font-size: 11px; padding: 1px 7px; }
+.rig-sq-pictures { display: flex; flex-wrap: wrap; gap: 4px; }
+.rig-sq-pic { padding: 2px; min-width: 30px; min-height: 30px; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; }
+.rig-sq-pic.active { outline: 2px solid var(--accent); }

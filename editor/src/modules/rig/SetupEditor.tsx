@@ -6,6 +6,11 @@
 // untouched side writes nothing. Undo and redo are one history over the source and its bake (history.ts), Save checks
 // the bake with the build's checks (the rig-check route) and writes both files. The first editor stays as the Advanced
 // view (RigEditor.tsx, #tool/rig?...&editor=old).
+//
+// Sequences mode ("Built: step 3"): the sequences list, the open sequence's preview (the bake playing it, sequences.ts
+// sequenceRig, on the clock of player.ts), its timeline and graph editor docked at the bottom (SequenceTimeline.tsx,
+// SequenceGraph.tsx), the chosen part at the playhead (SequencePanel.tsx); keys snap to 6 (Snap 6, Alt bypasses), the
+// gizmos, K and Shift+K key at the playhead (never while playing: it pauses), Delete deletes the chosen keys.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, type RigCheck } from "../../api.ts";
@@ -19,19 +24,39 @@ import { RigHistory } from "./history.ts";
 import { isTyping, loadArt, store, stored } from "./RigEditor.tsx";
 import { bakeV2, convertToV2, type V2 } from "./v2.ts";
 import { rigSizes, RESIDENT_GUIDANCE } from "./sizes.ts";
-import { copySide, defaultPoseRig, deleteBone, freshV2, restMaps } from "./setup.ts";
+import { copySide, defaultPoseRig, deleteBone, freshV2, restMaps, setDefault } from "./setup.ts";
 import { armaturePathOf, flatData, rigPathOf, v2Data, v2PathOf, v2SchemaFor, V2_LAYOUT, V2_SCHEMA_PATH, type Side } from "./setupFiles.ts";
-import { NO_SETUP_SELECTION, type SetupSelection, type SetupView } from "./setupContext.ts";
+import { NO_SETUP_SELECTION, type PoseEdit, type SequenceView, type SetupSelection, type SetupView } from "./setupContext.ts";
 import { SETUP_TOOLS, SetupPreview, type SetupTool } from "./SetupPreview.tsx";
 import { PieceList, SetupSheet } from "./SetupSheet.tsx";
 import { BoneSection, LayersSection, OutlinerSection, PieceSection, PoseSection, SequencesSection, SetupChecks } from "./SetupPanel.tsx";
 import { SetupGuide } from "./SetupGuide.tsx";
+import { Clock } from "./player.ts";
+import { useClock } from "./context.ts";
+import { copyKeys, deleteKeys, keyFrameOf, keyParts, lastFrame, liveRefs, pasteKeys, pauseForKeying, posedMaps, refId, refOf, sequenceBones, sequenceRig,
+         setKeyAt, type CopiedKeys } from "./sequences.ts";
+import { SequenceTimeline } from "./SequenceTimeline.tsx";
+import { SequenceGraph } from "./SequenceGraph.tsx";
+import { KeySection, SequenceListSection, SequenceSection } from "./SequencePanel.tsx";
 import "./rig.css";
 
 const SIDES: Side[] = ["front", "back"];
 const TOOL_KEY = "paperwhite2.rig2.tool";
 const GUIDE_KEY = "paperwhite2.rig2.guide";
 const ZOOM_KEY = "paperwhite2.rig2.zoom";
+const MODE_KEY = "paperwhite2.rig2.mode";
+const SNAP_KEY = "paperwhite2.rig2.snap";
+const DOCK_KEY = "paperwhite2.rig2.dockHeight";
+const DOCK_VIEW_KEY = "paperwhite2.rig2.dockView";
+const SCALE_KEY = "paperwhite2.rig2.timelineScale";
+type Mode = "setup" | "sequences";
+type DockView = "timeline" | "graph" | "both";
+/** The tools of Sequences mode: the gizmos, which key the chosen parts at the playhead. */
+const SEQUENCE_TOOLS = SETUP_TOOLS.filter((t) => t.tool !== "bones").map((t) => ({
+  ...t, note: t.tool === "move" ? "Drag to move the chosen parts: it keys them at the playhead (a connected bone turns and scales only)."
+    : t.tool === "rotate" ? "Drag round the chosen part's head to turn the chosen parts: it keys them at the playhead (Shift: 5° steps)."
+    : "Drag the red X handle to scale across only, the green Y handle up and down only, the ring for both: it keys the chosen parts at the playhead.",
+}));
 
 export function SetupPage({ folder, side }: { folder: string; side: Side }) {
   const flatPath = rigPathOf(folder, side);
@@ -60,6 +85,24 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
   const [checking, setChecking] = useState(false);
   const [guideOpen, setGuideOpenState] = useState(() => stored(GUIDE_KEY) === "open");
   const setGuideOpen = (open: boolean) => { setGuideOpenState(open); store(GUIDE_KEY, open ? "open" : "closed"); };
+  // Sequences mode: the open sequence, the preview's clock, the snap, the dock
+  const [mode, setModeState] = useState<Mode>(() => (stored(MODE_KEY) === "sequences" ? "sequences" : "setup"));
+  const setMode = (m: Mode) => { setModeState(m); store(MODE_KEY, m); setMessage(null); };
+  const [open, setOpenState] = useState(0);
+  const [snap, setSnapState] = useState(() => stored(SNAP_KEY) !== "off");
+  const setSnap = (on: boolean) => { setSnapState(on); store(SNAP_KEY, on ? "on" : "off"); };
+  const [onion, setOnion] = useState(false);
+  const [dockHeight, setDockHeight] = useState(() => Number(stored(DOCK_KEY)) || 360);
+  const [dockView, setDockViewState] = useState<DockView>(() => (["timeline", "graph", "both"].includes(stored(DOCK_VIEW_KEY) ?? "") ? stored(DOCK_VIEW_KEY) as DockView : "timeline"));
+  const setDockView = (v: DockView) => { setDockViewState(v); store(DOCK_VIEW_KEY, v); };
+  const [scale, setScaleState] = useState(() => Number(stored(SCALE_KEY)) || 8);
+  const setScale = (n: number) => { setScaleState(n); store(SCALE_KEY, String(n)); };
+  const [copied, setCopied] = useState<CopiedKeys | null>(null);
+  const clockRef = useRef<Clock>(null as unknown as Clock);
+  if (!clockRef.current) clockRef.current = new Clock();
+  const clock = clockRef.current;
+  const keyFrame = useClock(clock, (st) => keyFrameOf(st.time, snap));
+  const playing = useClock(clock, (st) => st.playing);
 
   // One history for the page over the source and its bake (history.ts): the source made by the first edit is part of
   // that edit's step, so undoing it takes the file away again (hidden, for redo) and gives the flat rig back
@@ -119,10 +162,47 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
       return { baked: null, error: (e as Error).message };
     }
   }, [src]);
-  const maps = useMemo(() => (src ? restMaps(src) : []), [src]);
+  const sequencing = mode === "sequences" && !!src && src.sequences.length > 0;
+  const openSeq = src ? Math.min(open, Math.max(0, src.sequences.length - 1)) : 0;
+  const seqFrames = src?.sequences[openSeq]?.frames ?? 6;
+  const maps = useMemo(() => (src ? (sequencing ? posedMaps(src, openSeq, keyFrame) : restMaps(src)) : []), [src, sequencing, openSeq, keyFrame]);
   const preview = useMemo(() => (src ? defaultPoseRig(src) : null), [src]);
   const srcRef = useRef(src);
   srcRef.current = src;
+
+  // The preview of the open sequence: the side's bake with one strip playing it, looping at the game's speed
+  const seqRig = useMemo(() => (sequencing && baked?.baked ? sequenceRig(baked.baked.rig, openSeq, seqFrames) : null), [sequencing, baked, openSeq, seqFrames]);
+  useEffect(() => {
+    if (seqRig) clock.setRig(seqRig);
+  }, [seqRig, clock]);
+  useEffect(() => {
+    if (!sequencing || !toolActive) return;
+    if (clock.state.playing) clock.start();
+    return () => clock.stop();
+  }, [sequencing, clock, toolActive]);
+  // The playhead kept inside the open sequence's loop (the clock counts on)
+  useEffect(() => {
+    if (!sequencing) return;
+    const wrap = () => {
+      const t = clock.state.time;
+      if (t >= seqFrames) clock.seek(t % seqFrames);
+    };
+    wrap();
+    return clock.subscribe(wrap);
+  }, [sequencing, clock, seqFrames]);
+  const openSequence = useCallback((s: number) => {
+    setOpenState(s);
+    clock.seek(0);
+    setSel((x) => ({ ...x, keys: [] }));
+  }, [clock]);
+  /** Keys are never made while the preview plays: it pauses on the frame they go to. */
+  const keying = useCallback(() => pauseForKeying(clock, snap), [clock, snap]);
+  const pose = useMemo<PoseEdit>(() => (sequencing
+    ? (s0, b, change) => setKeyAt(s0, openSeq, b, keyFrame, (now) => change(now))
+    : (s0, b, change) => setDefault(s0, b, (t) => {
+      const { piece: _p, hidden: _h, ...c } = change(t);
+      return { ...t, ...c };
+    })), [sequencing, openSeq, keyFrame]);
 
   // The bake kept in the flat rig's document (no step of its own), so the checks, the size, Save and the Build button
   // see what the game will get
@@ -223,7 +303,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
     const pixels = art?.sheets[side];
     const { sheet, size } = freshRectangle(pixels ? artBounds(pixels) : null);
     commit(freshV2(side, sheet, size));
-    setSel({ bones: [0], piece: 0, rectangle: 0 });
+    setSel({ bones: [0], piece: 0, rectangle: 0, keys: [] });
     setMessage("Started fresh: one piece and one bone. Resize the piece on the sheet (or draw more), give each a bone, and parent them. Save to keep it.");
   };
 
@@ -250,12 +330,71 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
   };
 
   // Keys while the page is shown
-  const latest = useRef({ saveAll, sel, src, commit, readOnly });
-  latest.current = { saveAll, sel, src, commit, readOnly };
+  const latest = useRef({ saveAll, sel, src, commit, readOnly, sequencing, openSeq, keying, copied, snap, seqFrames });
+  latest.current = { saveAll, sel, src, commit, readOnly, sequencing, openSeq, keying, copied, snap, seqFrames };
   useEffect(() => {
     if (!toolActive) return;
+    /** Sequences mode's keys: K and Shift+K, Delete for the chosen keys, Ctrl+C and Ctrl+V, Space, the arrows. */
+    const sequenceKey = (e: KeyboardEvent, key: string): boolean => {
+      const l = latest.current;
+      const cur = l.src;
+      if (!l.sequencing || !cur) return false;
+      const s = l.openSeq;
+      const refs = liveRefs(cur, s, l.sel.keys.map(refOf));
+      if (e.ctrlKey || e.metaKey) {
+        if (key === "c" && refs.length && !isTyping(e.target)) {
+          setCopied(copyKeys(cur, s, refs));
+          setMessage(`Copied ${refs.length} key${refs.length > 1 ? "s" : ""}: Ctrl+V pastes them at the playhead.`);
+          return true;
+        }
+        if (key === "v" && l.copied?.keys.length && !isTyping(e.target) && !l.readOnly) {
+          const at = l.keying();
+          const r = pasteKeys(cur, s, l.copied, at);
+          l.commit(r.src);
+          setSel((x) => ({ ...x, keys: r.refs.map(refId) }));
+          setMessage(`Pasted ${r.refs.length} key${r.refs.length > 1 ? "s" : ""} at frame ${at}.`);
+          return true;
+        }
+        return false;
+      }
+      if (isTyping(e.target)) return false;
+      if (key === "k" && !l.readOnly) {
+        const at = l.keying();
+        const bones = e.shiftKey ? sequenceBones(cur, s) : l.sel.bones;
+        if (!bones.length) { setMessage("Choose a part to key (or Shift+K for every part)."); return true; }
+        const r = keyParts(cur, s, bones, at);
+        l.commit(r.src);
+        setMessage(r.made ? `Keyed ${e.shiftKey ? "every part" : bones.map((b) => cur.bones[b].name).join(", ")} at frame ${at}.` : `Already keyed at frame ${at}.`);
+        return true;
+      }
+      if ((key === "delete" || key === "x" || key === "backspace") && !l.readOnly) {
+        if (!refs.length) { setMessage("Choose keys to delete (click, Shift-click, or drag a box on the timeline)."); return true; }
+        const r = deleteKeys(cur, s, refs);
+        if (r.deleted) l.commit(r.src);
+        setSel((x) => ({ ...x, keys: [] }));
+        setMessage(r.deleted ? `Deleted ${r.deleted} key${r.deleted > 1 ? "s" : ""} (Ctrl+Z brings ${r.deleted > 1 ? "them" : "it"} back).` : "The start and end keys are the default pose: they can't be deleted.");
+        return true;
+      }
+      if (key === " ") { clock.play(); return true; }
+      if (key === "arrowleft" || key === "arrowright") {
+        const by = (key === "arrowleft" ? -1 : 1) * (l.snap && !e.altKey ? 6 : 1);
+        const last = lastFrame(l.seqFrames, l.snap && !e.altKey);
+        const t = Math.floor(clock.state.time) + by;
+        clock.step(0);
+        clock.seek(t < 0 ? last : t > last ? 0 : t);
+        return true;
+      }
+      if (key === "home") { clock.play(false); clock.seek(0); return true; }
+      if (key === "escape") { setSel((x) => ({ ...x, keys: [], bones: [] })); return true; }
+      return false;
+    };
     const onKey = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
+      if (!e.altKey && sequenceKey(e, key)) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       if (e.ctrlKey || e.metaKey) {
         if (key === "s") {
           e.preventDefault();
@@ -271,8 +410,9 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
         return;
       }
       if (isTyping(e.target) || e.altKey) return;
-      const t = SETUP_TOOLS.find((x) => x.key.toLowerCase() === key);
+      const t = (latest.current.sequencing ? SEQUENCE_TOOLS : SETUP_TOOLS).find((x) => x.key.toLowerCase() === key);
       if (t) { setTool(t.tool); return; }
+      if (latest.current.sequencing) return;
       const { sel: s, src: cur, readOnly: ro } = latest.current;
       if ((key === "delete" || key === "x") && s.bones.length && cur && !ro) {
         e.preventDefault();
@@ -285,7 +425,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [toolActive, flatPath]);
+  }, [toolActive, flatPath, clock]);
 
   if (loadError) return <div className="rig-page"><p className="pkm-error">{loadError}</p></div>;
   if (!flatDoc || (!src && !(converted instanceof Error))) return <div className="rig-page"><p className="muted">Reading {flatPath}…</p></div>;
@@ -293,22 +433,45 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
     <button onClick={() => navigate("rig", { folder, side, editor: "old" })}>Advanced (old editor)</button></div>;
 
   const sheet = art?.sheets[sheetName] ? sheetName : side;
-  const view: SetupView = { src, maps, preview: preview?.baked ?? null, art, sheet, shiny, sel, select, commit, say: setMessage, readOnly };
+  const seqView: SequenceView | undefined = sequencing ? { sequence: openSeq, rig: seqRig, clock, keyFrame, snap, onion, keying } : undefined;
+  const liveSel = sequencing ? { ...sel, keys: liveRefs(src, openSeq, sel.keys.map(refOf)).map(refId) } : sel;
+  const view: SetupView = { src, maps, preview: preview?.baked ?? null, art, sheet, shiny, sel: liveSel, select, commit, say: setMessage, readOnly, seq: seqView, pose, copied };
+  const shownTool: SetupTool = sequencing && tool === "bones" ? "move" : tool;
+  const tools = sequencing ? SEQUENCE_TOOLS : SETUP_TOOLS;
   const sizes = baked?.baked ? rigSizes(baked.baked.rig) : null;
   const share = sizes ? sizes.resident / RESIDENT_GUIDANCE : 0;
   const title = folder.split("/").map((s) => s.replace(/_/g, " ")).join(" · ");
-  const toolNote = SETUP_TOOLS.find((t) => t.tool === tool)?.note;
+  const toolNote = tools.find((t) => t.tool === shownTool)?.note;
+  const openName = src.sequences[openSeq]?.name ?? "";
+  const resizeDock = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const startY = e.clientY, startHeight = dockHeight;
+    const page = (e.currentTarget as HTMLElement).closest(".rig-page") as HTMLElement | null;
+    const most = Math.max(160, (page?.clientHeight ?? window.innerHeight) - 160);
+    let height = startHeight;
+    const move = (ev: PointerEvent) => {
+      height = Math.round(Math.min(most, Math.max(120, startHeight + startY - ev.clientY)));
+      setDockHeight(height);
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      store(DOCK_KEY, String(height));
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
   const warnings = [...(baked?.error ? [`The rig can't be baked: ${baked.error}`] : []), ...(baked?.baked?.warnings ?? []), ...(preview?.error ? [preview.error] : [])];
 
   return (
-    <div className="rig-page rig-docked rig-setup">
+    <div className={`rig-page rig-docked rig-setup${sequencing ? " rig-sequences" : ""}`}>
       <div className="rig-left">
         <div className="rig-upper">
           <header className="rig-head">
             <h2>Rig <span className="muted">{title}</span></h2>
-            <span className="view-switch rig-mode" title="What the editor edits: the rig setup now; sequences come in the next step">
-              <button className="active">Rig setup <span className="muted small">pieces, bones, default pose</span></button>
-              <button disabled title="Sequences (Idle, Hop, ...) and their keyframes: the next step">Sequences <span className="muted small">soon</span></button>
+            <span className="view-switch rig-mode" title="What the editor edits: the rig setup (pieces, bones, the default pose), or the sequences (Idle, Hop, ...) and their keyframes">
+              <button className={mode === "setup" ? "active" : ""} onClick={() => setMode("setup")}>Rig setup <span className="muted small">pieces, bones, default pose</span></button>
+              <button className={mode === "sequences" ? "active" : ""} onClick={() => setMode("sequences")}>Sequences <span className="muted small">keyframes</span></button>
             </span>
             <span className="view-switch" title="Front and back are separate rigs">
               {SIDES.map((s) => (
@@ -357,6 +520,48 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
               </div>
             </section>
           )}
+          {sequencing ? (
+            <div className="rig-main rig-main-sequence">
+              <section className="rig-card rig-preview">
+                <div className="rig-card-head">
+                  <h3>{openName}</h3>
+                  <span className="muted small">{seqFrames} frames, looping at the game's speed: what the battle plays</span>
+                  <span className="spacer" />
+                  <span className="view-switch" title="The gizmo on the chosen parts: it keys them at the playhead">
+                    {SEQUENCE_TOOLS.map((t) => <button key={t.tool} className={shownTool === t.tool ? "active" : ""} title={`${t.note} (${t.key})`} onClick={() => setTool(t.tool)}>{t.label} <kbd>{t.key}</kbd></button>)}
+                  </span>
+                </div>
+                <div className="rig-stage">
+                  <SetupPreview view={view} zoom={zoom} tool={shownTool} showBones={showBones} feet={feet} />
+                </div>
+                <p className="muted ow-note">{toolNote} Pressing pauses the preview first: keys are never made while it plays. Click a part to choose it (Shift or Ctrl: one more).</p>
+                <Transport clock={clock} frames={seqFrames} snap={snap} playing={playing} />
+                <div className="rig-toggles">
+                  <span className="rig-keybuttons">
+                    <button disabled={readOnly || !sel.bones.length} title="A key at the playhead for the chosen parts, from what they show there (K)" onClick={() => {
+                      const at = keying();
+                      const r = keyParts(src, openSeq, sel.bones, at);
+                      commit(r.src);
+                      setMessage(r.made ? `Keyed ${sel.bones.map((b) => src.bones[b].name).join(", ")} at frame ${at}.` : `Already keyed at frame ${at}.`);
+                    }}>◇ Key <kbd>K</kbd></button>
+                    <button disabled={readOnly} title="A key for every part at the playhead (Shift+K)" onClick={() => {
+                      const at = keying();
+                      const r = keyParts(src, openSeq, sequenceBones(src, openSeq), at);
+                      commit(r.src);
+                      setMessage(r.made ? `Keyed ${r.made} part${r.made > 1 ? "s" : ""} at frame ${at}.` : `Every part already has a key at frame ${at}.`);
+                    }}>◆ Key all parts <kbd>⇧K</kbd></button>
+                  </span>
+                  <label className="ow-check" title="The frames a step (6) before and after, faded"><input type="checkbox" checked={onion} onChange={(e) => setOnion(e.target.checked)} /> Onion skin</label>
+                  <label className="ow-check"><input type="checkbox" checked={showBones} onChange={(e) => setShowBones(e.target.checked)} /> Bones</label>
+                  <label className="ow-check"><input type="checkbox" checked={feet} onChange={(e) => setFeet(e.target.checked)} /> Feet</label>
+                  <label className="ow-check"><input type="checkbox" checked={shiny} onChange={(e) => setShiny(e.target.checked)} /> Shiny</label>
+                  <span className="view-switch">
+                    {[2, 3, 4, 5, 6].map((z) => <button key={z} className={zoom === z ? "active" : ""} onClick={() => setZoom(z)}>{z}×</button>)}
+                  </span>
+                </div>
+              </section>
+            </div>
+          ) : (
           <div className="rig-main">
             <section className="rig-card rig-preview">
               <div className="rig-card-head">
@@ -397,17 +602,84 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
               </section>
             </div>
           </div>
+          )}
         </div>
+        {sequencing && (
+          <section className="rig-card rig-dock" style={{ height: dockHeight }}>
+            <div className="rig-dock-handle" onPointerDown={resizeDock} title="Drag to make the panel taller or shorter" />
+            <div className="rig-card-head">
+              <span className="view-switch" title="What the panel shows">
+                {([["timeline", "Timeline"], ["graph", "Graph"], ["both", "Both"]] as const).map(([v, label]) => (
+                  <button key={v} className={dockView === v ? "active" : ""} onClick={() => setDockView(v)}>{label}</button>
+                ))}
+              </span>
+              <b>{openName}</b>
+              <span className="muted small">{seqFrames} frames</span>
+              <label className={`ow-check rig-snap${snap ? " on" : ""}`} title="The playhead, keys and the length snap to 6 frames (Game Freak's rhythm, the bake's step). Hold Alt while dragging to go by frames.">
+                <input type="checkbox" checked={snap} onChange={(e) => setSnap(e.target.checked)} /> Snap 6 <kbd>Alt</kbd>
+              </label>
+              <span className="spacer" />
+              {copied?.keys.length ? <span className="muted small">{copied.keys.length} key{copied.keys.length > 1 ? "s" : ""} copied (Ctrl+V pastes at the playhead)</span> : null}
+              <span className="muted small">zoom</span>
+              <span className="view-switch">
+                {[4, 6, 8, 12, 16].map((z) => <button key={z} className={scale === z ? "active" : ""} onClick={() => setScale(z)}>{z}</button>)}
+              </span>
+            </div>
+            <div className={`rig-dock-body ${dockView}`}>
+              {dockView !== "graph" && (
+                <div className="rig-dock-pane">
+                  <SequenceTimeline view={view} scale={scale} />
+                  <p className="muted ow-note">Click a key to choose it (Shift or Ctrl: one more), drag empty space to box-select, drag chosen keys to move them in time,
+                    Delete deletes them, Ctrl+C and Ctrl+V copy them to the playhead. The hollow keys are the default pose: at 0, and the end key at {seqFrames}{" "}
+                    (drag it back to settle earlier). K keys the chosen parts, Shift+K every part; Space plays, the arrows step.</p>
+                </div>
+              )}
+              {dockView !== "timeline" && <div className="rig-dock-pane"><SequenceGraph view={view} /></div>}
+            </div>
+          </section>
+        )}
       </div>
-      <aside className="rig-side rig-inspector">
-        <OutlinerSection view={view} />
-        <BoneSection view={view} />
-        <PoseSection view={view} />
-        <LayersSection view={view} />
-        <PieceSection view={view} />
-        <SequencesSection view={view} />
-        <SetupChecks view={view} check={check} checking={checking} warnings={warnings} />
-      </aside>
+      {sequencing ? (
+        <aside className="rig-side rig-inspector">
+          <SequenceListSection view={view} open={openSeq} onOpen={openSequence} />
+          <SequenceSection view={view} open={openSeq} />
+          <KeySection view={view} open={openSeq} onMessage={setMessage} />
+          <SetupChecks view={view} check={check} checking={checking} warnings={warnings} />
+        </aside>
+      ) : (
+        <aside className="rig-side rig-inspector">
+          <OutlinerSection view={view} />
+          <BoneSection view={view} />
+          <PoseSection view={view} />
+          <LayersSection view={view} />
+          <PieceSection view={view} />
+          <SequencesSection view={view} />
+          <SetupChecks view={view} check={check} checking={checking} warnings={warnings} />
+        </aside>
+      )}
+    </div>
+  );
+}
+
+/** Play, pause and step the open sequence (by 6 with the snap), and where the playhead is. */
+function Transport({ clock, frames, snap, playing }: { clock: Clock; frames: number; snap: boolean; playing: boolean }) {
+  const time = useClock(clock, (st) => Math.floor(st.time));
+  const last = lastFrame(frames, snap);
+  const step = (by: number) => {
+    const t = time + by;
+    clock.step(0);
+    clock.seek(t < 0 ? last : t > last ? 0 : t);
+  };
+  const by = snap ? 6 : 1;
+  return (
+    <div className="rig-transport">
+      <button onClick={() => { clock.play(false); clock.seek(0); }} title="To the start (Home)">⏮</button>
+      <button onClick={() => step(-by)} title={`Back ${by} frame${by > 1 ? "s" : ""} (←)`}>◀ {by}</button>
+      <button className="primary" onClick={() => clock.play()} title="Play or pause (Space): the sequence loops at the game's 60 frames a second">{playing ? "⏸ Pause" : "▶ Play"}</button>
+      <button onClick={() => step(by)} title={`On ${by} frame${by > 1 ? "s" : ""} (→)`}>{by} ▶</button>
+      <span className="rig-time">frame <b>{time}</b> of {frames} <span className="muted">({(time / 60).toFixed(2)} s)</span></span>
+      <input type="range" min={0} max={Math.max(0, frames - 1)} step={snap ? 6 : 1} value={time} title="Scrub"
+             onChange={(e) => { clock.play(false); clock.seek(Number(e.target.value)); }} />
     </div>
   );
 }

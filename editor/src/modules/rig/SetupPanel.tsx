@@ -1,7 +1,7 @@
 // The new Rig Editor's side panel for the rig setup, laid out as the Ambients panel: the chosen bone (its name, piece,
 // parent and link, its head and tail), its default pose, the bones' tree (drag one onto another to parent it, keeping
-// where it is), the layers front to back (drag to reorder), the chosen piece, the sequences (read only until step 3)
-// and the checks.
+// where it is), the layers front to back (drag to reorder), the chosen piece, the sequences (keyed in Sequences mode,
+// SequencePanel.tsx) and the checks.
 
 import { useState, type ReactNode } from "react";
 import type { RigCheck } from "../../api.ts";
@@ -17,7 +17,7 @@ import { PieceThumb } from "./SetupSheet.tsx";
 import type { SetupView } from "./setupContext.ts";
 import type { V2 } from "./v2.ts";
 
-function Row({ label, children, hint }: { label: string; children: ReactNode; hint?: ReactNode }) {
+export function Row({ label, children, hint }: { label: string; children: ReactNode; hint?: ReactNode }) {
   return (
     <>
       <span className="ow-condition-label">{label}</span>
@@ -30,7 +30,7 @@ function Row({ label, children, hint }: { label: string; children: ReactNode; hi
 }
 
 /** A name box that commits on Enter or leaving it. */
-function NameInput({ value, onCommit, disabled }: { value: string; onCommit(name: string): void; disabled?: boolean }) {
+export function NameInput({ value, onCommit, disabled }: { value: string; onCommit(name: string): void; disabled?: boolean }) {
   const [typed, setTyped] = useState<string | null>(null);
   const done = () => {
     if (typed !== null && typed !== value) onCommit(typed);
@@ -336,7 +336,7 @@ export function SequencesSection({ view }: { view: SetupView }) {
   const { src } = view;
   return (
     <section className="ow-panel-box ow-section">
-      <h5>Sequences <span className="muted">{src.sequences.length}, read only for now</span></h5>
+      <h5>Sequences <span className="muted">{src.sequences.length}, keyed in Sequences mode</span></h5>
       <div className="rig-outliner">
         {src.sequences.map((s, i) => {
           const keyed = s.parts.filter((l) => l.keys.length).length;
@@ -350,8 +350,8 @@ export function SequencesSection({ view }: { view: SetupView }) {
           );
         })}
       </div>
-      <p className="muted ow-note">Sequences and their keyframes come in the next step. Until then a new rig holds its default pose, and the
-        Advanced (old) editor still edits a converted original's keys.</p>
+      <p className="muted ow-note">Sequences (the switch at the top) keys them. Changes made here (heads, tails, parents, the default pose) carry
+        into every sequence: a key holds only what it changes.</p>
     </section>
   );
 }
