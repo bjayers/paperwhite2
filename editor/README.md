@@ -469,9 +469,35 @@ files the build will write against the ~40 KB guidance (section 15.6) with the s
 **Save** (Ctrl+S). Save runs the build's checks first (`POST /api/battle-sprite/rig-check`, `server/python/rig_check.py`:
 `mcss_rig.check`, refusing errors) and then the validator; Ctrl+Z and Ctrl+Y undo and redo.
 
+- **Layout:** the side panel runs the page's full height at the right with its own scroll; the docked timeline and graph
+  sit under the preview and sheet, to its left (drag the dock's top edge to resize it). Dragging on the timeline never
+  selects text; the ruler and empty lane space scrub the playhead while held.
+- **Keys at the playhead:** **Key at playhead** (button, or **K**) puts a key beginning at the playhead on the chosen
+  part(s)' tracks: the key the playhead is in is split in two there (the same on both sides), a key already beginning
+  there is just chosen, an empty track gets one, and a track that plays once is held up to the time. **Key all parts**
+  (**Shift+K**) does it for every part of the shown pose: the pose workflow (position the parts, key; move the
+  playhead, move the parts, key). The last key of a track can't be deleted (the game plays a key per track): the button
+  reads **Reset** and puts it back to resting. **Auto-key** (on by default, remembered): a Move, Rotate or Scale drag at
+  a frame where no key begins first splits the key there, as Blender's auto-key makes a keyframe; off, the drag changes
+  the whole held key. A line under the preview says which key a drag edits.
+- **Pictures:** each key holds a picture. The Key panel's **Picture** picker shows every picture as a thumbnail; picking
+  one makes the part show it from the playhead on (splitting the key if the playhead is inside it, so a swap is one
+  click at a frame). Timeline key blocks show the picture's number and thumbnail. **Hidden** (first in the picker) is the
+  way to turn a part off for a while and another on, as Game Freak's sprites do: a key showing a blank picture (one
+  empty rectangle, `size [0, 0]`, which MCSS draws as nothing and `mcss_rig.check` allows; 106 original sides use it);
+  the editor adds the blank picture on first use. Armature key poses have the same picker.
+- **Several parts:** Shift-click (a range) or Ctrl-click (one more) in the layer list, the timeline's names or the
+  preview chooses several parts (dashed outlines; a pink cross is the group's centre). The Move gizmo moves all their
+  keys at the playhead, Rotate turns them about the group's centre, Scale scales each about its own pivot, Key at
+  playhead keys them together; plain tracks (picture-only keys) are left, and the message says so. Convert to armature
+  gives a Root that moves the whole sprite, and parenting.
+- **Poses:** the **Poses** section copies a pose's parts, pivots, layer order and tracks to another pose, or makes a
+  new pose from it. **Duplicate the tracks** gives the copy tracks of its own (named by pose letter), so its animation
+  can differ; **Share the tracks** plays the same ones (an edit shows in both; the only choice with an armature). One
+  undo step; copying over an existing pose asks first.
 - **Preview:** the sprite as MCSS draws it (`mcss.ts`, a port of `mcss.render` that `tests/rig-render.test.ts` proves
   pixel for pixel), live as the rig is edited, at 60 frames a second: play and pause (Space), a frame back and on
-  (← →, Shift for 6), Home, a scrub bar; 2–4×; shiny; onion skin (6 frames before and after); **Battle pauses** (at
+  (← →, Shift for 6), Home, a scrub bar; 2–6×; shiny; onion skin (6 frames before and after); **Battle pauses** (at
   each end of the stay loop the battle's roll, 1 in 3, 2, then 1: sequence 1, only the idle parts moving, 48, 56 or
   64 frames) and **Slowed** (a status's third speed); the feet's lines. Click a part to choose it: its rectangles are
   outlined and its pivot marked, and the tool's gizmo moves it: **Pivot** (P, the pose's pivot), **Move** (G),

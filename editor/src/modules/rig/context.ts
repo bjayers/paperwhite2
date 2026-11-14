@@ -13,6 +13,8 @@ export interface Selection {
   /** A part, by its place in the pose shown, and that pose. */
   pose: number;
   part: number | null;
+  /** Other parts of the pose shown chosen with it (shift or ctrl click): the gizmos act on all of them. */
+  more: number[];
   /** A key of a track, or of the sequence played. */
   key: { track: number; index: number } | null;
   sequenceKey: number | null;
@@ -22,7 +24,10 @@ export interface Selection {
   keyPose: number | null;
 }
 
-export const NO_SELECTION: Selection = { picture: null, rectangle: 0, pose: 0, part: null, key: null, sequenceKey: null, root: false, keyPose: null };
+export const NO_SELECTION: Selection = { picture: null, rectangle: 0, pose: 0, part: null, more: [], key: null, sequenceKey: null, root: false, keyPose: null };
+
+/** Every part chosen: the main one first, then the others. */
+export const selectedParts = (sel: Selection): number[] => (sel.part === null ? [] : [sel.part, ...sel.more.filter((m) => m !== sel.part)]);
 
 /** Where an armature's edits go: its document, a step for undo, a drag's later moves amending it. */
 export interface SourceEditor {
@@ -57,6 +62,8 @@ export interface RigView {
   /** Tracks hidden in the preview by the layer list's eyes (editor only, never saved). */
   hidden: ReadonlySet<number>;
   toggleHidden(track: number): void;
+  /** Gizmo drags at a frame where no key begins start one there (split off the key the playhead is in). */
+  autoKey: boolean;
 }
 
 /** A value of the clock's state, which a component re-renders on only when it changes. */

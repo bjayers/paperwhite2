@@ -7,8 +7,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { lengthOf, sequenceKeyAt } from "./mcss.ts";
-import { dropLayer, partName, sequenceSegments, signedDegrees, trackSpans, type Span } from "./model.ts";
-import { hue, useClock, type RigView } from "./context.ts";
+import { dropLayer, isBlank, partName, sequenceSegments, signedDegrees, trackSpans, type Span } from "./model.ts";
+import { Thumb } from "./LayerList.tsx";
+import { pickPart } from "./keying.ts";
+import { hue, selectedParts, useClock, type RigView } from "./context.ts";
 import { keyPoseTimes, setKeys, type Target } from "./armatureEdit.ts";
 import { curveOf, type KeyPose } from "./armature.ts";
 
@@ -86,10 +88,23 @@ export function Timeline({ view, scale, follow }: { view: RigView; scale: number
   const idle = new Set(rig.idle_parts ?? []);
   const [dragging, setDragging] = useState<number | null>(null);
 
-  const seek = (e: React.MouseEvent, lane: HTMLElement) => {
+  const seekTo = (clientX: number, lane: HTMLElement) => {
     const r = lane.getBoundingClientRect();
     clock.play(false);
-    clock.seek(Math.max(0, Math.min(length - 1, Math.floor((e.clientX - r.left) / scale))));
+    clock.seek(Math.max(0, Math.min(length - 1, Math.floor((clientX - r.left) / scale))));
+  };
+  /** A press on the ruler or an empty stretch of a lane moves the playhead there and follows the pointer while it is
+   * held (scrubbing); the default action is stopped so the drag doesn't select the page's text. */
+  const seek = (e: React.MouseEvent, lane: HTMLElement) => {
+    e.preventDefault();
+    seekTo(e.clientX, lane);
+    const move = (ev: MouseEvent) => seekTo(ev.clientX, lane);
+    const up = () => {
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+    };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
   };
 
   const edgeDrag = (e: React.PointerEvent, path: (string | number)[], frames: number) => {
@@ -165,6 +180,7 @@ export function Timeline({ view, scale, follow }: { view: RigView; scale: number
                    title={`Key ${s.key}: pose ${s.pose} for ${s.to - s.from} frames (from ${s.from})`}
                    onMouseDown={(e) => {
                      e.stopPropagation();
+                     e.preventDefault();
                      clock.play(false);
                      clock.seek(s.from);
                      select({ sequenceKey: s.key, key: null, pose: Math.min(s.pose, rig.poses.length - 1) });
@@ -186,8 +202,9 @@ export function Timeline({ view, scale, follow }: { view: RigView; scale: number
           {parts.map((part, k) => {
             const track = rig.tracks[part.track];
             const chosen = sel.part === k;
+            const also = !chosen && selectedParts(sel).includes(k);
             return [
-              <div key={`n${k}`} className={`rig-tl-name rig-part-name${chosen ? " selected" : ""}${dragging === k ? " dragging" : ""}`}
+              <div key={`n${k}`} className={`rig-tl-name rig-part-name${chosen ? " selected" : also ? " multi" : ""}${dragging === k ? " dragging" : ""}`}
                    draggable onDragStart={(e) => { setDragging(k); e.dataTransfer.effectAllowed = "move"; }}
                    onDragEnd={() => setDragging(null)}
                    onDragOver={(e) => { if (dragging !== null) e.preventDefault(); }}
@@ -199,7 +216,7 @@ export function Timeline({ view, scale, follow }: { view: RigView; scale: number
                      select({ part: drop.selected, key: null });
                      setDragging(null);
                    }}
-                   onClick={() => select({ part: k, key: null, picture: track?.keys[0]?.picture ?? null, rectangle: 0, sequenceKey: null, root: false, keyPose: null })}
+                   onClick={(e) => select(pickPart(sel, k, e) ?? { part: k, more: [], key: null, picture: track?.keys[0]?.picture ?? null, rectangle: 0, sequenceKey: null, root: false, keyPose: null })}
                    title={`Part ${k}: track ${part.track} (${track?.name}), pivot ${part.pivot.join(", ")}, ${part.play}s with the pose. Drag to reorder the layers.`}>
                 <span className="rig-grip">⠿</span>
                 <span className="rig-swatch" style={{ background: hue(k) }} />
@@ -230,16 +247,19 @@ export function Timeline({ view, scale, follow }: { view: RigView; scale: number
                   const picked = sel.key?.track === part.track && sel.key.index === span.key && chosen;
                   const turn = key.rotation ? `${Math.round(signedDegrees(key.rotation))}°` : "";
                   return (
-                    <div key={i} className={`rig-key${picked ? " selected" : ""}${span.pass || span.held ? " ghost" : ""}${span.unplayed ? " unplayed" : ""}${span.from === span.to ? " zero" : ""}`}
+                    <div key={i} className={`rig-key${picked ? " selected" : ""}${span.pass || span.held ? " ghost" : ""}${span.unplayed ? " unplayed" : ""}${span.from === span.to ? " zero" : ""}${isBlank(rig.pictures[key.picture ?? 0]) ? " blank" : ""}`}
                          style={{ left: span.from * scale, width: Math.max((span.to - span.from) * scale, 3), ["--hue" as string]: hue(k, 55, 42) }}
                          title={`${track.name} key ${span.key}: picture ${key.picture}, ${key.frames} frames${turn ? `, turn ${turn}` : ""}${key.move ? `, move ${key.move.join(", ")}` : ""}${key.scale && (key.scale[0] !== 1 || key.scale[1] !== 1) ? `, scale ${key.scale.join(" × ")}` : ""}${span.held ? " (held: the track plays once)" : span.unplayed ? " (not played: the pose ends first)" : ""}`}
                          onMouseDown={(e) => {
                            e.stopPropagation();
+                           e.preventDefault();
                            clock.play(false);
                            if (!span.unplayed && span.to > span.from) clock.seek(span.from);
                            select({ part: k, key: { track: part.track, index: span.key }, picture: key.picture ?? null, rectangle: 0, sequenceKey: null });
                          }}>
-                      <span className="rig-key-text">{key.picture}{turn ? ` ${turn}` : ""}</span>
+                      {(span.to - span.from) * scale >= 44 && (rig.pictures[key.picture ?? 0] && !isBlank(rig.pictures[key.picture ?? 0])
+                        ? <Thumb view={view} picture={key.picture ?? 0} size={20} className="rig-key-thumb" /> : null)}
+                      <span className="rig-key-text">{isBlank(rig.pictures[key.picture ?? 0]) ? "hidden" : `#${key.picture ?? 0}`}{turn ? ` ${turn}` : ""}</span>
                       {!source && !span.pass && !span.held && <span className="rig-key-edge" onPointerDown={(e) => edgeDrag(e, ["tracks", part.track, "keys", span.key], key.frames)} />}
                     </div>
                   );

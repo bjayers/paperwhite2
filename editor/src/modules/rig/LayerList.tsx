@@ -3,14 +3,14 @@
 // preview only (editor state, never saved), its colour, a thumbnail of the picture it shows first, and its name.
 
 import { useEffect, useRef, useState } from "react";
-import { hue, paletteWords, type RigView } from "./context.ts";
+import { hue, paletteWords, selectedParts, type RigView } from "./context.ts";
 import { dropLayer, partName } from "./model.ts";
+import { pickPart } from "./keying.ts";
 import { SHEET_HEIGHT, SHEET_WIDTH } from "./mcss.ts";
 
-const THUMB = 28;
-
 /** The first drawn rectangle of a picture, scaled to fit a small square (nearest). */
-function Thumb({ view, picture }: { view: RigView; picture: number }) {
+export function Thumb({ view, picture, size = 28, className = "rig-thumb" }: { view: RigView; picture: number; size?: number; className?: string }) {
+  const THUMB = size;
   const canvas = useRef<HTMLCanvasElement>(null);
   const { art, rig, sheet, shiny } = view;
   useEffect(() => {
@@ -32,8 +32,8 @@ function Thumb({ view, picture }: { view: RigView; picture: number }) {
       if (s >= 0 && s < SHEET_WIDTH && t >= 0 && t < SHEET_HEIGHT) out[y * ow + x] = words[pixels[t * SHEET_WIDTH + s]];
     }
     ctx.putImageData(data, Math.floor((THUMB - ow) / 2), Math.floor((THUMB - oh) / 2));
-  }, [art, rig, sheet, shiny, picture]);
-  return <canvas ref={canvas} className="rig-thumb" width={THUMB} height={THUMB} />;
+  }, [art, rig, sheet, shiny, picture, THUMB]);
+  return <canvas ref={canvas} className={className} width={THUMB} height={THUMB} />;
 }
 
 export function LayerList({ view }: { view: RigView }) {
@@ -42,6 +42,7 @@ export function LayerList({ view }: { view: RigView }) {
   const [over, setOver] = useState<number | null>(null);
   const parts = rig.poses[sel.pose]?.parts ?? [];
   const hiddenHere = parts.filter((p) => hidden.has(p.track));
+  const chosen = new Set(selectedParts(sel));
   return (
     <section className="ow-panel-box ow-section">
       <h5>Layers <span className="muted">pose {sel.pose}: {parts.length} part{parts.length === 1 ? "" : "s"}, front first</span></h5>
@@ -54,7 +55,7 @@ export function LayerList({ view }: { view: RigView }) {
           const track = rig.tracks[p.track];
           const off = hidden.has(p.track);
           return (
-            <div key={k} className={`rig-outliner-row${sel.part === k ? " selected" : ""}${over === k ? " drop" : ""}${drag === k ? " dragging" : ""}${off ? " hidden-layer" : ""}`}
+            <div key={k} className={`rig-outliner-row${sel.part === k ? " selected" : chosen.has(k) ? " multi" : ""}${over === k ? " drop" : ""}${drag === k ? " dragging" : ""}${off ? " hidden-layer" : ""}`}
                  draggable onDragStart={(e) => { setDrag(k); e.dataTransfer.effectAllowed = "move"; }} onDragEnd={() => { setDrag(null); setOver(null); }}
                  onDragOver={(e) => { if (drag !== null) { e.preventDefault(); setOver(k); } }} onDragLeave={() => setOver(null)}
                  onDrop={(e) => {
@@ -66,7 +67,7 @@ export function LayerList({ view }: { view: RigView }) {
                    editor.replace(d.rig);
                    select({ part: d.selected, key: null });
                  }}
-                 onClick={() => select({ part: k, key: null, picture: track?.keys[0]?.picture ?? null, rectangle: 0, sequenceKey: null, root: false, keyPose: null })}
+                 onClick={(e) => select(pickPart(sel, k, e) ?? { part: k, more: [], key: null, picture: track?.keys[0]?.picture ?? null, rectangle: 0, sequenceKey: null, root: false, keyPose: null })}
                  title={`Layer ${k}${k === 0 ? " (front)" : k === parts.length - 1 ? " (back)" : ""}: track ${p.track} (${track?.name}). Drag to reorder the layers; the eye hides it in the preview only.`}>
               <span className="rig-grip">⠿</span>
               <button className={`rig-eye${off ? " off" : ""}`} title={off ? "Hidden in the preview (not saved): click to show" : "Hide in the preview (not saved)"}
@@ -80,7 +81,9 @@ export function LayerList({ view }: { view: RigView }) {
         })}
       </div>
       <p className="muted ow-note">Front to back, the layer order. Click to choose a part (as clicking the preview does), drag to reorder (idle parts follow);
-        the eye hides a part in the preview only, to see what is behind it.</p>
+        the eye hides a part in the preview only, to see what is behind it. <b>Shift-click</b> (a range) or <b>Ctrl-click</b> (one more) chooses several parts:
+        the Move gizmo then moves all of them, Rotate turns them about the group's centre, and Key at playhead keys them together.
+        To move or turn the whole sprite, or parent parts so one follows another, use Convert to armature (Armature, above): its Root moves the whole sprite, and a child follows its parent.</p>
     </section>
   );
 }

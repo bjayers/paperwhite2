@@ -13,7 +13,8 @@ import { fileURLToPath } from "node:url";
 import { detectLayout, fileText, fromPlain, getIn, parseJson, setIn } from "../shared/json.ts";
 import { validate, type Schema } from "../shared/schema.ts";
 import { lengthOf, render } from "../src/modules/rig/mcss.ts";
-import { artBounds, dataOf, dropLayer, freshRig, fromDegrees, generateObjs, moveLayer, orderedKey, removePicture, rigOf, sizeProblem, trackSpans } from "../src/modules/rig/model.ts";
+import { artBounds, copyPose, dataOf, dropLayer, freshRig, fromDegrees, generateObjs, isBlank, keyPartsAt, keyStartingAt, moveKeys, moveLayer, orderedKey, removeKey, removePicture, resetKey, rigOf, sizeProblem, swapPictureAt, trackSpans, turnKeysAbout, withHiddenPicture } from "../src/modules/rig/model.ts";
+import type { Rig } from "../src/modules/rig/mcss.ts";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const SCHEMA = join(ROOT, "res/pokemon/battle_sprite_rig.schema.json");
@@ -196,4 +197,137 @@ test("the layer list reorders as the timeline does (one shared drop), idle flags
     assert.equal(drop.rig.poses[0].parts[to].track, rig.poses[0].parts[from].track);
   }
   assert.equal(dropLayer(rig, 0, 2, 2), null);
+});
+
+// ---------------------------------------------------------------- Keys at the playhead, hidden pictures, poses, several parts
+
+/** The build's validator and mcss_rig.check on a rig, both of which must pass. */
+function passes(rig: Rig, name: string) {
+  const dir = mkdtempSync(join(tmpdir(), "rig-ux-"));
+  try {
+    const data = dataOf(rig, "../battle_sprite_rig.schema.json");
+    const text = fileText(data, { width: 120, indent: 2, compact: true });
+    const file = join(dir, "front_rig.json");
+    writeFileSync(file, text);
+    assert.deepEqual(JSON.parse(python("editor/server/python/validate.py", `${file}\t${SCHEMA}\n`)), { ok: true }, name);
+    assert.deepEqual(validate(data, JSON.parse(readFileSync(SCHEMA, "utf8")) as Schema, new Map()), [], name);
+    const check = JSON.parse(python("editor/server/python/rig_check.py", text)) as { errors: string[] };
+    assert.deepEqual(check.errors, [], name);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+const fresh = () => freshRig("front", [8, 8, 32, 32]);
+
+test("Key at playhead splits a held key, selects one already there, and gives an empty track its first key", () => {
+  const rig = fresh();
+  // the 60-frame key, the playhead at 20: two keys, 20 and 40 frames, the second chosen
+  const a = keyPartsAt(rig, 0, 20, 0, [0]);
+  assert.deepEqual(a.rig.tracks[0].keys.map((k) => k.frames), [20, 40]);
+  assert.deepEqual(a.targets.map((t) => [t.track, t.index, t.created]), [[0, 1, true]]);
+  // again at 20: a key begins there, nothing new
+  const b = keyPartsAt(a.rig, 0, 20, 0, [0]);
+  assert.equal(b.rig, a.rig);
+  assert.equal(b.targets[0].created, false);
+  assert.equal(b.targets[0].index, 1);
+  // at 0 the first key begins already
+  assert.equal(keyPartsAt(rig, 0, 0, 0, [0]).targets[0].created, false);
+  passes(a.rig, "keyed at 20");
+  // an empty track (as an older file or a hand edit may leave one) is given a key
+  const made = keyStartingAt({ ...rig.tracks[0], keys: [] }, 0);
+  assert.equal(made.keys.length, 1);
+  assert.equal(made.index, 0);
+  assert.ok(made.keys[0].frames >= 6);
+  // a track that plays once, past its end: its last key holds up to the time, then a new key
+  const past = keyStartingAt({ ...rig.tracks[0], play: "once" as const }, 100);
+  assert.deepEqual(past.keys.map((k) => k.frames), [100, 6]);
+});
+
+test("Key all parts keys every part of the pose, a shared track once; a part not playing then is skipped", () => {
+  const rig = rigOf(parseJson(read("pichu/form_1", "front")));
+  const n = rig.poses[0].parts.length;
+  const all = keyPartsAt(rig, 0, 7, 0, Array.from({ length: n }, (_, i) => i));
+  assert.equal(all.targets.length, n);
+  assert.equal(all.skipped.length, 0);
+  // splitting keeps every track's length
+  all.rig.tracks.forEach((t, i) => assert.equal(t.keys.reduce((m, k) => m + k.frames, 0), rig.tracks[i].keys.reduce((m, k) => m + k.frames, 0)));
+  passes(all.rig, "key all parts");
+  // the sequence shows pose 0 only: pose 1 isn't playing
+  const two = copyPose(fresh(), 0, 1, true);
+  assert.deepEqual(keyPartsAt(two, 0, 5, 1, [0]).skipped, [0]);
+});
+
+test("the last key of a track can't be deleted, only reset", () => {
+  const rig = fresh();
+  const track = { ...rig.tracks[0], key_type: "srt" as const, keys: [{ picture: 0, frames: 60, rotation: 100, scale: [2, 2] as [number, number], move: [3, 4] as [number, number] }] };
+  assert.equal(removeKey(track, 0), null);
+  assert.deepEqual(resetKey(track.keys[0], "srt"), { picture: 0, frames: 60, rotation: 0, scale: [1, 1], move: [0, 0] });
+  const two = { ...track, keys: [...track.keys, { ...track.keys[0] }] };
+  assert.equal(removeKey(two, 1)!.length, 1);
+});
+
+test("a hidden key shows a blank picture: valid, and the part draws nothing", () => {
+  const rig = fresh();
+  const sheet = new Uint8Array(256 * 128).fill(3);
+  const h = withHiddenPicture(rig);
+  assert.equal(h.picture, 1);
+  assert.ok(isBlank(h.rig.pictures[1]) && !isBlank(h.rig.pictures[0]));
+  // asking again finds the one it made
+  assert.equal(withHiddenPicture(h.rig).picture, 1);
+  assert.equal(withHiddenPicture(h.rig).rig, h.rig);
+  // frames 0-19 show the art, 20-59 hidden
+  const split = swapPictureAt(h.rig, 0, 20, h.picture);
+  assert.deepEqual(split.rig.tracks[0].keys.map((k) => [k.picture, k.frames]), [[0, 20], [1, 40]]);
+  passes(split.rig, "hidden key");
+  const shown = render(split.rig, sheet, 0, 10);
+  assert.ok(shown.pixels.some((p) => p !== 0));
+  assert.ok(render(split.rig, sheet, 0, 30, shown).pixels.every((p) => p === 0));
+});
+
+test("a pose copied to another (or made new) keeps the parts, pivots and layers; duplicating gives it tracks of its own", () => {
+  const rig = rigOf(parseJson(read("pichu/form_1", "front")));
+  const parts = rig.poses[0].parts;
+  const shared = copyPose(rig, 0, rig.poses.length, false);
+  assert.equal(shared.poses.length, rig.poses.length + 1);
+  assert.deepEqual(shared.poses[shared.poses.length - 1].parts, parts);
+  assert.equal(shared.tracks.length, rig.tracks.length);
+  const dup = copyPose(rig, 0, rig.poses.length, true);
+  const newest = dup.poses[dup.poses.length - 1];
+  assert.deepEqual(dup.poses[0], rig.poses[0]);
+  assert.ok(newest.parts.every((p) => p.track >= rig.tracks.length));
+  assert.equal(new Set(dup.tracks.map((t) => t.name)).size, dup.tracks.length);
+  newest.parts.forEach((p, k) => {
+    assert.deepEqual(dup.tracks[p.track].keys, rig.tracks[parts[k].track].keys);
+    assert.deepEqual(p.pivot, parts[k].pivot);
+  });
+  // editing the copy's track leaves the original's alone
+  const edited = { ...dup, tracks: dup.tracks.map((t, i) => (i === newest.parts[0].track ? { ...t, keys: t.keys.slice(0, 1) } : t)) };
+  assert.deepEqual(edited.tracks[parts[0].track].keys, rig.tracks[parts[0].track].keys);
+  passes(shared, "shared");
+  passes(dup, "duplicated");
+  const two = copyPose(copyPose(fresh(), 0, 1, true), 0, 1, true);
+  assert.equal(two.poses.length, 2);
+  passes(two, "copied over");
+  assert.throws(() => copyPose(rig, 0, 0, false));
+});
+
+test("several parts' keys move together; a group turns about its centre", () => {
+  const base = copyPose(fresh(), 0, 1, true);
+  const rig: Rig = { ...base, tracks: base.tracks.map((t) => ({ ...t, key_type: "srt" as const, keys: t.keys.map((k) => ({ ...k, rotation: 0, scale: [1, 1] as [number, number], move: [10, 0] as [number, number] })) })) };
+  const targets = [{ track: 0, index: 0 }, { track: 1, index: 0 }];
+  const moved = moveKeys(rig, targets, [3, -2]);
+  assert.equal(moved.left, 0);
+  assert.deepEqual(moved.rig.tracks.map((t) => t.keys[0].move), [[13, -2], [13, -2]]);
+  // the base is untouched, so a drag's later moves start from it
+  assert.deepEqual(rig.tracks[0].keys[0].move, [10, 0]);
+  // a plain track's key can't move and is counted
+  const plain = { ...rig, tracks: rig.tracks.map((t, i) => (i === 1 ? { ...t, key_type: "plain" as const } : t)) };
+  assert.equal(moveKeys(plain, targets, [1, 1]).left, 1);
+  // a quarter turn (clockwise on the screen, y down) about the middle of two keys at (-10, 0) and (10, 0): they swing to (0, -10) and (0, 10)
+  const turned = turnKeysAbout(rig, [{ track: 0, index: 0, origin: [-10, 0] }, { track: 1, index: 0, origin: [10, 0] }], [0, 0], 90);
+  assert.equal(turned.rig.tracks[0].keys[0].rotation, fromDegrees(90));
+  assert.deepEqual(turned.rig.tracks[0].keys[0].move, [10 + 10, 0 - 10]);
+  assert.deepEqual(turned.rig.tracks[1].keys[0].move, [10 - 10, 0 + 10]);
+  passes(turned.rig, "turned together");
 });

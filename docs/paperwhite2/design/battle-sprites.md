@@ -898,6 +898,18 @@ build's validator. The schema needed no new keywords.
   follow), an eye that hides the part's track in the preview only (`render`'s `hide` option; editor state, never
   saved), colour, a thumbnail of its first picture, name and track; clicking selects the part.
 
+**Usability pass (2026-11-13).** The side panel runs the page's full height at the right, the docked timeline to its
+left; the timeline never selects text and scrubs by dragging; zoom to 6×. Pure edits in `model.ts`: `keyStartingAt`,
+`keyPartsAt` (**Key at playhead**, K, and **Key all parts**, Shift+K: split the held key at the playhead, never leave a
+track without a key, `removeKey` refuses the last, `resetKey` instead), `swapPictureAt` (the Key panel's thumbnail
+picker: a key holds the picture, so a swap is a split plus a picture), `copyPose` (copy a pose onto another or onto a new
+one, with its tracks shared or duplicated), `changeKeys`, `moveKeys`, `turnKeysAbout` (several parts chosen with
+shift or ctrl click move and turn together; keys always computed from the rig at the drag's start). Auto-key (on by
+default) makes a gizmo drag mid-key start a key there. **Hidden** is how Game Freak's sprites turn a part off: a key
+whose picture has an empty first rectangle (`size [0, 0]`, `at [256, -256]`, no OBJs: 106 original sides key onto one),
+which `mcss_rig.check` allows and MCSS draws as nothing; the editor adds one blank picture on first use. (Scale 0 is not
+used: the renderer skips a singular map and the originals never do it.) Tests in `editor/tests/rig-edit.test.ts`.
+
 ### 18.1 Proven
 
 - `editor/tests/rig-render.test.ts`: the port draws what `mcss.render` draws, pixel for pixel and canvas for canvas,
