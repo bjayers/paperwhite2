@@ -17,7 +17,7 @@ import { fileText, fromPlain, getIn, type JsonValue, type Layout } from "../../.
 import { readIndexedPng } from "../palettes/png.ts";
 import { parsePal } from "../palettes/pal.ts";
 import { keyAt, lengthOf, type Rig } from "./mcss.ts";
-import { artBounds, dataOf, freshRig, partClock, rigOf, sizeProblem, type Editor, type Phase } from "./model.ts";
+import { dataOf, partClock, rigOf, sizeProblem, type Editor, type Phase } from "./model.ts";
 import { bake, convertToArmature, DEFAULT_STEP, reparent, sequenceStep, withBones, wouldCycle, type Curve, type Source } from "./armature.ts";
 import { Clock, SLOW } from "./player.ts";
 import { NO_SELECTION, selectedParts, useClock, type Art, type Mode, type RigView, type Selection, type SourceEditor } from "./context.ts";
@@ -44,6 +44,9 @@ const sourcePathOf = (folder: string, side: Side) => `res/pokemon/${folder}/${si
 const SOURCE_SCHEMA = "res/pokemon/battle_sprite_rig_source.schema.json";
 /** The armature's file layout: the flat rig's (datajson.dumps_compact), a key pose a line. */
 const SOURCE_LAYOUT: Layout = { width: 120, indent: 2, compact: true };
+/** The first editor no longer makes new armatures (rig-editor-v2.md, "Built: step 6"): it is the Advanced view of the new
+ * one, editing a side's existing armature or its keys as the game stores them; armatures are imported into the new editor. */
+const RETIRED_NEW_ARMATURES = true;
 const sourceData = (source: Source, schema: unknown): JsonValue =>
   fromPlain({ $schema: schema, ...Object.fromEntries(Object.entries(source).filter(([k]) => k !== "$schema")) });
 
@@ -138,7 +141,7 @@ function Picker() {
   return (
     <div className="rig-picker">
       <h2>Rig Editor</h2>
-      <p className="muted">A battle sprite's rig: its pictures cut from the sheet, its parts and their pivots, and their keys. Open one from a
+      <p className="muted">A battle sprite's rig: pieces cut from the sheet, bones, sequences, loop clips and the timeline the battle plays. Open one from a
         Pokémon's Battle sprite card (Edit rig…), or choose it here.</p>
       <input className="rig-filter" placeholder="Filter (pichu, form_1, pokestar)" value={filter} onChange={(e) => setFilter(e.target.value)} autoFocus />
       {!folders ? <p className="muted">Reading the rigs…</p> : (
@@ -184,7 +187,8 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
   const [follow, setFollow] = useState(true);
   const [mode, setModeState] = useState<Mode>(() => (stored(MODE_KEY) === "edit" ? "edit" : "pose"));
   const [poseTool, setPoseTool] = useState<Tool>("move");
-  const [gameKeys, setGameKeys] = useState(false);
+  // (a side with no armature edits its keys as the game stores them: new armatures are made in the new editor)
+  const gameKeys = RETIRED_NEW_ARMATURES;
   const [guideOpen, setGuideOpenState] = useState(() => stored(GUIDE_KEY) === "open");
   const setGuideOpen = (open: boolean) => { setGuideOpenState(open); store(GUIDE_KEY, open ? "open" : "closed"); };
   const [newCurve, setNewCurveState] = useState<Curve>(() => (["linear", "ease_in", "ease_out", "ease_in_out", "constant"] as Curve[]).find((c) => c === stored(CURVE_KEY)) ?? "ease_in_out");
@@ -333,6 +337,12 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
     const cur = viewRef.current;
     if (!cur) return null;
     if (cur.source) return cur;
+    // Retired (rig-editor-v2.md, "Built: step 6"): new armatures are made in the new editor; this view edits the ones
+    // there are, and a side without one as the game stores it (Game keys)
+    if (RETIRED_NEW_ARMATURES) {
+      setMessage("New armatures (parents, curves) are made in the new editor now: \"New editor\" above. This Advanced view edits a side's existing armature, or its keys as the game stores them.");
+      return null;
+    }
     if (!flatRig || !doc?.data) return null;
     let made = convertToArmature(flatRig, DEFAULT_STEP);
     if (apply) made = apply(made);
@@ -352,8 +362,8 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
     if (cur.source) {
       if (wouldCycle(cur.source, bone, parent)) return `${name(parent)} can't be ${name(bone)}'s parent: they'd go round in a circle.`;
       commit({ source: reparent(cur.source, flatRig, bone, parent) });
-    } else {
-      ensureArmature(false, (s) => reparent(s, flatRig, bone, parent));
+    } else if (!ensureArmature(false, (s) => reparent(s, flatRig, bone, parent))) {
+      return "Parents are set in the new editor now (\"New editor\" above): this Advanced view makes no new armatures.";
     }
     return `${name(bone)} is now parented to ${name(parent)}; it stays where it is, and follows its parent from now on.`;
   };
@@ -479,32 +489,7 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
     return () => window.removeEventListener("keydown", onKey, true);
   }, [toolActive, path]);
 
-  const copyFromOther = async () => {
-    const otherSide = side === "front" ? "back" : "front";
-    const o = await documents.hold(other);
-    if (!o.data || !rig) return;
-    if (!confirm(`Replace this ${side} rig with a copy of the ${otherSide} rig (its pictures, parts, keys and sequences)? `
-      + `The rectangles will cut the ${side} sheet where the ${otherSide}'s pieces are, so draw the ${side} art there or move them. Undo takes it back.`)) return;
-    editor.replace({ ...rigOf(o.data), side });
-    setSel(NO_SELECTION);
-    setMessage(`Copied the ${otherSide} rig. Save to keep it.`);
-  };
-
-  // Start fresh: a minimal valid rig (freshRig) cut from the sheet's art, in place of everything on this side
-  const startFresh = async () => {
-    const hasSource = !!documents.get(sourcePath)?.data;
-    if (!confirm(`Start this ${side} rig fresh? Everything on this side is replaced by one picture (a rectangle round the sheet's first piece of art), one part holding it `
-      + `and the stay loop; the sheet stays as it is.${hasSource ? ` The side's armature (${side}_rig_source.json) is deleted, which Undo does not bring back.` : ""} `
-      + `Undo takes the rig back until you save.`)) return;
-    if (hasSource && !(await removeArmature(true))) return;
-    const sheetPixels = art?.sheets[side];
-    editor.replace(freshRig(side, sheetPixels ? artBounds(sheetPixels) : null));
-    setSel(NO_SELECTION);
-    setHidden(new Set());
-    clock.current.seek(0);
-    setMessage("Started fresh: one picture, one part, the stay loop. Draw the art on the sheet, then cut and add parts. Save to keep it.");
-  };
-
+  // (Start fresh and Copy from the other side are the new editor's now: rig-editor-v2.md, "Built: step 6")
   if (loadError) return <div className="rig-page"><p className="pkm-error">{loadError}</p></div>;
   if (!doc || !rig) return <div className="rig-page"><p className="muted">Reading {path}…</p></div>;
   if (doc.data === null) return <div className="rig-page"><p className="pkm-error">{path} isn't in a layout the editor writes back; edit it as text.</p></div>;
@@ -559,9 +544,7 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
             {Object.keys(art.sheets).map((s) => <button key={s} className={view.sheet === s ? "active" : ""} onClick={() => setSheet(s)}>{s.endsWith("female") ? "Female" : "Male"}</button>)}
           </span>
         )}
-        <button onClick={copyFromOther} disabled={!!source} title={source ? "This side has an armature: remove it first (Armature, in the side panel) to start from a copy" : `Start this side from a copy of the ${side === "front" ? "back" : "front"} rig`}>Copy {side === "front" ? "back to front" : "front to back"}…</button>
-        <button onClick={startFresh} title="Replace this side's rig with a minimal one: one picture cut round the sheet's art, one part, the stay loop (and delete its armature, if any)">Start fresh…</button>
-        <button onClick={() => navigate("rig", { folder, side })} title="The new Rig Editor: pieces, bones with heads and tails, parenting, the default pose">New editor</button>
+        <button onClick={() => navigate("rig", { folder, side })} className="primary" title="The new Rig Editor: pieces, bones, sequences, loop clips and the timeline (a side with an armature imports it there)">← New editor</button>
         <button onClick={() => navigate("pokemon")} title="The Pokémon Editor">Pokémon Editor</button>
         <button className={guideOpen ? "active" : ""} onClick={() => setGuideOpen(!guideOpen)} title="How rigs work: Edit and Pose mode, parenting, key poses and the baked keys, with an example">? How rigs work</button>
         <span className="spacer" />
@@ -600,7 +583,7 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
                   <option value="ease_in_out">ease in and out</option><option value="linear">linear</option><option value="ease_in">ease in</option><option value="ease_out">ease out</option><option value="constant">held (no in-betweens)</option>
                 </select>
               </label>
-              {!source && <label className="ow-check" title="Advanced: edit the game's own held keys of a sprite with no armature, as the game stores them (no key poses, no curves). Off, the first key you set makes an armature of the sprite, which plays exactly as before until you change something."><input type="checkbox" checked={gameKeys} onChange={(e) => setGameKeys(e.target.checked)} /> Game keys</label>}
+              {!source && <span className="muted small" title="New armatures (parents, curves) are made in the new editor; a side without one is edited here as the game stores it">Game keys: no armature on this side (parents and curves: the new editor)</span>}
             </div>
           )}
           {mode === "pose" && gameKeys && !source && <EditingNote view={view} tool={tool} />}

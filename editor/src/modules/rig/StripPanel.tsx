@@ -7,7 +7,7 @@ import { ScrubNumber, type ScrubPhase } from "../overworld/ScrubNumber.tsx";
 import { hue } from "./context.ts";
 import { boneTree, layersOfSetup } from "./setup.ts";
 import { keyCount } from "./sequences.ts";
-import { addClip, cantDeleteClip, clipsOf, deleteClip, keepsMovingOf, moveClip, playCount, setKeepsMoving, setPause, setRepeat, stripFrames } from "./timeline.ts";
+import { addClip, inOtherStrips, unplayedLabel, unplayedTitle, cantDeleteClip, clipsOf, deleteClip, keepsMovingOf, moveClip, playCount, setKeepsMoving, setPause, setRepeat, stripFrames } from "./timeline.ts";
 import { SEQUENCE_DRAG, sequenceColour } from "./StripTimeline.tsx";
 import { Row } from "./SetupPanel.tsx";
 import type { SetupView } from "./setupContext.ts";
@@ -41,8 +41,8 @@ export function StripSequencesSection({ view, onOpen, onAdded }: { view: SetupVi
               <b>{seq.name}</b>
               <span className="muted">{seq.frames} f · {keys ? `${keys} key${keys > 1 ? "s" : ""}` : "default pose"}</span>
               <span className="spacer" />
-              <span className={uses ? "muted" : "rig-not-played"} title={uses ? `The timeline plays it ${uses} time${uses > 1 ? "s" : ""} a loop` : "The battle never shows it: add it to the timeline"}>
-                {uses ? `played ×${uses}` : "not played"}
+              <span className={uses || inOtherStrips(src, i) ? "muted" : "rig-not-played"} title={uses ? `The timeline plays it ${uses} time${uses > 1 ? "s" : ""} a loop` : unplayedTitle(src, i)}>
+                {uses ? `played ×${uses}` : unplayedLabel(src, i)}
               </span>
               <button className="small" disabled={readOnly} onClick={() => add(i)} title="Add it at the end of the timeline">+ Add</button>
             </div>

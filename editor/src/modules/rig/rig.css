@@ -279,3 +279,4 @@
 .rig-pause-tools { margin-top: 6px; }
 .rig-not-played { font-size: 11px; color: #d4a72c; font-weight: 600; }
 .rig-sub-head { margin: 10px 0 4px; font-size: 12px; }
+.rig-import-report { margin: 4px 0 6px 18px; padding: 0; font-size: 12px; display: flex; flex-direction: column; gap: 2px; }

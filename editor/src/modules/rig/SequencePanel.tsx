@@ -10,7 +10,7 @@ import { addSequence, cantDelete, deleteKeys, deleteSequence, duplicateSequence,
 import { parentOf } from "./setup.ts";
 import { clipPictureAt, snapLength, STEP, V2_CURVES, DEFAULT_CURVE, type LoopClip } from "./v2.ts";
 import { PieceThumb } from "./SetupSheet.tsx";
-import { addClip } from "./timeline.ts";
+import { addClip, inOtherStrips, unplayedLabel, unplayedTitle } from "./timeline.ts";
 import { NameInput, Row } from "./SetupPanel.tsx";
 import type { SetupView } from "./setupContext.ts";
 import type { Curve } from "./armature.ts";
@@ -65,8 +65,8 @@ export function SequenceListSection({ view, open, onOpen }: { view: SetupView; o
               <span className="muted">{seq.frames} f · {seconds(seq.frames)}</span>
               <span className="muted">{keys ? `${keys} key${keys > 1 ? "s" : ""}` : "default pose"}</span>
               <span className="spacer" />
-              <span className={uses ? "muted" : "rig-not-played"} title={uses ? `The timeline (the game's stay loop) plays it ${uses} time${uses > 1 ? "s" : ""} a loop (Timeline at the top arranges it)`
-                : "The timeline (the game's stay loop) doesn't play it, so the battle never shows it"}>{uses ? `played ×${uses}` : "not played"}</span>
+              <span className={uses || inOtherStrips(src, i) ? "muted" : "rig-not-played"} title={uses ? `The timeline (the game's stay loop) plays it ${uses} time${uses > 1 ? "s" : ""} a loop (Timeline at the top arranges it)`
+                : unplayedTitle(src, i)}>{uses ? `played ×${uses}` : unplayedLabel(src, i)}</span>
               {!uses && (
                 <button className="small" disabled={readOnly} title="Add it to the timeline (at the end), so the battle plays it"
                         onClick={(e) => { e.stopPropagation(); commit(addClip(src, i)); say(`Added ${seq.name} at the end of the timeline (Timeline at the top arranges it).`); }}>+ Add</button>

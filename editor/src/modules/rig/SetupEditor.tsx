@@ -25,6 +25,8 @@ import { isTyping, loadArt, store, stored } from "./RigEditor.tsx";
 import { bakeV2, convertToV2, STEP, type V2 } from "./v2.ts";
 import { clipPreviewSource, clipSource, clipStepOf, clipUses, fromClipSource } from "./loopClips.ts";
 import { LoopClipsSection, LoopClipSection, PartClipsRows } from "./LoopClipPanel.tsx";
+import { importArmature, type ArmatureImport } from "./importArmature.ts";
+import type { Source } from "./armature.ts";
 import { rigSizes, RESIDENT_GUIDANCE } from "./sizes.ts";
 import { copySide, defaultPoseRig, deleteBone, freshV2, restMaps, setDefault } from "./setup.ts";
 import { armaturePathOf, flatData, rigPathOf, v2Data, v2PathOf, v2SchemaFor, V2_LAYOUT, V2_SCHEMA_PATH, type Side } from "./setupFiles.ts";
@@ -110,6 +112,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
   // Loop clips: the one edited on its own timeline (null: the open sequence), the one chosen in the list, the part it is
   // previewed on, and the clip views' own selection (their one part, its keys)
   const [clipEdit, setClipEdit] = useState<number | null>(null);
+  const [importReport, setImportReport] = useState<string[] | null>(null);
   const [clipChosen, setClipChosen] = useState<number | null>(null);
   const [clipPart, setClipPart] = useState<number | null>(null);
   const [clipSel, setClipSel] = useState<SetupSelection>({ ...NO_SETUP_SELECTION, bones: [0] });
@@ -405,6 +408,36 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
     setMessage("Started fresh: one piece and one bone. Resize the piece on the sheet (or draw more), give each a bone, and parent them. Save to keep it.");
   };
 
+  /** A first-editor armature imported (importArmature.ts): the source made from it (the file by this edit, one undo
+   * step), the armature deleted through the server as Start fresh does. */
+  const importArmatureNow = async () => {
+    const a = documents.get(armPath), f = documents.get(flatPath);
+    if (!a?.data || !f?.data) return;
+    let result: ArmatureImport;
+    try {
+      result = importArmature(rigOf(f.data), plainOf(a.data) as Source);
+    } catch (e) {
+      setMessage(`The armature couldn't be imported: ${(e as Error).message}. The Advanced editor still edits it.`);
+      return;
+    }
+    if (!confirm(`Import this ${side}'s armature into the new editor?\n\n${result.report.join("\n")}\n\n${side}_rig_source.json is deleted (Undo doesn't bring it back); `
+      + `the new ${side}_rig_v2.json is written when you save.`)) return;
+    if (a.savedText) {
+      try {
+        await api.removeFile(armPath);
+      } catch (e) {
+        setMessage(`Couldn't delete ${side}_rig_source.json, so nothing changed: ${(e as Error).message}`);
+        return;
+      }
+    }
+    await documents.reload(armPath);
+    history.current.forget(armPath);
+    commit(result.src);
+    setSel(NO_SETUP_SELECTION);
+    setImportReport(result.report);
+    setMessage(result.exact ? "Imported: it bakes to the same rig as before. Save to keep it." : "Imported, but it doesn't bake exactly as before: see the import's notes.");
+  };
+
   const copyFront = async () => {
     let front: V2 | null = null;
     try {
@@ -638,7 +671,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
             <span className="muted small rig-head-gap">Other views</span>
             <button onClick={() => navigate("rig", { folder, side, editor: "old" })} title="The first Rig Editor: the game's poses, tracks and keys as stored, and its own armatures">Advanced (old editor)</button>
             <button onClick={() => navigate("pokemon")} title="The Pokémon Editor">Pokémon Editor</button>
-            <button className={guideOpen ? "active" : ""} onClick={() => setGuideOpen(!guideOpen)} title="How rigs work: pieces, bones, parenting and the default pose">? How rigs work</button>
+            <button className={guideOpen ? "active" : ""} onClick={() => setGuideOpen(!guideOpen)} title="How rigs work: the rig setup, sequences, loop clips, the timeline and the battle's pause">? How rigs work</button>
           </div>
           {(message || flatDoc.saveError || v2Doc?.saveError) && (
             <p className={`rig-message${flatDoc.saveError || v2Doc?.saveError || message?.includes("not saved") || message?.includes("isn't saved") ? " pkm-error" : ""}`}>
@@ -649,12 +682,25 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
           {readOnly && (
             <section className="rig-card rig-notice">
               <h3>This side has a first-editor armature</h3>
-              <p className="muted">{side}_rig_source.json is the first Rig Editor's armature, which the new editor doesn't open yet (a later step converts them).
-                Edit it in the Advanced editor, or start this side fresh in the new one, which deletes the armature.</p>
+              <p className="muted">{side}_rig_source.json is the first Rig Editor's armature. <b>Import into the new editor</b> turns it into this editor's
+                bones, sequences and timeline: its parents and its key poses with their curves where they bake the same, the game's held keys where they don't
+                (the import says which), so the side plays exactly as before. Or start this side fresh, or keep editing it in the Advanced (old) editor.</p>
               <div className="rig-head">
-                <button onClick={() => navigate("rig", { folder, side, editor: "old" })}>Open in the Advanced editor</button>
+                <button className="primary" onClick={importArmatureNow} title="Convert the armature into the new editor's source (the armature file is deleted; the flat rig stays as it bakes)">Import into the new editor…</button>
                 <button onClick={startFresh}>Start fresh…</button>
+                <button onClick={() => navigate("rig", { folder, side, editor: "old" })}>Advanced (old editor)</button>
               </div>
+            </section>
+          )}
+          {importReport && (
+            <section className="rig-card rig-notice">
+              <div className="rig-card-head">
+                <h3>Imported the first editor's armature</h3>
+                <span className="spacer" />
+                <button className="small" onClick={() => setImportReport(null)}>Close</button>
+              </div>
+              <ul className="rig-import-report">{importReport.map((line, i) => <li key={i} className={line.startsWith("The import doesn't") ? "pkm-error" : ""}>{line}</li>)}</ul>
+              <p className="muted ow-note">Converted parts' tails are a guess (toward their picture's middle): drag them in Rig setup. Save writes {side}_rig_v2.json with {side}_rig.json.</p>
             </section>
           )}
           {clipEditView && editClip ? (

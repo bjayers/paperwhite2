@@ -65,6 +65,13 @@ export function clipAt(src: V2, frame: number): { clip: number; instance: number
 
 /** How many times the strip plays each sequence (its blocks). */
 export const playCount = (src: V2, s: number) => src.timeline.blocks.filter((b) => b.sequence === s).length;
+/** Whether an original's other strips (its stop strip, which the battle's pause plays; the egg's) play a sequence. */
+export const inOtherStrips = (src: V2, s: number) => (src.strips ?? []).some((strip) => strip.blocks.some((b) => b.sequence === s));
+/** A sequence the timeline doesn't play: an original's stop strip's, or not played at all. */
+export const unplayedLabel = (src: V2, s: number) => (inOtherStrips(src, s) ? "in the stop strip" : "not played");
+export const unplayedTitle = (src: V2, s: number) => (inOtherStrips(src, s)
+  ? "The original's stop strip plays it (in the battle's pause, as the original does), not the timeline"
+  : "The timeline (the game's stay loop) doesn't play it, so the battle never shows it: add it to the timeline");
 
 /** A clip of a sequence added: before clip `before` (a clip index), or at the end. Next to a clip of the same sequence it
  * joins it (one more instance). */
