@@ -171,3 +171,19 @@
 .rig-block-legend { display: inline-block; width: 18px; height: 9px; background: hsl(210 55% 42%); border-radius: 2px; vertical-align: middle; margin-right: 2px; }
 .rig-nla { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
 .rig-nla-block { padding: 2px 8px; border-radius: 4px; background: var(--panel-2); border: 1px solid var(--border); font-size: 12px; }
+
+/* The new Rig Editor's rig setup (SetupEditor.tsx) */
+.rig-head-actions { gap: 8px; font-size: 13px; }
+.rig-head-actions .rig-head-gap { margin-left: 14px; }
+.rig-setup .view-switch kbd { font-size: 10px; opacity: 0.6; margin-left: 3px; }
+.rig-notice { border-color: var(--warning); }
+.rig-notice h3 { margin: 0 0 6px; font-size: 14px; }
+.rig-outliner-row.multi { background: color-mix(in srgb, var(--selected) 55%, transparent); }
+.rig-outliner-row .spacer { flex: 1; }
+.rig-row-actions { display: inline-flex; gap: 4px; }
+.rig-row-actions button, .rig-outliner-row button.small { font-size: 11px; padding: 1px 6px; }
+.rig-chip { font-size: 10px; padding: 0 6px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; line-height: 16px; }
+.rig-chip.on { border-color: var(--accent); color: var(--accent); }
+.rig-layer-no { width: 16px; text-align: right; font-variant-numeric: tabular-nums; }
+.rig-piece-list { margin-top: 8px; max-height: 260px; }
+.rig-setup .ow-condition { grid-template-columns: 84px 1fr; }

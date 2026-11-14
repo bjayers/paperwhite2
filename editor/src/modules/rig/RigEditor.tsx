@@ -4,8 +4,8 @@
 // as MCSS does; the sheet shows the pictures' rectangles; the timeline the sequence and each part's keys; the side panel
 // what is chosen. Opened from the Pokémon Editor's Battle sprite card (#tool/rig?folder=pichu/form_1&side=front).
 //
-// Step 3 (an armature and curves) will be a source layer above this flat rig, baked into it on save; the views here
-// read and write only the flat rig, through the Editor of model.ts, so that layer can sit between them and the file.
+// Since the Rig Editor's second version (rig-editor-v2.md), this first editor is its Advanced view
+// (#tool/rig?folder=...&side=...&editor=old); the address without `editor=old` opens the new one (SetupEditor.tsx).
 
 import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api, type RigCheck } from "../../api.ts";
@@ -29,6 +29,8 @@ import { SheetView, uncovered } from "./SheetView.tsx";
 import { TimeReadout, Timeline } from "./Timeline.tsx";
 import { GraphEditor } from "./GraphEditor.tsx";
 import { Inspector } from "./Inspector.tsx";
+import { SetupPage } from "./SetupEditor.tsx";
+import { v2PathOf } from "./setupFiles.ts";
 import "./rig.css";
 
 const SIDES = ["front", "back"] as const;
@@ -62,14 +64,14 @@ export function isTyping(target: EventTarget | null, forUndo = false): boolean {
   if (el.tagName !== "INPUT") return false;
   return !["checkbox", "radio", "range", "button", "submit", "reset", "color", "file", "image"].includes((el as HTMLInputElement).type);
 }
-function stored(key: string): string | null {
+export function stored(key: string): string | null {
   try {
     return window.localStorage.getItem(key);
   } catch {
     return null;
   }
 }
-function store(key: string, value: string) {
+export function store(key: string, value: string) {
   try {
     window.localStorage.setItem(key, value);
   } catch {
@@ -81,10 +83,12 @@ export function RigEditor(_props: ToolProps) {
   const params = useToolParams("rig");
   const folder = params.get("folder");
   const side = (params.get("side") === "back" ? "back" : "front") as Side;
+  // The new editor (SetupEditor.tsx) unless the address asks for the first one, the Advanced view
+  const old = params.get("editor") === "old";
   if (!folder) return <Picker />;
   return (
-    <RigErrorBoundary key={`${folder}/${side}`}>
-      <RigPage folder={folder} side={side} />
+    <RigErrorBoundary key={`${folder}/${side}/${old ? "old" : "new"}`}>
+      {old ? <RigPage folder={folder} side={side} /> : <SetupPage folder={folder} side={side} />}
     </RigErrorBoundary>
   );
 }
@@ -151,7 +155,7 @@ function Picker() {
 
 // ---------------------------------------------------------------- One side
 
-async function loadArt(folder: string, side: Side): Promise<Art> {
+export async function loadArt(folder: string, side: Side): Promise<Art> {
   const dir = `res/pokemon/${folder}`;
   const names = (await api.list(`${dir}/${side}*.png`)).map((p) => p.slice(dir.length + 1, -4)).filter((n) => n === side || n === `${side}_female`);
   const sheets: Record<string, Uint8Array> = {};
@@ -209,6 +213,7 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
   const clockSequence = useClock(clock.current, (s) => s.sequence);
   const sourcePath = sourcePathOf(folder, side);
   const sourceDoc = docs.get(sourcePath);
+  const v2Doc = docs.get(v2PathOf(folder, side));
   // One history for the page across the flat rig's document and the armature's (history.ts), which takes an armature
   // made automatically away again, and back, with the step that made it
   const stashed = useRef<ReturnType<typeof documents.stash>>(undefined);
@@ -233,8 +238,9 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
     documents.hold(other).catch(() => undefined);
     // (no armature: the file isn't there, and the side edits flat)
     documents.hold(sourcePath).catch(() => undefined);
+    documents.hold(v2PathOf(folder, side)).catch(() => undefined);
     return () => { live = false; };
-  }, [path, other, sourcePath]);
+  }, [path, other, sourcePath, folder, side]);
   useEffect(() => {
     let live = true;
     loadArt(folder, side).then((a) => live && setArt(a), (e: Error) => live && setLoadError(e.message));
@@ -545,7 +551,7 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
         </span>
         <span className="view-switch" title="Front and back are separate rigs">
           {SIDES.map((s) => (
-            <button key={s} className={s === side ? "active" : ""} onClick={() => navigate("rig", { folder, side: s })}>{s === "front" ? "Front" : "Back"}{docs.get(rigPath(folder, s))?.dirty ? " •" : ""}</button>
+            <button key={s} className={s === side ? "active" : ""} onClick={() => navigate("rig", { folder, side: s, editor: "old" })}>{s === "front" ? "Front" : "Back"}{docs.get(rigPath(folder, s))?.dirty ? " •" : ""}</button>
           ))}
         </span>
         {art && Object.keys(art.sheets).length > 1 && (
@@ -555,6 +561,7 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
         )}
         <button onClick={copyFromOther} disabled={!!source} title={source ? "This side has an armature: remove it first (Armature, in the side panel) to start from a copy" : `Start this side from a copy of the ${side === "front" ? "back" : "front"} rig`}>Copy {side === "front" ? "back to front" : "front to back"}…</button>
         <button onClick={startFresh} title="Replace this side's rig with a minimal one: one picture cut round the sheet's art, one part, the stay loop (and delete its armature, if any)">Start fresh…</button>
+        <button onClick={() => navigate("rig", { folder, side })} title="The new Rig Editor: pieces, bones with heads and tails, parenting, the default pose">New editor</button>
         <button onClick={() => navigate("pokemon")} title="The Pokémon Editor">Pokémon Editor</button>
         <button className={guideOpen ? "active" : ""} onClick={() => setGuideOpen(!guideOpen)} title="How rigs work: Edit and Pose mode, parenting, key poses and the baked keys, with an example">? How rigs work</button>
         <span className="spacer" />
@@ -563,6 +570,7 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
         <button disabled={!dirty.length} onClick={revert}>Revert</button>
         <button className="primary" disabled={!dirty.length} onClick={saveAll} title="Ctrl+S: checks each changed side with the build's checks and validator, then writes it">Save</button>
       </header>
+      {v2Doc?.data && <p className="rig-message bsp-warning">This side has a source from the new editor ({side}_rig_v2.json): the new editor bakes this rig from it, so changes made here are replaced the next time it edits this side. Use the New editor for it.</p>}
       {(message || doc.saveError) && <p className={`rig-message${doc.saveError || message?.includes("not saved") ? " pkm-error" : ""}`}>{doc.saveError ?? message}</p>}
 
       {guideOpen && <Guide onClose={() => setGuideOpen(false)} />}
