@@ -17,7 +17,7 @@ import { CHANNELS, valuesAt, type Channel, type Curve, type Handle, type KeyPose
 import { loops, type Pair, type Rig } from "./mcss.ts";
 import { fixedScale } from "./model.ts";
 import { freeName, parentOf, restMaps } from "./setup.ts";
-import { DEFAULT_CURVE, lanePoses, layersOf, STEP, type Lane, type Layer, type Transform, type V2, type V2Key, type V2Sequence } from "./v2.ts";
+import { clipValues, DEFAULT_CURVE, lanePoses, layersOf, STEP, type Lane, type Layer, type Transform, type V2, type V2Key, type V2Sequence } from "./v2.ts";
 
 // ---------------------------------------------------------------- Keys and their names
 
@@ -82,19 +82,33 @@ export function partPoses(src: V2, s: number, b: number): { poses: KeyPose[]; fr
 
 export interface PartValues { move: Pair; rotation: number; scale: Pair; piece: number | undefined; hidden: boolean }
 
-/** A part's values at a frame of a sequence (unrounded, from its curves): what keying there starts from. */
-export function partValues(src: V2, s: number, b: number, frame: number): PartValues {
+/** A part's values at a frame of a sequence (unrounded, from its curves): what keying there starts from, its keys' own.
+ * With `clips`, its loop clips added as the bake adds them (v2.ts clipValues: moves and turns added, scales multiplied,
+ * a clip's picture over the part's): what the game shows of it there, and where the preview draws its bone. */
+export function partValues(src: V2, s: number, b: number, frame: number, clips = false): PartValues {
   const { poses, frames, loop } = partPoses(src, s, b);
   const local = frames > 0 ? (loop && frame > frames ? frame % frames : Math.min(frame, frames)) : 0;
   const v = valuesAt(poses, local, frames, loop);
-  return { move: v.move, rotation: v.rotation, scale: v.scale, piece: v.picture === HIDDEN ? undefined : v.picture, hidden: v.picture === HIDDEN };
+  const out: PartValues = { move: v.move, rotation: v.rotation, scale: v.scale, piece: v.picture === HIDDEN ? undefined : v.picture, hidden: v.picture === HIDDEN };
+  const uses = clips ? laneOf(src.sequences[s], b)?.clips ?? [] : [];
+  if (!uses.length) return out;
+  const cv = clipValues(src.loop_clips ?? [], uses, frame);
+  const locked = !!src.bones[b]?.connected && parentOf(src, b) !== null;
+  out.move = locked ? [0, 0] : [out.move[0] + cv.move[0], out.move[1] + cv.move[1]];
+  out.rotation += cv.rotation;
+  out.scale = [out.scale[0] * cv.scale[0], out.scale[1] * cv.scale[1]];
+  if (cv.picture) {
+    out.hidden = !!cv.picture.hidden;
+    out.piece = cv.picture.hidden ? undefined : cv.picture.piece;
+  }
+  return out;
 }
 
-/** Each bone's map from the rest arrangement to the sprite at a frame of a sequence (setup.ts restMaps under the pose):
- * where the bones are drawn and what the gizmos turn a drag into. */
+/** Each bone's map from the rest arrangement to the sprite at a frame of a sequence (setup.ts restMaps under the pose,
+ * the loop clips included): where the bones are drawn and what the gizmos turn a drag into. */
 export function posedMaps(src: V2, s: number, frame: number): Map2[] {
   if (!src.sequences[s]) return restMaps(src);
-  const values = src.bones.map((_, b) => partValues(src, s, b, frame));
+  const values = src.bones.map((_, b) => partValues(src, s, b, frame, true));
   return restMaps(src, (b) => ({ move: values[b].move, rotation: values[b].rotation, scale: values[b].scale }));
 }
 

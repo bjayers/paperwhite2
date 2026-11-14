@@ -166,8 +166,39 @@ export function piecesOf(src: V2, b: number): Set<number> {
   const out = new Set<number>();
   const d = src.bones[b]?.default?.piece;
   if (d !== undefined) out.add(d);
-  for (const seq of src.sequences) for (const lane of seq.parts) if (lane.bone === b) for (const k of lane.keys) if (k.piece !== undefined) out.add(k.piece);
+  for (const seq of src.sequences) for (const lane of seq.parts) if (lane.bone === b) {
+    for (const k of lane.keys) if (k.piece !== undefined) out.add(k.piece);
+    // (and the pictures its loop clips show over it)
+    for (const u of lane.clips ?? []) for (const k of src.loop_clips?.[u.clip]?.keys ?? []) if (k.piece !== undefined) out.add(k.piece);
+  }
   return out;
+}
+
+/** The loop clips placed on a bone (in any sequence). */
+export function clipsOnBone(src: V2, b: number): Set<number> {
+  const out = new Set<number>();
+  for (const seq of src.sequences) for (const lane of seq.parts) if (lane.bone === b) for (const u of lane.clips ?? []) if (src.loop_clips?.[u.clip]) out.add(u.clip);
+  return out;
+}
+
+/** The source with each loop clip placed on this bone that another bone plays too copied for this one (its uses on this
+ * bone pointing to the copy), so changing what the clip means here (a moved pivot) leaves the others alone. */
+function ownClips(src: V2, b: number): V2 {
+  const remap = new Map<number, number>();
+  const clips = (src.loop_clips ?? []).slice();
+  for (const c of clipsOnBone(src, b)) {
+    const shared = src.sequences.some((seq) => seq.parts.some((lane) => lane.bone !== b && (lane.clips ?? []).some((u) => u.clip === c)));
+    if (!shared) continue;
+    remap.set(c, clips.length);
+    clips.push({ ...clone(clips[c]), name: freeName(clips.map((x) => x.name), `${clips[c].name} (${src.bones[b].name})`) });
+  }
+  if (!remap.size) return src;
+  return {
+    ...src, loop_clips: clips,
+    sequences: src.sequences.map((seq) => ({ ...seq, parts: seq.parts.map((lane) => (lane.bone !== b || !lane.clips ? lane : {
+      ...lane, clips: lane.clips.map((u) => (remap.has(u.clip) ? { ...u, clip: remap.get(u.clip)! } : u)),
+    })) })),
+  };
 }
 
 /** The bones that show a piece (by default or in a key). */
@@ -195,6 +226,11 @@ function ownPieces(src: V2, b: number): { src: V2; pieces: number[]; copied: num
       ...lane, keys: lane.keys.map((k) => (k.piece !== undefined ? { ...k, piece: re(k.piece) } : k)),
     })) })),
   };
+  // The loop clips on this bone show the copies too (ownClips has made them this bone's alone)
+  const mine = clipsOnBone(src, b);
+  if (mine.size && src.loop_clips) next.loop_clips = src.loop_clips.map((clip, c) => (!mine.has(c) ? clip : {
+    ...clip, keys: clip.keys.map((k) => (k.piece !== undefined ? { ...k, piece: re(k.piece) } : k)),
+  }));
   if (next.kept?.picture_labels) delete next.kept;
   return { src: next, pieces: shown.map((n) => remap.get(n) ?? n), copied: remap.size };
 }
@@ -212,7 +248,7 @@ const mapLanes = (src: V2, b: number, change: (lane: Lane) => Lane): V2 => ({
  * with it. The head field follows (a connected bone's is its parent's tail: the caller moves that). */
 function shiftPivot(src0: V2, b: number, delta: Pair): { src: V2; copied: number } {
   if (!delta[0] && !delta[1]) return { src: src0, copied: 0 };
-  const own = ownPieces(src0, b);
+  const own = ownPieces(ownClips(src0, b), b);
   let src = own.src;
   const shiftUpBy = up(delta);
   const pieces = src.pieces.map((p, n) => (!own.pieces.includes(n) ? p : {
@@ -244,6 +280,19 @@ function shiftPivot(src0: V2, b: number, delta: Pair): { src: V2; copied: number
       next.move = [tidy(move[0]), tidy(move[1])];
       return next;
     }) }));
+    // Its loop clips' turns and scales carry the shift too: a clip key's move changes by what its turn and scale add
+    // to the default's spread (exact where the part's own keys don't turn or scale away from the default pose)
+    const mine = clipsOnBone(src, b);
+    if (mine.size && src.loop_clips) src = { ...src, loop_clips: src.loop_clips.map((clip, c) => (!mine.has(c) ? clip : {
+      ...clip, keys: clip.keys.map((k) => {
+        if (k.rotation === undefined && k.scale === undefined) return k;
+        const ds = d.scale ?? [1, 1], cs = k.scale ?? [1, 1];
+        const s = spread((d.rotation ?? 0) + (k.rotation ?? 0), [ds[0] * cs[0], ds[1] * cs[1]]);
+        const extra: Pair = [s[0] - dSpread[0], s[1] - dSpread[1]];
+        if (Math.abs(extra[0]) < 1e-9 && Math.abs(extra[1]) < 1e-9) return k;
+        return { ...k, move: [tidy((k.move?.[0] ?? 0) + extra[0]), tidy((k.move?.[1] ?? 0) + extra[1])] as Pair };
+      }),
+    })) };
   }
   // The sequences' own pivots for this bone (converted originals' per-action heads)
   src = { ...src, sequences: src.sequences.map((seq) => (!seq.layers ? seq : {
@@ -356,8 +405,17 @@ export function reparentKeep(src: V2, b: number, parent: number | null): V2 {
 
   // Each sequence's keys of it, as constant keys where it or the new parent changes
   if (!src.sequences.some((seq) => seq.parts.some((l) => l.bone === b && l.keys.length))) return orderedV2(next);
-  const before = bakeV2(src);
-  const after = bakeV2(next);
+  // (its own keys without its loop clips, which stay as they are and add to them again: where the new parent differs
+  // from the old by a movement only, as the originals' parts do, a clip means the same on the new parent. Its clips are
+  // swapped for ones that change nothing but cut the samples where they do, so its own curves are sampled where the
+  // bake samples them with the clips)
+  const n = src.loop_clips?.length ?? 0;
+  const noClips = (x: V2): V2 => ({
+    ...mapLanes(x, b, (lane) => (!lane.clips ? lane : { ...lane, clips: lane.clips.map((u) => ({ ...u, clip: u.clip + n })) })),
+    loop_clips: [...(x.loop_clips ?? []), ...(x.loop_clips ?? []).map((c) => ({ ...c, keys: c.keys.map((k) => ({ frame: k.frame, ...(k.curve ? { curve: k.curve } : {}), ...(k.curves ? { curves: k.curves } : {}) })) }))],
+  });
+  const before = bakeV2(noClips(src));
+  const after = bakeV2(noClips(next));
   const sequences = next.sequences.map((seq, s) => {
     const lane = seq.parts.find((l) => l.bone === b);
     const t0 = before.trackOf.get(`${s}/${b}`);

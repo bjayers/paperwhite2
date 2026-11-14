@@ -244,6 +244,55 @@ export function lanePoses(src: V2, b: number, lane: Lane | undefined, locked: bo
   return out;
 }
 
+// ---------------------------------------------------------------- Loop clips as the bake reads them
+
+const clipPoseCache = new WeakMap<LoopClip, KeyPose[]>();
+/** A loop clip's keys as key poses: its channels relative (absent: no change), constant unless a key names a curve. */
+export function clipPosesOf(clip: LoopClip): KeyPose[] {
+  let poses = clipPoseCache.get(clip);
+  if (!poses) {
+    poses = sortedKeys(clip.keys.map((k) => ({ frame: k.frame, move: k.move ?? [0, 0], rotation: k.rotation ?? 0, scale: k.scale ?? [1, 1],
+      curve: k.curve ?? "constant", ...(k.curves ? { curves: k.curves } : {}), ...(k.handles ? { handles: k.handles } : {}) }) as KeyPose));
+    clipPoseCache.set(clip, poses);
+  }
+  return poses;
+}
+
+/** What a loop clip shows over its part at a frame of its own time: a piece, hidden, or undefined (the part's own). The
+ * last key with a piece (or hidden) at or before the frame, else the clip's last such key (from the loop before). */
+export function clipPictureAt(clip: LoopClip, t: number): { piece?: number; hidden?: boolean } | undefined {
+  const list = (sortedKeys(clip.keys as KeyPose[]) as unknown as V2Key[]).filter((k) => k.piece !== undefined || k.hidden !== undefined);
+  if (!list.length) return undefined;
+  let at = list[list.length - 1];
+  for (const k of list) if (k.frame <= t) at = k;
+  if (at.hidden) return { hidden: true };
+  return at.piece !== undefined ? { piece: at.piece } : undefined;
+}
+
+/** A clip placed from `start` at a time of the sequence: the frame of its own time (looping). */
+export const clipTime = (clip: LoopClip, use: ClipUse, time: number) =>
+  (clip.frames > 0 ? ((((time - (use.start ?? 0)) % clip.frames) + clip.frames) % clip.frames) : 0);
+
+export interface ClipValues { move: Pair; rotation: number; scale: Pair; picture?: { piece?: number; hidden?: boolean } }
+
+/** A part's loop clips together at a time of its sequence (the block's time): their moves and turns added, their scales
+ * multiplied, and the picture the last of them to show one shows over the part's (undefined: the part's own). The bake
+ * and the editor's values (sequences.ts partValues with the clips) both read the clips through this. */
+export function clipValues(clips: LoopClip[], uses: ClipUse[], time: number): ClipValues {
+  const out: ClipValues = { move: [0, 0], rotation: 0, scale: [1, 1] };
+  for (const u of uses) {
+    const clip = clips[u.clip];
+    if (!clip) continue;
+    const tc = clipTime(clip, u, time);
+    const cv = valuesAt(clipPosesOf(clip), tc, clip.frames, true);
+    out.move = [out.move[0] + cv.move[0], out.move[1] + cv.move[1]];
+    out.rotation += cv.rotation;
+    out.scale = [out.scale[0] * cv.scale[0], out.scale[1] * cv.scale[1]];
+    out.picture = clipPictureAt(clip, tc) ?? out.picture;
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------- The bake
 
 export interface BakedV2 {
@@ -337,19 +386,6 @@ export function bakeV2(src: V2): BakedV2 {
   const keyPosesOf = (b: number, lane: Lane | undefined): KeyPose[] =>
     lanePoses(src, b, lane, !!src.bones[b].connected && parentOf(b) !== null, (shown, hidden) => (hidden || shown === undefined ? blankPictureIndex() : shown));
 
-  /** A clip's keys as key poses (channels relative, curve constant unless named), and its pictures by frame. */
-  const clipPoses = clips.map((clip) => sortedKeys(clip.keys.map((k) => ({ frame: k.frame, move: k.move ?? [0, 0], rotation: k.rotation ?? 0,
-    scale: k.scale ?? [1, 1], curve: k.curve ?? "constant", ...(k.curves ? { curves: k.curves } : {}), ...(k.handles ? { handles: k.handles } : {}) }) as KeyPose)));
-  const clipPictures = clips.map((clip) => sortedKeys(clip.keys as KeyPose[]).filter((k) => (k as V2Key).piece !== undefined || (k as V2Key).hidden !== undefined) as V2Key[]);
-  /** The picture a clip shows at its time, or undefined (the part's own). */
-  const clipPictureAt = (c: number, t: number): number | undefined => {
-    const list = clipPictures[c];
-    if (!list.length) return undefined;
-    let at = list[list.length - 1];
-    for (const k of list) if (k.frame <= t) at = k;
-    return at.hidden ? blankPictureIndex() : at.piece;
-  };
-
   // ---- The tracks, each part's parent's first
   const state = new Map<string, "busy" | "done">();
   const bakeTrack = (s: number, b: number) => {
@@ -408,7 +444,7 @@ export function bakeV2(src: V2): BakedV2 {
       const clip = clips[u.clip];
       const c = clip.frames;
       if (c <= 0) continue;
-      const curved = clipPoses[u.clip].some((k) => (k.curve ?? "constant") !== "constant" || k.curves);
+      const curved = clipPosesOf(clip).some((k) => (k.curve ?? "constant") !== "constant" || k.curves);
       const clipStep = clip.step ?? step;
       const marks = new Set(clip.keys.map((k) => k.frame % c));
       if (curved) for (let m = 0; m < c; m += clipStep) marks.add(m);
@@ -427,14 +463,12 @@ export function bakeV2(src: V2): BakedV2 {
         const local = Math.min(time - seg.base, frames);
         const v = valuesAt(keys, local, frames, loop, seg.index);
         let picture = kp.picture ?? 0;
-        for (const u of uses) {
-          const clip = clips[u.clip];
-          const tc = clip.frames > 0 ? ((((time - (u.start ?? 0)) % clip.frames) + clip.frames) % clip.frames) : 0;
-          const cv = valuesAt(clipPoses[u.clip], tc, clip.frames, true);
+        if (uses.length) {
+          const cv = clipValues(clips, uses, time);
           v.move = [v.move[0] + cv.move[0], v.move[1] + cv.move[1]];
           v.rotation += cv.rotation;
           v.scale = [v.scale[0] * cv.scale[0], v.scale[1] * cv.scale[1]];
-          picture = clipPictureAt(u.clip, tc) ?? picture;
+          if (cv.picture) picture = cv.picture.hidden ? blankPictureIndex() : cv.picture.piece!;
         }
         if (bone.connected && p !== null) v.move = [0, 0];
         const own = srtOfValues(v);
