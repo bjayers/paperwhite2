@@ -459,14 +459,14 @@ New species (`AddedSpecies.tsx`, docs/paperwhite2/design/new-species.md sections
 
 ## The Rig Editor
 
-**The new editor (2026-11-14, docs/paperwhite2/design/rig-editor-v2.md, "Built: step 2")** is what **Edit rig…** and the
+**The new editor (2026-11-14, docs/paperwhite2/design/rig-editor-v2.md, "Built: step 2" and "Built: step 3")** is what **Edit rig…** and the
 sidebar open (`src/modules/rig/SetupEditor.tsx`, its edits in `setup.ts`). It edits a side's source,
 `<side>_rig_v2.json` (`v2.ts`), and bakes it on every change into `<side>_rig.json`, the build's input. A side without a
 source opens as its flat rig converted (`convertToV2`, byte for byte), in memory: the first edit makes the file, so an
 untouched side writes nothing; Undo of that edit takes the file away again. Save runs the rig-check route on the bake
 and writes both files; Ctrl+Z and Ctrl+Y are one history over both (`history.ts`). A side with a first-editor armature
 (`_rig_source.json`) shows a notice: open it in the Advanced editor, or **Start fresh…** (which deletes the armature
-through the server). For now the editor's mode is **Rig setup** (sequences come next):
+through the server). The header switches its two modes, **Rig setup** and **Sequences** (remembered per viewer):
 
 - **Pieces** (the sheet card): drag on the sheet to cut a piece (Shift: the chosen piece's second rectangle); drag a
   rectangle to move it, its edges or corners to resize it, snapped to tiles (Alt: pixels) and to sizes the DS's OBJs can
@@ -482,10 +482,41 @@ through the server). For now the editor's mode is **Rig setup** (sequences come 
   place, onto Root to free it; a chip toggles connected and offset); **Bone** (name, the piece it shows, parent, link,
   head and tail); **Default pose** (move, turn, scale, Reset pose; the setup is the default pose, with no separate
   step); **Layers** front to back (drag to reorder; Hide and Draw); **Piece** (name, rectangles, its place on its bone);
-  **Sequences** (read only); **Checks**.
-- The header: **Rig setup** (and Sequences, coming), **Front** and **Back**, the size against ~40 KB, Revert, Save;
+  **Sequences** (a summary; Sequences mode keys them); **Checks**.
+- The header: **Rig setup** and **Sequences**, **Front** and **Back**, the size against ~40 KB, Revert, Save;
   **Copy front to back…** (on the back), **Start fresh…** (one piece round the sheet's first art and one bone), **Advanced
   (old editor)** (the first editor, `&editor=old`, which warns on a side that has a source), **? How rigs work**.
+
+**Sequences mode (step 3)**: the sequences (Idle, Hop, ...) of the same bones, each a loop that starts and ends at the
+default pose (`sequences.ts` for the edits, `SequenceTimeline.tsx`, `SequenceGraph.tsx`, `SequencePanel.tsx`):
+
+- **The preview** plays the open sequence looping at the game's 60 frames a second: the side's bake with one strip
+  playing it (`sequenceRig`), so it is what the battle shows. Play and pause (Space), step by 6 (the arrows; by 1 with
+  the snap off), to the start (Home), scrub; onion skin (the frames 6 before and after), Bones, Feet, Shiny, 2–6×.
+  **Move** (G), **Rotate** (R) and **Scale** (S, its X and Y handles) key the chosen parts at the playhead; a press pauses
+  the preview first, so nothing is keyed while it plays. The key goes to the start of the playhead's 6-frame step.
+- **The dock** (bottom left of the side panel, its top edge dragged for height): **Timeline**, **Graph** or **Both**,
+  **Snap 6** (the playhead, keys and the length go by 6; Alt bypasses it while dragging), the timeline's zoom.
+  - **Timeline**: the ruler (press or drag: the playhead; the end's grip: the length), an **All parts** row and a row per
+    part (children under parents) with its keys. The hollow keys are the default pose: at 0 where nothing is keyed, and
+    the **end key** at the length, drawn past the last baked frame in the shaded stretch (it is the next loop's frame 0).
+    Click a key to choose it (Shift or Ctrl adds or removes; an All parts key stands for every key at its frame), drag
+    empty space to box-select, drag chosen keys to move them in time (a hollow key dragged becomes a real key there: the
+    end key dragged back makes a part settle early), double-click to go to it; Delete deletes the chosen keys in one
+    undo step, Ctrl+C and Ctrl+V copy them to the playhead; K keys the chosen parts, Shift+K every part.
+  - **Graph**: the chosen parts' channels (move x and y, turn, scale x and y; each in its own range with Normalize) from
+    0 to the end key, with the 6-frame steps the game holds faint underneath; keys chosen as on the timeline (and box
+    select), dragged in time (the chosen together) and value (Shift keeps to one way), a Bézier key's handles; the curve
+    buttons set how the chosen keys go on to the next, every channel or the one clicked: Constant, Linear, Ease in, Ease
+    out, Ease in-out, Bézier, and the presets **Snap**, **Back**, **Bounce**, **Elastic**. A click on empty space moves the
+    playhead.
+- **The side panel**: **Sequences** (open one; + Sequence holding the default pose, Duplicate, Delete, drag to reorder;
+  the timeline's blocks follow), **Sequence** (name, length, **Reset sequence…**: no keys, everything else as it was, one
+  undo step), **Part** (the chosen part at the playhead: Key, Key all parts, Delete key; its picture (thumbnails, Hidden),
+  move, turn and scale, from its key there or its curves, changing one keys it; its curve to the next), **Checks**.
+- A key holds only what it changes (an absent channel is the default pose's), so edits of the rig setup still carry
+  into every sequence. Placing sequences on the battle's timeline (the strip of blocks) is step 4; a new sequence is kept
+  but isn't played in battle until then.
 
 **The first editor, now the Advanced view.** One side of a battle sprite's rig (`src/modules/rig/`, `res/pokemon/<folder>/<side>_rig.json`; the design is
 docs/paperwhite2/design/battle-sprites.md sections 15 to 18), opened from a Battle sprite card's **Edit rig…** or the

@@ -358,3 +358,113 @@ fresh deleting it; Copy front to back.
   over to keying: a sequence's preview is `bakeV2` of the source at the playhead's frame instead of `defaultPoseRig`.
 - `reparentKeep` already rewrites keys; `moveHead` corrects keys' moves. Neither yet handles loop clips (step 5).
 - The size meter is `rigSizes` of the bake; the checks list the bake's warnings.
+
+## Built: step 3, sequences (2026-11-14)
+
+The header's **Sequences** switch (beside Rig setup, remembered per viewer) opens the sequences: the list, the open
+sequence's preview, its timeline and graph editor in the dock, and the chosen part at the playhead. Every edit is a
+pure function of the source in `editor/src/modules/rig/sequences.ts`; the page is `SetupEditor.tsx` with
+`SequenceTimeline.tsx`, `SequenceGraph.tsx` and `SequencePanel.tsx`, and `SetupPreview.tsx` draws both modes. The save
+path is step 2's: every change baked into the flat rig's document, Save through the rig-check route, both files, one
+undo history.
+
+### The rules (sequences.ts)
+
+- **A part's values at a frame** (`partValues`) are its curves there, read through the bake's own key poses
+  (`lanePoses`, taken out of `bakeV2` so the two can't differ): the implicit start at the default pose, the pictures held
+  from key to key. **Keying** (`setKeyAt`) changes the key at a frame or makes one from those values, so making a key
+  changes nothing until it is moved. **A key holds only what it changes**: a channel it had, or one that differs from
+  the default pose (an absent channel is the default's, the format's rule); a piece or Hidden only where the picture
+  changes. So edits of the rig setup (the default pose, heads, parents) still carry into every sequence.
+- **Keys are named by their place in their part's lane** (`KeyRef`); lanes are kept in frame order. A drawn part's lane
+  left with no keys is dropped (it bakes as no lane does); a part the sequence doesn't draw keeps its empty lane, so its
+  children still follow its track.
+- **The implicit start and end.** The start (`START`) is the default pose at 0 where nothing is keyed; the end (`END`) is
+  the start again at the length, drawn one step past the last baked frame (the next loop's 0; the seam rule of step 1).
+  Neither can be deleted. Moving or copying one makes a real key with its values where it lands (the end: the start's
+  values, and its picture where the part shows another before; `{ "frame": 30 }` alone is the default pose), so dragging
+  the end key back makes a part settle early. A curve given to the start makes it a real key at 0 holding it
+  (`{ "frame": 0, "curve": "snap" }`). A real key at the length is the explicit end key (held 0 frames, as step 1 says).
+- **Moving keys** (`moveKeys`) moves the chosen ones together by a delta (whole steps with the snap), inside 0 to the
+  length; a moved key replaces one it lands on. **Copy and paste** (`copyKeys`, `pasteKeys`) keep the keys' parts and
+  their spacing, pasted from the playhead. **Deleting** (`deleteKeys`) takes any keys of any parts in one change.
+- **Curves** (`setCurve`): every channel's, or one channel's (`curves`), the presets included; Bézier handles
+  (`setHandles`) as section 19.2 of battle-sprites.md.
+- **Snapping** (the editor's): the playhead to the nearest multiple of 6, stopping at the last baked frame
+  (`playheadAt`); a key drag by whole steps (`snapDelta`); the length by `snapLength`; keys made at the start of the
+  playhead's step (`keyFrameOf`), which is the frame the game is showing. Alt bypasses the snap while dragging, and
+  **Snap 6** turns it off.
+- **Never keyed while playing**: a gizmo press, K, Shift+K, a field of the Part section or a paste first pauses the
+  preview and puts the playhead on the step's frame (`pauseForKeying`), then keys there.
+- **The list**: `addSequence` (48 frames, the default pose), `duplicateSequence` (after it, an original's own track names
+  not copied), `deleteSequence` (refused for the last one, and for an original's sequence whose tracks another plays),
+  `moveSequence`, `renameSequence`, `setLength`, `resetSequence` (no keys; its length, layers, loop clips and the other
+  sequences untouched). Each renumbers every sequence number in the source: the timeline's and the strips' blocks (a
+  deleted sequence's dropped; an empty timeline plays the first), `track_order` (a new sequence's tracks appended),
+  `track_of`.
+- **The preview's rig** (`sequenceRig`): the side's bake with its strips replaced by one that plays the open sequence,
+  looping, so the preview is the game's own frames of that sequence; `posedMaps` places the bones at the frame keys go to.
+
+### The page
+
+- **The preview**: the open sequence at the playhead, playing at 60 frames a second (`player.ts`'s Clock, no battle
+  pauses here), play and pause (Space), ±6 (the arrows; ±1 with the snap off), Home, a scrub bar; onion skin (6 before and
+  after), Bones, Feet, Shiny, 2–6×; Move (G), Rotate (R), Scale (S, X and Y handles and the ring) key the chosen parts.
+  The canvas only grows while a sequence is open, so the sprite doesn't jump as it plays.
+- **The dock** at the bottom, left of the side panel (drag its top edge; Timeline, Graph or Both, remembered), with
+  **Snap 6** and the timeline's zoom.
+  - **Timeline**: the ruler (press or drag to scrub; the end's ⇔ grip changes the length), an **All parts** row (a key
+    there stands for every key at its frame) and a row per part in the bones' tree order. Keys coloured by their curve
+    (presets pink); the hollow start and end keys; the stretch past the end shaded. Click, Shift/Ctrl-click, box-select
+    on empty space (Shift adds), drag the chosen keys in time, double-click to go to one; Delete, Ctrl+C, Ctrl+V, K,
+    Shift+K, Escape.
+  - **Graph**: the chosen parts' curves (the first part solid, the others dashed and named), the 6-frame steps the bake
+    holds faint underneath, the implicit keys hollow; click, box-select, drag in time and value, Bézier handles (Alt
+    breaks them); the curve buttons, plain then presets, for the chosen keys on every channel or the one clicked.
+- **The side panel** (Ambients layout): **Sequences** (open, + Sequence, Duplicate, Delete, drag to reorder; each row's
+  length, keys, and how often the timeline plays it), **Sequence** (name, length in frames with −6 and +6, **Reset
+  sequence…** with a confirm, one undo step), **Part** (the chosen part at the playhead: ◇ Key, ◆ Key all parts, Delete key;
+  its picture as thumbnails with Hidden; move, turn, scale; its curve to the next), **Checks** (the bake's warnings
+  include a key past the end).
+- The rig setup's Sequences section is a summary now; **? How rigs work** gained Sequences, Keys and Curves.
+
+### Tests (`tests/rig-sequences.test.ts`, 10 of `npm test`'s 168)
+
+Snapping (the playhead by 6 stopping at the last baked frame, Alt's frames, a drag of 10 going 12, lengths, keys held
+inside the loop); an empty sequence holding the default pose and one middle key blending default → it → default (the
+baked turns against `eased`, no second default at the seam, the values between keys the curve's); the end key moved back
+(`{ "frame": 36 }`, the samples settling, the implicit end still at 48) and copied (the start's values pasted at 42), and
+an explicit end key baking to a key held 0 frames; K and Shift+K from the values (a second K changes nothing; pictures
+and Hidden per key); Reset sequence touching nothing else; three keys box-selected across three parts deleted with the
+start ignored, undone and redone as one step of `RigHistory`; "back" applied to a key baking each sample as the preset
+(past the default the other way), the start given "snap" becoming a key at 0, one channel's curve; keying never while
+playing (a playing clock paused on the step's frame, without the snap on the frame shown, a paused one untouched); the
+list's add, duplicate, reorder and delete keeping the timeline on the same sequences; and **the preview's frames equal
+mcss.render**: for both sequences of a keyed source, the preview's rig has the same poses and tracks as the source baked
+with only that sequence on its timeline, and the editor's `render` of it equals `tools/paperwhite2/mcss.py`'s render of
+that bake (through the five files) pixel for pixel at 11 times each, past the loop's end too.
+
+Also tried in the editor end to end (a scratch copy of Budew in the worktree, removed after): three bones (bud connected
+to the body, a foot keeping its offset); **Idle** of 48 frames with the bud turned at 24 by the Rotate gizmo (the
+playhead clicked at 22 snapped to 24) given **Back**, its overshoot in the graph; **Hop** of 36 with the body moved up 14
+at 18 by the Move gizmo, a squash at 6 and the landing at 30 typed in the Part section, Shift+K at 12 and 24; a box over
+frames 9 to 15 of every row choosing the three keys at 12 and Delete removing them (Ctrl+Z bringing all three back, Ctrl+Y
+taking them again); the bud's end key dragged to 30; Reset sequence and its undo; Ctrl+S writing both files, which bake to
+each other (`npm test`'s res/ guard ran with them in place). A vanilla side (Budew's back) opens in Sequences mode with its
+converted keys (4-frame keys, two sequences) playing as before. Nothing in res/ changed in this step.
+
+### What step 4 (the timeline strip and the preview) builds on
+
+- The timeline is `src.timeline.blocks` (`{ sequence, frames? }`); the list's edits already keep it on the same sequences
+  (`renumber` in sequences.ts), and each row shows how often it plays a sequence. A new sequence isn't on it yet, so the
+  battle doesn't show it until step 4 places it.
+- The preview's rig is `sequenceRig`: step 4's strip preview is the bake's own sequence 0 (the timeline as baked) with
+  the battle's pauses (`Clock.pauses`, the keeps-moving parts as `idle_parts`), on the same Clock; `SetupPreview` already
+  draws any rig at a clock's time with its own layers.
+- The dock (`rig-dock`, Timeline / Graph / Both) has room for a strip view: blocks dragged like keys, with the snapping
+  helpers (`snapDelta`, `snapLength`) and the timeline's box-select and drag code to borrow.
+- The size meter is still `rigSizes` of the bake: every instance is one 2-byte block key, so step 4 can show the cost of a
+  block next to it.
+- Open: loop clips (step 5) aren't shown or edited; `reparentKeep` and `moveHead` don't touch them either. Keys hold
+  absolute values per channel (as the format says), so changing a default pose's channel that a key also holds doesn't
+  move that key.
