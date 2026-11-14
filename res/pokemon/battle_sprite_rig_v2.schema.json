@@ -237,6 +237,15 @@
                         }
                     },
                     "instances": {"type": "integer", "minimum": 0, "maximum": 65535},
+                    "root": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["keys"],
+                        "description": "The root's keyframes: the whole sprite's move, turn and scale about the feet, from the identity at frame 0 and back to it at the length; the bake composes them into every part that has no parent (pictures are the parts'; a piece or hidden here is ignored)",
+                        "properties": {
+                            "keys": {"type": "array", "items": {"$ref": "#/$defs/key"}}
+                        }
+                    },
                     "parts": {
                         "type": "array",
                         "description": "Keyframes by part; a part with none holds the default pose",

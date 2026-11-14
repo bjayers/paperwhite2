@@ -686,3 +686,64 @@ fresh and Copy. Nothing in res/ changed.
 - Clip keys show "the part's own picture" only by not having a picture: a clip can't return to the part's own picture
   after a picture key except by naming that piece.
 - Untested in the game; nothing in res/ changed.
+
+## Built: Root and empty sequences (2026-11-14)
+
+Two fixes from the user's use of steps 3–6.
+
+### Saving with only the default pose
+
+The user added a sequence and deleted the others to reset every key, and Save refused: "sequence 1 (CellAnime1) has no
+keys". Deleting a sequence dropped its blocks from the timeline and the strips, but an original's stop strip (the game's
+sequence 1, which the battle's pause shows) that played only deleted sequences was left with no blocks, which
+`mcss_rig.check` refuses (and the schema too: a strip's `blocks` has `minItems: 1`). The same left Applin's source
+unsaveable from the Pokémon Editor, whose save also took the Rig Editor's unsaved rig files (below).
+
+- **`deleteSequence`** (`renumber` in sequences.ts) tidies what it empties, as **`playedStrips`** (v2.ts) does for the
+  bake: an empty timeline plays the first sequence (as before); an emptied strip at the end is dropped, so the pause
+  holds the loop's start, as for a sprite without one (Pichu's rigs have none; the game plays sequence 1 only "if there
+  is one", section 4 of battle-sprites.md); an emptied strip before others plays the timeline's first sequence, keeping
+  the later strips' numbers. What happened is said in the delete's message ("The stop strip (CellAnime1) played only
+  that sequence, so it's gone: …"). A file that still has them (hand edits) bakes the same way, with a warning in Checks.
+- A sequence with no keys bakes to held keys (each part one key at its default pose for the sequence's length): tested.
+- **The check's words** (`checkText.ts`): the build's errors in the editor's terms with what to do (the stop strip, the
+  timeline, a piece's name for a picture, a sequence's for a pose, ...), in Save's message and in Checks (the check's own
+  words in the tooltip); an unknown one is shown as the check gives it, with "undo the last change".
+- **Rig files are the Rig Editor's to save** (`isRigFile` in setupFiles.ts): the Pokémon Editor's Save no longer saves a
+  side's `_rig.json`, `_rig_v2.json` or `_rig_source.json` (it saved every dirty file under res/pokemon/), nor do
+  Ctrl+Shift+S and Build's "save first" (Build says the unsaved rigs aren't saved there).
+
+### The Root
+
+The "All parts" summary row of the sequence timeline is now **Root — the whole sprite**, a keyable lane:
+
+- The format: a sequence's **`root: { keys }`** (the key format without pictures), from the identity at frame 0 and back
+  to it at the length, like a part's default pose. Absent in every converted original (the sweep is unchanged).
+- The bake samples it as a part (`rootTrack`: every step, the keys' curves, never a track of the rig) and composes it,
+  about the feet (pivot (0, 0)), into every part without a parent drawn in that sequence, exactly as a parent is composed
+  into a child; children get it through their parents. Parts restart with each block, so per-sequence root motion is
+  exact. A root that never leaves the identity changes nothing.
+- The editor: `laneOf(seq, ROOT)` (ROOT = −1) makes the root a lane for every key edit (K, moving, deleting, copying,
+  curves, the graph editor, snapping); its Part section has no pictures; `posedMaps` puts the bones under it and the
+  preview draws its diamond at the feet (chosen in orange), where Move, Rotate and Scale key it; `reparentKeep` to the
+  root counts the root's movement as the new parent.
+- **Rig setup's Root** (the Bones list's first row, or the feet's diamond with a gizmo): Move, Rotate and Scale move the
+  whole default pose about the feet (`moveDefaultPose`: each parentless bone given the default that draws it there).
+  Keys hold their own values, so keyed channels don't follow it.
+- Caveat (as step 5's Open): a keeps-moving part carries the root's motion in its own track, so in a pause it goes on
+  moving with the root while the rest stands still; keep the root still in the sequences the pause shows, or don't key
+  keeps-moving parts' sequences' roots.
+
+### Tests (`tests/rig-root.test.ts`, 6)
+
+Budew's front: + Sequence, the other two deleted: the stop strip gone (with its note), the timeline playing the new one,
+the source through both validators and the bake through the rig schema and `mcss_rig.check` with no errors; every track
+one key held 48 frames. An empty timeline (plays the first, warned, passes the check), an emptied stop strip (left out,
+warned), an emptied middle strip (plays the timeline's first; the later strips keep their numbers), deleting down to an
+empty timeline (the note); `checkText`'s words. The Root: K with 90° at 24 (`root.keys` `[{frame 24, rotation 90}]`, no
+lanes, no extra track); at 24 every bone's pivot and tail is the analytic quarter turn about the feet, at rest at 0; the
+editor's posed bones equal; a move of (5, −3) moves every pivot by it; its keys moved and deleted; both validators and
+the check. The preview of a source with root turn, move and uneven scale keys and a head key equals `mcss.render` of the
+bake pixel for pixel at 13 times (the sprite moving in most of them); the head freed to the root keeping its transform
+draws the same within the rounding. Rig setup's Root moving and turning the whole default pose. `isRigFile`. The sweep:
+all 1,516 sides still byte for byte.

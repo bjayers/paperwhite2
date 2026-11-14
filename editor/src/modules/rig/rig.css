@@ -210,7 +210,8 @@
 .rig-sq-row.chosen .rig-sq-lane { background: color-mix(in srgb, var(--selected) 35%, transparent); }
 .rig-sq-lane { position: relative; height: 24px; box-sizing: border-box; border-bottom: 1px solid var(--border); cursor: crosshair;
   background-image: repeating-linear-gradient(to right, transparent 0, transparent calc(var(--step, 48px) - 1px), rgba(128, 128, 128, 0.1) calc(var(--step, 48px) - 1px)); }
-.rig-sq-lane.summary { background-color: var(--panel-2); }
+.rig-sq-root .rig-sq-lane { background-color: var(--panel-2); }
+.rig-sq-root { border-bottom: 1px solid var(--border, #3a3f47); }
 .rig-sq-key { position: absolute; top: 6px; width: 10px; height: 10px; margin-left: -6px; transform: rotate(45deg); background: #a5d6a7; border: 1px solid #222;
   cursor: ew-resize; z-index: 2; }
 .rig-sq-key.curve-constant { background: #8b949e; }
@@ -218,7 +219,7 @@
 .rig-sq-key.curve-bezier { background: #f0c75e; }
 .rig-sq-key.curve-snap, .rig-sq-key.curve-back, .rig-sq-key.curve-bounce, .rig-sq-key.curve-elastic { background: #f0a1d8; }
 .rig-sq-key.implicit { background: transparent; border: 1.5px solid #c9d1d9; }
-.rig-sq-key.summary { background: #d0d7de; }
+
 .rig-sq-key.past { opacity: 0.45; }
 .rig-sq-key.selected { outline: 2px solid #ffd33d; outline-offset: 1px; opacity: 1; }
 .rig-sq-key.implicit.selected { border-color: #ffd33d; }

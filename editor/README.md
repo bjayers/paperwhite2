@@ -500,10 +500,10 @@ default pose (`sequences.ts` for the edits, `SequenceTimeline.tsx`, `SequenceGra
   the preview first, so nothing is keyed while it plays. The key goes to the start of the playhead's 6-frame step.
 - **The dock** (bottom left of the side panel, its top edge dragged for height): **Timeline**, **Graph** or **Both**,
   **Snap 6** (the playhead, keys and the length go by 6; Alt bypasses it while dragging), the timeline's zoom.
-  - **Timeline**: the ruler (press or drag: the playhead; the end's grip: the length), an **All parts** row and a row per
-    part (children under parents) with its keys. The hollow keys are the default pose: at 0 where nothing is keyed, and
+  - **Timeline**: the ruler (press or drag: the playhead; the end's grip: the length), the **Root** row (the whole sprite)
+    and a row per part (children under parents) with its keys. The hollow keys are the default pose: at 0 where nothing is keyed, and
     the **end key** at the length, drawn past the last baked frame in the shaded stretch (it is the next loop's frame 0).
-    Click a key to choose it (Shift or Ctrl adds or removes; an All parts key stands for every key at its frame), drag
+    Click a key to choose it (Shift or Ctrl adds or removes), drag
     empty space to box-select, drag chosen keys to move them in time (a hollow key dragged becomes a real key there: the
     end key dragged back makes a part settle early), double-click to go to it; Delete deletes the chosen keys in one
     undo step, Ctrl+C and Ctrl+V copy them to the playhead; K keys the chosen parts, Shift+K every part.
@@ -562,6 +562,18 @@ keys (`loopClips.ts` for the edits, `LoopClipPanel.tsx`; the format's `loop_clip
   restarts with each play of the sequence; the bake unrolls the part's track to both lengths' least common multiple).
 - The bones are drawn with their clips (`posedMaps`, `partValues` with the clips); keying writes the part's own keys only.
   Moving a head copies a clip another bone plays too and corrects its turned keys' moves; parenting keeps the clips.
+
+**The Root and empty sequences (rig-editor-v2.md, "Built: Root and empty sequences")**:
+- **Root** (the timeline's first row, or the diamond at the feet on the preview): keyed like a part (Move, Rotate, Scale, K,
+  the Part section without pictures, the graph, snapping to 6, at rest at both ends). It moves, turns and scales the whole
+  sprite about the feet in that sequence: `sequences[i].root.keys` in the source, composed by the bake into every part
+  without a parent (`rootTrack`), so it costs no track of its own. In Rig setup, the Bones list's **Root** (or the feet's
+  diamond with a gizmo) moves, turns and scales the whole default pose about the feet (`moveDefaultPose`).
+- **Deleting sequences can't leave a side the game refuses**: their blocks leave the timeline and every strip; an emptied
+  timeline plays the first sequence, an emptied stop strip is dropped (the pause then holds the loop's start, as for a
+  sprite without one), each said in the message (`deleteSequence`'s notes); the bake does the same for a file that has
+  them (`playedStrips`, with a warning in Checks). The build's check errors are shown in the editor's words with what to
+  do (`checkText.ts`), in Save's message and in Checks (the check's own words in the tooltip).
 
 **The first editor, now the Advanced view.** One side of a battle sprite's rig (`src/modules/rig/`, `res/pokemon/<folder>/<side>_rig.json`; the design is
 docs/paperwhite2/design/battle-sprites.md sections 15 to 18), opened from a Battle sprite card's **Edit rig…** or the

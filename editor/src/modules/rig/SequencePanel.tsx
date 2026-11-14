@@ -5,10 +5,10 @@
 
 import { useState, type ReactNode } from "react";
 import { ScrubNumber, type ScrubPhase } from "../overworld/ScrubNumber.tsx";
-import { addSequence, cantDelete, deleteKeys, deleteSequence, duplicateSequence, keyCount, keyParts, laneOf, moveSequence, partValues, refId, renameSequence,
+import { addSequence, cantDelete, deleteKeys, deleteSequence, duplicateSequence, keyCount, keyParts, laneOf, moveSequence, partLabel, partValues, refId, renameSequence,
          resetSequence, sequenceBones, setCurve, setLength, START } from "./sequences.ts";
 import { parentOf } from "./setup.ts";
-import { clipPictureAt, snapLength, STEP, V2_CURVES, DEFAULT_CURVE, type LoopClip } from "./v2.ts";
+import { clipPictureAt, ROOT, snapLength, STEP, V2_CURVES, DEFAULT_CURVE, type LoopClip } from "./v2.ts";
 import { PieceThumb } from "./SetupSheet.tsx";
 import { addClip, inOtherStrips, unplayedLabel, unplayedTitle } from "./timeline.ts";
 import { NameInput, Row } from "./SetupPanel.tsx";
@@ -36,9 +36,12 @@ export function SequenceListSection({ view, open, onOpen }: { view: SetupView; o
                 onClick={() => { const r = duplicateSequence(src, open); commit(r.src); onOpen(r.sequence); }}>Duplicate</button>
         <button disabled={readOnly || !!why} title={why ?? "Delete the open sequence (and its blocks on the timeline)"}
                 onClick={() => {
-                  if (!confirm(`Delete ${src.sequences[open].name}? Its blocks on the timeline go with it. Undo brings it back.`)) return;
-                  commit(deleteSequence(src, open));
+                  const name = src.sequences[open].name;
+                  if (!confirm(`Delete ${name}? Its blocks on the timeline go with it. Undo brings it back.`)) return;
+                  const notes: string[] = [];
+                  commit(deleteSequence(src, open, notes));
                   onOpen(Math.max(0, open - 1));
+                  say([`Deleted ${name} (Ctrl+Z brings it back).`, ...notes].join(" "));
                 }}>Delete</button>
       </div>
       <div className="rig-outliner">
@@ -121,7 +124,9 @@ export function SequenceSection({ view, open }: { view: SetupView; open: number 
 export function KeySection({ view, open, onMessage, clip, extra }: { view: SetupView; open: number; onMessage(m: string): void; clip?: LoopClip; extra?: ReactNode }) {
   const { src, sel, select, commit, readOnly, seq: sv, art, sheet, shiny } = view;
   const b = sel.bones[0];
-  const bone = b !== undefined ? src.bones[b] : undefined;
+  // (the Root: the whole sprite about the feet, keyed like a part but with no picture of its own)
+  const isRoot = b === ROOT && !clip;
+  const bone = isRoot ? { name: "Root", connected: false } : b !== undefined ? src.bones[b] : undefined;
   const seq = src.sequences[open];
   if (!sv || !seq) return null;
   const frame = sv.keyFrame;
@@ -149,7 +154,7 @@ export function KeySection({ view, open, onMessage, clip, extra }: { view: Setup
   const pieceNow = clip ? clipPicture?.piece : values.piece;
   const keyIndex = laneOf(seq, b)?.keys.findIndex((k) => k.frame === frame) ?? -1;
   const key = keyIndex >= 0 ? laneOf(seq, b)!.keys[keyIndex] : undefined;
-  const connected = !!bone.connected && parentOf(src, b) !== null;
+  const connected = !isRoot && !!bone.connected && parentOf(src, b) !== null;
   const set = (change: Parameters<SetupView["pose"]>[2], ph: ScrubPhase) => {
     if (readOnly) return;
     sv.keying();
@@ -160,22 +165,24 @@ export function KeySection({ view, open, onMessage, clip, extra }: { view: Setup
     const bones = sel.bones.length ? sel.bones : [b];
     const r = keyParts(src, open, bones, at);
     commit(r.src);
-    onMessage(r.made ? `Keyed ${bones.map((x) => src.bones[x].name).join(", ")} at frame ${at}.` : `Already keyed at frame ${at}.`);
+    onMessage(r.made ? `Keyed ${bones.map((x) => partLabel(src, x)).join(", ")} at frame ${at}.` : `Already keyed at frame ${at}.`);
   };
   const curve: Curve = key?.curve ?? src.curve ?? DEFAULT_CURVE;
   return (
     <section className="ow-panel-box ow-section">
-      <h5>{clip ? "Clip key" : "Part"} <span className="muted">{clip ? clip.name : bone.name} at frame {frame}{key ? ", keyed" : ", no key here"}{!clip && sel.bones.length > 1 ? ` (+${sel.bones.length - 1} chosen)` : ""}</span></h5>
+      <h5>{clip ? "Clip key" : isRoot ? "Root" : "Part"} <span className="muted">{clip ? clip.name : isRoot ? "the whole sprite" : bone.name} at frame {frame}{key ? ", keyed" : ", no key here"}{!clip && sel.bones.length > 1 ? ` (+${sel.bones.length - 1} chosen)` : ""}</span></h5>
       <div className="ow-section-actions">
         <button disabled={readOnly} onClick={keyHere} title="A key at the playhead for the chosen parts, from what they show there (K)">◇ Key <kbd>K</kbd></button>
         {!clip && <button disabled={readOnly} onClick={keyAll} title="A key for every part at the playhead (Shift+K)">◆ Key all parts <kbd>⇧K</kbd></button>}
         <button disabled={readOnly || !key} onClick={() => { commit(deleteKeys(src, open, [{ bone: b, index: keyIndex }]).src); select({ keys: [] }); }}
                 title="Delete this part's key at the playhead">Delete key</button>
       </div>
+      {isRoot && <p className="muted ow-note">The Root moves, turns and scales the whole sprite about the feet in this sequence, from where it stands at frame 0
+        and back there at the end; every part without a parent follows it (a keeps-moving part carries it on through the battle's pause).</p>}
       <p className="muted ow-note">{clip ? "The clip's values are changes to the part's own (0, 0° and 1 change nothing); its keys hold to the next (constant) unless given a curve."
         : key ? "Its key at the playhead: changing a value changes it." : "Not keyed here: these are its values from the curves, and changing one keys it at the playhead."}</p>
       <div className="ow-condition">
-        <Row label="Picture" hint={clip ? `shown over the part's own picture until the clip's next picture key, looping${clipPicture ? "" : "; none chosen yet: the part's own"}` : "held until a key shows another (blinks, mouths); Hidden draws nothing"}>
+        {!isRoot && <Row label="Picture" hint={clip ? `shown over the part's own picture until the clip's next picture key, looping${clipPicture ? "" : "; none chosen yet: the part's own"}` : "held until a key shows another (blinks, mouths); Hidden draws nothing"}>
           <span className="rig-sq-pictures">
             <button className={`rig-sq-pic${hiddenNow ? " active" : ""}`} disabled={readOnly} onClick={() => set(() => ({ hidden: true }), "typed")} title="Hidden: the part draws nothing from here">Hidden</button>
             {src.pieces.map((p, n) => (
@@ -185,12 +192,12 @@ export function KeySection({ view, open, onMessage, clip, extra }: { view: Setup
               </button>
             ))}
           </span>
-        </Row>
-        <Row label="Move" hint={clip ? "pixels added to the part's move (none on a connected part: its head is locked)" : connected ? "locked: a connected bone's head stays on its parent's tail" : "pixels from the default pose's place, in its parent's frame"}>
+        </Row>}
+        <Row label="Move" hint={isRoot ? "pixels the whole sprite moves, x right, y down" : clip ? "pixels added to the part's move (none on a connected part: its head is locked)" : connected ? "locked: a connected bone's head stays on its parent's tail" : "pixels from the default pose's place, in its parent's frame"}>
           <ScrubNumber label="X" value={Math.round(values.move[0] * 100) / 100} step={0.25} digits={0} onChange={(n, ph) => !connected && set(() => ({ move: [Math.round(n), values.move[1]] }), ph)} />
           <ScrubNumber label="Y" value={Math.round(values.move[1] * 100) / 100} step={0.25} digits={0} onChange={(n, ph) => !connected && set(() => ({ move: [values.move[0], Math.round(n)] }), ph)} />
         </Row>
-        <Row label="Turn" hint="degrees about the head, clockwise">
+        <Row label="Turn" hint={isRoot ? "degrees about the feet, clockwise" : "degrees about the head, clockwise"}>
           <ScrubNumber label="°" value={Math.round(values.rotation * 10) / 10} step={0.5} digits={1} onChange={(n, ph) => set(() => ({ rotation: n }), ph)} />
         </Row>
         <Row label="Scale" hint="both axes, or one (the gizmo's X and Y handles)">

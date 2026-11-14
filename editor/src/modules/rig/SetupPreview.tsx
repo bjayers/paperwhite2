@@ -14,10 +14,10 @@ import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { frameQuads, quadBox, render, type Canvas, type Pair } from "./mcss.ts";
 import { fixedScale } from "./model.ts";
 import { hue, paletteWords } from "./context.ts";
-import { addBone, axesOf, boneEnds, moveBone, moveHead, movePieces, moveTail, parentMapOf, parentOf, restDelta } from "./setup.ts";
+import { addBone, axesOf, boneEnds, mapOfPart, moveBone, moveHead, movePieces, moveTail, parentMapOf, parentOf, partHead, restDelta } from "./setup.ts";
 import type { Clock } from "./player.ts";
 import { pickBone, type SetupView } from "./setupContext.ts";
-import { layersOf, type V2 } from "./v2.ts";
+import { layersOf, ROOT, type V2 } from "./v2.ts";
 import type { Map2 } from "./armature.ts";
 
 /** The preview's stage: 192x176 sprite pixels, the feet 96 from the left and 144 from the top (a battle sprite stands
@@ -225,10 +225,27 @@ export function SetupPreview({ view, zoom, tool, showBones, feet }: { view: Setu
         ctx.fillText(src.bones[b].name, tail[0] + 6, tail[1] - 4);
       }
     }
-    // The gizmo on the main chosen bone
+    // The root: a diamond at the feet (where the whole sprite turns and scales), under its movement in a sequence
+    {
+      const [rx, ry] = at(partHead(src, maps, ROOT));
+      const on = sel.bones.includes(ROOT);
+      ctx.beginPath();
+      ctx.moveTo(rx, ry - 7); ctx.lineTo(rx + 7, ry); ctx.lineTo(rx, ry + 7); ctx.lineTo(rx - 7, ry); ctx.closePath();
+      ctx.fillStyle = on ? "rgba(255, 160, 50, 0.75)" : "rgba(120, 200, 255, 0.35)";
+      ctx.fill();
+      ctx.lineWidth = on ? 2 : 1;
+      ctx.strokeStyle = on ? "#ff9d2e" : "rgba(20, 20, 30, 0.9)";
+      ctx.stroke();
+      if (on) {
+        ctx.font = "11px sans-serif";
+        ctx.fillStyle = "#ffcf8a";
+        ctx.fillText("Root", rx + 9, ry + 14);
+      }
+    }
+    // The gizmo on the main chosen bone (or the root)
     const b = sel.bones[0];
-    if (b === undefined || !src.bones[b] || tool === "bones") return;
-    const center = at(boneEnds(src, maps, b).head);
+    if (b === undefined || (b !== ROOT && !src.bones[b]) || tool === "bones") return;
+    const center = at(partHead(src, maps, b));
     ctx.lineWidth = 2;
     ctx.strokeStyle = ctx.fillStyle = "#4fc3f7";
     if (tool === "move") {
@@ -240,7 +257,7 @@ export function SetupPreview({ view, zoom, tool, showBones, feet }: { view: Setu
       ctx.beginPath(); ctx.arc(center[0], center[1], 28, 0, Math.PI * 2); ctx.stroke();
     } else {
       ctx.beginPath(); ctx.arc(center[0], center[1], RING, 0, Math.PI * 2); ctx.stroke();
-      axesOf(maps[b]).forEach(([vx, vy], i) => {
+      axesOf(mapOfPart(maps, b)).forEach(([vx, vy], i) => {
         const end: Pair = [center[0] + vx * HANDLE, center[1] + vy * HANDLE];
         ctx.strokeStyle = ctx.fillStyle = i === 0 ? "#ff5d5d" : "#5dd35d";
         ctx.beginPath(); ctx.moveTo(...center); ctx.lineTo(...end); ctx.stroke();
@@ -275,6 +292,8 @@ export function SetupPreview({ view, zoom, tool, showBones, feet }: { view: Setu
         }
       }
     }
+    // The root's diamond at the feet: in a sequence, or for the gizmos (the Bones tool draws new bones there)
+    if ((v.seq || tool !== "bones") && Math.hypot(...sub(p, toScreen(partHead(v.src, v.maps, ROOT)))) <= 8) return { bone: ROOT, part: "head" };
     if (frame?.owners) {
       const x = Math.floor(p[0] / zoom), y = Math.floor(p[1] / zoom);
       if (x >= 0 && y >= 0 && x < frame.width && y < frame.height) {
@@ -300,12 +319,12 @@ export function SetupPreview({ view, zoom, tool, showBones, feet }: { view: Setu
     const main = v.sel.bones[0];
     // In a sequence the gizmos key the chosen bones at the playhead: the preview pauses first (never keyed while playing)
     const keying = () => v.seq?.keying();
-    if (tool !== "bones" && main !== undefined && v.src.bones[main]) {
-      const center = toScreen(boneEnds(v.src, v.maps, main).head);
+    if (tool !== "bones" && main !== undefined && (main === ROOT || v.src.bones[main])) {
+      const center = toScreen(partHead(v.src, v.maps, main));
       const reach = tool === "move" ? 20 : tool === "rotate" ? 40 : HANDLE + 12;
       if (Math.hypot(...sub(p, center)) <= reach && !(e.shiftKey && tool === "move")) {
         keying();
-        begin({ kind: tool, bone: main, bones: v.sel.bones, center, grab: tool === "scale" ? grabOf(p, center, axesOf(v.maps[main])) : undefined });
+        begin({ kind: tool, bone: main, bones: v.sel.bones, center, grab: tool === "scale" ? grabOf(p, center, axesOf(mapOfPart(v.maps, main))) : undefined });
         return;
       }
     }
@@ -325,16 +344,17 @@ export function SetupPreview({ view, zoom, tool, showBones, feet }: { view: Setu
       v.select(pickBone(v.sel, hit.bone, e));
       return;
     }
-    if (!v.sel.bones.includes(hit.bone)) v.select({ bones: [hit.bone], piece: v.src.bones[hit.bone].default?.piece ?? v.sel.piece });
+    if (!v.sel.bones.includes(hit.bone)) v.select({ bones: [hit.bone], piece: v.src.bones[hit.bone]?.default?.piece ?? v.sel.piece });
     const bones = v.sel.bones.includes(hit.bone) ? [hit.bone, ...v.sel.bones.filter((x) => x !== hit.bone)] : [hit.bone];
     if (tool === "bones" && v.seq) return;
+    if (tool === "bones" && hit.bone === ROOT) return;
     if (tool === "bones") {
       const kind = hit.part === "picture" ? "pieces" : hit.part;
       begin({ kind, bone: hit.bone, bones: [hit.bone], center: p });
     } else {
-      const center = toScreen(boneEnds(v.src, v.maps, hit.bone).head);
+      const center = toScreen(partHead(v.src, v.maps, hit.bone));
       keying();
-      begin({ kind: tool, bone: hit.bone, bones, center, grab: tool === "scale" ? grabOf(p, center, axesOf(v.maps[hit.bone])) : undefined });
+      begin({ kind: tool, bone: hit.bone, bones, center, grab: tool === "scale" ? grabOf(p, center, axesOf(mapOfPart(v.maps, hit.bone))) : undefined });
     }
   };
 
@@ -412,7 +432,7 @@ export function SetupPreview({ view, zoom, tool, showBones, feet }: { view: Setu
   if (!frame) return <p className="muted">Nothing to draw yet: draw a piece on the sheet, then give it a bone.</p>;
   return (
     <canvas ref={canvasEl} className="rig-preview-canvas" width={frame.width * zoom} height={frame.height * zoom}
-      data-feet={`${frame.originX},${frame.originY},${zoom}`} data-head={sel.bones[0] !== undefined && src.bones[sel.bones[0]] ? toScreen(boneEnds(src, maps, sel.bones[0]).head).map(Math.round).join(",") : undefined}
+      data-feet={`${frame.originX},${frame.originY},${zoom}`} data-head={sel.bones[0] !== undefined && (sel.bones[0] === ROOT || src.bones[sel.bones[0]]) ? toScreen(partHead(src, maps, sel.bones[0])).map(Math.round).join(",") : undefined}
       style={{ cursor: tool === "bones" ? "crosshair" : "default" }}
       onPointerDown={onDown} onPointerMove={onMove} onPointerUp={end} onPointerCancel={end} />
   );

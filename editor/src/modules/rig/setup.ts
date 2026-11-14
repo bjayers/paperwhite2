@@ -13,7 +13,7 @@
 import { forward, keyAt, type Pair, type Rectangle } from "./mcss.ts";
 import { fixedScale } from "./model.ts";
 import { boundariesOf, constantTrack, IDENTITY, inverse, keyOfMap, mapOf, partMap, shift, srtOfKey, srtOfValues, then, type Map2 } from "./armature.ts";
-import { bakeV2, emptyV2, layersOf, orderedV2, STEP, type BakedV2, type Lane, type Transform, type V2, type V2Bone, type V2Key, type V2Piece } from "./v2.ts";
+import { bakeV2, emptyV2, layersOf, orderedV2, rootTrack, STEP, type BakedV2, type Lane, type Transform, type V2, type V2Bone, type V2Key, type V2Piece } from "./v2.ts";
 
 // ---------------------------------------------------------------- Where things are in the default pose
 
@@ -51,9 +51,20 @@ function srtOf(t: Transform | undefined, locked: boolean) {
   return srtOfValues({ picture: 0, pose: 0, move: locked ? [0, 0] : (t?.move ?? [0, 0]), rotation: t?.rotation ?? 0, scale: t?.scale ?? [1, 1] });
 }
 
+/** Bones' maps, with the root's (the whole sprite's movement about the feet) where a sequence keys it. */
+export type PartMaps = Map2[] & { root?: Map2 };
+
+/** The root's map: its movement about the feet (the sprite's origin). */
+export const rootMapOf = (t: Transform): Map2 => partMap(srtOf(t, false), [0, 0]);
+
+/** A part's map: a bone's, or the root's (the identity where nothing keys it). */
+export const mapOfPart = (maps: PartMaps, b: number): Map2 => (b < 0 ? maps.root ?? IDENTITY : maps[b] ?? IDENTITY);
+
 /** Each bone's map from the rest arrangement (y up) to the sprite (y up) in a pose (by default the default pose): its
- * own movement about its pivot, then its parent's, as bakeV2 composes them (without rounding). */
-export function restMaps(src: V2, poseOf: (b: number) => Transform | undefined = (b) => src.bones[b]?.default): Map2[] {
+ * own movement about its pivot, then its parent's, as bakeV2 composes them (without rounding); a bone without a parent
+ * under the root's movement, where `root` gives one (a sequence's root keys at a frame). */
+export function restMaps(src: V2, poseOf: (b: number) => Transform | undefined = (b) => src.bones[b]?.default, root?: Transform): PartMaps {
+  const rootMap = root ? rootMapOf(root) : undefined;
   const out: (Map2 | undefined)[] = [];
   const busy = new Set<number>();
   const of = (b: number): Map2 => {
@@ -63,18 +74,22 @@ export function restMaps(src: V2, poseOf: (b: number) => Transform | undefined =
     const p = parentOf(src, b);
     const pivot = pivotOf(src, b);
     const own = then(inverse(shiftUp(pivot)), partMap(srtOf(poseOf(b), !!src.bones[b].connected && p !== null), pivot));
-    const m = p === null ? own : then(own, of(p));
+    const m = p === null ? (rootMap ? then(own, rootMap) : own) : then(own, of(p));
     busy.delete(b);
     out[b] = m;
     return m;
   };
-  return src.bones.map((_, b) => of(b));
+  const maps: PartMaps = src.bones.map((_, b) => of(b));
+  if (rootMap) maps.root = rootMap;
+  return maps;
 }
 
-/** The map of a bone's parent (the identity for a root bone). */
-export const parentMapOf = (src: V2, maps: Map2[], b: number): Map2 => {
+/** The map of a bone's parent (the root's for a bone without one: the identity unless a sequence keys the root); the
+ * root's own parent is the sprite's place (the identity). */
+export const parentMapOf = (src: V2, maps: PartMaps, b: number): Map2 => {
+  if (b < 0) return IDENTITY;
   const p = parentOf(src, b);
-  return p === null ? IDENTITY : maps[p];
+  return p === null ? maps.root ?? IDENTITY : maps[p];
 };
 
 /** A point of the rest arrangement (y down) on the sprite (y down) through a map. */
@@ -82,6 +97,9 @@ export const placed = (m: Map2, p: Pair): Pair => {
   const [x, y] = apply(m, up(p));
   return [x, -y];
 };
+
+/** Where a part's head is on the sprite (y down): a bone's pivot, or the root's, the feet under its movement. */
+export const partHead = (src: V2, maps: PartMaps, b: number): Pair => (b < 0 ? placed(mapOfPart(maps, b), [0, 0]) : boneEnds(src, maps, b).head);
 
 /** A bone's head and tail on the sprite (x right, y down from the feet) in the default pose. */
 export function boneEnds(src: V2, maps: Map2[], b: number): { head: Pair; tail: Pair } {
@@ -381,6 +399,24 @@ function transformOf(m: Map2, pivot: Pair, expectedDegrees: number, piece: Trans
   return { ...piece, move: [tidy(srt[3]), tidy(srt[4])], rotation: deg, scale: [srt[1], srt[2]] };
 }
 
+/** The whole default pose moved, turned and scaled about the feet (the rig setup's Root): every bone without a parent
+ * given the default that draws it under that movement (its children follow it). Keys hold their own values, so a
+ * sequence's keyed channels stay where they are. */
+export function moveDefaultPose(src: V2, root: Transform): V2 {
+  const rootMap = rootMapOf(root);
+  const maps = restMaps(src);
+  return {
+    ...src, bones: src.bones.map((x, b) => {
+      if (parentOf(src, b) !== null) return x;
+      const pivot = pivotOf(src, b);
+      const d = x.default ?? {};
+      const t = transformOf(then(shiftUp(pivot), then(maps[b], rootMap)), pivot, (d.rotation ?? 0) + (root.rotation ?? 0),
+        { ...(d.piece !== undefined ? { piece: d.piece } : {}), ...(d.hidden ? { hidden: true } : {}) });
+      return withDefault(x, t);
+    }),
+  };
+}
+
 /** A bone given a new parent (null: the root) where it stays drawn where it is, as Blender's Keep Transform: its default
  * pose written again relative to the new parent, and each sequence's keys of it as constant keys at each of its baked
  * keys and each of the new parent's (so it bakes back to the keys it had: exactly where the parents only move, as most
@@ -423,7 +459,8 @@ export function reparentKeep(src: V2, b: number, parent: number | null): V2 {
     const track = before.rig.tracks[t0];
     const pivotHere = before.rig.poses[s]?.parts.find((p) => p.track === t0)?.pivot ?? pivot;
     const pTrack = parent !== null ? after.trackOf.get(`${s}/${parent}`) : undefined;
-    const parentTrack = pTrack !== undefined ? after.rig.tracks[pTrack] : undefined;
+    // (to the root: the root's movement where the sequence keys it is the new parent)
+    const parentTrack = pTrack !== undefined ? after.rig.tracks[pTrack] : parent === null ? rootTrack(next, s) ?? undefined : undefined;
     const parentPivot = pTrack !== undefined ? after.rig.poses[s]?.parts.find((p) => p.track === pTrack)?.pivot ?? [0, 0] as Pair : [0, 0] as Pair;
     const frames = lane.frames ?? seq.frames;
     // A sample at each of its baked keys' starts (a key at the length itself, held 0 frames at the end, only where the

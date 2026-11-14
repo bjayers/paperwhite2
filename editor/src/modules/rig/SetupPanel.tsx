@@ -15,7 +15,8 @@ import { addBone, addBoneForPiece, boneTree, bonesShowing, connectedChildren, de
 import { uncovered } from "./SheetView.tsx";
 import { PieceThumb } from "./SetupSheet.tsx";
 import type { SetupView } from "./setupContext.ts";
-import type { V2 } from "./v2.ts";
+import { ROOT, type V2 } from "./v2.ts";
+import { checkText } from "./checkText.ts";
 
 export function Row({ label, children, hint }: { label: string; children: ReactNode; hint?: ReactNode }) {
   return (
@@ -53,6 +54,16 @@ export function BoneSection({ view }: { view: SetupView }) {
     commit(made.src);
     select({ bones: [made.bone] });
   };
+  if (b === ROOT && sel.bones.length === 1) {
+    return (
+      <section className="ow-panel-box ow-section">
+        <h5>Root <span className="muted">the whole sprite, at the feet</span></h5>
+        <p className="muted ow-note">The Move, Rotate and Scale gizmos move, turn and scale the whole default pose about the feet (the blue diamond): every bone
+          without a parent is given the default that draws it there, and its children follow. A sequence's keys hold their own values, so keyed parts stay where
+          they're keyed. To move the whole sprite in one sequence only, key the Root there (Sequences mode).</p>
+      </section>
+    );
+  }
   if (!bone) {
     return (
       <section className="ow-panel-box ow-section">
@@ -197,8 +208,9 @@ export function OutlinerSection({ view }: { view: SetupView }) {
     <section className="ow-panel-box ow-section">
       <h5>Bones <span className="muted">{src.bones.length} bone{src.bones.length === 1 ? "" : "s"}, children under their parents</span></h5>
       <div className="rig-outliner">
-        <div className={`rig-outliner-row${over === "root" ? " drop" : ""}`} onDragOver={(e) => { if (drag !== null) { e.preventDefault(); setOver("root"); } }}
-             onDragLeave={() => setOver(null)} onDrop={(e) => { e.preventDefault(); drop(null); }} title="Drop a bone here to make it a root bone">
+        <div className={`rig-outliner-row${over === "root" ? " drop" : ""}${sel.bones[0] === ROOT ? " selected" : ""}`} onDragOver={(e) => { if (drag !== null) { e.preventDefault(); setOver("root"); } }}
+             onDragLeave={() => setOver(null)} onDrop={(e) => { e.preventDefault(); drop(null); }} onClick={() => select({ bones: [ROOT] })}
+             title="Click to choose the Root: Move, Rotate and Scale then move the whole default pose about the feet. Drop a bone here to make it a root bone.">
           <span className="rig-bone-icon">◆</span><b>Root</b><span className="muted">the sprite's feet</span>
         </div>
         {tree.map(({ bone: b, depth }) => {
@@ -377,7 +389,7 @@ export function SetupChecks({ view, check, checking, warnings }: { view: SetupVi
   return (
     <section className="ow-panel-box ow-section">
       <h5>Checks <span className="muted">{checking ? "checking…" : errors.length ? `${errors.length} errors: Save refuses` : all.length ? `${all.length} warnings` : "the build takes it"}</span></h5>
-      {errors.length > 0 && <ul className="bsp-messages pkm-error">{errors.slice(0, 12).map((m, i) => <li key={i}>{m}</li>)}</ul>}
+      {errors.length > 0 && <ul className="bsp-messages pkm-error">{errors.slice(0, 12).map((m, i) => <li key={i} title={`The check's words: ${m}`}>{checkText(m, src)}</li>)}</ul>}
       {all.length > 0 && <ul className="bsp-messages bsp-warning">{all.slice(0, 12).map((m, i) => <li key={i}>⚠ {m}</li>)}</ul>}
       {!errors.length && !all.length && <p className="muted ow-note">No problems: the bake, mcss_rig.check (the game's limits) and the schema pass.</p>}
     </section>

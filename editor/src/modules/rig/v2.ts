@@ -102,6 +102,13 @@ export interface Layer {
   flags?: number;
 }
 
+/** The root's keys in a sequence: the whole sprite's move, turn and scale about the feet (the sprite's origin), from the
+ * identity at frame 0 and back to it at the length, composed by the bake into every part that has no parent. */
+export interface RootLane { keys: V2Key[] }
+
+/** The root's place among a sequence's lanes (sequences.ts laneOf, a KeyRef's bone): not a bone but the whole sprite. */
+export const ROOT = -1;
+
 export interface V2Sequence {
   name: string;
   /** The loop's length (a multiple of 6 for the editor's own); the default pose again at this frame, never baked. */
@@ -110,6 +117,8 @@ export interface V2Sequence {
   /** The drawn parts front to back, where they differ from the rig's layers. */
   layers?: Layer[];
   instances?: number;
+  /** The root's keys (the whole sprite about the feet). */
+  root?: RootLane;
   parts: Lane[];
 }
 
@@ -218,12 +227,12 @@ const lcm = (a: number, b: number) => (a / gcd(a, b)) * b;
  * and the editor's keyframing both read a part's keys through this. */
 export function lanePoses(src: V2, b: number, lane: Lane | undefined, locked: boolean,
                           pictureOf: (shown: number | undefined, hidden: boolean) => number): KeyPose[] {
-  const bone = src.bones[b];
-  const d = bone.default ?? {};
+  // (the root: the identity by default, and no picture of its own)
+  const d: Transform = b === ROOT ? {} : src.bones[b].default ?? {};
   const defaultCurve = src.curve ?? DEFAULT_CURVE;
   let shown = d.piece;
   let hidden = d.hidden ?? d.piece === undefined;
-  const pictureNow = () => pictureOf(shown, hidden);
+  const pictureNow = () => (b === ROOT ? 0 : pictureOf(shown, hidden));
   const values = (k: Transform) => ({
     move: (locked ? [0, 0] : k.move ?? d.move ?? [0, 0]) as Pair,
     rotation: k.rotation ?? d.rotation ?? 0,
@@ -291,6 +300,59 @@ export function clipValues(clips: LoopClip[], uses: ClipUse[], time: number): Cl
     out.picture = clipPictureAt(clip, tc) ?? out.picture;
   }
   return out;
+}
+
+// ---------------------------------------------------------------- The root as the bake reads it
+
+/** The root's keys in a sequence as key poses (lanePoses with ROOT: the implicit start at the identity, no picture). */
+export const rootPoses = (src: V2, s: number): KeyPose[] =>
+  lanePoses(src, ROOT, src.sequences[s]?.root ? { bone: ROOT, keys: src.sequences[s].root!.keys } : undefined, false, () => 0);
+
+/** The root's movement in a sequence sampled as a part's track is (every step, its keys' curves, back to the identity at
+ * the length), or null where it doesn't key the root or every sample is the identity: the parent track of the parts
+ * without one, about the feet. Not one of the rig's tracks. */
+export function rootTrack(src: V2, s: number, step0 = src.step ?? STEP, warnings: string[] = []): Track | null {
+  const seq = src.sequences[s];
+  if (!seq?.root?.keys.length) return null;
+  const frames = seq.frames;
+  const step = seq.step ?? step0;
+  for (const k of seq.root.keys) if (k.frame > frames) warnings.push(`The root in ${seq.name}: a key at frame ${k.frame}, past the sequence's ${frames}, never plays.`);
+  const poses = rootPoses(src, s);
+  const counter = { count: 0 };
+  const keys: Key[] = [];
+  for (const seg of segmentsOf(poses, frames, frames)) {
+    const sample = (time: number): Sample => ({
+      from: time, srt: rounded(srtOfValues(valuesAt(poses, Math.min(time - seg.base, frames), frames, true, seg.index))), head: { picture: 0 },
+    });
+    const pieces = seg.to <= seg.from ? [sample(seg.from)] : cutsOf(seg.from, seg.to, step, []).map(sample);
+    keys.push(...keysOfPieces(pieces, seg.to, "srt", undefined, counter));
+  }
+  const track: Track = { name: "root", key_type: "srt", play: "loop", keys };
+  const still = keys.every((k) => !k.rotation && (k.scale?.[0] ?? 1) === 1 && (k.scale?.[1] ?? 1) === 1 && !k.move?.[0] && !k.move?.[1]);
+  return still ? null : track;
+}
+
+// ---------------------------------------------------------------- What the strips play
+
+/** The strips as the bake writes them (the game refuses a sequence with no keys): an empty timeline plays the first
+ * sequence; an empty strip at the end (an original's stop strip whose sequences were all deleted) is left out, so the
+ * battle's pause holds the loop's start as for a sprite without one (Pichu's); an empty one before others plays the
+ * timeline's first sequence, keeping the later strips' numbers. Each said in the warnings. */
+export function playedStrips(src: V2, warnings: string[] = []): Strip[] {
+  const first = src.sequences[0]?.name ?? "the first sequence";
+  const timeline = src.timeline.blocks.length || !src.sequences.length ? src.timeline : { ...src.timeline, blocks: [{ sequence: 0 }] };
+  if (timeline !== src.timeline) warnings.push(`Nothing is on the timeline: the battle plays ${first} on its own, looping. Add sequences to it in Timeline mode.`);
+  const strips = (src.strips ?? []).slice();
+  while (strips.length && !strips[strips.length - 1].blocks.length) {
+    const gone = strips.pop()!;
+    warnings.push(`The ${strips.length ? `strip ${gone.name}` : `stop strip (${gone.name})`} plays nothing: it's left out${strips.length ? "" : ", so the battle's pause holds the loop's first frame"}.`);
+  }
+  const lead = timeline.blocks[0]?.sequence ?? 0;
+  return [timeline, ...strips.map((strip) => {
+    if (strip.blocks.length) return strip;
+    warnings.push(`The strip ${strip.name} plays nothing: it plays ${src.sequences[lead]?.name ?? first} instead.`);
+    return { ...strip, blocks: [{ sequence: lead }] };
+  })];
 }
 
 // ---------------------------------------------------------------- The bake
@@ -386,6 +448,14 @@ export function bakeV2(src: V2): BakedV2 {
   const keyPosesOf = (b: number, lane: Lane | undefined): KeyPose[] =>
     lanePoses(src, b, lane, !!src.bones[b].connected && parentOf(b) !== null, (shown, hidden) => (hidden || shown === undefined ? blankPictureIndex() : shown));
 
+  // ---- The root's movement in each sequence that keys it: sampled as a part's track is (never written to the rig), and
+  // composed into every part without a parent drawn there, about the feet, as a parent's track is into its children
+  const rootTracks = new Map<number, Track | null>();
+  const rootTrackOf = (s: number): Track | undefined => {
+    if (!rootTracks.has(s)) rootTracks.set(s, rootTrack(src, s, step0, warnings));
+    return rootTracks.get(s) ?? undefined;
+  };
+
   // ---- The tracks, each part's parent's first
   const state = new Map<string, "busy" | "done">();
   const bakeTrack = (s: number, b: number) => {
@@ -409,6 +479,12 @@ export function bakeV2(src: V2): BakedV2 {
         parentTrack = tracks[trackOf.get(pid)!];
         parentPivot = pivotIn(ps, pb);
       } else warnings.push(`${bone.name}'s parent ${src.bones[p].name} isn't drawn in ${seq.name}: there it moves as the root's.`);
+    }
+    // No parent drawn: the root's movement, if the sequence keys it (its pivot the feet)
+    let fromRoot = false;
+    if (!parentTrack) {
+      const root = rootTrackOf(s);
+      if (root) { parentTrack = root; parentPivot = [0, 0]; fromRoot = true; }
     }
     const frames = lane?.frames ?? seq.frames;
     const play = lane?.play ?? "loop";
@@ -435,7 +511,7 @@ export function bakeV2(src: V2): BakedV2 {
         length = both;
       } else warnings.push(`${bone.name} in ${seq.name} loops every ${frames} frames and ${what} every ${other}: they'd meet again only after ${both}; give them lengths that divide each other.`);
     };
-    if (parentMoves) grow(parentLength, `its parent ${src.bones[p!].name}`);
+    if (parentMoves) grow(parentLength, fromRoot ? "the root" : `its parent ${src.bones[p!].name}`);
     for (const u of uses) grow(clips[u.clip].frames, `its loop clip ${clips[u.clip].name}`);
 
     // Where the samples are cut besides the step: the parent's keys, the clips' keys (and their steps, where they curve)
@@ -496,7 +572,7 @@ export function bakeV2(src: V2): BakedV2 {
     };
     if (counter.count) {
       shears.set(index, counter.count);
-      warnings.push(`${tracks[index]!.name}: ${counter.count} baked keys would need a shear the game can't draw (a parent's uneven scale over a turned child); they keep the nearest turn and scale. Keep ${p !== null ? src.bones[p].name : "the parent"}'s scale even, or the child unturned.`);
+      warnings.push(`${tracks[index]!.name}: ${counter.count} baked keys would need a shear the game can't draw (a parent's uneven scale over a turned child); they keep the nearest turn and scale. Keep ${fromRoot ? "the root" : p !== null ? src.bones[p].name : "the parent"}'s scale even, or the child unturned.`);
     }
     state.set(id, "done");
   };
@@ -517,7 +593,7 @@ export function bakeV2(src: V2): BakedV2 {
   }));
 
   // ---- Strips: the timeline, then the originals' others; a block a key showing its sequence's pose
-  const sequences = [src.timeline, ...(src.strips ?? [])].map((strip) => {
+  const sequences = playedStrips(src, warnings).map((strip) => {
     const srts = strip.blocks.map((block) => rounded([degreesTo65536(block.rotation ?? 0), block.scale?.[0] ?? 1, block.scale?.[1] ?? 1,
                                                       block.move?.[0] ?? 0, block.move?.[1] ?? 0]));
     let type: KeyType = strip.key_type ?? "plain";
@@ -802,8 +878,9 @@ export function orderedV2(src: V2): V2 {
     sequences: src.sequences.map((s) => order({
       ...s,
       ...(s.layers ? { layers: s.layers.map((l) => order(l, ["bone", "head", "play", "track_of", "instance", "flags"])) } : {}),
+      ...(s.root ? { root: { keys: s.root.keys.map(key) } } : {}),
       parts: s.parts.map((l) => order({ ...l, keys: l.keys.map(key) }, ["bone", "name", "key_type", "play", "loop_start", "bank_type", "frames", "step", "clips", "keys"])),
-    }, ["name", "frames", "step", "layers", "instances", "parts"])),
+    }, ["name", "frames", "step", "layers", "instances", "root", "parts"])),
     ...(src.loop_clips ? { loop_clips: src.loop_clips.map((c) => order({ ...c, keys: c.keys.map(key) }, ["name", "frames", "step", "keys"])) } : {}),
   }, ["$schema", "format", "side", "step", "curve", "box", "stop_flags", "pause", "keeps_moving", "idle_nodes", "kept", "pieces", "bones", "layers",
       "sequences", "loop_clips", "timeline", "strips", "track_order", "kept_tracks"]);

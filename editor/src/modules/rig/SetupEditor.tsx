@@ -22,13 +22,14 @@ import { artBounds, freshRectangle, plainOf, rigOf, type Phase } from "./model.t
 import type { Art } from "./context.ts";
 import { RigHistory } from "./history.ts";
 import { isTyping, loadArt, store, stored } from "./RigEditor.tsx";
-import { bakeV2, convertToV2, STEP, type V2 } from "./v2.ts";
+import { bakeV2, convertToV2, ROOT, STEP, type V2 } from "./v2.ts";
+import { checkText } from "./checkText.ts";
 import { clipPreviewSource, clipSource, clipStepOf, clipUses, fromClipSource } from "./loopClips.ts";
 import { LoopClipsSection, LoopClipSection, PartClipsRows } from "./LoopClipPanel.tsx";
 import { importArmature, type ArmatureImport } from "./importArmature.ts";
 import type { Source } from "./armature.ts";
 import { rigSizes, RESIDENT_GUIDANCE } from "./sizes.ts";
-import { copySide, defaultPoseRig, deleteBone, freshV2, restMaps, setDefault } from "./setup.ts";
+import { copySide, defaultPoseRig, deleteBone, freshV2, moveDefaultPose, restMaps, setDefault } from "./setup.ts";
 import { armaturePathOf, flatData, rigPathOf, v2Data, v2PathOf, v2SchemaFor, V2_LAYOUT, V2_SCHEMA_PATH, type Side } from "./setupFiles.ts";
 import { NO_SETUP_SELECTION, type PoseEdit, type SequenceView, type SetupSelection, type SetupView } from "./setupContext.ts";
 import { SETUP_TOOLS, SetupPreview, type SetupTool } from "./SetupPreview.tsx";
@@ -37,7 +38,7 @@ import { BoneSection, LayersSection, OutlinerSection, PieceSection, PoseSection,
 import { SetupGuide } from "./SetupGuide.tsx";
 import { Clock } from "./player.ts";
 import { useClock } from "./context.ts";
-import { copyKeys, deleteKeys, keyFrameOf, keyParts, lastFrame, liveRefs, pasteKeys, pauseForKeying, posedMaps, refId, refOf, sequenceBones, sequenceRig,
+import { copyKeys, deleteKeys, keyFrameOf, keyParts, lastFrame, liveRefs, partLabel, pasteKeys, pauseForKeying, posedMaps, refId, refOf, sequenceBones, sequenceRig,
          setKeyAt, type CopiedKeys } from "./sequences.ts";
 import { SequenceTimeline } from "./SequenceTimeline.tsx";
 import { SequenceGraph } from "./SequenceGraph.tsx";
@@ -200,7 +201,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
   const activeFrames = editClip ? editClip.frames : seqFrames;
   const keyFrame = useClock(clock, (st) => keyFrameOf(st.time, snap, step));
   const clipPartShown = editingClip === null || !src?.bones.length ? 0
-    : clipPart !== null && src.bones[clipPart] ? clipPart : clipUses(src, editingClip)[0]?.bone ?? sel.bones[0] ?? 0;
+    : clipPart !== null && src.bones[clipPart] ? clipPart : clipUses(src, editingClip)[0]?.bone ?? Math.max(0, sel.bones[0] ?? 0);
   const clipView = useMemo(() => (src && editingClip !== null ? clipSource(src, editingClip) : null), [src, editingClip]);
   const clipPreviews = useMemo(() => {
     if (!src || editingClip === null || !src.bones[clipPartShown]) return null;
@@ -298,7 +299,9 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
   const edSeq = editingClip !== null ? 0 : openSeq;
   const pose = useMemo<PoseEdit>(() => (sequencing
     ? (s0, b, change) => setKeyAt(s0, edSeq, b, keyFrame, (now) => change(now))
-    : (s0, b, change) => setDefault(s0, b, (t) => {
+    // (the rig setup's Root: the whole default pose about the feet, from where the drag started)
+    : (s0, b, change) => b === ROOT ? moveDefaultPose(s0, (({ piece: _p, hidden: _h, ...c }) => c)(change({ move: [0, 0], rotation: 0, scale: [1, 1] })))
+    : setDefault(s0, b, (t) => {
       const { piece: _p, hidden: _h, ...c } = change(t);
       return { ...t, ...c };
     })), [sequencing, edSeq, keyFrame]);
@@ -358,7 +361,9 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
       if (f) {
         const result = await api.rigCheck(currentText(f));
         if (result.errors.length) {
-          out.push(`The ${s} isn't saved: ${result.errors[0]}${result.errors.length > 1 ? ` (and ${result.errors.length - 1} more)` : ""}`);
+          // (in the editor's words, with what to do: checkText.ts; the rest in Checks)
+          const said = checkText(result.errors[0], s === side ? srcRef.current : null);
+          out.push(`The ${s} isn't saved. ${said}${result.errors.length > 1 ? ` (${result.errors.length - 1} more in Checks.)` : ""}`);
           continue;
         }
       }
@@ -374,7 +379,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
       }
     }
     setMessage(out.join(" ") || "Nothing to save.");
-  }, [folder]);
+  }, [folder, side]);
   const revert = async () => {
     if (!dirty.length || !confirm(`Throw away the changes to ${dirty.map((d) => d.path.split("/").slice(-2).join("/")).join(" and ")}?`)) return;
     for (const d of dirty) await documents.reload(d.path);
@@ -520,7 +525,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
         if (!bones.length) { setMessage("Choose a part to key (or Shift+K for every part)."); return true; }
         const r = keyParts(cur, s, bones, at);
         l.edCommit(r.src);
-        setMessage(r.made ? `Keyed ${e.shiftKey ? "every part" : bones.map((b) => cur.bones[b].name).join(", ")} at frame ${at}.` : `Already keyed at frame ${at}.`);
+        setMessage(r.made ? `Keyed ${e.shiftKey ? "every part" : bones.map((b) => partLabel(cur, b)).join(", ")} at frame ${at}.` : `Already keyed at frame ${at}.`);
         return true;
       }
       if ((key === "delete" || key === "x" || key === "backspace") && !l.readOnly) {
@@ -574,13 +579,13 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
       if (t) { setTool(t.tool); return; }
       if (latest.current.sequencing || latest.current.stripping) return;
       const { sel: s, src: cur, readOnly: ro } = latest.current;
-      if ((key === "delete" || key === "x") && s.bones.length && cur && !ro) {
+      if ((key === "delete" || key === "x") && s.bones.some((b) => b >= 0) && cur && !ro) {
         e.preventDefault();
         let next = cur;
-        for (const b of [...s.bones].sort((a, b) => b - a)) next = deleteBone(next, b);
+        for (const b of s.bones.filter((x) => x >= 0).sort((a, b) => b - a)) next = deleteBone(next, b);
         latest.current.commit(next);
         setSel((x) => ({ ...x, bones: [] }));
-        setMessage(`Deleted ${s.bones.map((b) => cur.bones[b]?.name).join(", ")} (Ctrl+Z brings ${s.bones.length > 1 ? "them" : "it"} back).`);
+        setMessage(`Deleted ${s.bones.filter((b) => b >= 0).map((b) => cur.bones[b]?.name).join(", ")} (Ctrl+Z brings ${s.bones.length > 1 ? "them" : "it"} back).`);
       } else if (key === "escape") setSel((x) => ({ ...x, bones: [] }));
     };
     window.addEventListener("keydown", onKey, true);
@@ -770,7 +775,7 @@ export function SetupPage({ folder, side }: { folder: string; side: Side }) {
                       const at = keying();
                       const r = keyParts(src, openSeq, sel.bones, at);
                       commit(r.src);
-                      setMessage(r.made ? `Keyed ${sel.bones.map((b) => src.bones[b].name).join(", ")} at frame ${at}.` : `Already keyed at frame ${at}.`);
+                      setMessage(r.made ? `Keyed ${sel.bones.map((b) => partLabel(src, b)).join(", ")} at frame ${at}.` : `Already keyed at frame ${at}.`);
                     }}>◇ Key <kbd>K</kbd></button>
                     <button disabled={readOnly} title="A key for every part at the playhead (Shift+K)" onClick={() => {
                       const at = keying();

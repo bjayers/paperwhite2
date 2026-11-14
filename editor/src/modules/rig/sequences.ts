@@ -17,7 +17,7 @@ import { CHANNELS, valuesAt, type Channel, type Curve, type Handle, type KeyPose
 import { loops, type Pair, type Rig } from "./mcss.ts";
 import { fixedScale } from "./model.ts";
 import { freeName, parentOf, restMaps } from "./setup.ts";
-import { clipValues, DEFAULT_CURVE, lanePoses, layersOf, STEP, type Lane, type Layer, type Transform, type V2, type V2Key, type V2Sequence } from "./v2.ts";
+import { clipValues, DEFAULT_CURVE, lanePoses, layersOf, playedStrips, ROOT, STEP, type Lane, type Layer, type Transform, type V2, type V2Key, type V2Sequence } from "./v2.ts";
 
 // ---------------------------------------------------------------- Keys and their names
 
@@ -33,7 +33,13 @@ export const refOf = (id: string): KeyRef => {
   return { bone, index };
 };
 
-export const laneOf = (seq: V2Sequence | undefined, b: number): Lane | undefined => seq?.parts.find((l) => l.bone === b);
+/** A part's lane in a sequence; for ROOT, the root's keys as a lane (the whole sprite about the feet). */
+export const laneOf = (seq: V2Sequence | undefined, b: number): Lane | undefined =>
+  (b === ROOT ? (seq?.root ? { bone: ROOT, keys: seq.root.keys } : undefined) : seq?.parts.find((l) => l.bone === b));
+/** A part of the source, or the root: what keys can be made on. */
+export const hasPart = (src: V2, b: number) => b === ROOT || !!src.bones[b];
+/** A part's name, the root's "Root". */
+export const partLabel = (src: V2, b: number) => (b === ROOT ? "Root" : src.bones[b]?.name ?? `part ${b}`);
 /** A part's loop in a sequence: its own (originals) or the sequence's. */
 export const loopOf = (seq: V2Sequence, b: number) => laneOf(seq, b)?.frames ?? seq.frames;
 
@@ -41,7 +47,7 @@ export const loopOf = (seq: V2Sequence, b: number) => laneOf(seq, b)?.frames ?? 
 export function liveRefs(src: V2, s: number, refs: KeyRef[]): KeyRef[] {
   const seq = src.sequences[s];
   if (!seq) return [];
-  return refs.filter((r) => src.bones[r.bone] && (r.index === START ? !hasKeyAt(seq, r.bone, 0) : r.index === END ? !hasKeyAt(seq, r.bone, loopOf(seq, r.bone))
+  return refs.filter((r) => hasPart(src, r.bone) && (r.index === START ? !hasKeyAt(seq, r.bone, 0) : r.index === END ? !hasKeyAt(seq, r.bone, loopOf(seq, r.bone))
     : r.index >= 0 && r.index < (laneOf(seq, r.bone)?.keys.length ?? 0)));
 }
 const hasKeyAt = (seq: V2Sequence, b: number, frame: number) => !!laneOf(seq, b)?.keys.some((k) => k.frame === frame);
@@ -75,7 +81,7 @@ const HIDDEN = -1;
 export function partPoses(src: V2, s: number, b: number): { poses: KeyPose[]; frames: number; loop: boolean } {
   const seq = src.sequences[s];
   const lane = laneOf(seq, b);
-  const locked = !!src.bones[b]?.connected && parentOf(src, b) !== null;
+  const locked = b !== ROOT && !!src.bones[b]?.connected && parentOf(src, b) !== null;
   const poses = lanePoses(src, b, lane, locked, (shown, hidden) => (hidden || shown === undefined ? HIDDEN : shown));
   return { poses, frames: lane?.frames ?? seq.frames, loop: loops(lane?.play ?? "loop") };
 }
@@ -109,13 +115,14 @@ export function partValues(src: V2, s: number, b: number, frame: number, clips =
 export function posedMaps(src: V2, s: number, frame: number): Map2[] {
   if (!src.sequences[s]) return restMaps(src);
   const values = src.bones.map((_, b) => partValues(src, s, b, frame, true));
-  return restMaps(src, (b) => ({ move: values[b].move, rotation: values[b].rotation, scale: values[b].scale }));
+  const root = src.sequences[s].root?.keys.length ? partValues(src, s, ROOT, frame) : null;
+  return restMaps(src, (b) => ({ move: values[b].move, rotation: values[b].rotation, scale: values[b].scale }), root ?? undefined);
 }
 
 /** A channel's value as a key holds it (absent: the default pose's), a connected bone's move 0. */
 export function keyChannel(src: V2, b: number, key: Transform, channel: Channel): number {
-  const d = src.bones[b]?.default ?? {};
-  const locked = !!src.bones[b]?.connected && parentOf(src, b) !== null;
+  const d = (b === ROOT ? undefined : src.bones[b]?.default) ?? {};
+  const locked = b !== ROOT && !!src.bones[b]?.connected && parentOf(src, b) !== null;
   switch (channel) {
     case "move_x": return locked ? 0 : key.move?.[0] ?? d.move?.[0] ?? 0;
     case "move_y": return locked ? 0 : key.move?.[1] ?? d.move?.[1] ?? 0;
@@ -166,7 +173,13 @@ const withSequence = (src: V2, s: number, seq: V2Sequence): V2 => ({ ...src, seq
  * bakes as no lane does, while a part the sequence doesn't draw keeps it for its children's sake). */
 function withLane(src: V2, s: number, b: number, change: (keys: V2Key[]) => V2Key[]): V2 {
   const seq = src.sequences[s];
-  if (!seq || !src.bones[b]) return src;
+  if (!seq || !hasPart(src, b)) return src;
+  if (b === ROOT) {
+    // (the root's keys: no pictures, nothing else in its lane; none left, no root)
+    const keys = byFrame(change((seq.root?.keys ?? []).map((k) => ({ ...k })))).map(({ piece: _p, hidden: _h, ...k }) => k);
+    const { root: _, ...rest } = seq;
+    return withSequence(src, s, keys.length ? { ...seq, root: { keys } } : rest);
+  }
   const lane = laneOf(seq, b);
   const keys = byFrame(change((lane?.keys ?? []).map((k) => ({ ...k }))));
   let parts: Lane[];
@@ -182,8 +195,8 @@ function withLane(src: V2, s: number, b: number, change: (keys: V2Key[]) => V2Ke
 /** The values a key is given: each channel that it had, or that differs from the default pose (absent channels are the
  * default's); a piece or Hidden only where the picture changes. */
 function writeKey(src: V2, b: number, old: V2Key, now: PartValues, next: PartValues): V2Key {
-  const d = src.bones[b].default ?? {};
-  const locked = !!src.bones[b].connected && parentOf(src, b) !== null;
+  const d = (b === ROOT ? undefined : src.bones[b].default) ?? {};
+  const locked = b !== ROOT && !!src.bones[b].connected && parentOf(src, b) !== null;
   const key: V2Key = { ...old };
   const dm = d.move ?? [0, 0], ds = d.scale ?? [1, 1];
   if (locked) delete key.move;
@@ -206,7 +219,7 @@ function writeKey(src: V2, b: number, old: V2Key, now: PartValues, next: PartVal
 /** A part keyed at a frame: the key there changed, or one made from the part's values there (so making it changes
  * nothing until `change` does). `change` gets the values at the frame and returns the ones to change. */
 export function setKeyAt(src: V2, s: number, b: number, frame: number, change: (now: PartValues) => Partial<PartValues> = () => ({})): V2 {
-  if (!src.sequences[s] || !src.bones[b]) return src;
+  if (!src.sequences[s] || !hasPart(src, b)) return src;
   const now = partValues(src, s, b, frame);
   const next = { ...now, ...change(now) };
   return withLane(src, s, b, (keys) => {
@@ -327,7 +340,7 @@ export function pasteKeys(src: V2, s: number, copied: CopiedKeys, at: number): {
   let next = src;
   const placed: { bone: number; frame: number }[] = [];
   for (const c of copied.keys) {
-    if (!next.bones[c.bone]) continue;
+    if (!hasPart(next, c.bone)) continue;
     const frame = Math.max(0, Math.min(loopOf(seq, c.bone), at + c.offset));
     next = withLane(next, s, c.bone, (keys) => [...keys.filter((k) => k.frame !== frame), { frame, ...clone(c.key) } as V2Key]);
     placed.push({ bone: c.bone, frame });
@@ -369,7 +382,7 @@ function curved(k: V2Key, curve: Curve, channel: Channel | null, fileCurve: Curv
 /** A key's channel set to a value (the graph editor's drags): the move of a connected bone stays locked. */
 export function setKeyChannel(src: V2, s: number, r: KeyRef, channel: Channel, value: number): V2 {
   if (r.index < 0) return src;
-  const locked = !!src.bones[r.bone]?.connected && parentOf(src, r.bone) !== null;
+  const locked = r.bone !== ROOT && !!src.bones[r.bone]?.connected && parentOf(src, r.bone) !== null;
   if (locked && channel.startsWith("move")) return src;
   return withLane(src, s, r.bone, (keys) => keys.map((k, i) => {
     if (i !== r.index) return k;
@@ -415,16 +428,17 @@ export function resetSequence(src: V2, s: number): V2 {
   if (!seq) return src;
   let next = src;
   for (const lane of seq.parts) next = withLane(next, s, lane.bone, () => []);
-  return next;
+  return withLane(next, s, ROOT, () => []);
 }
 
 /** How many keys a sequence has. */
-export const keyCount = (seq: V2Sequence) => seq.parts.reduce((n, l) => n + l.keys.length, 0);
+export const keyCount = (seq: V2Sequence) => seq.parts.reduce((n, l) => n + l.keys.length, seq.root?.keys.length ?? 0);
 
 /** Every sequence number in the source renumbered (`to(old)`: its new number, or null for one deleted): the
- * timeline's and the strips' blocks (a deleted one's dropped; an empty timeline plays the first sequence), the tracks'
- * order, the originals' shared tracks. */
-function renumber(src: V2, sequences: V2Sequence[], to: (old: number) => number | null): V2 {
+ * timeline's and the strips' blocks (a deleted one's dropped; then as v2.ts playedStrips: an empty timeline plays the
+ * first sequence, an emptied stop strip at the end goes, so the source stays one the game takes), the tracks' order, the
+ * originals' shared tracks. What changed besides the numbers goes into `notes`, in the user's words. */
+function renumber(src: V2, sequences: V2Sequence[], to: (old: number) => number | null, notes: string[] = []): V2 {
   const blocks = (strip: V2["timeline"]) => ({
     ...strip,
     blocks: strip.blocks.flatMap((bl) => {
@@ -432,8 +446,18 @@ function renumber(src: V2, sequences: V2Sequence[], to: (old: number) => number 
       return n === null ? [] : [{ ...bl, sequence: n }];
     }),
   });
-  const timeline = blocks(src.timeline);
-  if (!timeline.blocks.length && sequences.length) timeline.blocks = [{ sequence: 0 }];
+  const before = [src.timeline, ...(src.strips ?? [])].map((strip) => strip.blocks.length);
+  const renumbered = [src.timeline, ...(src.strips ?? [])].map(blocks);
+  const [timeline, ...strips] = playedStrips({ ...src, sequences, timeline: renumbered[0], strips: renumbered.slice(1) });
+  if (before[0] && !renumbered[0].blocks.length && sequences.length) {
+    notes.push(`Nothing was left on the timeline, so it plays ${sequences[0].name} now.`);
+  }
+  renumbered.slice(1).forEach((strip, i) => {
+    if (!before[i + 1] || strip.blocks.length) return;
+    notes.push(i === 0 && strips.length === 0
+      ? `The stop strip (${strip.name}) played only that sequence, so it's gone: the battle's pause now holds the loop's first frame, with the keeps-moving parts going on.`
+      : i < strips.length ? `The strip ${strip.name} played only that sequence: it plays ${sequences[timeline.blocks[0]?.sequence ?? 0]?.name} now.` : `The strip ${strip.name} played only that sequence, so it's gone.`);
+  });
   const next: V2 = {
     ...src,
     sequences: sequences.map((seq) => (seq.layers ? {
@@ -445,8 +469,9 @@ function renumber(src: V2, sequences: V2Sequence[], to: (old: number) => number 
       }),
     } : seq)),
     timeline,
-    ...(src.strips ? { strips: src.strips.map(blocks) } : {}),
+    strips: strips.length ? strips : undefined,
   };
+  if (!next.strips) delete next.strips;
   if (src.track_order) {
     next.track_order = src.track_order.flatMap(([s, b]) => {
       if (s === null) return [[s, b] as [number | null, number]];
@@ -496,10 +521,11 @@ export function cantDelete(src: V2, s: number): string | null {
   return null;
 }
 
-/** A sequence deleted, with its blocks on the timeline. */
-export function deleteSequence(src: V2, s: number): V2 {
+/** A sequence deleted, with its blocks on the timeline and the strips (an emptied timeline playing the first sequence, an
+ * emptied stop strip gone); `notes` says what besides it changed. */
+export function deleteSequence(src: V2, s: number, notes: string[] = []): V2 {
   if (cantDelete(src, s)) return src;
-  return renumber(src, src.sequences.filter((_, i) => i !== s), (old) => (old === s ? null : old > s ? old - 1 : old));
+  return renumber(src, src.sequences.filter((_, i) => i !== s), (old) => (old === s ? null : old > s ? old - 1 : old), notes);
 }
 
 /** A sequence moved in the list (the timeline keeps playing the same sequences). */

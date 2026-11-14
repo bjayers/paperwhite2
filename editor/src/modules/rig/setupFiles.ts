@@ -15,6 +15,9 @@ export const v2PathOf = (folder: string, side: Side) => `res/pokemon/${folder}/$
 /** The first editor's armature, which a side has instead of a _rig_v2.json (never both). */
 export const armaturePathOf = (folder: string, side: Side) => `res/pokemon/${folder}/${side}_rig_source.json`;
 export const V2_SCHEMA_PATH = "res/pokemon/battle_sprite_rig_v2.schema.json";
+/** A side's rig files (flat, v2 source, first-editor armature): saved only by the Rig Editor, which bakes and checks
+ * them first, never by another editor's save or a save-everything. */
+export const isRigFile = (path: string) => /^res\/pokemon\/.+\/(front|back)_rig(_v2|_source)?\.json$/.test(path);
 /** The source's layout: the flat rig's (datajson.dumps_compact), a key a line. */
 export const V2_LAYOUT: Layout = { width: 120, indent: 2, compact: true };
 

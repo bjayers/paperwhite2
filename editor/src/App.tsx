@@ -16,6 +16,7 @@ import { GitPanel } from "./shell/GitPanel.tsx";
 import { QuickOpen } from "./shell/QuickOpen.tsx";
 import { Sidebar, type Selection } from "./shell/Sidebar.tsx";
 import { useTheme } from "./theme.ts";
+import { isRigFile } from "./modules/rig/setupFiles.ts";
 
 const NO_BUILD: BuildState = { running: false, command: "", startedAt: null, finishedAt: null, exitCode: null, lines: [] };
 
@@ -157,10 +158,13 @@ export function App() {
   };
 
   const startBuild = async () => {
-    const dirty = documents.dirtyPaths();
+    // (a side's rig files are saved only by the Rig Editor, which checks them first: the build takes them as on disk)
+    const all = documents.dirtyPaths();
+    const dirty = all.filter((p) => !isRigFile(p));
+    const rigs = all.length - dirty.length;
     if (dirty.length) {
       const save = confirm(`${dirty.length} file${dirty.length > 1 ? "s have" : " has"} unsaved changes. Save before building?\n\n` +
-        "OK saves them first; Cancel builds what is on disk.");
+        "OK saves them first; Cancel builds what is on disk." + (rigs ? `\n\nUnsaved rigs (${rigs} file${rigs > 1 ? "s" : ""}) aren't saved here: save them in the Rig Editor.` : ""));
       if (save) for (const path of dirty) if (!(await documents.save(path))) return alert(`${path} wasn't saved; the build didn't start.`);
     }
     setShowBuild(true);
@@ -175,7 +179,7 @@ export function App() {
       const typing = (e.target as HTMLElement).tagName === "TEXTAREA";
       if (key === "s") {
         e.preventDefault();
-        if (e.shiftKey) documents.dirtyPaths().forEach((p) => documents.save(p));
+        if (e.shiftKey) documents.dirtyPaths().filter((p) => !isRigFile(p)).forEach((p) => documents.save(p));
         else if (active) documents.save(active);
       } else if (key === "p") {
         e.preventDefault();

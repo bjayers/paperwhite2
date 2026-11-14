@@ -10,7 +10,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { hue, useClock } from "./context.ts";
 import { channelAt, CHANNEL_LABELS, CHANNELS, curveOf, handlesOf, segmentAt, type Channel, type Curve, type Handle } from "./armature.ts";
 import { fixedScale } from "./model.ts";
-import { keyChannel, moveKeys, partPoses, playheadAt, refId, refOf, setCurve, setHandles, setKeyChannel, snapDelta, usedChannels, START, type KeyRef } from "./sequences.ts";
+import { hasPart, keyChannel, laneOf, moveKeys, partLabel, partPoses, playheadAt, refId, refOf, setCurve, setHandles, setKeyChannel, snapDelta, usedChannels, START, type KeyRef } from "./sequences.ts";
 import { bakedFrames, DEFAULT_CURVE, STEP } from "./v2.ts";
 import type { SetupView } from "./setupContext.ts";
 
@@ -77,7 +77,7 @@ export function SequenceGraph({ view }: { view: SetupView }) {
   }, []);
 
   // The parts shown: the chosen bones (and those of the chosen keys)
-  const bones = useMemo(() => [...new Set([...sel.bones, ...sel.keys.map((id) => refOf(id).bone)])].filter((b) => src.bones[b]), [sel.bones, sel.keys, src]);
+  const bones = useMemo(() => [...new Set([...sel.bones, ...sel.keys.map((id) => refOf(id).bone)])].filter((b) => hasPart(src, b)), [sel.bones, sel.keys, src]);
   const frames = Math.max(sequence?.frames ?? STEP, 1);
   const parts = useMemo(() => bones.map((b) => ({ bone: b, ...partPoses(src, s, b) })), [bones, src, s]);
   const used = useMemo(() => {
@@ -87,7 +87,7 @@ export function SequenceGraph({ view }: { view: SetupView }) {
   }, [bones, src, s]);
   const shown = CHANNELS.filter((c) => (picked ?? new Set(used)).has(c));
   const chosen = new Set(sel.keys);
-  const lane = (b: number) => sequence?.parts.find((l) => l.bone === b);
+  const lane = (b: number) => laneOf(sequence, b);
 
   /** Every key's point on every channel shown, the implicit start and end too (hollow). */
   const points: Point[] = [];
@@ -218,7 +218,7 @@ export function SequenceGraph({ view }: { view: SetupView }) {
       }
       if (several) {
         ctx.fillStyle = hue(part.bone, 70, 70);
-        ctx.fillText(src.bones[part.bone].name, MARGIN.left + 4, MARGIN.top + 10 + 12 * bones.indexOf(part.bone));
+        ctx.fillText(partLabel(src, part.bone), MARGIN.left + 4, MARGIN.top + 10 + 12 * bones.indexOf(part.bone));
       }
     }
     for (const p of points) {
@@ -305,7 +305,7 @@ export function SequenceGraph({ view }: { view: SetupView }) {
       let next = d.base;
       // The value: the grabbed key's channel (an implicit key is the default pose: it moves only in time)
       if (dy && d.ref!.index >= 0) {
-        const k = d.base.sequences[s].parts.find((l) => l.bone === d.ref!.bone)?.keys[d.ref!.index];
+        const k = laneOf(d.base.sequences[s], d.ref!.bone)?.keys[d.ref!.index];
         if (k) {
           const y0 = yOf(c, keyChannel(d.base, d.ref!.bone, k, c), d.ranges);
           next = setKeyChannel(next, s, d.ref!, c, tidy(c, valueOfY(c, y0 + dy, d.ranges)));
@@ -326,7 +326,7 @@ export function SequenceGraph({ view }: { view: SetupView }) {
       const c = d.channel!;
       const r = d.ref!;
       const part = partPoses(d.base, s, r.bone);
-      const k = d.base.sequences[s].parts.find((l) => l.bone === r.bone)?.keys[r.index];
+      const k = laneOf(d.base.sequences[s], r.bone)?.keys[r.index];
       const i = k ? part.poses.findIndex((p) => p.frame === k.frame) : -1;
       if (!k || i < 0) return;
       const v = keyChannel(d.base, r.bone, k, c);
@@ -379,7 +379,7 @@ export function SequenceGraph({ view }: { view: SetupView }) {
   return (
     <div className="rig-graph">
       <div className="rig-graph-head">
-        <b>{bones.map((b) => src.bones[b].name).join(", ")}</b>
+        <b>{bones.map((b) => partLabel(src, b)).join(", ")}</b>
         <span className="muted">in {sequence.name}, {frames} frames · the game's 6-frame steps faint underneath</span>
         {CHANNELS.map((c) => (
           <label key={c} className="rig-channel" title={used.includes(c) ? "This channel changes" : "This channel stays the same"}>

@@ -1,5 +1,6 @@
 // The new Rig Editor's sequence timeline (rig-editor-v2.md, "Built: step 3"): the open sequence's frames, a row per
-// part (the shared bones, children under their parents) with its keys as diamonds, and a summary row of every key.
+// part (the shared bones, children under their parents) with its keys as diamonds, under the Root's row (the whole
+// sprite about the feet, keyed like a part: "Built: Root and empty sequences"; not in a loop clip's view).
 // The default pose is the hollow key at frame 0 where none is keyed, and again at the sequence's length: the end key,
 // drawn one step past the last baked frame in the shaded stretch (it is the next loop's frame 0, never held twice).
 // - The ruler: press or drag to move the playhead (snapped to 6 unless Alt; the snap is the dock's "Snap 6"); drag the
@@ -12,7 +13,7 @@ import { useMemo, useRef, useState } from "react";
 import { hue, useClock } from "./context.ts";
 import { boneTree } from "./setup.ts";
 import { lastFrame, moveKeys, playheadAt, refId, refOf, rowKeys, sequenceBones, setLength, snapDelta, START, END, type KeyRef } from "./sequences.ts";
-import { snapLength, STEP, type ClipUse } from "./v2.ts";
+import { ROOT, snapLength, STEP, type ClipUse } from "./v2.ts";
 import { clipFits, clipStepOf, placeClip, setClipStart, unplaceClip, unrolledFrames, usesOn } from "./loopClips.ts";
 import { PieceThumb } from "./SetupSheet.tsx";
 import type { SetupView } from "./setupContext.ts";
@@ -38,15 +39,17 @@ export function SequenceTimeline({ view, scale, onEditClip }: { view: SetupView;
   const time = useClock(clock, (st) => Math.floor(st.time));
   const step = seq!.step ?? STEP;
   const length = sequence?.frames ?? step;
+  const clipMode = seq!.clip !== undefined;
+  // The rows: the Root first (a sequence's, not a loop clip's), then the parts the sequence draws, in the bones' tree
   const bones = useMemo(() => {
     const drawn = new Set(sequenceBones(src, s));
-    return boneTree(src).filter((t) => drawn.has(t.bone));
-  }, [src, s]);
+    return [...(clipMode ? [] : [{ bone: ROOT, depth: 0 }]), ...boneTree(src).filter((t) => drawn.has(t.bone))];
+  }, [src, s, clipMode]);
   const rows = useMemo(() => bones.map(({ bone }) => rowKeys(src, s, bone)), [bones, src, s]);
   // Each part's loop clips (a sub-row under its keys where it has any), and where each part's row starts
-  const clipRows = useMemo(() => bones.map(({ bone }) => usesOn(src, s, bone)), [bones, src, s]);
+  const clipRows = useMemo(() => bones.map(({ bone }) => (bone === ROOT ? [] : usesOn(src, s, bone))), [bones, src, s]);
   const rowTop: number[] = [];
-  clipRows.reduce((top, uses, i) => { rowTop[i] = top; return top + ROW + (uses.length ? CLIP_ROW : 0); }, ROW);
+  clipRows.reduce((top, uses, i) => { rowTop[i] = top; return top + ROW + (uses.length ? CLIP_ROW : 0); }, 0);
   const chosen = new Set(sel.keys);
   const body = useRef<HTMLDivElement>(null);
   const [box, setBox] = useState<Box | null>(null);
@@ -56,15 +59,6 @@ export function SequenceTimeline({ view, scale, onEditClip }: { view: SetupView;
   const lane = { width, ["--step" as string]: `${step * scale}px`, backgroundPositionX: PAD } as React.CSSProperties;
   const frameAt = (x: number) => (x - PAD) / scale;
 
-  // The summary row: every frame with a real key, standing for all of them
-  const summary = useMemo(() => {
-    const at = new Map<number, KeyRef[]>();
-    rows.forEach((row) => row.forEach((k) => {
-      if (k.implicit) return;
-      at.set(k.frame, [...(at.get(k.frame) ?? []), k.ref]);
-    }));
-    return [...at].sort((a, b) => a[0] - b[0]);
-  }, [rows]);
   if (!sequence) return null;
 
   // ---- The playhead
@@ -175,7 +169,6 @@ export function SequenceTimeline({ view, scale, onEditClip }: { view: SetupView;
         const x = xOf(frame), y = top + ROW / 2;
         if (x >= lx - 4 && x <= hx + 4 && y >= ly && y <= hy) inside.push(...refs.map(refId));
       };
-      summary.forEach(([frame, refs]) => take(frame, 0, refs));
       rows.forEach((row, i) => row.forEach((k) => take(k.frame, rowTop[i], [k.ref])));
       select({ keys: [...new Set([...(add ? sel.keys : []), ...inside])] });
     };
@@ -284,19 +277,26 @@ export function SequenceTimeline({ view, scale, onEditClip }: { view: SetupView;
             <span className="rig-sq-playhead-cap" style={{ left: xOf(time) }} />
           </div>
           <div ref={body} className="rig-sq-body" style={{ gridColumn: "1 / span 2", width: NAME_WIDTH + width }}>
-            <div className="rig-sq-row">
-              <div className="rig-sq-name"><b>All parts</b> <span className="muted small">{summary.reduce((n, [, r]) => n + r.length, 0)} keys</span></div>
-              <div className="rig-sq-lane summary" style={lane} onPointerDown={boxStart}>
-                {summary.map(([frame, refs]) => (
-                  <span key={frame} className={`rig-sq-key summary${refs.every((r) => chosen.has(refId(r))) ? " selected" : ""}${frame > length ? " past" : ""}`} style={{ left: xOf(frame) }}
-                        title={`${refs.length} key${refs.length > 1 ? "s" : ""} at frame ${frame}: click to choose them, drag to move them`}
-                        onPointerDown={(e) => grab(e, refs)} onDoubleClick={() => { clock.play(false); clock.seek(Math.min(frame, end)); }} />
-                ))}
-              </div>
-            </div>
             {bones.map(({ bone: b, depth }, i) => {
-              const bone = src.bones[b];
               const row = rows[i];
+              if (b === ROOT) {
+                return (
+                  <div key="root" className="rig-sq-part">
+                    <div className={`rig-sq-row rig-sq-root${sel.bones.includes(ROOT) ? " chosen" : ""}`}>
+                      <div className={`rig-sq-name${sel.bones[0] === ROOT ? " selected" : sel.bones.includes(ROOT) ? " multi" : ""}`}
+                           onClick={(e) => select(e.shiftKey || e.ctrlKey || e.metaKey ? { bones: sel.bones.includes(ROOT) ? sel.bones.filter((x) => x !== ROOT) : [ROOT, ...sel.bones] } : { bones: [ROOT] })}
+                           title="The Root: the whole sprite, turning and scaling about the feet. Click to choose it: Move (G), Rotate (R) and Scale (S) on the preview and K key it at the playhead; every part without a parent follows it.">
+                        <span className="rig-bone-icon">◆</span>
+                        <span className="rig-sq-label"><b>Root</b> <span className="muted small">the whole sprite</span></span>
+                      </div>
+                      <div className="rig-sq-lane" style={lane} onPointerDown={boxStart}>
+                        {row.map((k) => diamond(k.ref, k.frame, k.implicit, k.key ? (k.key.curve ?? src.curve ?? "ease_in_out") : undefined, keyTitle(k.ref, k.frame, length, k.key?.curve, true)))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              const bone = src.bones[b];
               const uses = clipRows[i];
               return (
                 <div key={b} className={`rig-sq-part${dropOn === b ? " drop" : ""}`} {...dropTarget(b)}>
@@ -335,8 +335,9 @@ export function SequenceTimeline({ view, scale, onEditClip }: { view: SetupView;
   );
 }
 
-function keyTitle(ref: KeyRef, frame: number, length: number, curve: string | undefined) {
-  if (ref.index === START) return "The default pose at frame 0 (the sequence starts there). Drag to copy it to another frame as a key; give it a curve to key it here.";
+function keyTitle(ref: KeyRef, frame: number, length: number, curve: string | undefined, root = false) {
+  if (ref.index === START) return root ? "The Root at rest at frame 0 (the sprite where it stands). Drag to copy it to another frame as a key; give it a curve to key it here."
+    : "The default pose at frame 0 (the sequence starts there). Drag to copy it to another frame as a key; give it a curve to key it here.";
   if (ref.index === END) return `The end key at ${length}: the start again, one step past the last baked frame (the next loop's frame 0, never held twice). Drag it back to make the part settle into the default pose earlier.`;
   return `A key at frame ${frame}${frame === length ? " (the end key, made real)" : frame > length ? ", past the end: it never plays" : ""}${curve ? `, ${curve.replace(/_/g, " ")} to the next` : ""}. Drag to move it (by 6; Alt: by frames); double-click to go to it.`;
 }

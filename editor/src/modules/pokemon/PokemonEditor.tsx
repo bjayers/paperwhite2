@@ -28,6 +28,7 @@ import { FollowerSpritesCard } from "./FollowerSprites.tsx";
 import { BattleSpriteArt } from "./BattleSpriteArt.tsx";
 import { isOriginalForm, listSpecies, type Listed } from "./forms.ts";
 import { AddedSpeciesArt, AddedSpeciesCard, AddPokemonDialog, CryCard, FollowerCard } from "./AddedSpecies.tsx";
+import { isRigFile } from "../rig/setupFiles.ts";
 
 const SCHEMA = "res/pokemon/species.schema.json";
 const STATS = [["hp", "HP"], ["attack", "Attack"], ["defense", "Defense"], ["special_attack", "Sp. Atk"],
@@ -357,7 +358,8 @@ export function PokemonEditor({ constants }: ToolProps) {
   }, []);
 
   // (the Follower cards' rows too, whose walking sprite is picked there)
-  const editable = (p: string) => p.startsWith("res/pokemon/") || p === SERVICES || p.startsWith("res/field/actors/followers/");
+  // (a side's rig files are the Rig Editor's: it saves them with their bake and checks, so they are never saved here)
+  const editable = (p: string) => (p.startsWith("res/pokemon/") && !isRigFile(p)) || p === SERVICES || p.startsWith("res/field/actors/followers/");
   const unsaved = [...docs.values()].filter((d) => d.dirty && editable(d.path));
   const save = useCallback(async () => {
     const paths = documents.dirtyPaths().filter(editable);
