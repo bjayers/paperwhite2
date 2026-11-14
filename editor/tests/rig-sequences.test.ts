@@ -282,3 +282,19 @@ test("the preview plays the open sequence as the game does: its frames equal mcs
     }
   }
 });
+
+test("a key made on a side converted from the game's held keys eases from the default pose and back", () => {
+  // (a converted side's file curve is "constant": its own keys hold; a key the user makes blends instead)
+  const src: V2 = {
+    format: 2, side: "front", step: 6, curve: "constant", box: { width: 8, height: 8, x: 0, y: 0 }, stop_flags: 0,
+    pieces: [{ name: "body", rectangles: [{ sheet: [0, 0], size: [8, 8], at: [-4, 8] }] }],
+    bones: [{ name: "body", head: [0, -4], tail: [0, -8], parent: null, default: { piece: 0 } }],
+    layers: [0], sequences: [{ name: "Idle", frames: 48, parts: [] }], timeline: { name: "stay", blocks: [{ sequence: 0 }] },
+  } as unknown as V2;
+  const keyed = setKeyAt(src, 0, 0, 24, () => ({ rotation: 12 }));
+  const lane = keyed.sequences[0].parts.find((l) => l.bone === 0)!;
+  assert.deepEqual(lane.keys.map((k) => [k.frame, k.curve]), [[0, "ease_in_out"], [24, "ease_in_out"]]);
+  // The baked turns between 0 and 24 step through in-between values, not a still and a jump
+  const turns = new Set(bakeV2(keyed).rig.tracks[0].keys.map((k) => (k as { rotation?: number }).rotation ?? 0));
+  assert.ok(turns.size > 3, `in-between turns baked: ${[...turns].join(", ")}`);
+});

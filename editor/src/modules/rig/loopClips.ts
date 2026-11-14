@@ -15,7 +15,7 @@
 
 import { gcd } from "./armature.ts";
 import { freeName, parentOf } from "./setup.ts";
-import { bakeV2, STEP, type ClipUse, type Lane, type LoopClip, type V2, type V2Key, type V2Sequence } from "./v2.ts";
+import { bakeV2, CLIP_VIEW, STEP, type ClipUse, type Lane, type LoopClip, type V2, type V2Key, type V2Sequence } from "./v2.ts";
 import { rigSizes } from "./sizes.ts";
 
 /** A new clip's step: picture flicker usually wants 2 to 4 frames between pictures, finer than the sequences' 6. */
@@ -170,7 +170,7 @@ export function clipSource(src: V2, c: number): V2 {
   const clip = clipsOf(src)[c];
   const frames = clip?.frames ?? STEP;
   return {
-    ...src, curve: "constant", keeps_moving: [], idle_nodes: undefined, strips: undefined, track_order: undefined, kept_tracks: undefined,
+    ...src, [CLIP_VIEW]: true, curve: "constant", keeps_moving: [], idle_nodes: undefined, strips: undefined, track_order: undefined, kept_tracks: undefined,
     bones: [{ name: clip?.name ?? "clip", head: [0, 0], tail: [0, -8], parent: null, default: { piece: ownPiece(src) } }],
     layers: [0],
     sequences: [{ name: clip?.name ?? "clip", frames, ...(clip?.step ? { step: clip.step } : {}), parts: [{ bone: 0, keys: clone(clip?.keys ?? []) }] }],

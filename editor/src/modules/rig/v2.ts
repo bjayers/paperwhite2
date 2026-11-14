@@ -29,6 +29,9 @@ export const V2_SCHEMA = "battle_sprite_rig_v2.schema.json";
 export const STEP = 6;
 /** The curve of a keyframe that names none, unless the file says otherwise (`curve`). */
 export const DEFAULT_CURVE: Curve = "ease_in_out";
+/** Marks a loop clip's editing view (loopClips.ts `clipSource`): its keys hold as a clip's do, so keying there never
+ * eases (a symbol: kept by spreads, never written to a file). */
+export const CLIP_VIEW: unique symbol = Symbol("clip view");
 /** Every curve, with the presets (the first armature's schema has the first six). */
 export const V2_CURVES: Curve[] = ["constant", "linear", "ease_in", "ease_out", "ease_in_out", "bezier", "snap", "back", "bounce", "elastic"];
 

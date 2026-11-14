@@ -17,7 +17,7 @@ import { CHANNELS, valuesAt, type Channel, type Curve, type Handle, type KeyPose
 import { loops, type Pair, type Rig } from "./mcss.ts";
 import { fixedScale } from "./model.ts";
 import { freeName, parentOf, restMaps } from "./setup.ts";
-import { clipValues, DEFAULT_CURVE, lanePoses, layersOf, playedStrips, ROOT, STEP, type Lane, type Layer, type Transform, type V2, type V2Key, type V2Sequence } from "./v2.ts";
+import { CLIP_VIEW, clipValues, DEFAULT_CURVE, lanePoses, layersOf, playedStrips, ROOT, STEP, type Lane, type Layer, type Transform, type V2, type V2Key, type V2Sequence } from "./v2.ts";
 
 // ---------------------------------------------------------------- Keys and their names
 
@@ -222,12 +222,16 @@ export function setKeyAt(src: V2, s: number, b: number, frame: number, change: (
   if (!src.sequences[s] || !hasPart(src, b)) return src;
   const now = partValues(src, s, b, frame);
   const next = { ...now, ...change(now) };
+  // A side converted from the game's own keys holds them ("constant" for the file); a key the user makes there eases
+  // instead, from the default pose at the start too, so a pose keyed in between is blended to and back
+  const holds = (src.curve ?? DEFAULT_CURVE) === "constant" && !(src as { [CLIP_VIEW]?: boolean })[CLIP_VIEW];
   return withLane(src, s, b, (keys) => {
     let at = -1;
     keys.forEach((k, i) => { if (k.frame === frame) at = i; });
-    const key = writeKey(src, b, at >= 0 ? keys[at] : { frame }, now, next);
+    const key = writeKey(src, b, at >= 0 ? keys[at] : { frame, ...(holds ? { curve: DEFAULT_CURVE } : {}) }, now, next);
     if (at >= 0) keys[at] = key;
     else keys.push(key);
+    if (holds && at < 0 && frame > 0 && !keys.some((k) => k.frame === 0)) keys.push({ frame: 0, curve: DEFAULT_CURVE });
     return keys;
   });
 }
