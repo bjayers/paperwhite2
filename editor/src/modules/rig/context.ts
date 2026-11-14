@@ -54,6 +54,9 @@ export interface RigView {
   /** The sheet shown, by name. */
   sheet: string;
   shiny: boolean;
+  /** Tracks hidden in the preview by the layer list's eyes (editor only, never saved). */
+  hidden: ReadonlySet<number>;
+  toggleHidden(track: number): void;
 }
 
 /** A value of the clock's state, which a component re-renders on only when it changes. */

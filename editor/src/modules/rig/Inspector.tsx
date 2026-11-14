@@ -9,6 +9,7 @@ import { ScrubNumber, type ScrubPhase } from "../overworld/ScrubNumber.tsx";
 import { keyAt, lengthOf, sequenceKeyAt, type Key, type KeyType, type Pair, type Picture, type Rectangle, type Track } from "./mcss.ts";
 import { fixedScale, fromDegrees, generateObjs, keyAs, orderedKey, partName, pictureUses, removePicture, signedDegrees, sizeProblem,
          trackUses, withRectangles, type Phase } from "./model.ts";
+import { LayerList } from "./LayerList.tsx";
 import { hue, useClock, type RigView } from "./context.ts";
 
 const KEY_TYPES: { type: KeyType; label: string; note: string }[] = [
@@ -47,6 +48,7 @@ export function Inspector({ view, onTimeChanged, onConvert, onRemoveArmature }: 
   return (
     <div className="rig-inspector">
       <ArmatureSection view={view} onConvert={onConvert} onRemove={onRemoveArmature} />
+      {!view.source && <LayerList view={view} />}
       {view.source && <KeyPoseSection view={view} />}
       {!view.sel.root && <PartSection view={view} />}
       {view.source && !view.sel.root && <BoneSection view={view} />}

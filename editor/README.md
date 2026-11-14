@@ -464,7 +464,7 @@ docs/paperwhite2/design/battle-sprites.md sections 15 to 18), opened from a Batt
 sidebar (`#tool/rig?folder=pichu/form_1&side=front`). The art stays a full 256×128 sheet drawn in Aseprite and brought
 in with the card's Import art; here the pictures are cut from it and moved. The header switches **Front** and
 **Back** (separate rigs; a • marks unsaved changes), the **Male** and **Female** sheet where there is one, and has
-**Copy front to back** (or back to front, with a confirm: the whole rig, as a starting point), the size of the five
+**Copy front to back** (or back to front, with a confirm: the whole rig, as a starting point), **Start fresh…** (a minimal rig in place of this side's: one picture round the sheet's first piece of art, one part, the stay loop; with a confirm, undoable until saved; it deletes the side's armature, if any), the size of the five
 files the build will write against the ~40 KB guidance (section 15.6) with the stay loop's length, **Revert** and
 **Save** (Ctrl+S). Save runs the build's checks first (`POST /api/battle-sprite/rig-check`, `server/python/rig_check.py`:
 `mcss_rig.check`, refusing errors) and then the validator; Ctrl+Z and Ctrl+Y undo and redo.
@@ -488,7 +488,9 @@ files the build will write against the ~40 KB guidance (section 15.6) with the s
   pose's start for a part that restarts, on the sequence's time for one that continues); a looping track's later
   passes are faded, keys a pose never reaches hatched. Click a key to choose it, drag its right edge to change its
   frames (Shift: steps of 6, Game Freak's rhythm).
-- **The side panel** (laid out as the Ambients panel): the **Part** (its track and name, pivot, whether its track
+- **The side panel** (laid out as the Ambients panel): in a flat rig the **Layers** list first (the shown pose's parts front to
+  back, as the outliner lists bones: drag to reorder, an eye that hides a part in the preview only and isn't saved, a
+  thumbnail, click to choose); the **Part** (its track and name, pivot, whether its track
   restarts or continues, idle, layer forward and back, add and remove), its **Key** (picture, frames, turn in degrees,
   scale, move; Duplicate, Split at playhead, + Key after, Delete; the track's key type: picture only, move, or turn,
   scale and move, and loop or once), the **Picture** (each rectangle's place on the sheet, size and place from the

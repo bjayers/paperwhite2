@@ -12,8 +12,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { detectLayout, fileText, fromPlain, getIn, parseJson, setIn } from "../shared/json.ts";
 import { validate, type Schema } from "../shared/schema.ts";
-import { lengthOf } from "../src/modules/rig/mcss.ts";
-import { dataOf, fromDegrees, generateObjs, moveLayer, orderedKey, removePicture, rigOf, sizeProblem, trackSpans } from "../src/modules/rig/model.ts";
+import { lengthOf, render } from "../src/modules/rig/mcss.ts";
+import { artBounds, dataOf, dropLayer, freshRig, fromDegrees, generateObjs, moveLayer, orderedKey, removePicture, rigOf, sizeProblem, trackSpans } from "../src/modules/rig/model.ts";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const SCHEMA = join(ROOT, "res/pokemon/battle_sprite_rig.schema.json");
@@ -132,4 +132,68 @@ test("the timeline lays a track's keys where the game plays them", () => {
   for (let i = 1; i < played.length; i++) assert.equal(played[i].from, played[i - 1].to);
   assert.equal(played.at(-1)!.to, 240);
   assert.ok(played.some((s) => s.pass === 1 && s.from === length));
+});
+
+test("Start fresh makes a rig that passes the validator and mcss_rig.check, and draws the art", () => {
+  const schema = JSON.parse(readFileSync(SCHEMA, "utf8")) as Schema;
+  // A sheet with some art, as a sheet of palette indices
+  const sheet = new Uint8Array(256 * 128);
+  for (let y = 5; y < 41; y++) for (let x = 12; x < 40; x++) sheet[y * 256 + x] = 3;
+  const bounds = artBounds(sheet);
+  assert.deepEqual(bounds, [12, 5, 28, 36]);
+  // a second piece of art far from the first is left out, and the first is the topmost
+  for (let y = 90; y < 100; y++) for (let x = 100; x < 120; x++) sheet[y * 256 + x] = 2;
+  assert.deepEqual(artBounds(sheet), bounds);
+  const dir = mkdtempSync(join(tmpdir(), "rig-fresh-"));
+  try {
+    for (const [name, b] of [["art", bounds], ["empty sheet", null], ["wide art", [0, 0, 250, 120]], ["tall art", [200, 3, 30, 100]]] as const) {
+      for (const side of ["front", "back"] as const) {
+        const rig = freshRig(side, b as [number, number, number, number] | null);
+        const data = dataOf(rig, "../battle_sprite_rig.schema.json");
+        const text = fileText(data, { width: 120, indent: 2, compact: true });
+        const file = join(dir, "front_rig.json");
+        writeFileSync(file, text);
+        assert.deepEqual(JSON.parse(python("editor/server/python/validate.py", `${file}\t${SCHEMA}\n`)), { ok: true }, name);
+        assert.deepEqual(validate(data, schema, new Map()), [], name);
+        const check = JSON.parse(python("editor/server/python/rig_check.py", text)) as { errors: string[]; warnings: string[]; sizes: { resident: number } };
+        assert.deepEqual(check.errors, [], `${name} ${side}`);
+        assert.ok(check.sizes.resident > 0);
+        // One picture, one rectangle in the sheet; the stay loop plays; it draws the art
+        assert.equal(rig.pictures.length, 1);
+        assert.equal(rig.poses[0].parts.length, 1);
+        assert.equal(rig.sequences[0].play, "loop");
+        const [s, t] = rig.pictures[0].rectangles[0].sheet, [w, h] = rig.pictures[0].rectangles[0].size;
+        assert.ok(s + w <= 256 && t + h <= 128 && sizeProblem(w, h) === null, name);
+      }
+    }
+    // It covers the art (the rectangle drawn shows every art pixel)
+    const rig = freshRig("front", bounds);
+    const frame = render(rig, sheet, 0, 0);
+    assert.equal(frame.pixels.filter((p) => p === 3).length, 28 * 36);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("hiding a track leaves it undrawn, and nothing else", () => {
+  const rig = rigOf(parseJson(read("pichu", "front")));
+  const sheet = new Uint8Array(256 * 128).fill(2);
+  const all = new Set(rig.tracks.map((_, i) => i));
+  assert.equal(render(rig, sheet, 0, 0, undefined, undefined, { hide: all }).pixels.every((p) => p === 0), true);
+  const plain = render(rig, sheet, 0, 0);
+  const none = render(rig, sheet, 0, 0, plain, undefined, { hide: new Set() });
+  assert.deepEqual(none.pixels, plain.pixels);
+});
+
+test("the layer list reorders as the timeline does (one shared drop), idle flags following", () => {
+  const rig = rigOf(parseJson(read("charizard", "front")));
+  const n = rig.poses[0].parts.length;
+  assert.ok(n > 3);
+  for (const [from, to] of [[3, 0], [0, n - 1], [2, 1]]) {
+    const drop = dropLayer(rig, 0, from, to)!;
+    assert.deepEqual(drop.rig, moveLayer(rig, 0, from, to));
+    assert.equal(drop.selected, to);
+    assert.equal(drop.rig.poses[0].parts[to].track, rig.poses[0].parts[from].track);
+  }
+  assert.equal(dropLayer(rig, 0, 2, 2), null);
 });

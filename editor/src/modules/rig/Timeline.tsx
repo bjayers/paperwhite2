@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { lengthOf, sequenceKeyAt } from "./mcss.ts";
-import { moveLayer, partName, sequenceSegments, signedDegrees, trackSpans, type Span } from "./model.ts";
+import { dropLayer, partName, sequenceSegments, signedDegrees, trackSpans, type Span } from "./model.ts";
 import { hue, useClock, type RigView } from "./context.ts";
 import { keyPoseTimes, setKeys, type Target } from "./armatureEdit.ts";
 import { curveOf, type KeyPose } from "./armature.ts";
@@ -193,9 +193,10 @@ export function Timeline({ view, scale, follow }: { view: RigView; scale: number
                    onDragOver={(e) => { if (dragging !== null) e.preventDefault(); }}
                    onDrop={(e) => {
                      e.preventDefault();
-                     if (dragging === null || dragging === k) return;
-                     editor.replace(moveLayer(rig, pose, dragging, k));
-                     select({ part: k, key: null });
+                     const drop = dragging === null ? null : dropLayer(rig, pose, dragging, k);
+                     if (!drop) return;
+                     editor.replace(drop.rig);
+                     select({ part: drop.selected, key: null });
                      setDragging(null);
                    }}
                    onClick={() => select({ part: k, key: null, picture: track?.keys[0]?.picture ?? null, rectangle: 0, sequenceKey: null, root: false, keyPose: null })}

@@ -6,7 +6,7 @@
 // later moves), and as the whole rig where they renumber (removing a picture, reordering parts).
 
 import { JsonFloat, fromPlain, type JsonValue } from "../../../shared/json.ts";
-import { keyAt, lengthOf, loops, sequenceKeyAt, type Key, type KeyType, type Obj, type Pair, type Picture, type Rectangle,
+import { SHEET_HEIGHT, SHEET_WIDTH, keyAt, lengthOf, loops, sequenceKeyAt, type Key, type KeyType, type Obj, type Pair, type Picture, type Rectangle,
          type Rig, type Sequence, type Track } from "./mcss.ts";
 
 // ---------------------------------------------------------------- Reading
@@ -160,6 +160,76 @@ export function moveLayer(rig: Rig, pose: number, from: number, to: number): Rig
   const idle = rig.idle_parts === null ? null
     : rig.idle_parts.map((old) => order.indexOf(old)).filter((n) => n >= 0).sort((a, b) => a - b);
   return { ...rig, idle_parts: idle, poses: rig.poses.map((p, i) => (i === pose ? { ...p, parts } : p)) };
+}
+
+/** Reorders a pose's layers for the timeline and the layer list alike: the rig after the part at `from` is dropped on
+ * `to`, and the place it ends in (selected), or null when nothing moves. */
+export function dropLayer(rig: Rig, pose: number, from: number, to: number): { rig: Rig; selected: number } | null {
+  if (from === to) return null;
+  return { rig: moveLayer(rig, pose, from, to), selected: to };
+}
+
+// ---------------------------------------------------------------- Starting fresh
+
+/** The bounds of the first piece of art on a sheet (palette indices, 256 by 128; 0 clear): left, top, width, height, or
+ * null if it is empty. Art is grouped in 8-pixel tiles joined to their eight neighbours, so a piece is a cluster that
+ * touches itself (or lies within a tile of itself); the first is the one with the topmost, then leftmost, tile. */
+export function artBounds(sheet: Uint8Array): [number, number, number, number] | null {
+  const cols = SHEET_WIDTH / 8, rows = SHEET_HEIGHT / 8;
+  const filled = new Uint8Array(cols * rows);
+  for (let y = 0; y < SHEET_HEIGHT; y++) for (let x = 0; x < SHEET_WIDTH; x++) if (sheet[y * SHEET_WIDTH + x]) filled[(y >> 3) * cols + (x >> 3)] = 1;
+  const start = filled.indexOf(1);
+  if (start < 0) return null;
+  const seen = new Uint8Array(cols * rows);
+  const stack = [start];
+  seen[start] = 1;
+  let x0 = SHEET_WIDTH, y0 = SHEET_HEIGHT, x1 = -1, y1 = -1;
+  while (stack.length) {
+    const n = stack.pop()!;
+    const c = n % cols, r = Math.floor(n / cols);
+    for (let y = r * 8; y < r * 8 + 8; y++) for (let x = c * 8; x < c * 8 + 8; x++) {
+      if (!sheet[y * SHEET_WIDTH + x]) continue;
+      x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+    }
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+      const cc = c + dc, rr = r + dr;
+      if (cc < 0 || rr < 0 || cc >= cols || rr >= rows) continue;
+      const m = rr * cols + cc;
+      if (filled[m] && !seen[m]) { seen[m] = 1; stack.push(m); }
+    }
+  }
+  return [x0, y0, x1 - x0 + 1, y1 - y0 + 1];
+}
+
+/** The one rectangle a fresh rig cuts: the sheet's art (its bounds widened to whole tiles, and to multiples of 32 when a
+ * side reaches 64 so the pieces are OBJ sizes), or 32 by 32 at the sheet's corner where the sheet has no art (artBounds: the first piece of art, not all of it). */
+export function freshRectangle(bounds: [number, number, number, number] | null): { sheet: Pair; size: Pair } {
+  if (!bounds) return { sheet: [0, 0], size: [32, 32] };
+  let [x, y, w, h] = bounds;
+  const unit = w >= 64 || h >= 64 ? 32 : 8;
+  const left = Math.floor(x / unit) * unit, top = Math.floor(y / unit) * unit;
+  w = Math.min(SHEET_WIDTH - left, Math.ceil((x + w - left) / unit) * unit);
+  h = Math.min(SHEET_HEIGHT - top, Math.ceil((y + h - top) / unit) * unit);
+  return sizeProblem(w, h) ? { sheet: [0, 0], size: [32, 32] } : { sheet: [left, top], size: [w, h] };
+}
+
+/** A minimal valid rig for a side (Start fresh): one picture of one rectangle (`bounds` as freshRectangle takes them),
+ * standing on the feet (a tall one centred lower: the NCER's OBJ y reaches only 128 pixels); one track "body_a" that loops one held key of 60 frames; one pose with one part playing it
+ * (pivot at the feet); the stay sequence looping that pose. No second sequence (the idle pause then stops the sprite whole,
+ * and the originals with one sequence, Pichu's among them, work so), no idle parts, the box the picture's size. */
+export function freshRig(side: "front" | "back", bounds: [number, number, number, number] | null): Rig {
+  const { sheet, size } = freshRectangle(bounds);
+  const picture: Picture = withRectangles({ rectangles: [], objs: [], obj_attribute: 0 }, [{ sheet, size, at: [-size[0] / 2, Math.min(size[1], 64)] }]);
+  return {
+    format: 1, side,
+    box: { width: size[0], height: size[1], x: 0, y: 0 },
+    stop_flags: 0,
+    idle_parts: [],
+    pictures: [picture],
+    tracks: [{ name: "body_a", key_type: "plain", play: "loop", keys: [{ picture: 0, frames: 60 }] }],
+    poses: [{ parts: [{ track: 0, pivot: [0, 0], play: "restart" }] }],
+    sequences: [{ name: "CellAnime0", key_type: "plain", play: "loop", keys: [{ pose: 0, frames: 60 }] }],
+  };
 }
 
 // ---------------------------------------------------------------- The timeline

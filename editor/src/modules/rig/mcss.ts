@@ -222,8 +222,10 @@ export function canvasOf(boxes: [number, number, number, number][]): Canvas {
 
 /** Draws a frame as palette indices (mcss.render): on the canvas given, or by default on the frame's own bounds. */
 export function render(rig: Rig, sheet: Uint8Array, sequence = 0, time = 0, canvas?: Canvas, idle?: Idle,
-                       options: { owners?: boolean } = {}): Frame {
-  const { quads } = frameQuads(rig, sequence, time, idle);
+                       options: { owners?: boolean; hide?: ReadonlySet<number> } = {}): Frame {
+  // (`hide`: tracks left undrawn, the editor's eye toggles; never part of the game's picture)
+  const all = frameQuads(rig, sequence, time, idle).quads;
+  const quads = options.hide?.size ? all.filter((q) => !options.hide!.has(q.track)) : all;
   const boxes = quads.map(quadBox);
   const c = canvas ?? canvasOf(boxes);
   if (!canvas && !boxes.length) return { ...c, pixels: new Uint8Array(1) };

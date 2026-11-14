@@ -17,7 +17,7 @@ import { fileText, fromPlain, getIn, type JsonValue, type Layout } from "../../.
 import { readIndexedPng } from "../palettes/png.ts";
 import { parsePal } from "../palettes/pal.ts";
 import { lengthOf, type Rig } from "./mcss.ts";
-import { dataOf, rigOf, sizeProblem, type Editor, type Phase } from "./model.ts";
+import { artBounds, dataOf, freshRig, rigOf, sizeProblem, type Editor, type Phase } from "./model.ts";
 import { bake, convertToArmature, DEFAULT_STEP, sequenceStep, withBones, type Source } from "./armature.ts";
 import { Clock, SLOW } from "./player.ts";
 import { NO_SELECTION, useClock, type Art, type RigView, type Selection, type SourceEditor } from "./context.ts";
@@ -167,6 +167,13 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
   const [checking, setChecking] = useState(false);
   const [picking, setPicking] = useState<number | null>(null);
   const [showBones, setShowBones] = useState(true);
+  // Tracks hidden in the preview by the layer list's eyes: editor state only, not part of any file
+  const [hidden, setHidden] = useState<ReadonlySet<number>>(new Set());
+  const toggleHidden = useCallback((track: number) => setHidden((h) => {
+    const next = new Set(h);
+    if (!next.delete(track)) next.add(track);
+    return next;
+  }), []);
   const [dockHeight, setDockHeight] = useState(() => Number(stored(DOCK_KEY)) || 300);
   const [dockView, setDockView] = useState<"timeline" | "graph" | "both">(() => (stored(DOCK_VIEW_KEY) as "timeline" | "graph" | "both") || "timeline");
   const clock = useRef<Clock>(null as unknown as Clock);
@@ -260,9 +267,9 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
     documents.create(sourcePath, SOURCE_SCHEMA, sourceData(convertToArmature(flatRig, DEFAULT_STEP), schema), SOURCE_LAYOUT);
     setMessage(`Converted to an armature: every part a bone of the root's, its keys held key poses (it bakes to the rig as it was). Parent the bones and key them; Save writes ${side}_rig_source.json with the baked rig.`);
   };
-  const removeArmature = async () => {
+  const removeArmature = async (confirmed = false) => {
     const d = documents.get(sourcePath);
-    if (!d || !confirm(`Remove this side's armature (${side}_rig_source.json)? The rig keeps its keys as they bake now, and edits flat again.`)) return;
+    if (!d || (!confirmed && !confirm(`Remove this side's armature (${side}_rig_source.json)? The rig keeps its keys as they bake now, and edits flat again.`))) return;
     if (d.savedText) await api.removeFile(sourcePath);
     await documents.reload(sourcePath);
     history.current.undo = history.current.undo.filter((p) => p !== sourcePath);
@@ -368,12 +375,27 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
     setMessage(`Copied the ${otherSide} rig. Save to keep it.`);
   };
 
+  // Start fresh: a minimal valid rig (freshRig) cut from the sheet's art, in place of everything on this side
+  const startFresh = async () => {
+    const hasSource = !!documents.get(sourcePath)?.data;
+    if (!confirm(`Start this ${side} rig fresh? Everything on this side is replaced by one picture (a rectangle round the sheet's first piece of art), one part holding it `
+      + `and the stay loop; the sheet stays as it is.${hasSource ? ` The side's armature (${side}_rig_source.json) is deleted, which Undo does not bring back.` : ""} `
+      + `Undo takes the rig back until you save.`)) return;
+    if (hasSource) await removeArmature(true);
+    const sheetPixels = art?.sheets[side];
+    editor.replace(freshRig(side, sheetPixels ? artBounds(sheetPixels) : null));
+    setSel(NO_SELECTION);
+    setHidden(new Set());
+    clock.current.seek(0);
+    setMessage("Started fresh: one picture, one part, the stay loop. Draw the art on the sheet, then cut and add parts. Save to keep it.");
+  };
+
   if (loadError) return <div className="rig-page"><p className="pkm-error">{loadError}</p></div>;
   if (!doc || !rig) return <div className="rig-page"><p className="muted">Reading {path}…</p></div>;
   if (doc.data === null) return <div className="rig-page"><p className="pkm-error">{path} isn't in a layout the editor writes back; edit it as text.</p></div>;
 
   const view: RigView = { rig, editor, sel, select, clock: clock.current, art, sheet: art?.sheets[sheet] ? sheet : side, shiny,
-                          source, sourceEditor: source ? sourceEditor : null, baked, picking, setPicking };
+                          source, sourceEditor: source ? sourceEditor : null, baked, picking, setPicking, hidden, toggleHidden };
   const resizeDock = (e: React.PointerEvent) => {
     e.preventDefault();
     const startY = e.clientY, startHeight = dockHeight;
@@ -416,6 +438,7 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
           </span>
         )}
         <button onClick={copyFromOther} disabled={!!source} title={source ? "This side has an armature: remove it first (Armature, in the side panel) to start from a copy" : `Start this side from a copy of the ${side === "front" ? "back" : "front"} rig`}>Copy {side === "front" ? "back to front" : "front to back"}…</button>
+        <button onClick={startFresh} title="Replace this side's rig with a minimal one: one picture cut round the sheet's art, one part, the stay loop (and delete its armature, if any)">Start fresh…</button>
         <button onClick={() => navigate("pokemon")} title="The Pokémon Editor">Pokémon Editor</button>
         <span className="spacer" />
         <SizeMeter check={check} checking={checking} rig={rig} />
@@ -468,7 +491,7 @@ function RigPage({ folder, side }: { folder: string; side: Side }) {
           <ChecksSection view={view} check={check} checking={checking} />
         </section>
 
-        <aside className="rig-side"><Inspector view={view} onTimeChanged={() => undefined} onConvert={convert} onRemoveArmature={removeArmature} /></aside>
+        <aside className="rig-side"><Inspector view={view} onTimeChanged={() => undefined} onConvert={convert} onRemoveArmature={() => void removeArmature()} /></aside>
       </div>
       </div>
 

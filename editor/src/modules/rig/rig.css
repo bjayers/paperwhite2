@@ -36,6 +36,12 @@
 .rig-rect { border-top: 1px solid var(--border); padding-top: 6px; margin-top: 6px; }
 .rig-rect.selected > .muted { color: var(--accent); }
 .rig-name-input { width: 160px; }
+/* The layer list (flat rigs): the outliner's rows with a grip, an eye and a thumbnail */
+.rig-thumb { width: 28px; height: 28px; flex: none; background: var(--panel-2); border-radius: 3px; image-rendering: pixelated; }
+.rig-eye { border: 0; background: transparent; color: var(--text); padding: 0 2px; cursor: pointer; font-size: 12px; line-height: 1; }
+.rig-eye.off { color: var(--muted); }
+.rig-outliner-row.hidden-layer b, .rig-outliner-row.hidden-layer .rig-thumb { opacity: 0.4; }
+.rig-outliner-row.dragging { opacity: 0.5; }
 .rig-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex: none; }
 
 /* The timeline: a name column that stays at the left, lanes of keys as wide as their frames */

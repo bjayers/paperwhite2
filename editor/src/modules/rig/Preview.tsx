@@ -93,7 +93,7 @@ export function Preview({ view, zoom, onion, guides, tool, bones = true, onMessa
     }
     if (!pixelsOf || seq >= v.rig.sequences.length) return;
     const image = (t: number, alpha: number, withOwners: boolean) => {
-      const frame = render(v.rig, pixelsOf, seq, t, st, idle, { owners: withOwners });
+      const frame = render(v.rig, pixelsOf, seq, t, st, idle, { owners: withOwners, hide: v.hidden });
       const data = new ImageData(st.width, st.height);
       const out = new Uint32Array(data.data.buffer);
       for (let i = 0; i < frame.pixels.length; i++) out[i] = words[frame.pixels[i]];

@@ -886,6 +886,18 @@ build's validator. The schema needed no new keywords.
   flag; the checks and the resident size against the ~40 KB guidance of section 15.6; Copy front to back and back to
   front (with a confirm).
 
+- **Start fresh and the layer list (added 2026-11-13):** the header's **Start fresh…** (confirm; undoable until saved)
+  replaces the side's rig with `model.ts`'s `freshRig`: one picture of one rectangle round the sheet's first piece of
+  art (8-pixel tiles joined to their neighbours, topmost then leftmost, widened to whole tiles, to multiples of 32 when a
+  side reaches 64; 32×32 at the corner on an empty sheet), standing on the feet (`at` y capped at 64 so the OBJs' y stays
+  in -128..127); one track `body_a` looping one held 60-frame key; one pose with one part (pivot 0, 0, restart); the stay
+  sequence looping that pose; idle parts `[]`, no stop sequence (Pichu's rigs have only the stay one), box the
+  rectangle's size. The sheet is untouched; an armature, if the side has one, is deleted (the confirm says so; the file
+  removal isn't undoable). In a flat rig the side panel's **Layers** section lists the shown pose's parts front to back
+  like the outliner: grip (drag to reorder, through `dropLayer`, which the timeline's names use too, so idle flags
+  follow), an eye that hides the part's track in the preview only (`render`'s `hide` option; editor state, never
+  saved), colour, a thumbnail of its first picture, name and track; clicking selects the part.
+
 ### 18.1 Proven
 
 - `editor/tests/rig-render.test.ts`: the port draws what `mcss.render` draws, pixel for pixel and canvas for canvas,
@@ -894,7 +906,7 @@ build's validator. The schema needed no new keywords.
   each sequence's loop, 44,136 frames) found no pixel different.
 - `editor/tests/rig-edit.test.ts`: an unchanged rig written back is the file byte for byte; an edited key and pivot
   change two lines, pass the build's validator, the editor's and `mcss_rig.check`, and read back as edited; the OBJs
-  are `generate_objs`'s; removing a picture and reordering layers keep the references right. `npm test` 93 tests,
+  are `generate_objs`'s; removing a picture and reordering layers keep the references right. `npm test` 93 tests (122 with Start fresh's checks, the hide option and the shared layer drop),
   typecheck and `vite build` pass.
 - **End to end:** in the editor, Spiky-eared Pichu's front: the right ear's pivot dragged 2 pixels right and up with
   the Pivot gizmo, a 12-frame key added after the ear's frame-60 key and turned to −45° with the Rotate gizmo, undo and
