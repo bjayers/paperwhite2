@@ -7,7 +7,7 @@ from an image editor turned into an item's icon and palette.
 An item shows an icon (a 32×32 picture of 16 color indices) and a palette (16 colors, 0 transparent), the members of
 the item icons' archive that src/system/pml_item.c's ITEM_GRAPHICS_CHARS_AND_PALETTES gives it, in the hack's build
 (the PAPERWHITE2 branch of an #ifdef). Their files are tools/data/item_icon_data.py's, which packs them. The hack's
-items are the constants in docs/paperwhite2/items.md's table. A PNG is indexed, its indices 0-15 used with index 0
+items are hack_items()'s. A PNG is indexed, its indices 0-15 used with index 0
 transparent, or RGB(A), with at most 15 colors besides the transparent pixels (alpha under 128); colors are rounded to
 the DS's, 5 bits an axis. With OUT, the icon and palette are written there as icon.png and icon.pal, for the editor
 to put in place of the item's files.
@@ -15,6 +15,7 @@ to put in place of the item's files.
 import base64
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -59,15 +60,47 @@ def item_files() -> dict[str, tuple[str, str]]:
     return result
 
 
+def original_items() -> list[str] | None:
+    """The original game's item constants, from the clean data's tag (w2-original), or None without it."""
+    try:
+        out = subprocess.run(["git", "show", "w2-original:generated/items.txt"], cwd=ROOT, capture_output=True, text=True, timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if out.returncode != 0:
+        return None
+    return [line.strip() for line in out.stdout.splitlines() if line.strip() and not line.startswith("#")]
+
+
 def hack_items() -> list[str]:
-    """The hack's items, in the order of docs/paperwhite2/items.md's table."""
+    """The hack's items: those docs/paperwhite2/items.md's table lists (in its order), then any other item that
+    generated/items.txt gives where the original had an unused one or past its end, or marks with a "# Paper White 2"
+    comment, so an item added later shows without a list to update."""
     path = ROOT / "docs/paperwhite2/items.md"
     found: list[str] = []
     for line in path.read_text().splitlines() if path.is_file() else []:
         if line.startswith("|"):
-            for constant in re.findall(r"`(ITEM_[A-Z0-9_]+)`", line)[:1]:
+            cells = line.split("|")
+            for constant in re.findall(r"`(ITEM_[A-Z0-9_]+)`", cells[2] if len(cells) > 2 else line):
                 if constant not in found:
                     found.append(constant)
+    current = ordered_names("items")
+    original = original_items()
+    marked: set[str] = set()
+    comment = False
+    lines = (ROOT / "generated/items.txt").read_text().splitlines() if (ROOT / "generated/items.txt").is_file() else []
+    for line in lines:
+        if line.startswith("#"):
+            comment = comment or "Paper White 2" in line
+        elif line.strip():
+            if comment:
+                marked.add(line.strip())
+            comment = False
+    for number, item in enumerate(current):
+        if item in found or item.startswith("ITEM_UNUSED_"):
+            continue
+        added = original is not None and (number >= len(original) or original[number].startswith("ITEM_UNUSED_"))
+        if added or item in marked:
+            found.append(item)
     return found
 
 
