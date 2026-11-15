@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "title": "A type: res/types/<type>.json",
-    "description": "A type's text, in the order of generated/types.txt; TYPE_NULL, the type of a typeless move, has none. The text files take it with \\from{types.name} (tools/text/text_sources.py).",
+    "description": "A type's text, in the order of generated/types.txt; TYPE_NULL, the type of a typeless move, has a placeholder name (message 17), so that Paper White 2's TYPE_FAIRY is message 18. The text files take it with \\from{types.name} (tools/text/text_sources.py).",
     "type": "object",
     "additionalProperties": false,
     "required": [ "name" ],

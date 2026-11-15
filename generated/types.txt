@@ -19,3 +19,7 @@ TYPE_DARK
 
 # The type of a typeless move
 TYPE_NULL = 17
+
+# Paper White 2: the Fairy type, after TYPE_NULL so that every original check of 17 as "no type" keeps its meaning
+# (docs/paperwhite2/design/fairy-type.md)
+TYPE_FAIRY

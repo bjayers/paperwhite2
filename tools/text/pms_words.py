@@ -29,7 +29,9 @@ TEXT = ROOT / "res/text/system"
 LAST_WORDS = {"SPECIES": "SpeciesNamesUpper_Text_BadEgg"}
 # The words of a category whose file Paper White 2's added constants extend: the original moves and abilities alone,
 # so that the words after them keep their numbers in saves and in the plain build (the added ones are no words)
-WORD_COUNTS = {"MOVES": move_list.FIRST_ADDED, "ABILITIES": ability_list.FIRST_ADDED}
+# The types' words are the original 17, TYPE_NORMAL to TYPE_DARK: TYPE_NULL's placeholder and Paper White 2's TYPE_FAIRY
+# after it are no words
+WORD_COUNTS = {"MOVES": move_list.FIRST_ADDED, "ABILITIES": ability_list.FIRST_ADDED, "TYPES": 17}
 # The categories in word order: their name, their message file, and for one whose words are another constant's, the
 # macro that turns one into its word
 CATEGORIES = [

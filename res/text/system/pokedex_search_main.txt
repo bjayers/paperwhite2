@@ -105,4 +105,5 @@ PokedexSearchMain_Text_Gray = Gray
 PokedexSearchMain_Text_White = White
 PokedexSearchMain_Text_Pink = Pink
 PokedexSearchMain_Text_Empty_31 = -
+PokedexSearchMain_Text_Fairy = Fairy
 \pad{da}

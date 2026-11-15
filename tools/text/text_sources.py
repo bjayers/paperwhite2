@@ -98,8 +98,9 @@ def abilities() -> list[dict]:
 
 @cache
 def types() -> list[dict]:
-    # TYPE_NULL, the type of a typeless move, has no name
-    return validated("types", "res/types", "TYPE_", "type.schema.json", skip={"TYPE_NULL"})
+    # TYPE_NULL, the type of a typeless move, is message 17 with a placeholder name, so that Paper White 2's TYPE_FAIRY
+    # after it is message 18, its constant
+    return validated("types", "res/types", "TYPE_", "type.schema.json")
 
 
 @cache
