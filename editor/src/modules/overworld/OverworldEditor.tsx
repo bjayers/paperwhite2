@@ -32,6 +32,7 @@ import { entityFields } from "./fields.tsx";
 import { AmbientPanel } from "./AmbientPanel.tsx";
 import { OverworldGrid } from "../maps/OverworldGrid.tsx";
 import { WildPanel } from "./WildPanel.tsx";
+import { ZoneHeaderPanel, zoneHeaderPath } from "./ZoneHeaderPanel.tsx";
 import { GroupsPanel, GroupsProvider, useGroupsState } from "./GroupsUI.tsx";
 import { sameRef, type MemberRef } from "./groups.ts";
 import { EventPanel, hasEventLayout } from "./EventPanel.tsx";
@@ -84,7 +85,6 @@ export function OverworldEditor({ constants, open }: ToolProps) {
   /** The zone's camera area file (or where a new one goes), its areas, the default cameras and the preview. */
   const [cameraFile, setCameraFile] = useState<{ path: string; exists: boolean } | null>(null);
   const [defaults, setDefaults] = useState<DefaultCamera[]>([]);
-  const [zoneCamera, setZoneCamera] = useState(0);
   const [previewing, setPreviewing] = useState(false);
   const [previewT, setPreviewT] = useState(0);
   const [previewDefault, setPreviewDefault] = useState(false);
@@ -108,8 +108,6 @@ export function OverworldEditor({ constants, open }: ToolProps) {
     // Only the latest lookup counts: a zone change asks once with the last zone's rails still loaded, then again
     let live = true;
     cameraFileOf(zone, railsName).then((f) => { if (live) setCameraFile(f); }, () => { if (live) setCameraFile(null); });
-    api.file(`res/field/zones/${zone}.json`).then((f) => { if (live) setZoneCamera(Number((JSON.parse(f.text) as { camera?: number }).camera ?? 0)); },
-                                                   () => { if (live) setZoneCamera(0); });
     return () => { live = false; };
   }, [zone, railsName]);
   const { data: cameraData } = useHeld(cameraFile?.exists || (cameraFile && documents.get(cameraFile.path)) ? cameraFile.path : null);
@@ -153,6 +151,9 @@ export function OverworldEditor({ constants, open }: ToolProps) {
 
   const eventsPath = zone ? `res/field/events/${zone}.json` : null;
   const { data, schema } = useHeld(eventsPath);
+  // The zone's header, as its section edits it: the default camera follows
+  const { data: headerData } = useHeld(zone ? zoneHeaderPath(zone) : null);
+  const zoneCamera = headerData instanceof Map ? Number(headerData.get("camera") ?? 0) : 0;
   const propsVersion = usePropsVersion();
   const [models, setModels] = useState<Map<number, string>>(new Map());
   useEffect(() => {
@@ -1173,6 +1174,7 @@ export function OverworldEditor({ constants, open }: ToolProps) {
             </div>
           ) : (
             <div className="ow-panel">
+              <ZoneHeaderPanel zone={zone} constants={constants} onEdit={(p) => record([p])} open={open} />
               <p className="muted ow-note">
                 Click an entity to edit it, drag it to another tile, or Shift+click a tile to add {module === "level" ? "one (not level scripts, which have no place)" : `a ${KIND_NAMES[module].toLowerCase().replace(/ies$/, "y").replace(/s$/, "")}`}.
                 {tile && <> Tile {tile.x}, {tile.z}.</>}

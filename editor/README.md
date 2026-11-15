@@ -292,6 +292,17 @@ trainer's line of sight), Proxies (background events), Triggers, Warps and Level
 - **Seasons:** a zone whose area has seasons gets a **Season** choice, which shows the chunks the season puts in place
   (`res/field/map_replacements/`, as the game patches the matrix) with the season area's textures. Painting edits
   the chunks shown, so a season's own chunk has its own permissions.
+- **Zone header** (the first section of the side panel when nothing is chosen, collapsible and remembered;
+  `ZoneHeaderPanel.tsx`, `zoneHeader.ts`): every field of the zone's header (`res/field/zones/<zone>.json`) in headed
+  groups, with a label column and the schema's description as each hint. Map and files (area, map matrix, scripts, init
+  scripts, text bank, NPC cache), Place (parent zone, place, name shown, name icon), Sound (music, one song or by
+  season; bike and Surf music), Weather and look (default weather by name, projection, camera, entry effect), Battle
+  (battle background, encounter table, save slot, Easy Mode level), Movement and travel (map type, cycling, Escape Rope,
+  Fly from here, Fly landing, Entralink warp, camera bound). Controls come from the schema (constants as searchable
+  pickers, ranges, optional fields with Set it and ×), and a property the schema gains that no group names appears under
+  Other. It edits through the document store (undo, Save with the build's check; the default camera and NPC cache the
+  map uses follow). The weather and the encounter table link to the Weather and Encounter Editors, and **Open
+  <zone>.json in Data files** is the fallback.
 - **Warps:** a warp's panel links to the zone it leads to, with the warp it arrives at chosen. Each zone keeps its
   unsaved changes and its undo while another is shown; Save writes them all.
 - **Paint** (the map gets a light blue border) sets tiles' type (walkable, blocked, water, grass and the rest) or a

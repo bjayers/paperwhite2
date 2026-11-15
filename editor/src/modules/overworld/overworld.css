@@ -161,3 +161,19 @@
 .ow-group-bar { display: inline-block; width: 70px; height: 7px; border-radius: 4px; background: var(--border); vertical-align: middle;
   overflow: hidden; }
 .ow-group-bar > span { display: block; height: 100%; background: var(--accent); }
+
+/* The zone header section: collapsible, groups headed, a label column wide enough for the field names */
+.ow-zone-header { border-bottom: 1px solid var(--border); padding: 0 0 6px; margin-bottom: 8px; }
+.ow-zone-header > summary { cursor: pointer; font-size: 13px; padding: 2px 0; }
+.ow-header-grid { grid-template-columns: 116px minmax(0, 1fr); row-gap: 10px; align-items: start; }
+.ow-header-grid > .ow-condition-label { padding-top: 5px; }
+.ow-header-control { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+.ow-header-control .hint { flex-basis: 100%; font-size: 12px; overflow-wrap: anywhere; }
+.ow-header-fly { display: flex; flex-direction: column; gap: 4px; }
+.ow-header-fly .ow-header-axis { display: grid; grid-template-columns: 16px 1fr; align-items: center; }
+.ow-header-fly .range { display: none; }
+.ow-header-control .field-error { flex-basis: 100%; }
+.ow-header-axis { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 12px; }
+.ow-header-axis input { width: 76px; }
+.ow-header-music { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.ow-header-seasons { grid-template-columns: 64px minmax(0, 1fr); row-gap: 6px; margin: 0; }
