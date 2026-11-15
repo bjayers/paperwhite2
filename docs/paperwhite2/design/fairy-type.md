@@ -31,15 +31,16 @@ Steps 0-4 of §11 are built, with the recommendations of §2 (decisions 1-3 and 
 - **The editor** needed nothing: its type pickers list `TYPE_FAIRY` from `generated/types.txt` (and `TYPE_NULL`, as
   before, outside the Move Editor's filter).
 
-**Placeholders for the user to redraw**: the two palettes in the editor's Graphics & Palettes (Palettes, a graphics
-archive's members: `app_menu_common` 033, `btlv` 572), the label by replacing its PNG (indexed, same indices):
+**Placeholders for the user to redraw**: the editor's Graphics & Palettes has a **Type icons** page for every type's art
+and colors, Fairy's included: the label (export and import its PNG, or all labels as one sheet), its palette row (033),
+the move button's palette (`btlv` 572) and the HUD wedge's colors. The Palettes page edits the same files:
 
 | Art | File | Size, colors |
 | --- | --- | --- |
 | The FAIRY label | `res/graphics/app_menu_common/182.png` (`a/0/8/2` 182) | 32 x 16, indexed 4bpp, palette row 2 of `033.pal`: index 0 transparent, 8 the fill, 9 the edge, 15 the letters, 14 their shadow (as every label) |
 | The label's two colors | `res/graphics/app_menu_common/033.pal` entries 40 and 41 (row 2's 8 and 9) | placeholder 238 132 181 and 165 66 115 |
 | The battle move button | `res/graphics/btlv/572.pal` (`a/0/1/1` 572) | 16 colors used (of 256), a copy of Psychic's 469: 0-7 and 14 the button's frame and text, 8-13 the button's gradient, light to dark (placeholder pinks 255 158 206 ... 123 57 99) |
-| The HUD wedge | `TYPE_COLORS[TYPE_FAIRY]`, `TYPE_SHADES[TYPE_FAIRY]` in `src/paperwhite2/ov168/paperwhite2_type_icons.c` | two RGB555 values, the label's colors (`0x5a1d`, `0x3914`); change them with the label |
+| The HUD wedge | `res/paperwhite2/type_colors.json`'s `TYPE_FAIRY` (packed into `paperwhite2/type_colors_config.h`, which `paperwhite2_type_icons.c`'s `TYPE_COLORS`/`TYPE_SHADES` take) | fill and edge, 8-bit RGB (placeholders `238 132 181`, `165 66 115`, the label's colors); the Type icons page takes them from the label |
 | Hall of Fame particles and plate | (none yet) | Fairy uses Psychic's; its own would be new members of `ARCID_HALL_OF_FAME_DEMO` and a mapping |
 
 **Proved in py-desmume** (the user's save, scratchpad `fairy-build/`): the summary's info and skills pages (FAIRY

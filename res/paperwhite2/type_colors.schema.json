@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "HUD wedge colors",
+  "description": "The colors of the battle HUD's type wedges (docs/paperwhite2/plugins.md, Type Icons): for every type, the wedge's fill and its darker edge. tools/paperwhite2/type_colors.py checks the file and writes the colors, rounded to the DS's 5 bits an axis, into paperwhite2/type_colors_config.h for src/paperwhite2/ov168/paperwhite2_type_icons.c.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [ "types" ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "types": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Every type of generated/types.txt, by constant. TYPE_NULL's are the typeless move's (Roost's), a copy of Normal's",
+      "properties": {
+        "TYPE_NORMAL": { "$ref": "#/$defs/wedge" },
+        "TYPE_FIGHTING": { "$ref": "#/$defs/wedge" },
+        "TYPE_FLYING": { "$ref": "#/$defs/wedge" },
+        "TYPE_POISON": { "$ref": "#/$defs/wedge" },
+        "TYPE_GROUND": { "$ref": "#/$defs/wedge" },
+        "TYPE_ROCK": { "$ref": "#/$defs/wedge" },
+        "TYPE_BUG": { "$ref": "#/$defs/wedge" },
+        "TYPE_GHOST": { "$ref": "#/$defs/wedge" },
+        "TYPE_STEEL": { "$ref": "#/$defs/wedge" },
+        "TYPE_FIRE": { "$ref": "#/$defs/wedge" },
+        "TYPE_WATER": { "$ref": "#/$defs/wedge" },
+        "TYPE_GRASS": { "$ref": "#/$defs/wedge" },
+        "TYPE_ELECTRIC": { "$ref": "#/$defs/wedge" },
+        "TYPE_PSYCHIC": { "$ref": "#/$defs/wedge" },
+        "TYPE_ICE": { "$ref": "#/$defs/wedge" },
+        "TYPE_DRAGON": { "$ref": "#/$defs/wedge" },
+        "TYPE_DARK": { "$ref": "#/$defs/wedge" },
+        "TYPE_NULL": { "$ref": "#/$defs/wedge" },
+        "TYPE_FAIRY": { "$ref": "#/$defs/wedge" }
+      }
+    }
+  },
+  "$defs": {
+    "color": {
+      "type": "array", "minItems": 3, "maxItems": 3,
+      "items": { "type": "integer", "minimum": 0, "maximum": 255 },
+      "description": "Red, green and blue from 0 to 255; the DS shows 5 bits an axis, so the game rounds each to the nearest of 32 levels"
+    },
+    "wedge": {
+      "type": "object", "additionalProperties": false, "required": [ "fill", "edge" ],
+      "properties": {
+        "fill": { "$ref": "#/$defs/color", "description": "The wedge's fill: a monotype's upper field, and a dual type's fields (its first and second type)" },
+        "edge": { "$ref": "#/$defs/color", "description": "A monotype's second field, the darker shade; a dual type never shows its edge" }
+      }
+    }
+  }
+}

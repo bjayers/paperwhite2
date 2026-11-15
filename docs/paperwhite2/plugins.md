@@ -153,8 +153,11 @@ The "Solid" style, TypeIconsSolidW2 0.3.24-solid (`battle_type_hud.cpp` with `IC
 `assets-solid.h`), the DLL in the hack's ROM. It colors the light face at the left of each battler's name box with its
 types, in single, double and triple battles, and shifts the header's text to make room.
 
-- `src/paperwhite2/ov168/paperwhite2_type_icons.c`, `include/paperwhite2/battle_type_icons.h`. The wedges' masks, the
-  types' colors and the name boxes' native pixels are tables in the C file, copied from `assets-solid.h`.
+- `src/paperwhite2/ov168/paperwhite2_type_icons.c`, `include/paperwhite2/battle_type_icons.h`. The wedges' masks and the
+  name boxes' native pixels are tables in the C file, copied from `assets-solid.h`; the types' colors are data,
+  `res/paperwhite2/type_colors.json` (a fill and an edge, 8-bit RGB, for every type, with `type_colors.schema.json`),
+  which `tools/paperwhite2/type_colors.py` packs into `paperwhite2/type_colors_config.h` (BGR555, in the build's
+  generated includes) and the editor's Graphics & Palettes > Type icons edits.
 - Data: the installer's panel expansion (`panel_expansion.py`, `panel-expansion.json`) is in `res/graphics/btlv/`:
   `438.png` (the player's name box in single and double battles) has 8 more blank tiles (32x144 instead of 32x128),
   and `439.ncer` a third OAM piece (`0x40f4, 0x81bc, 0x20`). Packed, `a/0/1/1` members 438 and 439 equal the hack
@@ -2648,8 +2651,8 @@ reads 17 as "no type" (Roost, STAB, Color Change, Conversion 2, the PWT's "any t
   `BOX2_CHR_FAIRY_TYPE_ICON` 129; `actors[146]`, `chrRes[130]`).
 - **Battle:** the move buttons' tile palette for Fairy is `a/0/1/1`'s new member 572 (`res/graphics/btlv/572.pal`, a
   copy of Psychic's 469 with colors 8-13 pink; `btlv_input.c`'s `FAIRY_MOVE_TILE_PALETTE`). The HUD wedges' colors
-  (`paperwhite2_type_icons.c`'s `TYPE_COLORS`/`TYPE_SHADES`, 19 entries, Fairy's last are its label's two colors, 17 a
-  copy of Normal's for Roost's `TYPE_NULL`); the preview's bound is the chart's.
+  (`res/paperwhite2/type_colors.json`, 19 entries read by `paperwhite2_type_icons.c`'s `TYPE_COLORS`/`TYPE_SHADES`, Fairy's last
+  are its label's two colors, 17 a copy of Normal's for Roost's `TYPE_NULL`); the preview's bound is the chart's.
 - **Guards** for a Fairy Pokémon where the original reads or writes past a table of 17: the game clear's type medals
   (`event_game_clear.c`) and the PWT's party main type (`wbt_tool.c`) count the original types only (no Fairy medal or
   Type Expert record: their saves have one per original type); the Hall of Fame's particles and plate palettes
