@@ -2,6 +2,33 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-15: the Fairy type foundation (ROM session, on the `fairy` branch)
+
+`docs/paperwhite2/design/fairy-type.md` §0 has what was built and the placeholders; `plugins.md`'s "Fairy type" the
+code's map. Five commits, steps 0-4 of the design's build order, with its recommendations: Gen 6's Steel change in,
+Charm / Sweet Kiss / Moonlight Fairy, Hidden Power never Fairy; Arceus, Fairy items, Gen 6 stat changes, the PWT's
+Type Expert and the type medals out.
+
+- **Built:** `TYPE_FAIRY = 18` (after `TYPE_NULL`), the 19 x 19 chart, the type name banks' message 18 (17 a "???"
+  placeholder), Easy Chat's types capped at 17 (`pms_words.h` unchanged), the four out-of-bounds guards (type medals,
+  PWT main type and simulated matches, Hall of Fame) and Cheren's 171 messages from the chart
+  (`tools/paperwhite2/cheren_type_text.py`), the label (`a/0/8/2` 182) on every screen, the battle button palette
+  (`a/0/1/1` 572), the HUD wedge colors, the preview, the Pokédex search's Fairy row, 22 species and 3 moves retyped.
+- **Proof:** hack build DSi-intact; the plain build's 350 code modules all match (its archive and SHA1 failures are the
+  hack's data, as before); `compile_all.py` fails only on hack files it compiles without the hack's define, as before;
+  the editor's tsc, tests (only the known Applin rig failure) and vite build pass. In py-desmume with the user's save:
+  summary, box, bag, Pokédex entry, Matchups, search by Fairy, and battles (Dragon into Fairy no effect, Fighting
+  resisted, Poison super effective, Ghost and Dark neutral on Steel, Roost on Togekiss then Earthquake hits,
+  Conversion 2 choosing Fairy). Screenshots in the scratchpad's `fairy-build/shots/`.
+- **Found and fixed:** the bag's actor unit was full with an 18th type label (an assert on changing pockets); it is 55
+  under `PAPERWHITE2`.
+- **Placeholders for the user:** the FAIRY label (`res/graphics/app_menu_common/182.png`, 32 x 16, `033.pal` row 2's
+  colors 8 and 9), the move button palette (`res/graphics/btlv/572.pal`, colors 8-13) and the HUD wedge's two colors
+  (`paperwhite2_type_icons.c`); the Hall of Fame uses Psychic's particles and plate for Fairy.
+
+Next: the user's art; a fresh-save playtest of Fairy matchups; later Arceus's Fairy form and the Pixie Plate, Fairy
+items, new Fairy moves, Gen 6 stat changes, a chart editor page.
+
 ## 2026-11-15: the Shop Editor and every shop's goods as data (ROM session, on a branch)
 
 docs/data.md's Shops and editor/README.md's Shop Editor have the details.

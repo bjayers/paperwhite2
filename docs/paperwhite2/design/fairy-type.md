@@ -6,7 +6,50 @@ new moves, abilities or items here. This follows `design/moves-and-abilities.md`
 
 **Evidence.** Everything below was read from `src/`, `include/`, `res/`, `generated/`, `tools/` and the editor at
 commit `e8910ecbc4`, and from the user's Pokeweb repo (reference only). What is inferred and not traced is marked
-*(inferred)*. Nothing was built or run.
+*(inferred)*. Nothing was built or run for §1-11; §0 is what was built after.
+
+## 0. Built (2026-11-15)
+
+Steps 0-4 of §11 are built, with the recommendations of §2 (decisions 1-3 and 7-8 taken as recommended; 4-6 later).
+`plugins.md`'s "Fairy type" has the code's map. What differs from the plan below:
+
+- **22 species, not 23**: §8.1's table lists 22, which is Gen 6's whole list among 1-649.
+- **Slots**: `TYPE_SLOT_COUNT`, `PaperWhite2_TypeSlot` and `_SlotType` are in `include/paperwhite2/type_chart.h` (not
+  a new `types.h`), with `ORIGINAL_TYPE_COUNT` (17) for the saves' per-type records. The plain build's identity
+  versions are local macros (`PSTA_TYPE_SLOT`, `ITEMMENU_TYPE_SLOT`, `POKEDEX_INFO_TYPE_SLOT`...), so its code is
+  unchanged.
+- **The label's resource** is the packer's new sized 4bpp resource (mapping 0, a SOPC section), not member 34's
+  header: the game draws it right on every screen tested, as it does `pokedex_gra`'s 137.
+- **Hall of Fame**: the Pokémon's first type is mapped to Psychic where it is read (`HallOfFameDemoMain_GetPokeData`),
+  which covers both tables.
+- **Cheren**: messages 153-169 are Fairy with Normal ... Dark, 170 Fairy alone; `tools/paperwhite2/cheren_type_text.py`
+  rewrote 41 original messages (§7's "Fairy" weaknesses, and Ghost/Dark weaknesses of Steel/Ghost and Steel/Psychic
+  from the Steel change; Ghost/Dark now has one weakness).
+- **The bag's actor unit** grows from 54 to 55: the original's 54 are all used, and the 18th label made the selected
+  item's icon fail `ClActUnit_FindFreeActor`'s assert ("An error has occurred") on changing pockets. The other screens'
+  units have room (summary 96 with no new actor, box 233, the Pokédex's 128).
+- **The editor** needed nothing: its type pickers list `TYPE_FAIRY` from `generated/types.txt` (and `TYPE_NULL`, as
+  before, outside the Move Editor's filter).
+
+**Placeholders for the user to redraw**: the two palettes in the editor's Graphics & Palettes (Palettes, a graphics
+archive's members: `app_menu_common` 033, `btlv` 572), the label by replacing its PNG (indexed, same indices):
+
+| Art | File | Size, colors |
+| --- | --- | --- |
+| The FAIRY label | `res/graphics/app_menu_common/182.png` (`a/0/8/2` 182) | 32 x 16, indexed 4bpp, palette row 2 of `033.pal`: index 0 transparent, 8 the fill, 9 the edge, 15 the letters, 14 their shadow (as every label) |
+| The label's two colors | `res/graphics/app_menu_common/033.pal` entries 40 and 41 (row 2's 8 and 9) | placeholder 238 132 181 and 165 66 115 |
+| The battle move button | `res/graphics/btlv/572.pal` (`a/0/1/1` 572) | 16 colors used (of 256), a copy of Psychic's 469: 0-7 and 14 the button's frame and text, 8-13 the button's gradient, light to dark (placeholder pinks 255 158 206 ... 123 57 99) |
+| The HUD wedge | `TYPE_COLORS[TYPE_FAIRY]`, `TYPE_SHADES[TYPE_FAIRY]` in `src/paperwhite2/ov168/paperwhite2_type_icons.c` | two RGB555 values, the label's colors (`0x5a1d`, `0x3914`); change them with the label |
+| Hall of Fame particles and plate | (none yet) | Fairy uses Psychic's; its own would be new members of `ARCID_HALL_OF_FAME_DEMO` and a mapping |
+
+**Proved in py-desmume** (the user's save, scratchpad `fairy-build/`): the summary's info and skills pages (FAIRY
+label, Charm's), the PC box (Clefable, Gardevoir, Togekiss, Azumarill, Mawile), the Pokédex entry and its Matchups
+(Dragon ×0, Poison and Steel ×2, Fighting/Bug/Dark ×0.5, Fairy ×1 in the 18th place), the Pokédex search by Fairy
+(Clefairy, Togepi, Gardevoir), the bag's pockets and a TM's label; in battle Dragon Claw into Clefable "doesn't affect", Close Combat into Clefable "not very
+effective", Poison Jab "super effective", Shadow Ball and Crunch into Klink neutral, Roost on Togekiss then Earthquake
+hits, Conversion 2 after Dragon Claw picking Fairy (forced) and then immune to Dragon Claw; the HUD wedge, the move
+buttons and the preview's colors. The game clear's medals, the PWT and the Hall of Fame are proved from the code
+(their paths need the endgame), and Cheren's messages from the built bank (171 messages) and the index's code.
 
 ## 1. Summary
 
@@ -28,7 +71,7 @@ commit `e8910ecbc4`, and from the user's Pokeweb repo (reference only). What is 
   Cheren's Xtransceiver type advice.
 - **Art the user draws:** one 32 × 16 type label (with two colors added to an existing palette row), one move-button
   palette for the battle menu, and two HUD wedge colors. Pokeweb has no usable 32 × 16 Fairy label (§5.4).
-- **Data:** the 23 species of §8 and, if the user wants them now, Charm, Moonlight and Sweet Kiss (§8.2).
+- **Data:** the 22 species of §8 and, if the user wants them now, Charm, Moonlight and Sweet Kiss (§8.2).
 - **Is it "fairly straightforward"?** Yes, with no blockers: no format changes, no save changes, no hard-coded
   addresses. But it is wide rather than deep: about 20 small C edits in 14 files, 3 new art members, 2 text banks
   and the data. §11 orders it into five testable steps.
@@ -264,7 +307,7 @@ agree with Gen 6. None has an alternate form; Paper White 2's added species (App
 | 303 | Mawile | Steel | Steel/Fairy |
 | 546, 547 | Cottonee, Whimsicott | Grass | Grass/Fairy |
 
-23 species, each `"types"` in its `data.json`. Gallade stays Psychic/Fighting. Applin's line (Grass/Dragon,
+22 species, each `"types"` in its `data.json`. Gallade stays Psychic/Fighting. Applin's line (Grass/Dragon,
 Dragon/Normal...) becomes weak to Fairy through the chart, with no data change.
 
 ### 8.2 Moves (decision 2)
@@ -316,7 +359,7 @@ py-desmume with a copy of the user's save (`emulator-testing` memory), the debug
 2. **Icons:** the label member 182 and `033.pal`, `AppMenuCommon_*` mappings, the slot helper, every array of §5.2, the
    button palette 572, the HUD colors, the preview's bound, the Matchups slot 17, the Pokédex search row. Test: every
    screen of §10 with the scratch retype. Placeholder art first; the user's art drops in after.
-3. **Data:** the 23 species and the 3 moves (decision 2). Test: §10 in full on a fresh save and on the user's save
+3. **Data:** the 22 species and the 3 moves (decision 2). Test: §10 in full on a fresh save and on the user's save
    (their caught Marill etc. become Water/Fairy).
 4. **Cheren's text** from the chart (a tool) and `pokedex_templates.py`. Test: the call for a Fairy and a Dragon.
 5. **Later, separate:** Arceus's Fairy form and the Pixie Plate, Fairy items, new Fairy moves (`moves-and-abilities.md`'s

@@ -1929,13 +1929,13 @@ with Form, another Pokémon and Flavour, landing in the VBlank with the entry's 
 `dex_flavour.py template` (and `pokedex_templates.py`) writes the tab's canvas, a guide with its OBJs' and label's
 regions, and references with the widest labels.
 
-**Matchups** (shown once seen): the 17 attacking types in 3 rows of 6 (the 18th place free for a Fairy type), each the
-game's type icon (`a/0/8/2` palette 0x21, chars 0x22+type, cells and animations 0x3d and 0x40 for the 1D 128 KB
-mapping) as a sub OBJ, semi-transparent so the page's fades darken it, with the multiplier against the shown form's
+**Matchups** (shown once seen): the 18 attacking types in 3 rows of 6 (by slot, Fairy's last: see Fairy type), each
+the game's type icon (`a/0/8/2` palette 0x21, chars 0x22+type or Fairy's 182, cells and animations 0x3d and 0x40 for the
+1D 128 KB mapping) as a sub OBJ, semi-transparent so the page's fades darken it, with the multiplier against the shown form's
 types under it in font 0 (`×0.5`, `×1.25`..., computed in 64ths, coloured by `sMatchupColors`: above
 ×1 the battle's light blue, below it its yellow, ×0 a light grey (148, 148, 148, slot 12), each with the panels' text's
 light shadow, ×1 the panels' near-black). The icons use sub
-OBJ palette rows 0-2 (the touch bar has 8-13); their 17 characters, palette and cells are loaded with the panels and
+OBJ palette rows 0-2 (the touch bar has 8-13); their 18 characters, palette and cells are loaded with the panels and
 only shown or hidden by sub-page. Below the chart (y 141-164, lifted 3 px to centre them between the chart's panel and the touch bar), one
 `AppTaskMenuWin` per distinct ability (the hidden one once
 caught, the name in font 1 through a second `AppTaskMenuRes` when font 0's is wider than the button), the chosen one in
@@ -2596,6 +2596,54 @@ New moves appended to `generated/moves.txt` from 560 and abilities to `generated
   `Bank0018_Text_GoingAllOut`).
 - **An ability Mold Breaker ignores** goes in `sMoldBreakerIgnoredAddedAbilities` (`btl_tables.c`); one the AI should
   respect needs lines in `res/trainers/ai/basic.s` (Bulletproof's beside Soundproof's).
+
+### Fairy type
+
+`TYPE_FAIRY = 18`, after `TYPE_NULL = 17`, with Gen 6's matchups, on every screen that shows a type
+(`docs/paperwhite2/design/fairy-type.md` has the research, the decisions and what is built). Every original check that
+reads 17 as "no type" (Roost, STAB, Color Change, Conversion 2, the PWT's "any type") keeps its meaning.
+
+- **Constant and text:** `generated/types.txt`, `res/types/fairy.json`; `TYPE_NULL` has a placeholder name ("???",
+  `res/types/null.json`) so that the type name banks' message 18 is Fairy's (`text_sources.types()` no longer skips it).
+  Easy Chat's type words stay the original 17 (`pms_words.py`'s `WORD_COUNTS["TYPES"]`), so saved sentences keep their
+  numbers; `PMS_WORD_TYPE(TYPE_FAIRY)` is no word. The Pokédex search's `PokedexSearchMain_Text_Fairy`.
+- **The chart:** `PaperWhite2_TypeChart[TYPE_CHART_SIZE][TYPE_CHART_SIZE]`, 19 x 19 (`include/paperwhite2/type_chart.h`,
+  `src/paperwhite2/main/paperwhite2_type_chart.c`): row and column 17 all normal, Fairy's row and column Gen 6's, and
+  Ghost and Dark normal against Steel (Gen 6). Read by the battle (`btl_calc.c`, Conversion 2's `GetTypeWeaknesses`
+  over the whole chart), the trainer AI through it, the PWT's simulated matches (`wbt_system.c`, which had its own copy),
+  the Move Effectiveness Preview, the HUD wedges' bounds and the Pokédex's Matchups.
+- **Slots:** a screen's array of type labels has `TYPE_SLOT_COUNT` (18) entries by slot, Normal to Dark in 0-16 and
+  Fairy in 17 (`PaperWhite2_TypeSlot`, `PaperWhite2_SlotType` in `type_chart.h`). `ORIGINAL_TYPE_COUNT` (17) is what
+  the saves' per-type records and the original tables have.
+- **The label:** `a/0/8/2`'s new member 182 (`res/graphics/app_menu_common/182.png`, 32 x 16, 4bpp), drawn in
+  `033.pal`'s row 2 with its free colors 8 (fill) and 9 (edge), and the labels' shared 0, 14 (letters' shadow) and 15
+  (letters). `AppMenuCommon_GetTypeIconCharFile` and `_GetTypeIconPaletteIndex` (`app_menu_common.c`) serve it for
+  `TYPE_FAIRY`, so every screen that loads a label by type has it: the battle's move buttons and party list, the move
+  tutor, the trade screen, the PWT book, the battle scenario, the Pokédex move panel. Packed as a new sized 4bpp
+  resource; its header differs from the originals' (unsized, 1D 32 KB) and the game draws it the same, as
+  `pokedex_gra`'s 137 is.
+- **Screens with a label per type**, now by slot: the summary (`PSTA_TYPE_COUNT`, `p_status_local.h`), the bag
+  (`typeIconChr`/`typeIcons` in `itemmenu.h`; its actor unit 55 instead of 54, which the original fills: with the 18th
+  label the selected item's icon failed `ClActUnit_FindFreeActor`'s assert on changing pockets), the Pokédex entry (`allTypeChars`/`allTypeActors`, `pokedex_info.c`; its
+  other languages' sheets have no Fairy label, so it keeps the game's), the Info page's Matchups (18 places, Fairy's the
+  last), and the PC box, which has one more actor and character resource for Fairy (`BOX2_ACTOR_FAIRY_TYPE_ICON` 145,
+  `BOX2_CHR_FAIRY_TYPE_ICON` 129; `actors[146]`, `chrRes[130]`).
+- **Battle:** the move buttons' tile palette for Fairy is `a/0/1/1`'s new member 572 (`res/graphics/btlv/572.pal`, a
+  copy of Psychic's 469 with colors 8-13 pink; `btlv_input.c`'s `FAIRY_MOVE_TILE_PALETTE`). The HUD wedges' colors
+  (`paperwhite2_type_icons.c`'s `TYPE_COLORS`/`TYPE_SHADES`, 19 entries, Fairy's last are its label's two colors, 17 a
+  copy of Normal's for Roost's `TYPE_NULL`); the preview's bound is the chart's.
+- **Guards** for a Fairy Pokémon where the original reads or writes past a table of 17: the game clear's type medals
+  (`event_game_clear.c`) and the PWT's party main type (`wbt_tool.c`) count the original types only (no Fairy medal or
+  Type Expert record: their saves have one per original type); the Hall of Fame's particles and plate palettes
+  (`hall_of_fame_demo_main.c`) use Psychic's for Fairy; Cheren's Xtransceiver advice (`local_tvt_person_chelen.c`)
+  reads messages 153-170 for a pair with Fairy. The Pokédex search lists Fairy as its 18th type
+  (`POKEDEX_SEARCH_TYPE_COUNT`, `PokedexSearchMain_ListPosToType` by slot).
+- **Data:** 22 species retyped as in Gen 6 and Charm, Sweet Kiss and Moonlight made Fairy (`res/pokemon/*/data.json`,
+  `res/moves/*/data.json`). Types aren't saved per Pokémon, so caught ones change with their species.
+- **Cheren's text:** `tools/paperwhite2/cheren_type_text.py` writes `local_tvt_person_chelen_type.txt` from the chart:
+  a message whose weaknesses still match is kept as the game wrote it, the others and the 18 Fairy pairs are written
+  in its words. Run it after any chart edit (`--check` says what would change).
+- **Hidden Power** stays without Fairy (`hpTypes[16]`); Arceus, Fairy items and Gen 6's stat changes are later work.
 
 ## Adding global scripts
 
