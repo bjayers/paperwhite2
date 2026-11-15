@@ -67,7 +67,7 @@
         "special_attack": 50,
         "special_defense": 80
     },
-    "types": [ "TYPE_WATER", "TYPE_WATER" ],
+    "types": [ "TYPE_WATER", "TYPE_FAIRY" ],
     "catch_rate": 75,
     "evolution_stage": 3,
     "ev_yields": {

@@ -22,7 +22,7 @@
         "special_attack": 77,
         "special_defense": 75
     },
-    "types": [ "TYPE_GRASS", "TYPE_GRASS" ],
+    "types": [ "TYPE_GRASS", "TYPE_FAIRY" ],
     "catch_rate": 75,
     "evolution_stage": 2,
     "ev_yields": {

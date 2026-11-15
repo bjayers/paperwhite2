@@ -67,7 +67,7 @@
         "special_attack": 120,
         "special_defense": 115
     },
-    "types": [ "TYPE_NORMAL", "TYPE_FLYING" ],
+    "types": [ "TYPE_FAIRY", "TYPE_FLYING" ],
     "catch_rate": 30,
     "evolution_stage": 3,
     "ev_yields": {

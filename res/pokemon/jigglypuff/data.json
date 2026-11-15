@@ -67,7 +67,7 @@
         "special_attack": 45,
         "special_defense": 25
     },
-    "types": [ "TYPE_NORMAL", "TYPE_NORMAL" ],
+    "types": [ "TYPE_NORMAL", "TYPE_FAIRY" ],
     "catch_rate": 170,
     "evolution_stage": 2,
     "ev_yields": {
