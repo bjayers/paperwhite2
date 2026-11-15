@@ -2664,7 +2664,15 @@ reads 17 as "no type" (Roost, STAB, Color Change, Conversion 2, the PWT's "any t
 - **Cheren's text:** `tools/paperwhite2/cheren_type_text.py` writes `local_tvt_person_chelen_type.txt` from the chart:
   a message whose weaknesses still match is kept as the game wrote it, the others and the 18 Fairy pairs are written
   in its words. Run it after any chart edit (`--check` says what would change).
-- **Hidden Power** stays without Fairy (`hpTypes[16]`); Arceus, Fairy items and Gen 6's stat changes are later work.
+- **Hidden Power** stays without Fairy (`hpTypes[16]`); Arceus and Gen 6's stat changes are later work.
+- **Fairy moves** (`fairy-type.md` section 12): Fairy Wind, Disarming Voice, Draining Kiss, Play Rough, Moonblast,
+  Dazzling Gleam, Baby-Doll Eyes and Aromatic Mist, moves 566-573, data only (`moves.py add`, borrowed animations and
+  AI effects; five names shortened to 12 characters), in 17 species' level-up lists and Teddiursa's egg moves;
+  Dazzling Gleam at the Lentimas Town tutor (`move_tutors.json`) for 30 species. Basic AI's Soundproof list has
+  Disarming Voice (`basic.s`, under `PAPERWHITE2`).
+- **Fairy items** (`items.md`): the Roseli Berry (123) and the Fairy Gem (124), rows at the end of
+  `sItemEventAddTable` under `PAPERWHITE2` with the resist Berries' and the Gems' common handlers and `TYPE_FAIRY`;
+  `ItemEvent_AddItemCore` runs to `NELEMS(sItemEventAddTable)`; `PML_ItemIsBerry` counts the Roseli Berry.
 
 ## Adding global scripts
 

@@ -1041,3 +1041,8 @@ ITEM_ICON_SWEET_APPLE
 ITEM_ICON_PALETTE_SWEET_APPLE
 ITEM_ICON_SYRUPY_APPLE
 ITEM_ICON_PALETTE_SYRUPY_APPLE
+# Paper White 2: the Roseli Berry's icon and palette, for now a copy of the Pecha Berry's, and the Fairy Gem's palette
+# (the gems share the Fire Gem's icon), for now a copy of the Psychic Gem's
+ITEM_ICON_ROSELI_BERRY
+ITEM_ICON_PALETTE_ROSELI_BERRY
+ITEM_ICON_PALETTE_FAIRY_GEM

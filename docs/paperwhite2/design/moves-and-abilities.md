@@ -949,3 +949,21 @@ check (its archive checks fail as before); `compile_all.py` reports nothing in t
   popup" (Sweet Syrup, Intimidate); "once a battle per Pokémon" (Sweet Syrup's bit); "a condition's turn end: a stat
   change" (the syrup); "an amount ×2 for an ability, with the popup" (Ripen). The new mechanisms (the target kind, the
   condition slot, the attack-stat variable, the critical-hit stage's reset) are engine pieces such blocks would call.
+
+## 16. Built: the Fairy moves (2026-11-15)
+
+Eight Gen 6 Fairy moves, 566-573, all data, with `moves.py add`: `fairy-type.md` section 12 has their data,
+learners, shortened names and proof. What they showed about the tools:
+
+- **Drain is data.** `"drain"` is the percentage of the damage healed (`MOVE_PARAM_DRAIN`, read by
+  `btl_server_flow.c`), so Draining Kiss's 75% needs no handler.
+- **Never missing is data**: accuracy 101 skips `ServerEvent_CheckHit`'s roll (Disarming Voice, Aromatic Mist).
+- **An ally-target stat move is data**: `MOVE_QUALITY_STAT_CHANGE` with `MOVE_TARGET_ALLY` (Aromatic Mist) raises
+  the ally's stat; in a single battle there is no target and it does nothing.
+- **A name past 12 characters is shortened, and the constant renamed by hand**: `add` makes the constant from the
+  name (Disarm Voice → `MOVE_DISARM_VOICE`); the five shortened moves' constants and folders were renamed to the full
+  names after (`generated/moves.txt`, the folder), which nothing else named yet. An `add --constant` option would do it.
+- **The AI** has no flag reads, so a sound move goes in `basic.s`'s Soundproof list by name, as ball moves do for
+  Bulletproof.
+- **Learnsets and tutors are data**: `by_level`, `egg_moves`, and a tutor's move by its place in `move_tutors.json`
+  with `by_tutor` in each learner (sorted in the tutors' bit order, as `species_data.py` dumps them).

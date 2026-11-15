@@ -367,3 +367,129 @@ py-desmume with a copy of the user's save (`emulator-testing` memory), the debug
    Add move), Gen 6 stat changes, a chart editor page.
 
 Record each step in STATUS.md and plugins.md (a "Fairy type" section) as it lands.
+
+## 12. Fairy moves (2026-11-15)
+
+The user's decisions: the Gen 6 Fairy moves that Gen 1-5 Pokémon learn; **no** Misty Terrain (there is no terrain
+system), Geomancy or Light of Ruin; no new TM (a tutor instead); the Roseli Berry and the Fairy Gem now, the Pixie
+Plate and Arceus-Fairy later; the user draws the item icons.
+
+### 12.1 Research
+
+Gen 6 data, from memory of XY/ORAS (the numbers are well known; a "?" marks what I'm unsure of). Gen 6's "—" accuracy
+is the game's 101 (never misses, as Swift). Descriptions in `res/` are our own words.
+
+| Move | Cat. | Pow. | Acc. | PP | Prio. | Target | Effect, flags |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Fairy Wind | special | 40 | 100 | 30 | 0 | one adjacent | none; Protect, Mirror Move |
+| Disarming Voice | special | 40 | — | 15 | 0 | adjacent foes | never misses; sound, Protect, Mirror Move |
+| Draining Kiss | special | 50 | 100 | 10 | 0 | one adjacent | heals 75% of the damage dealt (Gen 5's `drain` field, a percentage: data only); contact, Protect, Mirror Move |
+| Play Rough | physical | 90 | 90 | 10 | 0 | one adjacent | 10% Attack -1; contact, Protect, Mirror Move |
+| Moonblast | special | 95 | 100 | 15 | 0 | one adjacent | 30% Sp. Atk -1; Protect, Mirror Move (not ballistic) |
+| Dazzling Gleam | special | 80 | 100 | 10 | 0 | adjacent foes | none; Protect, Mirror Move |
+| Baby-Doll Eyes | status | — | 100 | 30 | +1 | one adjacent | Attack -1; Protect, Magic Coat, Mirror Move |
+| Aromatic Mist | status | — | — | 20 | 0 | one adjacent ally | ally's Sp. Def +1; fails without an ally; not blocked by Protect or a Substitute (?) |
+
+**The next step** (each needs C):
+
+| Move | Data | What it does, and what the engine needs |
+| --- | --- | --- |
+| Flower Shield | Fairy, status, —, 10 PP, every Pokémon on the field | +1 Defense to every Grass-type Pokémon on the field, both sides (fails if none). A handler on `UNCATEGORIZED_MOVE` over all battlers, Dragon Cheer's per-target loop with a type test |
+| Fairy Lock | Fairy, status, —, 10 PP, the field, bypasses Protect | for the next turn no Pokémon can flee or switch (Ghost types too in Gen 6?). A field condition with a 2-turn count and a check where Mean Look's trapping is tested (`BtlServerFlow`'s switch/escape checks); message "No one will be able to run away during the next turn!" (our own wording) |
+| Crafty Shield | Fairy, status, —, 10 PP, the user's side, priority +3 | protects the user's side from status moves for the turn (not damaging ones). A side condition like Quick Guard/Wide Guard (`SIDE_CONDITION_*`, their handlers in `move_handlers.c`), keyed on `MOVE_CATEGORY_STATUS` instead of priority/spread |
+
+**Who learns them** (species 1-649; the hack's Applin line learns none). Gen 6 is the source; where Gen 6 gave no
+Gen 1-5 learner, a later generation's is used and said. Levels are fitted into the Gen 5 learnsets.
+
+| Species | Move, how | Source |
+| --- | --- | --- |
+| Clefairy | Disarming Voice 1, Moonblast 50 | Gen 6 (the levels ?) |
+| Clefable | Disarming Voice 1, Moonblast 1 (the Move Reminder) | Gen 6 ? |
+| Jigglypuff | Disarming Voice 11 | Gen 6 (level ?) |
+| Wigglytuff | Play Rough 1, Disarming Voice 1 | Gen 6 (Disarming Voice ?) |
+| Marill, Azumarill | Play Rough 23, 25 | Gen 6 |
+| Togetic | Fairy Wind 1 | Gen 6 |
+| Snubbull, Granbull | Play Rough 37, 43 | Gen 6 |
+| Ralts, Kirlia | Disarming Voice 1, Draining Kiss 17 | Gen 7+ (not in Gen 6; levels ?) |
+| Gardevoir | Moonblast 1, Disarming Voice 1, Draining Kiss 17 | Moonblast Gen 6; the others Gen 7+ ? |
+| Mawile | Play Rough 1, Fairy Wind 6, Baby-Doll Eyes 1 | Play Rough and Fairy Wind Gen 6; Baby-Doll Eyes later ? (the user's suggestion) |
+| Cottonee | Fairy Wind 3 | Gen 6 ? |
+| Whimsicott | Fairy Wind 1, Moonblast 50 | Gen 6 |
+| Eevee | Baby-Doll Eyes 9 | Gen 6 |
+| Teddiursa | Baby-Doll Eyes 1; Play Rough as an egg move | Gen 6 |
+| Dazzling Gleam (Gen 6's TM99), at the tutor | Clefairy, Clefable, Cleffa, Jigglypuff, Wigglytuff, Igglybuff, Mr. Mime, Mime Jr., Mew, Togepi, Togetic, Togekiss, Marill, Azumarill, Azurill, Snubbull, Granbull, Ralts, Kirlia, Gardevoir, Mawile, Swablu, Altaria, Audino, Cottonee, Whimsicott, Celebi, Jirachi, Cresselia, Arceus (30) | Gen 6, the ones I'm sure of; perhaps also Espeon, Chimecho, Latias/Latios, Roserade, Shaymin, Meloetta, Gothitelle (not given) |
+
+Not given, for the user to decide: **Aromatic Mist has no Gen 1-5 learner in Gen 6** (Spritzee's line only) — it is in
+the game and Metronome can call it, but nothing learns it; Disarming Voice for Swablu and Altaria (ORAS ?), Draining
+Kiss for the Clefairy line (not in any game I know), Play Rough at a tutor (no Gen 6 TM or tutor; Gen 8's TR list is
+wide).
+
+### 12.2 Built
+
+**The moves** (`tools/paperwhite2/moves.py add`, then each record set to §12.1's data), IDs 566-573:
+
+| ID | Constant | Name (12 characters) | Animation | AI effect |
+| --- | --- | --- | --- | --- |
+| 566 | `MOVE_FAIRY_WIND` | Fairy Wind | Silver Wind | `HIT` |
+| 567 | `MOVE_DISARMING_VOICE` | **Disarm Voice** | Hyper Voice | `BYPASS_ACCURACY` |
+| 568 | `MOVE_DRAINING_KISS` | **Drain Kiss** | Sweet Kiss | `RECOVER_HALF_DAMAGE_DEALT` |
+| 569 | `MOVE_PLAY_ROUGH` | Play Rough | Thrash | `LOWER_ATTACK_HIT` |
+| 570 | `MOVE_MOONBLAST` | Moonblast | Moonlight | `LOWER_SP_ATK_HIT` |
+| 571 | `MOVE_DAZZLING_GLEAM` | **Dazzle Gleam** | Flash | `HIT` |
+| 572 | `MOVE_BABY_DOLL_EYES` | **BabyDollEyes** | Charm | `ATK_DOWN` |
+| 573 | `MOVE_AROMATIC_MIST` | **Aroma Mist** | Aromatherapy | `BOOST_ALLY_POWER_BY_50_PERCENT` (Helping Hand's: the ally-targeting one) |
+
+- **Shortened names** (bold; the game's limit is 12 characters): Disarming Voice → Disarm Voice, Draining Kiss → Drain
+  Kiss, Dazzling Gleam → Dazzle Gleam, Baby-Doll Eyes → BabyDollEyes, Aromatic Mist → Aroma Mist. The constants and
+  folders keep the full names (`moves.py add` makes the constant from the name; the five were renamed after), so a
+  longer name later changes only `name`.
+- **All data:** none needs C. Draining Kiss's 75% is the record's `drain`; Disarming Voice's 101 accuracy never rolls;
+  Baby-Doll Eyes' priority and Aromatic Mist's ally target are fields. No `handlers_like`.
+- **The trainer AI** lists Disarming Voice with the sound moves against Soundproof (`basic.s`, under `PAPERWHITE2`).
+- **Learnsets** as §12.1's table: 17 species' level-up lists, Teddiursa's egg moves, and **Dazzling Gleam at the
+  Lentimas Town tutor** (`res/field/shops/move_tutors.json`: 10 Blue Shards, the menu's last, its 18th move of 32)
+  with its bit in the 30 species' `by_tutor`. Lentimas because its tutor teaches the special moves (Hyper Voice, Dark
+  Pulse, Dragon Pulse); it comes late in the story, as TM99 did in X and Y.
+- **Not done:** Easy Chat words (decision of moves-and-abilities.md §11.8), Aromatic Mist's learners.
+
+**The items** (unused items 123 and 124, `tools/data/rename_constant.py`):
+
+| Item | Data | Battle | Icon (placeholder) |
+| --- | --- | --- | --- |
+| Roseli Berry (`ITEM_ROSELI_BERRY`, 123) | the Occa Berry's (price 2, ×10: 20; Fling 10; Natural Gift Fairy 60), Berries pocket (`sItemPockets`), sorted after the Chilan Berry; hold effect 147 (Gen 5's new items', none exists for Fairy) | `HandlerRoseliBerry`: `CommonResistBerry(..., TYPE_FAIRY, FALSE)` and the shared "weakened" message; a Berry for `PML_ItemIsBerry` (Bug Bite, Pluck, Harvest, Unnerve, Ripen) and the AI's Natural Gift table | a copy of the Pecha Berry's, `res/items/roseli_berry/icon.png`, `.pal` |
+| Fairy Gem (`ITEM_FAIRY_GEM`, 124) | the Fire Gem's (price 20), Items pocket, sorted before the Fighting Gem | `HandlerFairyGemDecide`/`Power`: `CommonGemDecide`/`CommonGemPower` with `TYPE_FAIRY` and `HandlerGemEnd`: ×1.5 once, then consumed | the gems' shared icon (the Fire Gem's) with its own palette, a copy of the Psychic Gem's, `res/items/fairy_gem/icon.pal` |
+
+Their rows in `sItemEventAddTable` are under `#ifdef PAPERWHITE2` (`item_handlers.c`), and its lookup loop runs to
+`NELEMS(sItemEventAddTable)` (the original's `0xac`, its 172 rows). Not placed in the world: the debug menu's Give
+item (123, 124). Places they could go: the Roseli Berry with the other resist Berries (Route 4/16's Berry spots, a
+Pokémon Breeder's gift), the Fairy Gem with the Gems (`effect_encount.c`'s rustling-grass and dust-cloud items, which
+pick `ITEM_FIRE_GEM + rand(17)` and would need a case for it, or a hidden item).
+
+### 12.3 Proof (py-desmume, a copy of the user's save; scratchpad `fairymoves/`, shots in `fairymoves/shots/keep/`)
+
+Route 6, the harness of moves-and-abilities.md §15.3 (the lead a Clefable Lv. 24 with its moves and stats written, the
+damage roll at 100% and no critical hits). ROM `2ea47e931ae8f0f15ffdd6b1b64f7da608fdd0e5`, `verify_dsi_rom.py` intact.
+
+- **Into a Dragonair Lv. 60:** "Oinkums used Moonblast!" with Moonlight's moon (effect 236), "It's super effective!",
+  54 damage; Fairy Wind 24 (Silver Wind's, 318); Dazzling Gleam 44 (Flash's, 148), super effective; Disarming Voice 24
+  (Hyper Voice's, 304) with **no accuracy roll**. Its Dragon Tail "doesn't affect" Clefable.
+- **Roseli Berry** on the Dragonair: the ratio ×0.5, "The Roseli Berry weakened the damage to the wild Dragonair!",
+  "It's super effective!", **27** damage; the next Moonblast **54** (eaten).
+- **Fairy Gem** on the Clefable, Moonblast into a Snorlax: "The Fairy Gem strengthened Moonblast's power!", the power
+  ratio ×1.5, **27** damage; the next **19** (used up).
+- **Against a faster Snorlax:** Draining Kiss 13 damage, **10** healed (25 → 19 in another run: 75%, rounded);
+  Play Rough (Thrash's, 37) 37 damage and, its 10% forced, "The wild Snorlax's Attack fell!"; Baby-Doll Eyes (Charm's)
+  **before** the Snorlax's Tackle, "The wild Snorlax's Attack fell!", its Tackle 12 → 7; Aromatic Mist in a single
+  battle: "Oinkums used Aroma Mist!" and nothing else (no target; Gen 6 says "But it failed!").
+- **A double battle** against two Snorlax: Disarming Voice hit both (9 and 10) with no accuracy roll; Dazzling Gleam
+  both (16 and 18) after the target screen's confirmation; the Klink's Aromatic Mist on the Clefable: Aromatherapy's
+  animation, then the stat rise on the Clefable.
+- **Summary:** the four moves with the FAIRY label, PP, power, accuracy and their descriptions (`summary_moves`).
+  **Pokédex:** Clefable's Level Up list has Disarm Voice with the FAIRY label (`pokedex_moves`). **Bag:** the Roseli
+  Berry in Berries with its icon and description, the Fairy Gem in Items with the pink gem (`bag_items`), given by the
+  debug menu (123, 124).
+- The plain `w2_us` build's modules all match (`modules.ok`; its archive checks fail as before);
+  `test_moves_abilities` passes (21). The editor is unchanged.
+- **Noticed:** the Pokédex Info opened from party slot 0's summary listed slot 3's learnset (a Swinub's) after slot 0's
+  species was changed in memory; with slot 3 changed too it listed Clefable's. A test artifact or a bug in what the Info
+  page reads; not chased (the other session's Pokédex work).

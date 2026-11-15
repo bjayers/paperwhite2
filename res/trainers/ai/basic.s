@@ -87,6 +87,10 @@ Basic_CheckSoundproof:
     IfMoveEqualTo MOVE_ECHOED_VOICE, ScoreMinus10
     IfMoveEqualTo MOVE_RELIC_SONG, ScoreMinus10
     IfMoveEqualTo MOVE_SNARL, ScoreMinus10
+#ifdef PAPERWHITE2
+    // Paper White 2: the added sound move
+    IfMoveEqualTo MOVE_DISARMING_VOICE, ScoreMinus10
+#endif
 
 #if defined(PAPERWHITE2) && defined(ABILITY_BULLETPROOF)
 // Paper White 2: Bulletproof as Soundproof, for the ball and bomb moves (MOVE_FLAG_BALLISTIC in res/moves/,
@@ -1182,6 +1186,10 @@ Basic_NaturalGiftBerries:
     TableEntry ITEM_CUSTAP_BERRY
     TableEntry ITEM_JABOCA_BERRY
     TableEntry ITEM_ROWAP_BERRY
+#ifdef PAPERWHITE2
+    // Paper White 2: the Roseli Berry, unused item 123
+    TableEntry ITEM_ROSELI_BERRY
+#endif
     TableEntry TABLE_END
 
 Basic_CheckTailwind:

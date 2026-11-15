@@ -109,6 +109,7 @@
             [ 1, "MOVE_TAIL_WHIP" ],
             [ 5, "MOVE_SAND_ATTACK" ],
             [ 9, "MOVE_GROWL" ],
+            [ 9, "MOVE_BABY_DOLL_EYES" ],
             [ 13, "MOVE_QUICK_ATTACK" ],
             [ 17, "MOVE_BITE" ],
             [ 21, "MOVE_COVET" ],

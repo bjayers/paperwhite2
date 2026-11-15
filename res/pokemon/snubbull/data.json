@@ -117,6 +117,7 @@
             [ 25, "MOVE_ROAR" ],
             [ 31, "MOVE_RAGE" ],
             [ 37, "MOVE_TAKE_DOWN" ],
+            [ 37, "MOVE_PLAY_ROUGH" ],
             [ 43, "MOVE_PAYBACK" ],
             [ 49, "MOVE_CRUNCH" ]
         ],
@@ -174,6 +175,7 @@
             "MOVE_LAST_RESORT",
             "MOVE_SUPERPOWER",
             "MOVE_HYPER_VOICE",
+            "MOVE_DAZZLING_GLEAM",
             "MOVE_SNORE",
             "MOVE_HEAL_BELL",
             "MOVE_SLEEP_TALK"

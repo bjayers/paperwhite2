@@ -107,7 +107,9 @@
             [ 1, "MOVE_SING" ],
             [ 1, "MOVE_DISABLE" ],
             [ 1, "MOVE_DEFENSE_CURL" ],
-            [ 1, "MOVE_DOUBLE_SLAP" ]
+            [ 1, "MOVE_DOUBLE_SLAP" ],
+            [ 1, "MOVE_PLAY_ROUGH" ],
+            [ 1, "MOVE_DISARMING_VOICE" ]
         ],
         "by_tm": [
             "TM06",
@@ -167,6 +169,7 @@
             "MOVE_LAST_RESORT",
             "MOVE_ICY_WIND",
             "MOVE_HYPER_VOICE",
+            "MOVE_DAZZLING_GLEAM",
             "MOVE_SNORE",
             "MOVE_KNOCK_OFF",
             "MOVE_ROLE_PLAY",

@@ -60,6 +60,7 @@
     "learnset": {
         "by_level": [
             [ 1, "MOVE_ABSORB" ],
+            [ 3, "MOVE_FAIRY_WIND" ],
             [ 4, "MOVE_GROWTH" ],
             [ 8, "MOVE_LEECH_SEED" ],
             [ 10, "MOVE_STUN_SPORE" ],
@@ -101,6 +102,7 @@
         "by_tutor": [
             "MOVE_COVET",
             "MOVE_SEED_BOMB",
+            "MOVE_DAZZLING_GLEAM",
             "MOVE_SNORE",
             "MOVE_KNOCK_OFF",
             "MOVE_TAILWIND",

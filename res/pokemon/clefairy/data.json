@@ -106,6 +106,7 @@
         "by_level": [
             [ 1, "MOVE_POUND" ],
             [ 1, "MOVE_GROWL" ],
+            [ 1, "MOVE_DISARMING_VOICE" ],
             [ 4, "MOVE_ENCORE" ],
             [ 7, "MOVE_SING" ],
             [ 10, "MOVE_DOUBLE_SLAP" ],
@@ -122,6 +123,7 @@
             [ 43, "MOVE_MOONLIGHT" ],
             [ 46, "MOVE_LIGHT_SCREEN" ],
             [ 49, "MOVE_GRAVITY" ],
+            [ 50, "MOVE_MOONBLAST" ],
             [ 52, "MOVE_METEOR_MASH" ],
             [ 55, "MOVE_HEALING_WISH" ],
             [ 58, "MOVE_AFTER_YOU" ]
@@ -186,6 +188,7 @@
             "MOVE_ZEN_HEADBUTT",
             "MOVE_HYPER_VOICE",
             "MOVE_IRON_TAIL",
+            "MOVE_DAZZLING_GLEAM",
             "MOVE_SNORE",
             "MOVE_KNOCK_OFF",
             "MOVE_ROLE_PLAY",
