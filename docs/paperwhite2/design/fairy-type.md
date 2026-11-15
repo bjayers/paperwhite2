@@ -1,0 +1,325 @@
+# Fairy type: the foundation
+
+Research, design and build checklist for adding the Fairy type to Paper White 2 with the Gen 6+ matchups, shown
+everywhere a type is shown, and with the existing Pokémon (and perhaps moves) that became Fairy in Gen 6 retyped. No
+new moves, abilities or items here. This follows `design/moves-and-abilities.md` §8, which it replaces as the plan.
+
+**Evidence.** Everything below was read from `src/`, `include/`, `res/`, `generated/`, `tools/` and the editor at
+commit `e8910ecbc4`, and from the user's Pokeweb repo (reference only). What is inferred and not traced is marked
+*(inferred)*. Nothing was built or run.
+
+## 1. Summary
+
+- **Fairy is `TYPE_FAIRY = 18`**, appended after `TYPE_NULL = 17` in `generated/types.txt` (§3). Every original check
+  that treats 17 as "no type" keeps working, including Roost on a Fairy/Flying Togekiss. The cost is a gap at 17:
+  tables indexed by type get an unused 17th entry, or map Fairy to slot 17 (§3.2).
+- **Types aren't saved per Pokémon.** `PKM_PARAM_TYPE1/2` read the species' data every time
+  (`src/system/poke_tool.c:1861`). Retyping the species in `res/` retypes every caught Pokémon, and the save format
+  doesn't change.
+- **The chart is already one table in ARM9 main** (`src/paperwhite2/main/paperwhite2_type_chart.c`), read by the
+  battle, the AI's damage estimate, the Move Effectiveness Preview and the Pokédex's Matchups. It grows to 19 × 19,
+  with a neutral row and column 17 (§4).
+- **The type icons have one source.** `AppMenuCommon_GetTypeIconCharFile` and `_GetTypeIconPaletteIndex`
+  (`src/system/app_menu_common.c:45-50`) serve every screen's 32 × 16 type label. One new icon member, one mapping
+  there, and Fairy shows wherever those labels are drawn. The screens that keep **an array of 17 icons** each need it
+  grown (§5).
+- **Four original routines would write or read out of bounds for a Fairy Pokémon** and must land before any species
+  is retyped (§6.1): the game-clear type medals, the PWT's party main type, the Hall of Fame's per-type effects, and
+  Cheren's Xtransceiver type advice.
+- **Art the user draws:** one 32 × 16 type label (with two colors added to an existing palette row), one move-button
+  palette for the battle menu, and two HUD wedge colors. Pokeweb has no usable 32 × 16 Fairy label (§5.4).
+- **Data:** the 23 species of §8 and, if the user wants them now, Charm, Moonlight and Sweet Kiss (§8.2).
+- **Is it "fairly straightforward"?** Yes, with no blockers: no format changes, no save changes, no hard-coded
+  addresses. But it is wide rather than deep: about 20 small C edits in 14 files, 3 new art members, 2 text banks
+  and the data. §11 orders it into five testable steps.
+
+## 2. Decisions for the user
+
+| # | Question | Recommendation |
+| --- | --- | --- |
+| 1 | Gen 6's Steel change: Steel no longer resists Ghost and Dark | **Include.** Fairy's balance assumes it (Steel became one of Fairy's two checks), and it is two cells of the chart. It is a change to vanilla matchups, so say so in the hack's notes |
+| 2 | Retype Charm, Moonlight, Sweet Kiss to Fairy | **Include in the foundation.** Data only (3 `data.json`), all status moves, so the type matters only for their icon, Conversion and the AI's type reads. Without them a Fairy type has no Fairy move at all, and Conversion can never pick Fairy |
+| 3 | Hidden Power | **No Fairy**, as in Gen 6+. Nothing to do: `hpTypes[16]` (`poke_tool.c:83`) stays |
+| 4 | Arceus's Fairy form and the Pixie Plate | **Later.** Needs a new item, a new form (form 17 with type 18), its sprites, and a case in `PML_ItemGetArceusPlateType` (`poke_tool.c:~2544`). Arceus's 17 forms are form = type today |
+| 5 | Fairy items: Fairy Gem, Pixie Plate, Roseli Berry; a type-boosting item (Gen 5 has no Pink Bow / Polkadot Bow) | **Later**, with the items work: each is a new item and a line in `item_handlers.c` (`CommonTypeBoostingItem`, `CommonGemPower`, resist berries) |
+| 6 | Gen 6's other changes to these species (Clefable's, Wigglytuff's, Granbull's... stat buffs) | **Not foundation.** A separate data pass if wanted |
+| 7 | Fairy in the PWT's Type Expert tournament and the Medal Box's type medals | **Leave Fairy out** of both: their saves have one record per original type. Make them ignore Fairy safely (§6.1) |
+| 8 | Fairy = 18 (recommended) or Fairy = 17 with `TYPE_NULL` moved | **18** (§3.1) |
+
+## 3. The constant
+
+### 3.1 Why 18, not 17
+
+`generated/types.txt` has `TYPE_NORMAL` 0 to `TYPE_DARK` 16 and `TYPE_NULL = 17`, "the type of a typeless move".
+Gen 5 has no ??? type as a real index: 17 is only a sentinel. The original code tests it as a bare number:
+
+- `splitTypeCore` (`src/ov167/btl_pokeparam.c:514-539`): Roost replaces Flying with `0x11`, then collapses it. A
+  Fairy/Flying Togekiss under Roost becomes mono-Fairy only if Fairy isn't 17.
+- `DoesMonHaveType` (`:554`), `GetTypeEffectiveness` (`btl_calc.c:142`), STAB (`btl_server_flow.c:3691`), Color
+  Change (`ability_handlers.c:2196`), Conversion 2 (`move_handlers.c:5080`), the PWT (`wbt_tool.c:138-141`,
+  `wbt_system.c:494`, `scrcmd_wbt.c:46`), and `TYPE_NULL` uses (`btl_server_flow.c:6271, 6644`,
+  `wbt_makematch.c:227`, `poke_regulation.c:139`, whose rules are data with 17 for "any type").
+
+Fairy as 17 (what White2Upgrade, Pokeweb and the PMC plugins assumed: `paperwhite2_type_icons.c:60` and
+`paperwhite2_move_preview.c:84` say "17 itself, a Fairy type in hacks that add one") means rewriting every one of
+those and any data that stores 17 as "none". Fairy as 18 means none of them change. That is the recommendation, as
+`moves-and-abilities.md` §8 already said.
+
+### 3.2 The gap at 17, and a slot helper
+
+Tables indexed by type then need 19 entries with 17 unused, or a mapping. For the battle chart, 19 × 19 with a neutral
+row and column 17 is simplest (§4). For the UI's arrays of icons, where an entry costs VRAM and a loop over "all
+types" would draw slot 17, add one hack header (`include/paperwhite2/types.h`, *proposed*):
+
+```c
+// The types a screen shows, Normal to Dark and then Fairy, by slot: slot 17 is Fairy
+#define PAPERWHITE2_TYPE_SLOT_COUNT 18
+u32 PaperWhite2_TypeSlot(u32 type);     // TYPE_FAIRY -> 17, 0-16 as they are
+u32 PaperWhite2_SlotType(u32 slot);     // 17 -> TYPE_FAIRY
+```
+
+Static inlines are enough. Every "17" below that is "the types" becomes `PAPERWHITE2_TYPE_SLOT_COUNT` with these
+mappings, under `#ifdef PAPERWHITE2`.
+
+### 3.3 Lists, text and Easy Chat
+
+- `generated/types.txt`: `TYPE_FAIRY` after `TYPE_NULL = 17` (18 by count). The editor's pickers (`x-constant:
+  "TYPE_"` in `species.schema.json` and `move.schema.json`) and every packer (`species_data.py:343`, `move_data.py`,
+  `tr_ai_script.py`, `field_script.py`) are constant-driven and pick it up. Don't rerun `make_constants.py` on it.
+- `res/types/fairy.json` `{ "name": "Fairy" }`.
+- **The type name banks need a message 17.** `type_names.txt` and `type_names_upper.txt` are `\from{types.name}`, and
+  `text_sources.types()` skips `TYPE_NULL` (`tools/text/text_sources.py:102`). With Fairy after it, Fairy's name would
+  land at message 17. Give `TYPE_NULL` a placeholder message (an empty or "???" name) instead of skipping it, so
+  `loadTypeTextToStrbuf(type)` reads message 18 for Fairy.
+- **Easy Chat:** `pms_words.py` counts every message of `type_names_upper` as a word (`CATEGORIES`, line 38), and
+  every later category's words would shift by two, changing saved sentences. Add `"TYPES": 17` to `WORD_COUNTS`
+  (line 31), as moves and abilities have. Fairy is then no Easy Chat word, and `PMS_WORD_TYPE(TYPE_FAIRY)` must never
+  be used.
+- The Pokédex search's own type names are their own messages: append `PokedexSearchMain_Text_Fairy` to
+  `res/text/system/pokedex_search_main.txt` (§7).
+
+## 4. The chart and the battle
+
+### 4.1 Format
+
+A matrix, not Gen 3/4's list of triples: `PaperWhite2_TypeChart[TYPE_CHART_SIZE][TYPE_CHART_SIZE]` of u8, attacking
+type first, values 0 / 2 / 4 / 8 (none, half, normal, double), `include/paperwhite2/type_chart.h` (`TYPE_CHART_SIZE
+17`). `btl_calc.c:72-89` points the battle at it under `PAPERWHITE2`. `GetTypeEffectiveness` (`btl_calc.c:141`)
+returns neutral for 17 before reading the table.
+
+**Foresight, Miracle Eye, Scrappy, Gravity, Iron Ball** aren't in the chart: they are handlers on
+`BATTLE_EVENT_CHECK_TYPE_EFFECTIVENESS` (`field_handlers.c:84`, the server's event at `btl_server_flow.c:6743`).
+None touches Fairy, and no Gen 5 mechanic lifts Fairy's Dragon immunity, so nothing changes there.
+
+### 4.2 The new chart (19 × 19)
+
+- `TYPE_CHART_SIZE 19`; row and column 17 all 4 (never read, and neutral so any loop over all 19 is harmless).
+- Fairy's row (attacking), by defending type, Normal ... Dark, [17], Fairy:
+  `4, 8, 4, 2, 4, 4, 4, 4, 2, 2, 4, 4, 4, 4, 4, 8, 8, 4, 4`
+  (2× Fighting, Dragon, Dark; ½× Poison, Steel, Fire).
+- Fairy's column (defending), by attacking type, Normal ... Dark, [17], Fairy:
+  `4, 2, 4, 8, 4, 4, 2, 4, 8, 4, 4, 4, 4, 4, 4, 0, 2, 4, 4`
+  (2× from Poison, Steel; ½× from Fighting, Bug, Dark; immune to Dragon).
+- Decision 1: Ghost→Steel and Dark→Steel from 2 to 4 (`[7][8]`, `[16][8]`).
+- `tools/paperwhite2/pokedex_templates.py` reads the C file's numbers (`type_chart()`, line ~935) and indexes the
+  icons after the types with `len(type_chart())` (line ~910): update it for 19 and the slot order.
+
+### 4.3 Battle code (ov167, ov169, ov170)
+
+| Site | Today | Change |
+| --- | --- | --- |
+| `GetTypeWeaknesses` (`btl_calc.c:213`), Conversion 2's list of resisting types | `i < 17` | `i < TYPE_CHART_SIZE`: row 17 is neutral, so 17 never lists. Its buffer is the handler work's 0x11 bytes (`move_handlers.c:5081`): at most 8 types ever resist one attacker, so 17 bytes still hold them |
+| Conversion (`move_handlers.c:1000`), Color Change, Reflect Type, Soak, Transform, Roost | by `DoesMonHaveType` / `GetPokeType` | none |
+| STAB, `GetTypeEffectiveness`, `BtlCalc_GetTypePairEffectiveness` | 17 = none | none |
+| Trainer AI: `AICalcDamage` and every switch check in `btl_client.c` (3597-4000) use the chart; `res/trainers/ai/*.s` name specific types (`TYPE_STEEL` for poison immunity, Expert's pre-split physical list) | | none needed. The type-absorbing table (`btl_client.c:819`) has no Fairy ability in Gen 5 |
+| Hidden Power, Judgment, Natural Gift, Weather Ball, Camouflage, Nature Power, Techno Blast | tables of Gen 5 types | none (decisions 3-5) |
+| Items: type boosters, gems, resist berries (`item_handlers.c`) | one per Gen 5 type | none: no Fairy item exists |
+
+Box data, personal data and move data store a type as a u8 (`species_data.py:121`, the move record's first byte);
+nothing packs a type into fewer bits (searched for bit fields named `type`; the move preview's attribute mask is 5 bits,
+`paperwhite2_move_preview.c:65`). Entree Forest stores species and moves, not types.
+
+## 5. Icons and every screen that shows a type
+
+### 5.1 The shared type label
+
+- Archive `a/0/8/2` (`ARCID_APP_MENU_COMMON` 82, `res/graphics/app_menu_common/`): palette member 33 (`033.pal`,
+  `AppMenuCommon_GetTypeIconPaletteFile` = 0x21), labels 34-50 for the 17 types (`0x22 + type`), then 51-55 the
+  contest categories Cool-Tough, 56-58 the move categories, cells 59-61, animations 62-64. **Type 18 today would get
+  member 52, Beauty's label, in palette 1** (`sTypeIconPalettes`, `app_menu_common.c:22`, 22 entries).
+- Each label is a 32 × 16, 4bpp OBJ character in one of three palette rows of `033.pal`. Every screen loads those
+  three rows (`ClActSys_LoadPlttRange(..., 0, 3)` in `p_sta_sys.c:421`, `itemmenu_disp.c:358`,
+  `pokedex_info.c:1508`, the hack's panels...). Measured over the PNGs: the labels use indices 0, 14 and 15 shared and
+  two of their own. **Row 2's indices 8-13 are unused** (magenta 255,0,255 placeholders; row 2 is Bug, Grass, Dragon
+  and Smart).
+- **Design:** Fairy's label is a new member **182** (`182.png`, the archive ends at 181), drawn with indices 0, 14, 15
+  and two new colors put in row 2's free indices 8 and 9 (Gen 6's label pink and its dark edge). No screen needs a
+  fourth palette row. Then under `PAPERWHITE2` in `app_menu_common.c`:
+  - `AppMenuCommon_GetTypeIconCharFile`: `TYPE_FAIRY` → 182;
+  - `AppMenuCommon_GetTypeIconPaletteIndex`: `TYPE_FAIRY` → 2.
+- **Check when building:** `graphics_archive.py` makes an added PNG "a sized character resource". The labels are OBJ
+  characters loaded as 1D tiles. A 32 × 16 image's tiles in rows are the same order *(inferred)*, but compare the new
+  member's NCGR header (mapping mode, size fields) with member 34's, and copy 34's header if the game draws it wrong.
+
+### 5.2 Screens and their arrays
+
+Screens that load one label at a time from the type (`GFL_G2DIOReadOBJNCGRArc(..., GetTypeIconCharFile(type))`) need
+nothing beyond §5.1. Those that preload one per type need their arrays grown (by slot, §3.2):
+
+| Screen | Where | What it keeps | Change |
+| --- | --- | --- | --- |
+| Summary (info page types, skill page move types) | `src/ov207/p_status_local.h:31` `PSTA_TYPE_COUNT 17`; `p_sta_sys.c:428, 487`; `p_sta_info.c:169`, `p_sta_skill.c:585` | 17 loaded labels, indexed by type | 18 by slot |
+| Bag (a TM's move type) | `include/app/itemmenu.h:81, 98` (`typeIconChr[17]`, `typeIcons[17]`); `itemmenu_disp.c:366, 388, 442, 1134` | one actor per type, shown by `typeIcons[PML_MoveGetType(move)]` | 18 by slot; **index 18 today reads past the array** |
+| PC box (the selected Pokémon's types) | `src/ov255/box2_obj.c:985, 1019, 1042`; `include/app/box2_obj.h:11-18` | actors 32-48 by type; **actor 49 is the first tray icon**, so 32 + 18 is a tray icon | add one actor for Fairy (`BOX2_ACTOR_MAX` 145 → 146, a `chrRes` slot), or remap the group by slot. Note `ShowTypeIcons` hides a second type of 0 (Normal): no Fairy species is X/Normal, so no effect |
+| Pokédex entry (vanilla top screen) | `src/ov296/pokedex_info.c:180-181` (`allTypeChars[TYPE_NULL]`), `:1527-1550` | 17 preloaded | 18 by slot. The struct's offsets move; it is the overlay's own work, so fine in C |
+| Pokédex Info → Matchups (hack) | `src/paperwhite2/ov298/paperwhite2_pokedex_info_panels.c:534-535, 806, 934, 1330, 1367` | `TYPE_CHART_SIZE` icons in 3 rows of 6; **the 18th place was left for Fairy** (`design/pokedex.md:197`) | loop over slots, read the chart with `PaperWhite2_SlotType(i)`; arrays by slot (not `TYPE_CHART_SIZE`, which becomes 19); the move list's `type < TYPE_CHART_SIZE` (line 1330) through the slot |
+| Pokédex Info → Moves, move panel (hack) | `paperwhite2_pokedex_move_panel.c:561` | one label by type | none |
+| Battle menu move buttons | `src/ov168/btlv_input.c:225` `data_ov168_021f3864[17]` (BG palette member per move type, `a/0/1/1` 464-480), read at `:2453`; the label at `:2457` | | **new member 572** (`res/graphics/btlv/572.pal`, the archive ends at 571): Fairy's button palette. Map `TYPE_FAIRY` → 572. Index 18 today reads past the table |
+| Battle menu's 22 "type" actors | `btlv_input.c:53, 274` | decorative pieces of the command screen's background, 22 positions | none: not types (`moves-and-abilities.md` §8 called them type actors) |
+| Battle party list (moves, types) | `src/ov287/b_plist_obj.c:273-279` | one label by type | none |
+| Move tutor, trade screen, PWT book, battle scenario, Habitat Dex, DexNav | `ov258/move_tutor_main.c:1389`, `ov194/pokemontrade_message.c:94`, `ov322/pkwd_book.c:1251`, `ov288/b_scenario_graphic.c:470`; the hack's ov303 files print type names | by type | none |
+| Battle HUD wedges (hack) | `src/paperwhite2/ov168/paperwhite2_type_icons.c:61` `ICON_TYPE_COUNT 18`, `TYPE_COLORS`/`TYPE_SHADES` (`:151-158`, entry 17 = the plugin's Fairy `0x723c`/`0x48e9`) | colors by type | 19 entries: Fairy's colors at 18 (sampled from the new label, as the others were), 17 unused; or index by slot. Bounds checks at `:863, 875, 986` follow |
+| Move Effectiveness Preview (hack) | `paperwhite2_move_preview.c:85` `MOVE_PREVIEW_TYPE_COUNT 18`, `:286, 297, 437` | a bound only; matchups from the battle's chart (`:331`) | `TYPE_CHART_SIZE`. Nothing else |
+| Hall of Fame | `src/ov265/hall_of_fame_demo_main.c:88` particles, `hall_of_fame_demo_obj.c:66` palettes, by the first type (`:267`) | 17 entries | §6.1 |
+
+### 5.3 The editor
+
+The type pickers are generated from `generated/types.txt`, so `TYPE_FAIRY` appears in the Pokémon and Move editors with
+no change. The Move Editor already filters `TYPE_NULL` (`editor/src/modules/moves/MoveEditor.tsx:415`); the species
+form shows whatever the schema's constant list gives *(not checked whether it lists `TYPE_NULL`)*. The editor draws no
+type icons and has no type chart page; a chart editor would be new work (the chart is C today; a JSON source packed
+into the C would be the way, later).
+
+### 5.4 The art, and Pokeweb's
+
+| Art | Size and colors | Placeholder |
+| --- | --- | --- |
+| Type label "FAIRY" (`a/0/8/2` 182) | 32 × 16, 4bpp, palette row 2: indices 0 / 14 / 15 as every label, 8 and 9 the new pink and edge | the user draws it; a recolored copy of Psychic's (47) with the letters redrawn is a fine stand-in |
+| `033.pal` row 2 indices 8, 9 | two colors | Gen 6's label pink and its edge |
+| Move button palette (`a/0/1/1` 572) | 16 colors, a copy of a type's button palette (464-480) recolored | Psychic's (469) recolored pink |
+| HUD wedge fill and shade | two RGB555 values | the plugin's `0x723c` / `0x48e9` |
+| Hall of Fame particles and palette | | Psychic's (§6.1) |
+
+Pokeweb has Fairy only in the HUD wedge tables (`runtime/battle-type-hud/assets*.h`, the 8 × 8 approved icons, whose
+`icons/fairy.png` isn't in the repo) and Frost's 18 × 18 chart offsets (`src/pokeweb/typeChartModel.ts`). Its
+`summary-type-icons` excludes Fairy (`README.md:17`). So no usable 32 × 16 Fairy label exists there.
+
+## 6. Original code that a Fairy Pokémon breaks
+
+### 6.1 Out of bounds (must land with or before the retypes)
+
+| Where | What | Fix (under `PAPERWHITE2`) |
+| --- | --- | --- |
+| `src/ov012/event_game_clear.c:300-326` (game clear, Medal Box type medals) | `u32 typeCounts[17]` on the stack, `typeCounts[type1]++` for every party member: **a Fairy writes past the array** | count only types below 17 (no Fairy medal, decision 7); a party with a Fairy then earns no single-type medal, which is right |
+| `src/ov055/wbt_tool.c:120` `WbtTool_GetPartyMainType` (PWT entrant's main type) | `u8 counts[17]`, `counts[type]++`: **stack write** | skip Fairy as it skips 17. The Type Expert records are one per original type (`WbtSave` 29 counts; `scrcmd_wbt.c:35-55`) |
+| `src/ov055/wbt_system.c:469` (PWT's simulated NPC matches) | its own copy of the 17 × 17 chart; a retyped NPC Pokémon reads past it | read `PaperWhite2_TypeChart` |
+| `src/ov265/hall_of_fame_demo_main.c:88`, `hall_of_fame_demo_obj.c:66` | particle and palette member by the first type: a Clefable or a Togekiss reads past the tables, **a wild file ID** | map Fairy to Psychic's entries (47 and 17) until there is art |
+| `src/ov259/local_tvt_person_chelen.c:22, 299` (Cheren's call: "a Normal- and Flying-type Pokémon... it's weak against...") | a message per pair of types, 153 of them, by a triangular index of 17: a Fairy pair indexes past the bank's 153 | §7 |
+
+### 6.2 Out of range, but safe
+
+- `scrcmd_pokemon_center.c:36, 73, 318` (the type medals' Pokédex check) reads its types from its own archive
+  (`ARCID_MEDAL_TYPE_SPECIES` 239), not from the species. Those stay Gen 5 types, so no Fairy reaches the array, and the
+  medals keep their vanilla meaning. Leave it.
+- `poke_regulation.c:139` and the PWT's `expertType` compare to data where 17 means "any".
+- The Pokédex search (§7) and every screen of §5.2 that reads past an array today: all fixed there.
+
+## 7. Text
+
+- **Type names:** §3.3.
+- **Pokédex search:** `sPokedexSearchTypeMsgs[POKEDEX_SEARCH_TYPE_COUNT + 1]` (`src/ov300/pokedex_search_main.c:54`,
+  17 types then "-") is read by list position (`:634`) and by the criteria's stored type (`:638`,
+  `pokedex_search_bmp.c:139-262`); the list adds `POKEDEX_SEARCH_TYPE_COUNT` rows (`pokedex_search_list.c:220`,
+  `include/app/pokedex_search_main.h:24`). Add a Fairy row: the list's 18th position stores `TYPE_FAIRY`, and the
+  message lookup by type maps 18. The engine compares the stored type with the species' (`ov302/pokedex_search_engine.c:185`,
+  `CRITERIA_ANY` 0xff), so it needs nothing.
+- **Cheren's call** (`res/text/system/local_tvt_person_chelen_type.txt`, 153 messages): append 18 messages for Fairy
+  and each type with it, and index them past 153 for any pair with Fairy. The existing messages also become wrong for
+  types now weak to Fairy: every message naming Dragon, Fighting or Dark as one of the Pokémon's types gains "Fairy"
+  in its weaknesses where the pair's other type doesn't cancel it. Best: a small tool that writes all 171 messages from
+  the chart, so they stay right after any chart edit (step 4).
+- **Battle messages:** none mention a type by number.
+
+## 8. Data
+
+### 8.1 Species (Gen 6's Fairy retypes among 1-649)
+
+Verified against `res/pokemon/*/data.json` (old) and Pokeweb's list (`src/pokeweb/romPatchModel.ts:100-123`), which
+agree with Gen 6. None has an alternate form; Paper White 2's added species (Applin's line) and forms aren't Fairy.
+
+| # | Species | Now | Gen 6 |
+| --- | --- | --- | --- |
+| 35, 36 | Clefairy, Clefable | Normal | Fairy |
+| 173 | Cleffa | Normal | Fairy |
+| 39, 40 | Jigglypuff, Wigglytuff | Normal | Normal/Fairy |
+| 174 | Igglybuff | Normal | Normal/Fairy |
+| 122 | Mr. Mime | Psychic | Psychic/Fairy |
+| 439 | Mime Jr. | Psychic | Psychic/Fairy |
+| 175 | Togepi | Normal | Fairy |
+| 176, 468 | Togetic, Togekiss | Normal/Flying | Fairy/Flying |
+| 183, 184 | Marill, Azumarill | Water | Water/Fairy |
+| 298 | Azurill | Normal | Normal/Fairy |
+| 209, 210 | Snubbull, Granbull | Normal | Fairy |
+| 280, 281, 282 | Ralts, Kirlia, Gardevoir | Psychic | Psychic/Fairy |
+| 303 | Mawile | Steel | Steel/Fairy |
+| 546, 547 | Cottonee, Whimsicott | Grass | Grass/Fairy |
+
+23 species, each `"types"` in its `data.json`. Gallade stays Psychic/Fighting. Applin's line (Grass/Dragon,
+Dragon/Normal...) becomes weak to Fairy through the chart, with no data change.
+
+### 8.2 Moves (decision 2)
+
+Charm (204), Sweet Kiss (186) and Moonlight (236), each `"type": "TYPE_NORMAL"` today in `res/moves/<move>/data.json`.
+All status moves (`ATK_DOWN_2`, `STATUS_CONFUSE`, `HEAL_HALF_MORE_IN_SUN`; Moonlight shares Morning Sun's handler,
+`move_handlers.c:640`, which doesn't read the type). Retyped, they change their icon and button color, what Conversion
+can pick, and what the AI's type loads see. No other Gen 5 move became Fairy.
+
+## 9. Risks
+
+- **Saves:** none from types. Easy Chat words keep their numbers only with the cap (§3.3). The PWT and Medal Box saves
+  have no Fairy records, and the fixes of §6.1 keep Fairy out of them.
+- **The order of the steps:** a retyped species before §6.1 can corrupt the stack at game clear or a PWT entry. The
+  retypes (step 3) come after the guards (step 1).
+- **The plain build:** every C change under `#ifdef PAPERWHITE2` (the chart already is). The constant, the text banks
+  and the data change both builds' data, as the hack's other data does.
+- **OAM and VRAM:** one more preloaded label (8 tiles) on the summary, bag, box and Pokédex entry; one more actor in the
+  box. *(inferred)* small; check each screen once.
+- **The PMC-era plugins** (wedges, preview) assumed Fairy = 17: their tables move Fairy to 18 (or slot 17), and their
+  bounds become the chart's.
+- **The trainer AI** sees Fairy only through the chart and type loads; no script change is needed. Smarter play
+  (avoiding Dragon moves into a Fairy) already follows from `AICalcDamage`.
+- **The new icon member** must be the same kind of NCGR as the others (§5.1).
+
+## 10. Testing
+
+py-desmume with a copy of the user's save (`emulator-testing` memory), the debug menu's Give Pokémon:
+
+- a Clefable: summary info and skill pages, box, bag (a TM's type with Charm retyped is not a TM; check with a test
+  move), Pokédex entry, Info → Matchups (Dragon 0×, Poison and Steel 2×, Fighting/Bug/Dark ½×), Pokédex search by
+  Fairy, battle HUD wedge, the move buttons' color for Charm;
+- in battle: Dragon Claw into Clefable (no effect), Clefable's Charm, a Fairy move's preview color (via a test move or
+  Charm's icon only, since there is no damaging Fairy move yet: check the preview with a retyped test move);
+- Togekiss using Roost (mono-Fairy, Ground hits it);
+- Conversion 2 after a Dragon move (may pick Fairy);
+- the Hall of Fame and game clear with a Fairy in the party (save first); the PWT entry with one; Cheren's call about
+  Clefable and about a Dragon type;
+- `tools/build/verify_dsi_rom.py build/paperwhite2.nds` after the build.
+
+## 11. Build order
+
+0. **Constants and text** (no behavior): `TYPE_FAIRY`, `res/types/fairy.json`, the type banks' message 17, the Easy
+   Chat cap, `pokedex_search_main.txt`'s Fairy. Test: the hack build; `PMS_WORD_*` in the generated `pms_words.h`
+   unchanged (diff it); the type bank has 19 messages.
+1. **Chart and guards:** the 19 × 19 chart (Fairy, plus the Steel change if decided), `GetTypeWeaknesses`, the PWT's
+   chart, and every §6.1 fix but Cheren's text. Test: a temporarily retyped species in a scratch build, battle
+   matchups, game clear and PWT entry with it.
+2. **Icons:** the label member 182 and `033.pal`, `AppMenuCommon_*` mappings, the slot helper, every array of §5.2, the
+   button palette 572, the HUD colors, the preview's bound, the Matchups slot 17, the Pokédex search row. Test: every
+   screen of §10 with the scratch retype. Placeholder art first; the user's art drops in after.
+3. **Data:** the 23 species and the 3 moves (decision 2). Test: §10 in full on a fresh save and on the user's save
+   (their caught Marill etc. become Water/Fairy).
+4. **Cheren's text** from the chart (a tool) and `pokedex_templates.py`. Test: the call for a Fairy and a Dragon.
+5. **Later, separate:** Arceus's Fairy form and the Pixie Plate, Fairy items, new Fairy moves (`moves-and-abilities.md`'s
+   Add move), Gen 6 stat changes, a chart editor page.
+
+Record each step in STATUS.md and plugins.md (a "Fairy type" section) as it lands.
