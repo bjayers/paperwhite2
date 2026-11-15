@@ -14,12 +14,20 @@
 #include "gfl/std.h"
 #include "pml/poke_party.h"
 #include "system/game_data.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/type_chart.h"
+#endif
 
 // What the person of LOCAL_TVT_CALL_CHELEN says in a call on the Xtransceiver, named after the ROM's
 // "local_tvt_person_chelen.c": what the types of a Pokémon of the party are weak to, and what its Ability does
 
 // The types a Pokémon can have; a pair of types is counted with the smaller type first
 #define TYPE_COUNT 17
+#ifdef PAPERWHITE2
+// Paper White 2: the messages of the pairs with the Fairy type follow the original pairs', one for each other type and
+// the last for the Fairy type alone (tools/paperwhite2/cheren_type_text.py writes them from the type chart)
+#define TYPE_PAIR_COUNT (TYPE_COUNT * (TYPE_COUNT + 1) / 2)
+#endif
 
 struct LocalTvtChelen {
     int step;
@@ -300,6 +308,15 @@ static u16 LocalTvtChelen_GetTypesMsg(u16 type1, u16 type2) {
     int i;
     int index = 0;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: a pair with the Fairy type, past the original pairs
+    if (type1 == TYPE_FAIRY) {
+        return TYPE_PAIR_COUNT + PaperWhite2_TypeSlot(type2);
+    }
+    if (type2 == TYPE_FAIRY) {
+        return TYPE_PAIR_COUNT + type1;
+    }
+#endif
     if (type1 > type2) {
         int type = type1;
 

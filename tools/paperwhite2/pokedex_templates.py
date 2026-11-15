@@ -84,6 +84,12 @@ FONTS = "files/a/0/2/3"
 MENU_COMMON = "files/a/0/8/2"
 TYPE_ICON_PALETTE = 0x21
 TYPE_ICON_CHARS = 0x22
+# The types by slot, as the page shows them (include/paperwhite2/type_chart.h): TYPE_NORMAL to TYPE_DARK, then
+# TYPE_FAIRY (18), whose label is the hack's own member of a/0/8/2 (app_menu_common.c's FAIRY_TYPE_ICON_*)
+TYPE_FAIRY = 18
+SLOT_TYPES = list(range(17)) + [TYPE_FAIRY]
+FAIRY_ICON = ROOT / "res/graphics/app_menu_common/182.png"
+TYPE_ICON_PALETTE_FILE = ROOT / "res/graphics/app_menu_common/033.pal"
 TYPE_ICON_WIDTH, TYPE_ICON_HEIGHT = 32, 16
 # The category icons' characters (AppMenuCommon_GetCategoryIconCharFile), with the type icons' palette
 CATEGORY_ICON_CHARS = 0x38
@@ -242,8 +248,8 @@ The top screen's colours
 Matchups
 - matchups_canvas.png, matchups_reference.png, matchups_reference_tiles.png: the same for
   Matchups. Its canvas is in your palette, with your tab strip and the plain placeholder panel.
-- The 17 type icons are the game's own sprites, drawn over everything: their places are fixed
-  (3 rows of 6, the last place free for a possible new type). Under each, the damage
+- The 18 type icons are the game's own sprites, drawn over everything: their places are fixed
+  (3 rows of 6, the Fairy type's last). Under each, the damage
   multiplier against the Pokemon: a small "x" and the number in the standard font, in the
   battle's move colours: light blue (98,180,255) above x1, yellow (246,222,90) below, and a
   light grey (148,148,148) for x0, each with the same light grey shadow (180,180,189) as the
@@ -702,8 +708,9 @@ def move_data(move):
 
 
 def type_index(name):
+    # The type's slot, as its icon's index
     order = ["NORMAL", "FIGHTING", "FLYING", "POISON", "GROUND", "ROCK", "BUG", "GHOST", "STEEL", "FIRE", "WATER",
-             "GRASS", "ELECTRIC", "PSYCHIC", "ICE", "DRAGON", "DARK"]
+             "GRASS", "ELECTRIC", "PSYCHIC", "ICE", "DRAGON", "DARK", "FAIRY"]
     return order.index(name.replace("TYPE_", ""))
 
 
@@ -907,8 +914,8 @@ def move_panel(d, m, font, icons, tiles):
     data = move_data(SAMPLE_MOVE)
     canvas.text(font, data["name"], d["NAME_X"], d["NAME_Y"], letter=name_c, shadow=name_shadow)
     put_icon(canvas, icons[type_index(data["type"])], d["TYPE_ICON_X"], d["TYPE_ICON_Y"])
-    put_icon(canvas, icons[len(type_chart()) + ["MOVE_CATEGORY_STATUS", "MOVE_CATEGORY_PHYSICAL",
-                                                "MOVE_CATEGORY_SPECIAL"].index(data["category"])],
+    put_icon(canvas, icons[len(SLOT_TYPES) + ["MOVE_CATEGORY_STATUS", "MOVE_CATEGORY_PHYSICAL",
+                                             "MOVE_CATEGORY_SPECIAL"].index(data["category"])],
              d["CATEGORY_ICON_X"], d["CATEGORY_ICON_Y"])
     for label, y in (("Category", "CATEGORY_Y"), ("Power", "POWER_Y"), ("Accuracy", "ACCURACY_Y")):
         canvas.text(font, m[label], d["LABEL_X"], d[y], letter=text_c, shadow=shadow)
@@ -951,17 +958,27 @@ def multiplier_text(value):
 
 
 def type_icons(extract):
-    """Each type's icon as its 32 by 16 pixels in the icons' 48 colors, and those colors."""
+    """Each type's icon by slot as its 32 by 16 pixels in the icons' 48 colors, and those colors: the ROM's, with the
+    Fairy type's label and its two colors from res/."""
     files = read_narc((extract / MENU_COMMON).read_bytes())
     icon_colors = palette_colors(files[TYPE_ICON_PALETTE])[:48]
+    # res/'s colors where the ROM's are unused (magenta), as the game shows them: Fairy's, row 2's 8 and 9
+    for i, color in enumerate(read_palette(TYPE_ICON_PALETTE_FILE)[:48]):
+        if color != (255, 0, 255):
+            icon_colors[i] = tuple(round(v * 31 / 255) * 255 // 31 for v in color)
     rows = [int(v) for v in re.search(r"sTypeIconPalettes\[\] = \{([^}]*)\}", APP_MENU_COMMON.read_text())
             .group(1).replace(",", " ").split()]
     category_rows = [int(v) for v in re.search(r"sIconPalettes\[\] = \{([^}]*)\}", APP_MENU_COMMON.read_text())
                      .group(1).replace(",", " ").split()]
     icons = []
-    for t in range(len(type_chart())):
-        _, _, pixels = character_pixels(files[TYPE_ICON_CHARS + t], TYPE_ICON_WIDTH, TYPE_ICON_HEIGHT)
-        icons.append(bytes(v + rows[t] * 16 if v else 0 for v in pixels))
+    for t in SLOT_TYPES:
+        if t == TYPE_FAIRY:
+            _, _, pixels, _ = read_indexed_png(FAIRY_ICON)
+            row = int(re.search(r"#define FAIRY_TYPE_ICON_PALETTE (\d+)", APP_MENU_COMMON.read_text()).group(1))
+        else:
+            _, _, pixels = character_pixels(files[TYPE_ICON_CHARS + t], TYPE_ICON_WIDTH, TYPE_ICON_HEIGHT)
+            row = rows[t]
+        icons.append(bytes(v + row * 16 if v else 0 for v in pixels))
     # Then the three categories' (status, physical, special), after the types'
     for c in range(3):
         _, _, pixels = character_pixels(files[CATEGORY_ICON_CHARS + c], TYPE_ICON_WIDTH, TYPE_ICON_HEIGHT)
@@ -974,9 +991,10 @@ def matchups_text(canvas, d, m, font, small, icons, lift):
     # buttons as PokedexInfoPage_CreateAbilityButtons, lifted with their BG
     chart = type_chart()
     type1, type2 = SAMPLE_TYPES
-    for t, icon in enumerate(icons[:len(chart)]):
-        x = d["MATCHUPS_ICON_X"] + t % d["MATCHUPS_COLUMNS"] * d["MATCHUPS_COLUMN_PITCH"]
-        y = d["MATCHUPS_ICON_Y"] + t // d["MATCHUPS_COLUMNS"] * d["MATCHUPS_ROW_PITCH"]
+    for slot, icon in enumerate(icons[:len(SLOT_TYPES)]):
+        t = SLOT_TYPES[slot]
+        x = d["MATCHUPS_ICON_X"] + slot % d["MATCHUPS_COLUMNS"] * d["MATCHUPS_COLUMN_PITCH"]
+        y = d["MATCHUPS_ICON_Y"] + slot // d["MATCHUPS_COLUMNS"] * d["MATCHUPS_ROW_PITCH"]
         for i, value in enumerate(icon):
             if value:
                 px, py = x - TYPE_ICON_WIDTH // 2 + i % TYPE_ICON_WIDTH, y - TYPE_ICON_HEIGHT // 2 + i // TYPE_ICON_WIDTH
