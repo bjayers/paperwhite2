@@ -363,6 +363,10 @@
                             "maximum": 180,
                             "description": "How far its heading may vary either way, at random, in degrees (20 by default)"
                         },
+                        "chain": {
+                            "type": "boolean",
+                            "description": "It also reacts when another ambient within its near radius does, 2 to 8 frames after it: a flock lifting off together (false by default)"
+                        },
                         "climb": {
                             "type": "integer",
                             "minimum": 0,

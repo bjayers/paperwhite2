@@ -63,6 +63,10 @@
 // a hide's frames and depth; how far the player must be from its place for its return to count down, past its
 // startle radius, and how far its place must be (the screen's tiles round the player, and one more) for it to come
 // back unseen
+// A chained reaction (AMBIENT_FLAG_CHAIN) starts this many frames after the one that set it off, at random between
+// the two, so a flock lifts off in a ripple
+#define AMBIENT_CHAIN_DELAY_MIN 2
+#define AMBIENT_CHAIN_DELAY_MAX 8
 #define AMBIENT_REACT_FRAMES (4 * AMBIENT_FRAMES_A_SECOND)
 #define AMBIENT_REACT_FAR 12
 #define AMBIENT_HIDE_FRAMES 12
@@ -130,6 +134,9 @@ typedef struct {
     u16 react[2];
     // The animation its reaction sprite was last given
     u16 reactAnim;
+    // The frames before a chained reaction starts (0 none), and where it was on its path last frame
+    u8 chainDelay;
+    VecFx32 homePos;
     // A reaction's frames left, or the frames before it returns (counted while the player is away)
     u32 reactTimer;
     // Where it is in its reaction, and its move a frame
@@ -369,6 +376,7 @@ static BOOL Ambients_Join(Field *field, u32 candidate) {
     ambient->record = *record;
     ambient->candidate = (u8)candidate;
     ambient->facing = record->facing;
+    ambient->homePos = record->at;
     ambient->angle = Ambients_LoopAngle(record, sAmbients.frames);
     ambient->nextChange = AMBIENT_FRAMES_A_SECOND;
     ambient->anim = 0xffff;
@@ -870,6 +878,33 @@ static BOOL Ambients_ShouldReact(Field *field, const Ambient *ambient, const Vec
 
 // A reaction started: its heading (away from the player, or its own) varied by its spread, its move a frame by its
 // kind and speed, its bubble and its cry
+static void Ambients_StartReaction(Field *field, Ambient *ambient, const VecFx32 *pos);
+
+// Paper White 2: an ambient reacted, so each one with AMBIENT_FLAG_CHAIN that is at home and has the reacting one
+// within its reaction's radius (tiles, as the player's is) reacts too, a few frames on. Each is set once (a delay
+// waiting is left alone), and a chain goes on as those that react alert theirs in turn.
+static void Ambients_AlertOthers(const Ambient *source, const VecFx32 *pos) {
+    u32 i;
+
+    for (i = 0; i < sAmbients.count; i++) {
+        Ambient *other = &sAmbients.list[i];
+        s32 dx;
+        s32 dz;
+
+        if (other == source || !(other->record.flags & AMBIENT_FLAG_CHAIN) || other->reaction != AMBIENT_AT_HOME ||
+            other->chainDelay != 0 || other->record.reactKind == AMBIENT_REACT_NONE || other->pathHidden ||
+            other->billboard[1] == BILLBOARD_ACTOR_NONE) {
+            continue;
+        }
+        dx = AMBIENT_TILE(other->homePos.x) - AMBIENT_TILE(pos->x);
+        dz = AMBIENT_TILE(other->homePos.z) - AMBIENT_TILE(pos->z);
+        if ((u32)(dx < 0 ? -dx : dx) <= other->record.reactNear && (u32)(dz < 0 ? -dz : dz) <= other->record.reactNear) {
+            other->chainDelay =
+                AMBIENT_CHAIN_DELAY_MIN + GFL_RandomLC(AMBIENT_CHAIN_DELAY_MAX - AMBIENT_CHAIN_DELAY_MIN + 1);
+        }
+    }
+}
+
 static void Ambients_StartReaction(Field *field, Ambient *ambient, const VecFx32 *pos) {
     const SpawnAmbient *record = &ambient->record;
     fx32 speed = record->reactSpeed * FX32_ONE / AMBIENT_FRAMES_A_SECOND;
@@ -899,7 +934,9 @@ static void Ambients_StartReaction(Field *field, Ambient *ambient, const VecFx32
     }
     ambient->reactPos = *pos;
     ambient->hop = 0;
+    ambient->chainDelay = 0;
     ambient->reaction = AMBIENT_REACTING;
+    Ambients_AlertOthers(ambient, pos);
     if (record->reactEmote != 0) {
         FldeffEmotionBubble_SetPos(field->fieldEffects, pos, record->reactEmote - 1, TRUE);
     }
@@ -1012,7 +1049,10 @@ void PaperWhite2_AmbientsUpdate(Field *field) {
         }
         if (ambient->reaction == AMBIENT_AT_HOME) {
             moving = Ambients_Move(field, ambient, &pos);
-            if (free && Ambients_ShouldReact(field, ambient, &pos)) {
+            ambient->homePos = pos;
+            // (a chained reaction waits out its delay, counted while no event runs)
+            if (free && (Ambients_ShouldReact(field, ambient, &pos) ||
+                         (ambient->chainDelay != 0 && --ambient->chainDelay == 0))) {
                 Ambients_StartReaction(field, ambient, &pos);
             }
         }

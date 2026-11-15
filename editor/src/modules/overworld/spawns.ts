@@ -70,6 +70,8 @@ export interface Reaction {
   /** Degrees clockwise from north; away from the player without it. */
   direction?: number;
   spread?: number;
+  /** Also reacts when another ambient within its near radius does. */
+  chain?: boolean;
   climb?: number;
   speed?: number;
   sprite?: string | number;

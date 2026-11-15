@@ -594,6 +594,12 @@ function ReactionSection({ reaction, constants, used, sprite, onChange }: {
               </span>
             </>
           )}
+          <span className="ow-condition-label">Chain</span>
+          <span className="ow-xyz">
+            <label className="ow-check"><input type="checkbox" checked={r.chain ?? false}
+              onChange={(e) => set("chain", e.target.checked ? true : undefined)} /> reacts with others</label>
+            <span className="muted hint">Also flies/runs off when another ambient within its range does: a flock lifting off together</span>
+          </span>
           <span className="ow-condition-label">Sprite</span>
           <div className="ow-ambient-sprites">
             <div className="ow-ambient-sprite">
