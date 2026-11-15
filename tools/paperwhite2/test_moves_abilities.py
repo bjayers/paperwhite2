@@ -237,7 +237,16 @@ class RepositoryTest(unittest.TestCase):
                                                    ("MOVE_BODY_PRESS", names.index("MOVE_BODY_SLAM"), 0),
                                                    ("MOVE_FICKLE_BEAM", names.index("MOVE_DRAGON_PULSE"), 0),
                                                    ("MOVE_DRAGON_CHEER", names.index("MOVE_FOCUS_ENERGY"), 0),
-                                                   ("MOVE_SYRUP_BOMB", names.index("MOVE_MUD_BOMB"), 0)])
+                                                   ("MOVE_SYRUP_BOMB", names.index("MOVE_MUD_BOMB"), 0),
+                                                   # The Fairy moves (fairy-type.md, section 12), data only
+                                                   ("MOVE_FAIRY_WIND", names.index("MOVE_SILVER_WIND"), 0),
+                                                   ("MOVE_DISARMING_VOICE", names.index("MOVE_HYPER_VOICE"), 0),
+                                                   ("MOVE_DRAINING_KISS", names.index("MOVE_SWEET_KISS"), 0),
+                                                   ("MOVE_PLAY_ROUGH", names.index("MOVE_THRASH"), 0),
+                                                   ("MOVE_MOONBLAST", names.index("MOVE_MOONLIGHT"), 0),
+                                                   ("MOVE_DAZZLING_GLEAM", names.index("MOVE_FLASH"), 0),
+                                                   ("MOVE_BABY_DOLL_EYES", names.index("MOVE_CHARM"), 0),
+                                                   ("MOVE_AROMATIC_MIST", names.index("MOVE_AROMATHERAPY"), 0)])
         self.assertEqual(ability_list.added_table(),
                          [("ABILITY_BULLETPROOF", 0), ("ABILITY_SWEET_SYRUP", 0), ("ABILITY_RIPEN", 0)])
         # Their own handlers in the hack's battle code; Apple Acid and Syrup Bomb are data only (the syrup is a
@@ -246,6 +255,9 @@ class RepositoryTest(unittest.TestCase):
             self.assertTrue(move_list.has_own_handlers(move), move)
         self.assertFalse(move_list.has_own_handlers("MOVE_APPLE_ACID"))
         self.assertFalse(move_list.has_own_handlers("MOVE_SYRUP_BOMB"))
+        for move in ("MOVE_FAIRY_WIND", "MOVE_DISARMING_VOICE", "MOVE_DRAINING_KISS", "MOVE_PLAY_ROUGH", "MOVE_MOONBLAST",
+                     "MOVE_DAZZLING_GLEAM", "MOVE_BABY_DOLL_EYES", "MOVE_AROMATIC_MIST"):
+            self.assertFalse(move_list.has_own_handlers(move), move)
         for ability in ("ABILITY_BULLETPROOF", "ABILITY_SWEET_SYRUP", "ABILITY_RIPEN"):
             self.assertTrue(ability_list.has_own_handlers(ability), ability)
         # Bulletproof is the generated Mold Breaker list (it was hand-written in btl_tables.c until step 4)
