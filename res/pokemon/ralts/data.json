@@ -105,10 +105,12 @@
     "learnset": {
         "by_level": [
             [ 1, "MOVE_GROWL" ],
+            [ 1, "MOVE_DISARMING_VOICE" ],
             [ 6, "MOVE_CONFUSION" ],
             [ 10, "MOVE_DOUBLE_TEAM" ],
             [ 12, "MOVE_TELEPORT" ],
             [ 17, "MOVE_LUCKY_CHANT" ],
+            [ 17, "MOVE_DRAINING_KISS" ],
             [ 21, "MOVE_MAGICAL_LEAF" ],
             [ 23, "MOVE_HEAL_PULSE" ],
             [ 28, "MOVE_CALM_MIND" ],
@@ -168,6 +170,7 @@
             "MOVE_ICY_WIND",
             "MOVE_ZEN_HEADBUTT",
             "MOVE_HYPER_VOICE",
+            "MOVE_DAZZLING_GLEAM",
             "MOVE_SNORE",
             "MOVE_PAIN_SPLIT",
             "MOVE_HELPING_HAND",

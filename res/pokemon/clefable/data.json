@@ -107,7 +107,9 @@
             [ 1, "MOVE_SING" ],
             [ 1, "MOVE_DOUBLE_SLAP" ],
             [ 1, "MOVE_MINIMIZE" ],
-            [ 1, "MOVE_METRONOME" ]
+            [ 1, "MOVE_METRONOME" ],
+            [ 1, "MOVE_DISARMING_VOICE" ],
+            [ 1, "MOVE_MOONBLAST" ]
         ],
         "by_tm": [
             "TM03",
@@ -172,6 +174,7 @@
             "MOVE_ZEN_HEADBUTT",
             "MOVE_HYPER_VOICE",
             "MOVE_IRON_TAIL",
+            "MOVE_DAZZLING_GLEAM",
             "MOVE_SNORE",
             "MOVE_KNOCK_OFF",
             "MOVE_ROLE_PLAY",

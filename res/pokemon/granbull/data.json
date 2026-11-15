@@ -117,6 +117,7 @@
             [ 27, "MOVE_ROAR" ],
             [ 35, "MOVE_RAGE" ],
             [ 43, "MOVE_TAKE_DOWN" ],
+            [ 43, "MOVE_PLAY_ROUGH" ],
             [ 51, "MOVE_PAYBACK" ],
             [ 59, "MOVE_CRUNCH" ],
             [ 67, "MOVE_OUTRAGE" ]
@@ -182,6 +183,7 @@
             "MOVE_SUPERPOWER",
             "MOVE_HYPER_VOICE",
             "MOVE_IRON_TAIL",
+            "MOVE_DAZZLING_GLEAM",
             "MOVE_SNORE",
             "MOVE_HEAL_BELL",
             "MOVE_OUTRAGE",

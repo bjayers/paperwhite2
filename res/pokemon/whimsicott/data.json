@@ -63,9 +63,11 @@
             [ 1, "MOVE_LEECH_SEED" ],
             [ 1, "MOVE_MEGA_DRAIN" ],
             [ 1, "MOVE_COTTON_SPORE" ],
+            [ 1, "MOVE_FAIRY_WIND" ],
             [ 10, "MOVE_GUST" ],
             [ 28, "MOVE_TAILWIND" ],
-            [ 46, "MOVE_HURRICANE" ]
+            [ 46, "MOVE_HURRICANE" ],
+            [ 50, "MOVE_MOONBLAST" ]
         ],
         "by_tm": [
             "TM06",
@@ -101,6 +103,7 @@
         "by_tutor": [
             "MOVE_COVET",
             "MOVE_SEED_BOMB",
+            "MOVE_DAZZLING_GLEAM",
             "MOVE_SNORE",
             "MOVE_KNOCK_OFF",
             "MOVE_TAILWIND",

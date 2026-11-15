@@ -44,7 +44,8 @@
                 { "move": "MOVE_ZEN_HEADBUTT", "price": 8, "menu_position": 11 },
                 { "move": "MOVE_DRAGON_PULSE", "price": 10, "menu_position": 15 },
                 { "move": "MOVE_HYPER_VOICE", "price": 6, "menu_position": 5 },
-                { "move": "MOVE_IRON_TAIL", "price": 6, "menu_position": 8 }
+                { "move": "MOVE_IRON_TAIL", "price": 6, "menu_position": 8 },
+                { "move": "MOVE_DAZZLING_GLEAM", "price": 10, "menu_position": 17 }
             ]
         },
         {
