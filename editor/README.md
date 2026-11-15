@@ -21,7 +21,7 @@ If Edge can't reach it, WSL isn't forwarding the port: check that `localhostForw
 ## What it does
 
 - **Specialty editors** at the top of the sidebar, under **Editors**: everything about one subject in one place. The
-  first are the **Encounter Editor**, **Graphics & Palettes**, the **Follower Editor**, the **Text Editor**, the **Script Editor**, the **Pokémon Editor**, the **Move Editor**, the **Ability Editor**, the **Rig Editor**, the **Trainer Editor** and the **Weather Editor** (below). The per-file editors are under **Data files**, which folds away. A page
+  first are the **Encounter Editor**, **Graphics & Palettes**, the **Follower Editor**, the **Text Editor**, the **Script Editor**, the **Pokémon Editor**, the **Move Editor**, the **Ability Editor**, the **Rig Editor**, the **Trainer Editor**, the **Pokémon Center** and the **Weather Editor** (below). The per-file editors are under **Data files**, which folds away. A page
   of a tool can be linked to: `http://localhost:7420/#tool/encounters`.
 - **Every kind of data in `res/`, found by itself.** Each data file names its schema in `"$schema"`; the editor groups
   the files by schema, so a new kind of data, a new field or a new file shows up without changing the editor.
@@ -121,7 +121,9 @@ and the next build packs it.
 
 ### Item icons
 
-Every item's bag icon, the hack's items first (the constants of `docs/paperwhite2/items.md`'s table), then all by
+Every item's bag icon, the hack's items first ("Paper White 2's items": every constant in `docs/paperwhite2/items.md`'s table, plus any item
+`generated/items.txt` gives where the original game had an unused one or past its end, or marks with a `# Paper White 2`
+comment, so a new item shows there without a list to update; `server/python/item_icons.py`'s `hack_items`), then all by
 number, with a filter. An item shows the icon and palette that `src/system/pml_item.c`'s table gives it in the hack's
 build, files of `res/items/` (`server/python/item_icons.py`, with the packer's `tools/data/item_icon_data.py`).
 **Download PNG** gives the icon to draw over; **Import PNG** takes a 32×32 PNG, indexed with indices 0-15 (0
@@ -761,6 +763,21 @@ The pictures shown over the C-Gear's rings, which its help button cycles in the 
 (`tools/paperwhite2/cgear_pictures.py`) converts it, keeping 15 colors and 255 distinct tiles (a tile and its flips
 count once), so a busy PNG can lose detail, and the saved PNG is what the game shows. An existing name replaces its
 picture. The arrows reorder, and Remove deletes the picture.
+
+## The Pokémon Center
+
+The three upstairs attendants' fees, rates and lists (`src/modules/pokemoncenter/`), read from and saved to
+`res/paperwhite2/pokemon_center/services.json` through the document store (undo, Save with the build's validator,
+changes on disk), its schema giving each field's range and hint (`docs/paperwhite2/design/pokemon-center.md`). A
+**Champion discount** section on top (percent, and whether it also covers Battle Points and the Move Relearner's items),
+then a switch for the attendants: **Day Care** (transfer fee, badges), **Training Services** (each service's price, the
+Move Relearner's item, Hyper Training, EV resets, abilities, the three grooming courses) and **Wonder Trade**: the fee
+and level spread, the received Pokémon's odds (shiny 1 in N, hidden ability, perfect IVs, Pokérus, nickname; each shown
+as "1 in N trades"), the held items (the percent, the tiers' shares as bars, each tier's list of items with a picker and
+an optional weight, and for each item its share of the tier and "about 1 in N trades"), the balls with their shares,
+the languages with their weights and names, the forms' weights, the excluded species and forms, the never-tradeable
+forms and the special reward (enabled, chance, guaranteed trade, species, form, level, moves, nature, IVs, ability,
+gender, ball, held item). `tests/pokemon-center.test.ts` checks that edits round-trip and validate.
 
 ## Join Avenue
 
