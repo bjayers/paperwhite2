@@ -319,6 +319,12 @@ u32 getOBJTileMapping_SubEng(void);
 BOOL PokeParty_ChangeForme(PartyPkm *pkm, u16 forme);
 // The form of Arceus for a plate, and of Genesect for a drive
 u16 _getTypeForPlate(u16 item);
+#ifdef PAPERWHITE2
+// Paper White 2: the form Arceus takes with an item, its plate's type, but form 17 for the Pixie Plate's Fairy (type 18:
+// Arceus's forms have no ??? type's, as Gen 6's)
+#define ARCEUS_FORM_FAIRY 17
+u16 PaperWhite2_GetArceusPlateForm(u16 item);
+#endif
 u32 PML_ItemGetGenesectDriveForme(u16 item);
 // The form, or 0 if the species has fewer forms. Species 650 counts as having two
 u8 PML_PkmSanitizeForme(u16 species, u8 form);

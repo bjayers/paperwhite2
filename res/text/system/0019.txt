@@ -204,4 +204,7 @@ Bank0019_Text_OhThreeWildAppeared = Oh! Three wild {0101:0} appeared!
 Bank0019_Text_OhTwoWildAndWildAppeared = Oh! Two wild {0101:0} and\na wild {0101:1} appeared!
 Bank0019_Text_PrestigeRose = {010c:0}'s Prestige\nrose to {ff00:505}Lv. {0206:1}{ff00:0}!
 Bank0019_Text_GainedPrestigePoints = {010c:0} gained\n{0206:1} Prestige Points!
+Bank0019_Text_NoOneCanRunAway = No one will be able to run away\nduring the next turn!
+Bank0019_Text_CraftyShieldProtectedTeam = Crafty Shield protected your team!
+Bank0019_Text_CraftyShieldProtectedFoes = Crafty Shield protected the foe's team!
 \pad{48}

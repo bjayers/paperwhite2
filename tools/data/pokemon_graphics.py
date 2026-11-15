@@ -30,7 +30,7 @@ from pathlib import Path
 
 from narc import read_narc, write_narc
 from species_data import directory
-from form_groups import ORIGINAL_FORM_GROUPS, form_groups
+from form_groups import ORIGINAL_FORM_GROUPS, ORIGINAL_PALETTE_FORMS, form_groups, palette_form_groups
 import species_list
 from nitro_2d import (character_pixels, color5, palette_colors, palette_indices, patch_characters, patch_palette,
                       read_indexed_png, read_palette, write_indexed_png, write_palette)
@@ -108,6 +108,20 @@ def form_names(musical=False):
     return result
 
 
+def added_palette_forms():
+    """Returns Paper White 2's palette-only forms (Arceus's Fairy form), in order: (species, form) each, whose normal
+    and shiny palettes follow the added species' groups in the battle sprites' archive."""
+    pairs = palette_form_groups(ROOT / "res/pokemon")
+    return [pairs[index] for index in sorted(pairs) if index >= ORIGINAL_PALETTE_FORMS]
+
+
+@lru_cache(maxsize=1)
+def added_palette_files():
+    """Returns the first battle sprite file of Paper White 2's palette-only forms: after the added species' groups
+    (PAPERWHITE2_PALETTE_FORM_FILES)."""
+    return ADDED_FORM_FILES + (added_form_groups() + len(added_species())) * GROUP_FILES
+
+
 def added_form_groups():
     """Returns the number of Paper White 2's form sprite groups, from ORIGINAL_FORM_GROUPS."""
     return sum(1 for group in form_names() if group >= ORIGINAL_FORM_GROUPS)
@@ -160,7 +174,10 @@ EXTENSIONS = {"cells": ".ncer", "animations": ".nanr.lz11", "multi_cells": ".nmc
 
 def battle_group(index, musical):
     """Returns a battle or musical sprite file's group and its slot in the group, or None where the file is the
-    Substitute's or a form's palette. Past those come Paper White 2's form groups, in group order."""
+    Substitute's or a form's palette. Past those come Paper White 2's form groups, in group order, then its added
+    species' groups and its palette-only forms' palettes."""
+    if not musical and index >= added_palette_files():
+        return None
     if not musical and index >= ADDED_FORM_FILES:
         group, slot = divmod(index - ADDED_FORM_FILES, GROUP_FILES)
         return GROUPS["battle"][1] + ORIGINAL_FORM_GROUPS + group, slot
@@ -202,6 +219,11 @@ def shared_rig_file(path):
 
 def battle_file(root, index, musical):
     end = 14240 if musical else SUBSTITUTE_FILES
+    if not musical and index >= added_palette_files():
+        # Paper White 2's palette-only forms, after its groups
+        species, form = added_palette_forms()[(index - added_palette_files()) // 2]
+        name = "shiny.pal" if (index - added_palette_files()) % 2 else "normal.pal"
+        return root / species / f"form_{form}" / name, "palette", None
     if battle_group(index, musical) is None:
         palette_start = 14253 if musical else FORM_PALETTE_FILES
         if index >= palette_start:
@@ -468,6 +490,15 @@ def pack(root, game, output):
             result.append(b"")
             continue
         result.append(pack_file(root, archive_name, archive, index, template, path, kind, options))
+    if ARCHIVES[archive_name] == "battle":
+        # Paper White 2's palette-only forms' palettes, in the format of the original forms' first
+        for _ in range(len(added_palette_forms()) * 2):
+            index = len(result)
+            path, kind, options = source_file(root, archive_name, index)
+            if not path.exists():
+                raise ValueError(f"{path}: missing, and the palette-only form needs it")
+            result.append(pack_file(root, archive_name, archive, index, archive[FORM_PALETTE_FILES], path, kind,
+                                    options))
     if ARCHIVES[archive_name] == "footprints" and added_species():
         # Paper White 2: a footprint for each ID from SPECIES_EGG to the last added species, by footprint_file
         template = archive[len(FOOTPRINT_FILES) + 1]

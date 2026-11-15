@@ -20,6 +20,10 @@
 // (include/paperwhite2/pokedex_save.h).
 #define POKEMON_FORMS_ORIGINAL_GROUPS 66
 #define POKEMON_FORMS_SPRITE_FILES 15065
+// The original game's palette-only forms (Arceus's 16), whose palettes follow the Substitute's files; the hack's
+// (Arceus's Fairy form) follow its added species' groups, from PAPERWHITE2_PALETTE_FORM_FILES
+// (tools/data/form_groups.py's palette_form_groups)
+#define POKEMON_FORMS_ORIGINAL_PALETTE_FORMS 16
 
 // The palette of the icon of the hack's form sprite group group (from POKEMON_FORMS_ORIGINAL_GROUPS), the female's
 // with female, as sPokeIconPalettes gives the others'

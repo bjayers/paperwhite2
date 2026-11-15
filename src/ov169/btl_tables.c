@@ -113,6 +113,12 @@ static const u16 sArceusPlates[] = { ITEM_FLAME_PLATE,  ITEM_SPLASH_PLATE, ITEM_
                                      ITEM_SPOOKY_PLATE, ITEM_DRACO_PLATE,  ITEM_DREAD_PLATE,  ITEM_IRON_PLATE };
 
 BOOL IsArceusPlate(u16 item) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the Pixie Plate, unused item 125
+    if (item == ITEM_PIXIE_PLATE) {
+        return TRUE;
+    }
+#endif
     return U16List_Contains(item, sArceusPlates, 16);
 }
 

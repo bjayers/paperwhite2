@@ -120,6 +120,13 @@
                 "height": "10'06\"",
                 "weight": "705.5 lbs.",
                 "shape": 4
+            },
+            {
+                "name": "Fairy",
+                "entry": "It is said to have emerged from an\negg in a place where there was\nnothing then shaped the world.",
+                "height": "10'06\"",
+                "weight": "705.5 lbs.",
+                "shape": 4
             }
         ],
         "languages": {
@@ -208,7 +215,7 @@
     "hidden_ability": "ABILITY_NONE",
     "flee_rate": 0,
     "forms": {
-        "count": 17,
+        "count": 18,
         "sprite_offset": 0,
         "pokedex": false
     },

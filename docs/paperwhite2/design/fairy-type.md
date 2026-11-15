@@ -493,3 +493,88 @@ damage roll at 100% and no critical hits). ROM `2ea47e931ae8f0f15ffdd6b1b64f7da6
 - **Noticed:** the Pokédex Info opened from party slot 0's summary listed slot 3's learnset (a Swinub's) after slot 0's
   species was changed in memory; with slot 3 changed too it listed Clefable's. A test artifact or a bug in what the Info
   page reads; not chased (the other session's Pokédex work).
+
+### 12.4 Built: Flower Shield, Fairy Lock, Crafty Shield, the Pixie Plate and Arceus's Fairy form (2026-11-15)
+
+**The moves** (`moves.py add`, then each record set to Gen 6's data), IDs 574-576, all Fairy, status, never miss, 10 PP:
+
+| ID | Constant | Name | Data | Animation | AI effect |
+| --- | --- | --- | --- | --- | --- |
+| 574 | `MOVE_FLOWER_SHIELD` | **FlowerShield** | quality `SPECIAL`, target `MOVE_TARGET_ALL` (Perish Song's: every Pokémon, the user too), bypasses a Substitute, not Protect's | Growth | `DEF_UP` |
+| 575 | `MOVE_FAIRY_LOCK` | Fairy Lock | quality `FIELD`, target `FIELD`, Mirror Move | Imprison | `PREVENT_ESCAPE` |
+| 576 | `MOVE_CRAFTY_SHIELD` | **CraftyShield** | quality `SIDE`, target `USER_SIDE`, priority +3 | Wide Guard | `QUICK_GUARD` |
+
+Two names shortened to 12 characters (bold); the constants and folders keep the full names; the messages say "Flower
+Shield", "Crafty Shield" in full. The C (`paperwhite2_battle.c`, rows under `#if defined(PAPERWHITE2) && defined(MOVE_X)`):
+
+- **Flower Shield** (`HandlerFlowerShield`, `UNCATEGORIZED_MOVE`): of its targets, every Grass type gets Defense +1 in one
+  stat change; with none, "But it failed!" (the server's, as Dragon Cheer's).
+- **Fairy Lock** (`HandlerFairyLock`, `FIELD_EFFECT_MOVE`, Gravity's shape): a new field condition,
+  `FIELD_CONDITION_FAIRY_LOCK` (8, `include/constants/battle.h`; `btl_field.c`'s `FIELD_EFFECT_COUNT` 9 under the hack),
+  for 2 turns (the turn it is used and the next, whose choices it locks), with "No one will be able to run away during
+  the next turn!" (bank 19's `NoOneCanRunAway`); it fails while the field is locked. Checked where trapping is:
+  the clients' `IsMonTrapped` (`btl_client.c`: the switch, the escape and the AI's switch, `TRAP_CONDITION`, so the game's
+  own "can't be switched out" and "can't escape" messages), the server's escape check (the field effect's handler on
+  `CHECK_ESCAPE_BLOCKED`, `field_handlers.c`'s row) and Teleport (`HandlerTeleportCheckFail`). **Gen 6's rules:** Ghost
+  types are not trapped (`PaperWhite2_IsFairyLocked`); Shed Shell, Run Away and the Smoke Ball still work (the original
+  checks come first); U-turn, Baton Pass, Roar and switches after a faint aren't blocked. No end message (Gen 6 has none).
+- **Crafty Shield**: a new side condition, `SIDE_CONDITION_CRAFTY_SHIELD` (14; `side_handlers.c`'s `NUM_SIDE_EFFECTS`
+  15 under the hack), for the turn, with "Crafty Shield protected your team!" / "…the foe's team!" (bank 19, a side
+  message in `btl_string.c`'s `sSideMessages`). Its side handler on `CHECK_NO_EFFECT` (Quick Guard's, keyed on the
+  category): a status move on one of the side's Pokémon has no effect, "Crafty Shield protected [it]!" (bank 18, three
+  variants), except a move a Pokémon uses on itself and one that targets every Pokémon (Perish Song, Flower Shield);
+  allies' status moves are blocked too (Showdown's Gen 6). Damaging moves hit. It fails when its user moves last, but
+  never for being used in a row (Gen 6's). **Metronome can call it** (Gen 6 excludes it, as this game does Quick Guard
+  and Wide Guard: add it to `sMetronomeExcludedMoves` if wanted).
+- **Learners:** none. Among species 1-649 no Gen 6 learner of any of the three is known to me (Flower Shield: the
+  Flabébé line; Fairy Lock: Klefki; Crafty Shield: Spritzee's and Klefki's lines, roughly): the user's pick. They are in
+  the game, Metronome calls them, and the editor can give them.
+
+**The Pixie Plate** (`ITEM_PIXIE_PLATE`, unused item 125, `rename_constant.py`; items.md): the Mind Plate's data
+(price 100, Fling 90) with hold effect 147, sorted with Pink Scarf (90). Held: Fairy moves ×1.2
+(`HandlerPixiePlate`, `CommonTypeBoostingItem`, a row in `sItemEventAddTable`); Judgment Fairy (a case in
+`HandlerJudgement`); Arceus's type Fairy (`PML_ItemGetArceusPlateType`, which `PKM_PARAM_TYPE1/2` read for a
+Multitype Arceus, so the summary, the battle and every type reader follow); a plate for `IsArceusPlate` (Trick, Knock Off,
+Thief and the like can't take it from Arceus). Icon: the plates' shared one with its own palette, a copy of the Mind
+Plate's (`res/items/pixie_plate/icon.pal`, `ITEM_ICON_PALETTE_PIXIE_PLATE`). Not placed in the world; the debug
+menu's Give item (125).
+
+**Arceus's Fairy form is form 17**, not 18: Arceus's form is its plate's type (`PokeList_UpdateArceusForm`,
+`Box2Main_PokeItemFormChange`), which would make Fairy (type 18) form 18 and leave form 17, `TYPE_NULL`'s, a dead form
+with its own palettes. `PaperWhite2_GetArceusPlateForm` (`poke_tool.c`, `pml/poke_party.h`) gives the type but 17
+(`ARCEUS_FORM_FAIRY`) for Fairy, and both callers use it; it is also Gen 6's number. Made with **Add form**, which now
+takes palette-only species (`pokemon_form.py add arceus --from 13 --name Fairy`): `forms.count` 18, `pokedex.forms`
+"Fairy" (Arceus's forms aren't in the Pokédex's form list, as before), `form_17/normal.pal` and `shiny.pal` (copies of
+the Psychic form's, form 13), followers `arceus_form_17` and `_shiny` (copies of the Psychic form's). The palettes:
+Arceus's 16 form pairs end where the hack's form groups start (15,065), so the hack's palette-only forms follow its
+added species' groups, at `PAPERWHITE2_PALETTE_FORM_FILES` (15,185 now, generated by `pokemon_forms.py`);
+`form_groups.palette_form_groups` lays them out, `pokemon_graphics.py` appends them, and `GetPokemonDataIDBase`
+(`pokegra.c`) reads a palette form from `POKEMON_FORMS_ORIGINAL_PALETTE_FORMS` (16) there. Arceus's icon is one for all
+forms (the original's), so it needs nothing. The musical reads Black and White's personal data, where form 17 is past
+the count, so it shows Normal Arceus there.
+
+**Placeholders for the user:** the Pixie Plate's icon palette (`res/items/pixie_plate/icon.pal`), and Arceus-Fairy's
+palettes `res/pokemon/arceus/form_17/normal.pal` and `shiny.pal` (the Psychic form's pinks now) and its follower
+sprites (`res/field/actors/followers/arceus_form_17*`, the Psychic form's).
+
+**Proof** (py-desmume, a copy of the user's save, Route 6; scratchpad `fairymoves2/`, shots in `fairymoves2/shots/keep/`;
+the user asked for light testing here):
+
+- **Flower Shield**, a Bulbasaur against a wild Oddish: "Oinkums used FlowerShield!", Growth's animation, one stat
+  change of Defense +1 for both, the user's and the foe's (`StatChange stat 2 change 1 mons [0, 12]`), "Oinkums's Defense
+  rose!"; a Clefable using it against an Oddish raised only the Oddish (`flower_shield_*`).
+- **Fairy Lock**: "No one will be able to run away during the next turn!" (bank 19's 206); then Pokémon, Klink, Shift:
+  "Oinkums can't be switched out!" on the lower screen, and the choice stays open; the same steps without Fairy Lock
+  switched ("Oinkums, switch out! Come back!", "Go! Klink!") (`fairy_lock_*`, `control_switch_without_fairy_lock`).
+- **Crafty Shield**, a slower Clefable against a wild Pikachu's Thunder Wave: Crafty Shield first (priority), "Crafty Shield
+  protected your team!", then "The wild Pikachu used Thunder Wave!", "Crafty Shield protected Oinkums!" (set 0x48d), no
+  paralysis (`crafty_shield_team`).
+- **Arceus** (form 17, Multitype, the Pixie Plate): the summary's Type FAIRY, the Pixie Plate as its item, the form's
+  palette (the Psychic form's copy) on the summary and in battle; Judgment into a Dragonair: the power ratio ×0x1333
+  (1.2), "It's super effective!" (`arceus_fairy_summary`, `arceus_fairy_judgment`).
+- ROM `b9835c5102e305630eeb6f3b0d7c8defba196b83`, `verify_dsi_rom.py` intact; the plain `w2_us` build's code modules
+  match (its archive checks fail as before); `test_moves_abilities` passes (21); the editor's `npm test` 219 of 220 (the
+  known Applin back-rig failure).
+- **Not run:** Fairy Lock wearing off and blocking a flee, a Ghost type under it, Teleport; Crafty Shield against a
+  damaging move and when used last; Flower Shield with no Grass type, in a double battle; giving the Pixie Plate in the
+  party screen or the PC (the form change through `PaperWhite2_GetArceusPlateForm`, set in memory here); the Pokédex.

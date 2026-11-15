@@ -41,6 +41,7 @@
 #include "save/player_info.h"
 #include "system/pms_data.h"
 #ifdef PAPERWHITE2
+#include "paperwhite2/battle_handlers.h"
 #include "paperwhite2/moves.h"
 #include "paperwhite2/prestige.h"
 #endif
@@ -3419,6 +3420,14 @@ static u32 IsMonTrapped(BtlClient *client, BattleMon *mon, u8 *trapMonId, u16 *t
         *trapAbility = 0;
         return TRAP_CONDITION;
     }
+#if defined(PAPERWHITE2) && defined(MOVE_FAIRY_LOCK)
+    // Paper White 2: Fairy Lock keeps every Pokémon but a Ghost type in, as a condition does (paperwhite2_battle.c)
+    if (PaperWhite2_IsFairyLocked(mon, CheckFieldEffect(client->field, FIELD_CONDITION_FAIRY_LOCK))) {
+        *trapMonId = GetMonID(mon);
+        *trapAbility = 0;
+        return TRAP_CONDITION;
+    }
+#endif
     return TRAP_NONE;
 }
 

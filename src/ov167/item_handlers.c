@@ -296,6 +296,10 @@ static const BattleEventHandlerEntry *EventAddSpookyPlate(u32 *priority);
 static const BattleEventHandlerEntry *EventAddDracoPlate(u32 *priority);
 static const BattleEventHandlerEntry *EventAddDreadPlate(u32 *priority);
 static const BattleEventHandlerEntry *EventAddIronPlate(u32 *priority);
+#ifdef PAPERWHITE2
+static const BattleEventHandlerEntry *EventAddPixiePlate(u32 *priority);
+static void HandlerPixiePlate(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work);
+#endif
 static const BattleEventHandlerEntry *EventAddBigRoot(u32 *priority);
 static void HandlerPlate(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work);
 static const BattleEventHandlerEntry *EventAddSmokeBall(u32 *priority);
@@ -638,6 +642,8 @@ static const ItemEventAddEntry sItemEventAddTable[] = {
     // Paper White 2: the Fairy type's Berry and Gem, unused items 123 and 124
     { ITEM_ROSELI_BERRY, EventAddRoseliBerry },
     { ITEM_FAIRY_GEM, EventAddFairyGem },
+    // and Arceus's Pixie Plate, unused item 125
+    { ITEM_PIXIE_PLATE, EventAddPixiePlate },
 #endif
     { ITEM_NONE, NULL },
 };
@@ -3271,6 +3277,22 @@ static const BattleEventHandlerEntry *EventAddIronPlate(u32 *priority) {
     *priority = NELEMS(sHandlersIronPlate);
     return sHandlersIronPlate;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: the Pixie Plate powers up Fairy-type moves by a fifth, as the other plates do their types'
+static const BattleEventHandlerEntry sHandlersPixiePlate[] = {
+    { BATTLE_EVENT_MOVE_POWER_RATIO, HandlerPixiePlate },
+};
+
+static const BattleEventHandlerEntry *EventAddPixiePlate(u32 *priority) {
+    *priority = NELEMS(sHandlersPixiePlate);
+    return sHandlersPixiePlate;
+}
+
+static void HandlerPixiePlate(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
+    CommonTypeBoostingItem(item, flow, monId, TYPE_FAIRY);
+}
+#endif
 
 static const BattleEventHandlerEntry sHandlersBigRoot[] = {
     { BATTLE_EVENT_CALC_DRAIN_AMOUNT, HandlerPlate },

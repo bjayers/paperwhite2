@@ -30,6 +30,9 @@ from tools.data import species_list  # noqa: E402
 
 POKEMON = ROOT / "res" / "pokemon"
 ORIGINAL_FORM_GROUPS = 66
+# The original game's palette-only forms (Arceus's 16), whose normal and shiny palettes follow the battle sprites'
+# Substitute files (GetPokemonDataIDBase's POKEGRA_FORM_PALETTES)
+ORIGINAL_PALETTE_FORMS = 16
 # The personal record's form count (PersonalData.formCount, include/pml/personal.h)
 FORM_COUNT_OFFSET = 0x20
 
@@ -134,6 +137,29 @@ def layout(root: Path = POKEMON) -> tuple[dict[int, tuple[str, int]], dict[str, 
             groups[following + form - 1] = (species, form)
         following += count - 1
     return groups, offsets
+
+
+@lru_cache(maxsize=4)
+def palette_form_groups(root: Path = POKEMON) -> dict[int, tuple[str, int]]:
+    """Each palette-only form's palette pair, {index: (species, form)}, the index sprite_offset + form - 1 as the game
+    computes it. The original game's 0 to 15 (Arceus's) keep their place; Paper White 2's from ORIGINAL_PALETTE_FORMS
+    (Arceus's Fairy form) must follow them without gaps, and the battle sprites' archive appends them after its other
+    groups (tools/data/pokemon_graphics.py, PAPERWHITE2_PALETTE_FORM_FILES)."""
+    pairs: dict[int, tuple[str, int]] = {}
+    for species, forms, palette_only in species_forms(root):
+        if not palette_only:
+            continue
+        for form in range(1, forms["count"]):
+            index = forms["sprite_offset"] + form - 1
+            if index in pairs:
+                other = pairs[index]
+                raise FormGroupsError(f"res/pokemon/{species}: form {form}'s palettes {index} are also {other[0]}'s "
+                                      f"form {other[1]}'s (forms.sprite_offset)")
+            pairs[index] = (species, form)
+    if sorted(pairs) != list(range(len(pairs))) or len(pairs) < ORIGINAL_PALETTE_FORMS:
+        raise FormGroupsError(f"the palette-only forms' palettes must be 0 to {len(pairs) - 1} without gaps, the "
+                              f"original game's {ORIGINAL_PALETTE_FORMS} first")
+    return pairs
 
 
 def form_groups(root: Path = POKEMON) -> dict[int, tuple[str, int]]:

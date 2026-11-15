@@ -2,6 +2,31 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-15: Flower Shield, Fairy Lock, Crafty Shield, the Pixie Plate and Arceus-Fairy (ROM session, on a branch)
+
+`docs/paperwhite2/design/fairy-type.md` section 12.4 has what was built and the proof; `items.md` the Pixie Plate;
+`moves-and-abilities.md` section 17 the engine pieces.
+
+- **Moves 574-576**, Gen 6's rules: Flower Shield ("FlowerShield": every Grass type on the field, both sides, Defense
+  +1, fails with none), Fairy Lock (a 2-turn field condition: no switching or fleeing next turn, Ghost types exempt,
+  Shed Shell / Run Away / Smoke Ball still work), Crafty Shield ("CraftyShield", +3: the user's side is protected from
+  status moves for the turn; fails if used last, never for being used in a row). New: a field condition and a side
+  condition slot, messages in banks 18 and 19. Nothing learns them: no Gen 1-5 species does in Gen 6 that I know.
+  Metronome can call all three (Gen 6 excludes Crafty Shield).
+- **Pixie Plate** (item 125): Fairy moves ×1.2, Judgment Fairy, a Multitype Arceus Fairy and in **form 17** (not 18,
+  so there is no dead ??? form; Gen 6's number too). Add form now takes palette-only species: Arceus's form 17 "Fairy"
+  was made with it; its palettes follow the hack's sprite groups (`PAPERWHITE2_PALETTE_FORM_FILES`).
+- **Placeholders for the user:** the Pixie Plate's icon palette (a copy of the Mind Plate's); Arceus-Fairy's
+  `res/pokemon/arceus/form_17/normal.pal`, `shiny.pal` and its followers (copies of the Psychic form's).
+- **Proof (light, as asked):** Flower Shield raised a Bulbasaur user's and a wild Oddish's Defense; after Fairy Lock a
+  switch gave "Oinkums can't be switched out!" (the same switch without it worked); Crafty Shield blocked a Pikachu's
+  Thunder Wave ("Crafty Shield protected Oinkums!"); an Arceus with the plate shows FAIRY and the form's palette in the
+  summary and in battle, and its Judgment was ×1.2 and super effective on a Dragonair. ROM `b9835c51…`, DSi check intact,
+  plain build's code modules match.
+
+Next: the user's picks (learners for the three moves, where the Pixie Plate goes, Crafty Shield and Metronome), the
+art; untested paths are listed in section 12.4.
+
 ## 2026-11-15: the Fairy moves, the Roseli Berry and the Fairy Gem (ROM session, on a branch)
 
 `docs/paperwhite2/design/fairy-type.md` section 12 has the research, what was built and the proof; `items.md` the two

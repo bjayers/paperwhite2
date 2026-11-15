@@ -3,6 +3,10 @@
 #include "battle/btl_event.h"
 #include "constants/battle.h"
 #include "constants/types.h"
+#ifdef PAPERWHITE2
+#include "constants/moves.h"
+#include "paperwhite2/battle_handlers.h"
+#endif
 
 // One entry of the field effect table: an effect and the function that returns its handlers
 typedef struct FieldEffectEventAddEntry {
@@ -33,6 +37,10 @@ static const FieldEffectEventAddEntry sFieldEffectEventAddTable[] = {
     { FIELD_CONDITION_GRAVITY, EventAddFieldGravity },        { FIELD_CONDITION_IMPRISON, EventAddFieldImprison },
     { FIELD_CONDITION_WATER_SPORT, EventAddFieldWaterSport }, { FIELD_CONDITION_MUD_SPORT, EventAddFieldMudSport },
     { FIELD_CONDITION_WONDER_ROOM, EventAddFieldWonderRoom }, { FIELD_CONDITION_MAGIC_ROOM, EventAddFieldMagicRoom },
+#if defined(PAPERWHITE2) && defined(MOVE_FAIRY_LOCK)
+    // Paper White 2: Fairy Lock's (paperwhite2_battle.c)
+    { FIELD_CONDITION_FAIRY_LOCK, PaperWhite2_EventAddFieldFairyLock },
+#endif
 };
 
 BattleEventItem *FieldEffectEventAdd(u32 effect, u8 monId) {

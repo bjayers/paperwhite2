@@ -1046,3 +1046,6 @@ ITEM_ICON_PALETTE_SYRUPY_APPLE
 ITEM_ICON_ROSELI_BERRY
 ITEM_ICON_PALETTE_ROSELI_BERRY
 ITEM_ICON_PALETTE_FAIRY_GEM
+# Paper White 2: the Pixie Plate's palette (the plates share the Flame Plate's icon), for now a copy of the Mind
+# Plate's
+ITEM_ICON_PALETTE_PIXIE_PLATE

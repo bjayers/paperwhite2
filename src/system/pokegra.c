@@ -302,7 +302,18 @@ static void GetPokemonDataIDBase(u32 arcId, int species, int form, u32 sex, BOOL
         }
         if (paletteForms) {
             if (formPalette != NULL && form != 0) {
+#ifdef PAPERWHITE2
+                // Paper White 2: the hack's palette-only forms (Arceus's Fairy form) follow its sprite groups, at the
+                // archive's end, since the original forms' palettes end where the hack's form groups start
+                if (spriteOffset + form - 1 >= POKEMON_FORMS_ORIGINAL_PALETTE_FORMS) {
+                    *formPalette = PAPERWHITE2_PALETTE_FORM_FILES +
+                                   (spriteOffset + form - 1 - POKEMON_FORMS_ORIGINAL_PALETTE_FORMS) * 2 + rare;
+                } else {
+                    *formPalette = POKEGRA_FORM_PALETTES + (spriteOffset + form - 1) * 2 + rare;
+                }
+#else
                 *formPalette = POKEGRA_FORM_PALETTES + (spriteOffset + form - 1) * 2 + rare;
+#endif
             }
         } else if (form != 0) {
 #ifdef PAPERWHITE2

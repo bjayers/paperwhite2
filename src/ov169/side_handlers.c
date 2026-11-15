@@ -10,9 +10,18 @@
 #include "constants/types.h"
 #include "gfl/std.h"
 #include "pml/move.h"
+#ifdef PAPERWHITE2
+#include "constants/moves.h"
+#include "paperwhite2/battle_handlers.h"
+#endif
 
 #define NUM_SIDES 2
+#if defined(PAPERWHITE2) && defined(MOVE_CRAFTY_SHIELD)
+// Paper White 2: Crafty Shield's (SIDE_CONDITION_CRAFTY_SHIELD) follows the original 14
+#define NUM_SIDE_EFFECTS 15
+#else
 #define NUM_SIDE_EFFECTS 14
+#endif
 
 // One entry of the side effect table: an effect, the function that returns its handlers, and how many layers it takes
 typedef struct SideEffectEventAddEntry {
@@ -81,6 +90,9 @@ static const SideEffectEventAddEntry sSideEffectEventAddTable[NUM_SIDE_EFFECTS] 
     { SIDE_CONDITION_RAINBOW, EventAddSideRainbow, 1 },
     { SIDE_CONDITION_SEA_OF_FIRE, EventAddSideSeaOfFire, 1 },
     { SIDE_CONDITION_SWAMP, EventAddSideSwamp, 1 },
+#if defined(PAPERWHITE2) && defined(MOVE_CRAFTY_SHIELD)
+    { SIDE_CONDITION_CRAFTY_SHIELD, PaperWhite2_EventAddSideCraftyShield, 1 },
+#endif
 };
 
 void SideEffectsInit(void) {

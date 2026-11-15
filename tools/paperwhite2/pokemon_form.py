@@ -20,7 +20,9 @@ add makes form N, the species' forms.count, from the species (or from --from FOR
   offset, and the packers move its forms (form_groups.py). pokedex.forms gains the template's name (or --name),
   entry, height, weight and shape, and pokedex.form_name the species' name if it has none.
 - form_<N>/: the template's battle sprite files, palettes and icons (not its cry, footprint or musical sprites, which
-  the form shares with its species).
+  the form shares with its species). A species whose forms are palettes only (palette_forms, Arceus) gets
+  only the template's normal.pal and shiny.pal, which the battle sprites' archive appends after the original forms'
+  (tools/data/form_groups.py's palette_form_groups), and no record.
 - form_<N>.json and its forms.json row, with --record, or always when the species' forms have records (the game
   reads a form's record at formFile + form - 1, so a species' forms have records all or none): the template's record
   without what only a species has (name, name_article, pokedex, baby_species, regional_dex_number, cry_volume and
@@ -267,8 +269,9 @@ def add(name: str, template_form: int, form_name: str | None, record: bool, chec
     data = read(POKEMON / folder / "data.json")
     forms = data["forms"]
     count = forms["count"]
-    if data["palette_forms"]:
-        raise FormError(f"{folder}'s forms are palettes only (palette_forms), which Add form can't make")
+    palette_only = data["palette_forms"]
+    if palette_only and record:
+        raise FormError(f"{folder}'s forms are palettes only (palette_forms), which take no records")
     if count >= FORM_MAX:
         raise FormError(f"{folder} has {count} forms, the most a Pokémon's form field holds")
     if not 0 <= template_form < count:
@@ -276,12 +279,14 @@ def add(name: str, template_form: int, form_name: str | None, record: bool, chec
     form = count
     changes = Changes()
     source = POKEMON / folder / (f"form_{template_form}" if template_form else "")
-    if template_form and not (source / "front.png").is_file():
+    if template_form and not palette_only and not (source / "front.png").is_file():
         # A form without art of its own (Unown's are all there; Genesect's drives only change the record) is drawn as
         # the species
         source = POKEMON / folder
     # The form's art
-    for art in ART_FILES:
+    # A palette-only form (Arceus's) is its normal and shiny palettes, which follow the original ones
+    # (tools/data/form_groups.py's palette_form_groups)
+    for art in ("normal.pal", "shiny.pal") if palette_only else ART_FILES:
         if (source / art).is_file():
             target = POKEMON / folder / f"form_{form}"
             if art.endswith(mcss_rig.RIG_FILE):
@@ -300,7 +305,7 @@ def add(name: str, template_form: int, form_name: str | None, record: bool, chec
     pokedex["forms"] = [*pokedex.get("forms", []), entry]
     data["pokedex"] = with_form_name(pokedex, pokedex["form_name"])
     forms["count"] = count + 1
-    if count == 1:
+    if count == 1 and not palette_only:
         forms["sprite_offset"] = next_free_offset()
     changed = {folder: data}
     relayout(changes, changed)
