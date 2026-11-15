@@ -833,9 +833,9 @@ for each kind with its schema beside it, and each shop is named after where it i
   `species_data.py` packs `learnset.by_tutor` from these lists: a species learns a tutor's new move only once its data
   lists it, and a move taken out of a list must leave the species' lists too.
 
-A mart's items cost the item's own price (`ITEM_PARAM_PRICE` of `res/items/<item>/data.json`, less with the Bargain
-Pass Power), so the marts' lists hold only items; the BP and tutor shops give each its price. A list holds at most 45
-(`ShopUIWork`'s entries), and a tutor at most 32 moves. `tools/data/shop_data.py pack` builds `a/2/8/2` (each list's
+A mart's items cost the item's own price (`ITEM_PARAM_PRICE`, ten times the `price` of
+`res/items/<item>/data.json`, less with the Bargain Pass Power), so the marts' lists hold only items; the BP and tutor
+shops give each its price. A list holds at most 45 (`ShopUIWork`'s entries), and a tutor at most 32 moves. `tools/data/shop_data.py pack` builds `a/2/8/2` (each list's
 items as u16s) and `a/2/8/3` (a byte per list, its length) for both builds. The BP and tutor lists are C tables, which
 the matching build keeps as `scrcmd_shop.c` writes them; Paper White 2's build writes them from the JSON
 (`shop_data.py header`, `paperwhite2/shops_config.h`: `scrcmd_shop.c` under `PAPERWHITE2` for the BP exchange,

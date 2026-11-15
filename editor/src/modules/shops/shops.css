@@ -1,0 +1,88 @@
+/* The Shop Editor (ShopEditor.tsx) */
+
+.shp-editor { display: flex; flex-direction: column; flex: 1; min-height: 0; background: var(--panel); }
+.shp-header { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--border); }
+.shp-header h2 { margin: 0; font-size: 16px; }
+.shp-header .spacer, .shp-section-head .spacer { flex: 1; }
+.shp-error { color: var(--error); }
+.shp-bar { margin: 6px 14px 0; }
+.shp-split { display: grid; grid-template-columns: 340px 1fr; flex: 1; min-height: 0; }
+.shp-list { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); }
+.shp-list > .filter { margin: 8px 10px 4px; }
+.shp-list-tools { display: flex; align-items: center; gap: 6px; font-size: 12px; margin: 0 10px 6px; }
+.shp-list-items { flex: 1; overflow-y: auto; }
+.shp-group { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted);
+  padding: 10px 12px 4px; }
+.shp-item { display: flex; justify-content: space-between; gap: 6px; width: 100%; border: none; border-radius: 0; background: none;
+  text-align: left; padding: 5px 12px; }
+.shp-item:hover { background: var(--hover); }
+.shp-item.selected { background: var(--selected); box-shadow: inset 3px 0 var(--accent); }
+.shp-item-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shp-item-detail { font-size: 12px; white-space: nowrap; }
+.shp-detail { overflow-y: auto; min-width: 0; }
+.shp-empty { padding: 12px 4px; }
+.shp-page { padding: 12px 20px 48px; max-width: 1200px; display: flex; flex-direction: column; gap: 14px; }
+.shp-top { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; }
+.shp-top h2 { margin: 0; font-size: 18px; }
+.shp-name { font-size: 17px; font-weight: 600; width: min(640px, 100%); }
+.shp-lead { margin: 0; font-size: 13px; line-height: 1.5; max-width: 900px; }
+.shp-note { margin: 0 0 8px; font-size: 12px; }
+.shp-warn-box { margin: 0; padding: 8px 12px; border-radius: 6px; background: var(--warning-soft); color: var(--warning); font-size: 13px; }
+
+.shp-tiers { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 14px; align-items: start; }
+.shp-section { border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px 12px; background: var(--panel); }
+.shp-section-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.shp-section-head h3 { margin: 0; font-size: 14px; }
+.shp-summary { font-weight: normal; font-size: 12px; }
+
+.shp-goods { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.shp-row { display: flex; align-items: center; gap: 8px; padding: 2px 4px; border-radius: 6px; border: 1px solid transparent; }
+.shp-row:hover { background: var(--hover); }
+.shp-row.shp-over { border-color: var(--accent); background: var(--accent-soft); }
+.shp-row.shp-past { opacity: 0.55; }
+.shp-handle { cursor: grab; color: var(--muted); padding: 0 2px; user-select: none; }
+.shp-index { width: 22px; text-align: right; font-size: 12px; }
+.shp-icon { width: 32px; height: 32px; image-rendering: pixelated; flex: none; }
+.shp-icon-missing { display: inline-block; background: var(--panel-2); border-radius: 4px; }
+.shp-picker { flex: 1; min-width: 180px; max-width: 320px; }
+.shp-price { width: 70px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; }
+.shp-price-input { display: flex; align-items: center; gap: 4px; font-size: 12px; }
+.shp-price-input input { width: 64px; }
+.shp-tags { display: flex; gap: 4px; min-width: 60px; }
+.shp-tag { font-size: 10px; padding: 0 5px; border-radius: 6px; white-space: nowrap; }
+.shp-new { background: var(--accent-soft); color: var(--accent); }
+.shp-warn { background: var(--warning-soft); color: var(--warning); }
+.shp-remove { padding: 0 6px; border: none; background: none; color: var(--muted); }
+.shp-remove:hover { color: var(--error); }
+.shp-bit { width: 32px; font-size: 12px; text-align: right; }
+.shp-learners { font-size: 12px; padding: 1px 8px; min-width: 84px; }
+.shp-learner-list { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; }
+.shp-learner-list h4 { margin: 0 0 6px; font-size: 13px; }
+.shp-learner-links { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.shp-learner-links .link { border: none; background: none; padding: 0; color: var(--accent); cursor: pointer; font-size: 13px; }
+.shp-learner-links .link:hover { text-decoration: underline; }
+.shp-all summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+
+/* The moves' types, in the games' colors */
+.shp-type { width: 64px; flex: none; text-align: center; font-size: 10px; font-weight: 600; padding: 1px 0; border-radius: 6px;
+  color: #fff; text-transform: uppercase; background: var(--panel-2); }
+.shp-type-normal { background: #9fa19f; }
+.shp-type-fighting { background: #c03028; }
+.shp-type-flying { background: #81b9ef; }
+.shp-type-poison { background: #9141cb; }
+.shp-type-ground { background: #915121; }
+.shp-type-rock { background: #afa981; }
+.shp-type-bug { background: #91a119; }
+.shp-type-ghost { background: #704170; }
+.shp-type-steel { background: #60a1b8; }
+.shp-type-fire { background: #e62829; }
+.shp-type-water { background: #2980ef; }
+.shp-type-grass { background: #3fa129; }
+.shp-type-electric { background: #c9a400; }
+.shp-type-psychic { background: #ef4179; }
+.shp-type-ice { background: #3dcef3; }
+.shp-type-dragon { background: #5060e1; }
+.shp-type-dark { background: #624d4e; }
+.shp-type-fairy { background: #ef70ef; }
+.shp-section-head button { white-space: nowrap; }
+.shp-section-head h3 { min-width: 0; }

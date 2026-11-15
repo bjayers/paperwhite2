@@ -777,6 +777,32 @@ owners by ID; the original's visitors share some. An owner's **own lines** say w
 each with its talk window preview; **Use the usual line** gives a moment back to the avenue's generic line. A look
 past the first 256 object codes is flagged: the avenue keeps looks in a byte. Save (Ctrl+S) writes the bank, then the table.
 
+## The Shop Editor
+
+What every shop sells (`src/modules/shops/`, `res/field/shops/`, packed by `tools/data/shop_data.py`; docs/data.md's
+Shops). The list groups the shops as the game does, each named after where it is: the **Poké Mart** (every Pokémon
+Center's first clerk), the **Pokémon Centers' second clerks**, **Shopping Mall Nine** (White 2's department store),
+the **markets**, the **BP exchange** and the **move tutors**; the unused special marts (no script opens them, and
+they're empty) show with their checkbox. The filter matches a shop's name or anything it sells ("max repel" finds every
+shop with Max Repels).
+
+- **The Poké Mart** is a section per badge tier (0 badges, 1–2, 3–4, 5–6, 7, 8), as the game's `BADGE_SHOP_DAT_IDS`
+  picks them: which counts a tier covers is C, so only its goods are edited. Items a tier adds over the one before are
+  marked *new*, and **Copy previous** starts a tier from the one before.
+- **A shop's goods** are rows: drag ⠿ to reorder, ✕ to remove, **+ Add** at the section's top; each with its icon (the
+  game's, from `/api/item-icons`) and a searchable picker. A mart's price is the item's own (its data's price × 10, as
+  `GetItemParam` gives it), shown but edited in the item; a BP or tutor price is the entry's. A list holds 45 (44 for
+  Virbank City's second clerk, which the hack adds the Shiny Candy to); an item twice or with no price is flagged.
+- **A move tutor's** moves show their type, price in shards, bit (#: its place in the tutor's list, which species'
+  tutor moves name) and how many species learn it there, with links to them in the Pokémon Editor. Dragging changes
+  the menu's order only. **+ Add move** puts a move last; no species learns it until the Pokémon Editor adds it to the
+  species' Tutor moves. Removing or replacing a move that species learn asks first, then changes their files too (drops
+  it, or names the new move in its place), which Save writes with the shops; Ctrl+Z undoes the shop's change only.
+
+Save (Ctrl+S) checks each file with the build's validator; the hack's build then packs the marts and regenerates the
+BP and tutor tables. How shops work (which shop a script opens, the tiers' badge counts, the currencies) stays the
+game's code.
+
 ## The Weather Editor
 
 Each location's weather (`src/modules/weather/`, `docs/paperwhite2/design/weather-editor.md`). The list has the zones
