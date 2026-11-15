@@ -19,6 +19,8 @@ registrable item needs a larger save.
 | Version Key | `ITEM_GALACTIC_KEY` (the Galactic Key) | Key Items | yes | `include/paperwhite2/version_key.h` |
 | Link Cord | `ITEM_LINK_CORD` (unused item 114) | Items | no | `include/paperwhite2/link_cord.h` |
 | Tart Apple, Sweet Apple, Syrupy Apple | `ITEM_TART_APPLE`, `ITEM_SWEET_APPLE`, `ITEM_SYRUPY_APPLE` (unused items 120-122) | Items | no | none (data only) |
+| Roseli Berry | `ITEM_ROSELI_BERRY` (unused item 123) | Berries | no | none (a row in `item_handlers.c`) |
+| Fairy Gem | `ITEM_FAIRY_GEM` (unused item 124) | Items | no | none (a row in `item_handlers.c`) |
 
 ## Exp. Share
 
@@ -135,4 +137,32 @@ apple is used up; on anything else, "It won't have any effect."
 - **Obtained:** nowhere yet; the debug menu's Give item (120, 121, 122). Places they could go: a shop (Castelia's or
   the Shopping Mall Nine), hidden or visible items near where Applin will live (it lives in orchards and the like in
   Galar), or an NPC who hands one over with an Applin.
-- **Free unused IDs left:** 115, 123-133, 426, 427 and 622.
+- **Free unused IDs left:** 115, 125-133, 426, 427 and 622 (after the Roseli Berry and the Fairy Gem).
+
+## Roseli Berry, Fairy Gem
+
+The Fairy type's held items (docs/paperwhite2/design/fairy-type.md section 12), added as the apples were: unused items
+123 and 124 renamed with `tools/data/rename_constant.py`, each `data.json` a copy of a sibling's with its name, plural,
+description and `sort_index`.
+
+- **Roseli Berry:** the Occa Berry's data with Natural Gift Fairy 60, in the Berries pocket (`sItemPockets` under
+  `PAPERWHITE2`), sorted after the Chilan Berry. In battle it halves a supereffective Fairy-type hit once and is eaten,
+  with the other resist Berries' message (`HandlerRoseliBerry`: `CommonResistBerry` with `TYPE_FAIRY`; Ripen makes it a
+  quarter). `PML_ItemIsBerry` counts it (Bug Bite, Pluck, Harvest, Unnerve, Ripen), and so does Basic AI's Natural
+  Gift table. Its hold effect is 147, as every item Gen 5 added: the battle finds its handlers by item.
+- **Fairy Gem:** the Fire Gem's data, sorted before the Fighting Gem. It powers up its holder's first Fairy-type
+  damaging move by half, with the Gems' message, and is used up (`CommonGemDecide`/`CommonGemPower` with
+  `TYPE_FAIRY`). The rustling grass and dust clouds' Gems (`effect_encount.c`, `ITEM_FIRE_GEM` + a random 0-16) don't
+  give it.
+- **Battle rows:** both under `#ifdef PAPERWHITE2` at the end of `sItemEventAddTable` (`src/ov167/item_handlers.c`),
+  whose lookup runs to `NELEMS` (the original's `0xac`).
+- **Price:** the Roseli Berry 2 (shown ×10: 20), the Fairy Gem 20 (200), as their siblings.
+- **Descriptions:** short originals, for the user to rewrite.
+- **Icons:** placeholders. The Roseli Berry's is a copy of the Pecha Berry's icon and palette
+  (`res/items/roseli_berry/icon.png`, `icon.pal`); the Fairy Gem shows the Gems' shared icon (the Fire Gem's) with
+  its own palette, a copy of the Psychic Gem's (`res/items/fairy_gem/icon.pal`). Their constants are at the end of
+  `generated/item_icons.txt`, their rows of `ITEM_GRAPHICS_CHARS_AND_PALETTES` under `#ifdef PAPERWHITE2`.
+- **Obtained:** nowhere yet; the debug menu's Give item (123, 124). Places they could go: the Roseli Berry where the
+  other resist Berries are found or with a Berry-giving NPC; the Fairy Gem as a hidden item, a dust cloud's or rustling
+  grass's find (a case in `effect_encount.c`), or a Battle Subway prize with the other Gems.
+

@@ -2,6 +2,36 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-15: the Fairy moves, the Roseli Berry and the Fairy Gem (ROM session, on a branch)
+
+`docs/paperwhite2/design/fairy-type.md` section 12 has the research, what was built and the proof; `items.md` the two
+items; `plugins.md`'s Fairy type the code's map.
+
+- **Moves 566-573, all data** (`moves.py add`): Fairy Wind, Disarming Voice ("Disarm Voice"), Draining Kiss ("Drain
+  Kiss"), Play Rough, Moonblast, Dazzling Gleam ("Dazzle Gleam"), Baby-Doll Eyes ("BabyDollEyes"), Aromatic Mist
+  ("Aroma Mist"): Gen 6's numbers, borrowed animations and AI effects, our own descriptions. Five names shortened to
+  12 characters; their constants keep the full names.
+- **Learnsets:** 17 species by level (the Clefairy, Jigglypuff, Marill, Snubbull, Ralts and Cottonee lines, Togetic,
+  Mawile, Eevee, Teddiursa), Teddiursa's egg Play Rough, and Dazzling Gleam at the Lentimas Town tutor (10 Blue
+  Shards) for 30 species, Gen 6's TM99 learners that I'm sure of. Unsure levels and later-generation choices are
+  marked in the design. Aromatic Mist has no Gen 1-5 learner in Gen 6, so nothing learns it yet.
+- **Items:** the Roseli Berry (123, Berries pocket) and the Fairy Gem (124), with the resist Berries' and the Gems'
+  common handlers and `TYPE_FAIRY`; placeholder icons (the Pecha Berry's; the Gems' icon with the Psychic Gem's
+  palette); not placed in the world (debug Give item 123, 124).
+- **Proof (py-desmume, the user's save):** Moonblast, Fairy Wind, Dazzling Gleam and Disarming Voice super effective
+  on a Dragonair, with Moonlight's, Silver Wind's, Flash's and Hyper Voice's animations; Dragon Tail doesn't affect
+  Clefable; Draining Kiss healed 75% (13 → 10, 25 → 19); Disarming Voice never rolls accuracy and hits both foes in a
+  double battle, as Dazzling Gleam does; Play Rough's Attack drop (forced); Baby-Doll Eyes moved before a faster
+  Snorlax; the Roseli Berry halved Moonblast (54 → 27) once, the Fairy Gem raised it by half once (27, then 19); the
+  summary and the Pokédex's move list show the moves with the FAIRY label; the bag shows both items. The plain build's
+  code modules still match. Shots in the scratchpad's `fairymoves/shots/keep/`.
+- **Noticed, not changed:** the Pokédex Info opened from a party Pokémon's summary listed another party member's
+  learnset (slot 3's) when the slot's species had been changed in memory (a test artifact, perhaps not a bug); Aromatic
+  Mist in a single battle shows "used" and nothing else, not Gen 6's "But it failed!".
+
+Next: the user's picks (Aromatic Mist's learners, Play Rough at a tutor, the unsure levels), then Flower Shield, Fairy
+Lock and Crafty Shield (C, researched in section 12.1), then the Pixie Plate and Arceus-Fairy.
+
 ## 2026-11-15: the Fairy type foundation (ROM session, on the `fairy` branch)
 
 `docs/paperwhite2/design/fairy-type.md` §0 has what was built and the placeholders; `plugins.md`'s "Fairy type" the
