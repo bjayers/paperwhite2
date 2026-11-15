@@ -23,6 +23,7 @@
 #include "nitro/hw.h"
 #include "nnsys/g2d.h"
 #include "paperwhite2/battle_type_icons.h"
+#include "paperwhite2/type_chart.h"
 #include "pml/poke_party.h"
 #include "system/palanm.h"
 
@@ -57,8 +58,8 @@
 #define HEADER_ROWS 16
 #define HEADER_WIDTH 128
 
-// The types the wedges have colors for: the game's 17 and 17 itself, which is a Fairy type in hacks that add one
-#define ICON_TYPE_COUNT 18
+// The types the wedges have colors for: the chart's, TYPE_NORMAL to TYPE_FAIRY, with TYPE_NULL's (Roost's) Normal's
+#define ICON_TYPE_COUNT TYPE_CHART_SIZE
 
 // The name boxes, one per view position, 2 and 3 sharing 0 and 1's
 #define ICON_RECORD_COUNT 6
@@ -147,14 +148,15 @@ static const TypeIconWedge COMPACT_WEDGE = {
 };
 // clang-format on
 
-// Each type's fill, by type ID, and a monotype's darker edge, sampled from the summary screen's type labels
+// Each type's fill, by type ID, and a monotype's darker edge, sampled from the summary screen's type labels. Fairy's,
+// last, are its placeholder label's (a/0/8/2's 033.pal, row 2's colors 8 and 9: 238 132 181 and 165 66 115)
 static const u16 TYPE_COLORS[ICON_TYPE_COUNT] = {
-    0x4210, 0x125c, 0x6aae, 0x6552, 0x1dd4, 0x4295, 0x1694, 0x390e, 0x66ad,
-    0x1d9c, 0x7266, 0x1e68, 0x16fc, 0x45bd, 0x6729, 0x5dab, 0x210a, 0x723c,
+    0x4210, 0x125c, 0x6aae, 0x6552, 0x1dd4, 0x4295, 0x1694, 0x390e, 0x66ad, 0x1d9c,
+    0x7266, 0x1e68, 0x16fc, 0x45bd, 0x6729, 0x5dab, 0x210a, 0x4210, 0x5a1d,
 };
 static const u16 TYPE_SHADES[ICON_TYPE_COUNT] = {
-    0x294a, 0x18e9, 0x4948, 0x28e9, 0x0d4e, 0x0d4e, 0x1da8, 0x28e9, 0x294a,
-    0x048e, 0x4948, 0x1da8, 0x0d4e, 0x1ced, 0x4948, 0x48e9, 0x18e9, 0x48e9,
+    0x294a, 0x18e9, 0x4948, 0x28e9, 0x0d4e, 0x0d4e, 0x1da8, 0x28e9, 0x294a, 0x048e,
+    0x4948, 0x1da8, 0x0d4e, 0x1ced, 0x4948, 0x48e9, 0x18e9, 0x294a, 0x3914,
 };
 
 // The native pixels of the name boxes at x 0 to 25 and y 15 to 31, two to a byte with the left one low: the player's

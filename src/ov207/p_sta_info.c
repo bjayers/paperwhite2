@@ -164,7 +164,7 @@ void PStaInfo_Draw(PStatusWork *wk, PStaInfoWork *info) {
     if (wk->isEgg == FALSE) {
         type1 = PML_PkmGetParam(pkm, PKM_PARAM_TYPE1, NULL);
         type2 = PML_PkmGetParam(pkm, PKM_PARAM_TYPE2, NULL);
-        ClActSys_GetCharProxy(wk->typeIconChars[type1], &proxy1);
+        ClActSys_GetCharProxy(wk->typeIconChars[PSTA_TYPE_SLOT(type1)], &proxy1);
         ClActor_SetImageProxy(wk->typeIcons[0], &proxy1);
         ClActor_SetPalette(wk->typeIcons[0], AppMenuCommon_GetTypeIconPaletteIndex(type1), 1);
         pos.x = 96;
@@ -173,7 +173,7 @@ void PStaInfo_Draw(PStatusWork *wk, PStaInfoWork *info) {
         ClActor_SetVisible(wk->typeIcons[0], TRUE);
         ClActor_SetBgPriority(wk->typeIcons[0], 1);
         if (type1 != type2) {
-            ClActSys_GetCharProxy(wk->typeIconChars[type2], &proxy2);
+            ClActSys_GetCharProxy(wk->typeIconChars[PSTA_TYPE_SLOT(type2)], &proxy2);
             ClActor_SetImageProxy(wk->typeIcons[1], &proxy2);
             ClActor_SetPalette(wk->typeIcons[1], AppMenuCommon_GetTypeIconPaletteIndex(type2), 1);
             pos.x = 130;

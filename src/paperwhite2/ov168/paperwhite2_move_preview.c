@@ -34,6 +34,7 @@
 #include "gfl/bmpwin.h"
 #include "nitro/hw.h"
 #include "paperwhite2/battle_move_preview.h"
+#include "paperwhite2/type_chart.h"
 #include "pml/move.h"
 #include "pml/poke_party.h"
 #include "system/palanm.h"
@@ -81,8 +82,8 @@
 #define MOVE_PREVIEW_LAST_ABILITY ABILITY_TERAVOLT
 #endif
 
-// The types the preview reads matchups for: the game's 17 and 17 itself, a Fairy type in hacks that add one
-#define MOVE_PREVIEW_TYPE_COUNT 18
+// The types the preview reads matchups for: the chart's, TYPE_NORMAL to TYPE_FAIRY, with TYPE_NULL (Roost's)
+#define MOVE_PREVIEW_TYPE_COUNT TYPE_CHART_SIZE
 
 // A move's matchup: the effectiveness's steps from neutral, -2 to 2, or these
 #define AFFINITY_IMMUNE (-8)

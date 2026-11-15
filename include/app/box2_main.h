@@ -306,8 +306,14 @@ struct Box2AppWork {
     BOOL pokeIconExist[30];
     u8 trayIconChar[BOX2_TRAY_MAX][0x400];
     ClActUnit *clunit;
+#ifdef PAPERWHITE2
+    // Paper White 2: one more of each, the Fairy type's label (BOX2_ACTOR_FAIRY_TYPE_ICON, box2_obj.h)
+    ClActor *actors[146];
+    u32 chrRes[130];
+#else
     ClActor *actors[145];
     u32 chrRes[129];
+#endif
     u8 unkA2E0[0x204];
     u32 palRes[11];
     u32 cellRes[13];

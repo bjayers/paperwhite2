@@ -21,7 +21,12 @@
 #define POKEDEX_SEARCH_NONE 0xff
 
 #define POKEDEX_SEARCH_SHAPE_COUNT 14
+#ifdef PAPERWHITE2
+// Paper White 2: the types' list has the Fairy type last (pokedex_search_main.c)
+#define POKEDEX_SEARCH_TYPE_COUNT 18
+#else
 #define POKEDEX_SEARCH_TYPE_COUNT 17
+#endif
 
 // The actors
 enum {

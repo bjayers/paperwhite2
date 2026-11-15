@@ -49,6 +49,15 @@
 // The bag's screens: BGs, windows, OBJ, the drawing of the item list and of the item under the cursor, and the menus'
 // windows. The ROM doesn't name this file; it is named after itemmenu.c for what it holds
 
+#ifdef PAPERWHITE2
+// Paper White 2: the type labels are by slot, the Fairy type's in slot 17 (paperwhite2/type_chart.h)
+#define ITEMMENU_TYPE_SLOT(type) PaperWhite2_TypeSlot(type)
+#define ITEMMENU_SLOT_TYPE(slot) PaperWhite2_SlotType(slot)
+#else
+#define ITEMMENU_TYPE_SLOT(type) (type)
+#define ITEMMENU_SLOT_TYPE(slot) (slot)
+#endif
+
 // The colors of the text
 #define ITEMMENU_TEXT_COLOR PRINT_COLOR(15, 14, 0)
 #define ITEMMENU_TITLE_COLOR PRINT_COLOR(15, 2, 0)
@@ -363,7 +372,8 @@ void ItemMenuDisp_Init(ItemMenuWork *work) {
             ClActSys_LoadChars(uiArc, AppMenuCommon_GetCategoryIconCharFile(i), FALSE, 1, work->heapId);
     }
     for (i = 0; i < NELEMS(work->typeIconChr); i++) {
-        work->typeIconChr[i] = ClActSys_LoadChars(uiArc, AppMenuCommon_GetTypeIconCharFile(i), FALSE, 1, work->heapId);
+        work->typeIconChr[i] =
+            ClActSys_LoadChars(uiArc, AppMenuCommon_GetTypeIconCharFile(ITEMMENU_SLOT_TYPE(i)), FALSE, 1, work->heapId);
     }
     GFL_ArcToolFree(uiArc);
 
@@ -387,7 +397,7 @@ void ItemMenuDisp_Init(ItemMenuWork *work) {
     for (i = 0; i < NELEMS(work->typeIcons); i++) {
         work->typeIcons[i] = ClActor_Create(work->actorUnit, work->typeIconChr[i], work->typeIconPlt, work->typeIconCel,
                                             &typeSetup, 1, work->heapId);
-        ClActor_SetPalette(work->typeIcons[i], AppMenuCommon_GetTypeIconPaletteIndex(i), 1);
+        ClActor_SetPalette(work->typeIcons[i], AppMenuCommon_GetTypeIconPaletteIndex(ITEMMENU_SLOT_TYPE(i)), 1);
         ClActor_SetVisible(work->typeIcons[i], FALSE);
         ClActor_SetDrawAnim(work->typeIcons[i], FALSE);
     }
@@ -439,7 +449,7 @@ void ItemMenuDisp_ShowTMIcons(ItemMenuWork *work, BOOL show) {
     move = PML_ItemGetTMMoveID(ItemMenu_GetSlot(work, ItemMenu_GetCursorIndex(work))->item);
     if (move != 0) {
         ClActor_SetVisible(work->categoryIcons[PML_MoveGetCategory(move)], show);
-        ClActor_SetVisible(work->typeIcons[PML_MoveGetType(move)], show);
+        ClActor_SetVisible(work->typeIcons[ITEMMENU_TYPE_SLOT(PML_MoveGetType(move))], show);
     }
 }
 
@@ -1131,7 +1141,7 @@ static void ItemMenuDisp_DrawTMInfo(ItemMenuWork *work, u32 move) {
     s32 accuracy;
 
     ClActor_SetVisible(work->categoryIcons[PML_MoveGetCategory(move)], TRUE);
-    ClActor_SetVisible(work->typeIcons[PML_MoveGetType(move)], TRUE);
+    ClActor_SetVisible(work->typeIcons[ITEMMENU_TYPE_SLOT(PML_MoveGetType(move))], TRUE);
     pp = PML_MoveGetMaxPP(move, 0);
     power = PML_MoveGetParam(move, MOVE_PARAM_POWER);
     accuracy = PML_MoveGetParam(move, MOVE_PARAM_ACCURACY);

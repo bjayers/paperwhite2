@@ -580,7 +580,7 @@ static void PStaSkill_DrawDetail(PStatusWork *wk, PStaSkillWork *skill) {
     pkm = PStatus_GetBoxPkm(wk);
     type1 = PML_PkmGetParam(pkm, PKM_PARAM_TYPE1, NULL);
     type2 = PML_PkmGetParam(pkm, PKM_PARAM_TYPE2, NULL);
-    ClActSys_GetCharProxy(wk->typeIconChars[type1], &proxy1);
+    ClActSys_GetCharProxy(wk->typeIconChars[PSTA_TYPE_SLOT(type1)], &proxy1);
     ClActor_SetImageProxy(wk->typeIcons[0], &proxy1);
     ClActor_SetPalette(wk->typeIcons[0], AppMenuCommon_GetTypeIconPaletteIndex(type1), 1);
     pos.x = 208;
@@ -589,7 +589,7 @@ static void PStaSkill_DrawDetail(PStatusWork *wk, PStaSkillWork *skill) {
     ClActor_SetVisible(wk->typeIcons[0], TRUE);
     ClActor_SetBgPriority(wk->typeIcons[0], 0);
     if (type1 != type2) {
-        ClActSys_GetCharProxy(wk->typeIconChars[type2], &proxy2);
+        ClActSys_GetCharProxy(wk->typeIconChars[PSTA_TYPE_SLOT(type2)], &proxy2);
         ClActor_SetImageProxy(wk->typeIcons[1], &proxy2);
         ClActor_SetPalette(wk->typeIcons[1], AppMenuCommon_GetTypeIconPaletteIndex(type2), 1);
         pos.x = 240;
@@ -1458,7 +1458,7 @@ static void PStaSkill_DrawPlate(PStatusWork *wk, PStaSkillWork *skill, SkillPlat
     if (plate->isDirty == TRUE) {
         if (move != MOVE_NONE) {
             type = PML_MoveGetType(move);
-            ClActSys_GetCharProxy(wk->typeIconChars[type], &proxy);
+            ClActSys_GetCharProxy(wk->typeIconChars[PSTA_TYPE_SLOT(type)], &proxy);
             ClActor_SetImageProxy(plate->typeIcon, &proxy);
             ClActor_SetPalette(plate->typeIcon, AppMenuCommon_GetTypeIconPaletteIndex(type), 1);
             ClActor_SetVisible(plate->typeIcon, TRUE);

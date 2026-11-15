@@ -426,7 +426,8 @@ static void PStatus_LoadResources(PStatusWork *wk) {
     wk->clResources[PSTA_RES_CELL(5)] = ClActSys_LoadCellAnims(uiArc, AppMenuCommon_GetTypeIconCellFile(0),
                                                                AppMenuCommon_GetTypeIconAnimFile(0), wk->heapId);
     for (i = 0; i < PSTA_TYPE_COUNT; i++) {
-        wk->typeIconChars[i] = ClActSys_LoadChars(uiArc, AppMenuCommon_GetTypeIconCharFile(i), FALSE, 0, wk->heapId);
+        wk->typeIconChars[i] =
+            ClActSys_LoadChars(uiArc, AppMenuCommon_GetTypeIconCharFile(PSTA_SLOT_TYPE(i)), FALSE, 0, wk->heapId);
     }
     wk->clResources[PSTA_RES_CHAR(4)] = ClActSys_LoadChars(uiArc, 56, FALSE, 1, wk->heapId);
     wk->clResources[PSTA_RES_CHAR(5)] = ClActSys_LoadChars(uiArc, 57, FALSE, 1, wk->heapId);

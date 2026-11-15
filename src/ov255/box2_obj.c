@@ -20,6 +20,9 @@
 #include "pml/poke_party.h"
 #include "save/box.h"
 #include "system/app_menu_common.h"
+#ifdef PAPERWHITE2
+#include "constants/types.h"
+#endif
 #include "system/bgwinfrm.h"
 #include "system/bmp_oam.h"
 #include "system/cursor_move.h"
@@ -986,6 +989,11 @@ static void LoadInfoResources(Box2AppWork *app) {
         app->chrRes[99 + i] =
             ClActSys_LoadChars(arc, AppMenuCommon_GetTypeIconCharFile(i), FALSE, CLACT_VRAM_SUB, HEAPID_BOX2_APP);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the Fairy type's label
+    app->chrRes[BOX2_CHR_FAIRY_TYPE_ICON] =
+        ClActSys_LoadChars(arc, AppMenuCommon_GetTypeIconCharFile(TYPE_FAIRY), FALSE, CLACT_VRAM_SUB, HEAPID_BOX2_APP);
+#endif
     app->cellRes[4] = ClActSys_LoadCellAnims(arc, AppMenuCommon_GetTypeIconCellFile(2),
                                              AppMenuCommon_GetTypeIconAnimFile(2), HEAPID_BOX2_APP);
     app->palRes[4] = ClActSys_LoadPltt(arc, AppMenuCommon_GetTypeIconPaletteFile(), CLACT_VRAM_SUB, 0, HEAPID_BOX2_APP);
@@ -1022,15 +1030,35 @@ static void CreateTypeIconActors(Box2AppWork *app) {
         ClActor_SetPalette(app->actors[32 + i], AppMenuCommon_GetTypeIconPaletteIndex(i), 1);
         Box2Obj_SetVisible(app, 32 + i, FALSE);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the Fairy type's label
+    data.chr = BOX2_CHR_FAIRY_TYPE_ICON;
+    app->actors[BOX2_ACTOR_FAIRY_TYPE_ICON] = CreateActor(app, &data);
+    ClActor_SetPalette(app->actors[BOX2_ACTOR_FAIRY_TYPE_ICON], AppMenuCommon_GetTypeIconPaletteIndex(TYPE_FAIRY), 1);
+    Box2Obj_SetVisible(app, BOX2_ACTOR_FAIRY_TYPE_ICON, FALSE);
+#endif
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: the actor of a type's label, the Fairy type's after the original ones
+static u32 TypeIconActor(u32 type) {
+    if (type == TYPE_FAIRY) {
+        return BOX2_ACTOR_FAIRY_TYPE_ICON;
+    }
+    return BOX2_ACTOR_TYPE_ICON + type;
+}
+#define TYPE_ICON_ACTOR(type) TypeIconActor(type)
+#else
+#define TYPE_ICON_ACTOR(type) (BOX2_ACTOR_TYPE_ICON + (type))
+#endif
+
 static void ShowTypeIcons(Box2AppWork *app, u32 type1, u32 type2) {
-    u32 id = BOX2_ACTOR_TYPE_ICON + type1;
+    u32 id = TYPE_ICON_ACTOR(type1);
 
     Box2Obj_SetVisible(app, id, TRUE);
     Box2Obj_SetPos(app, id, 88, 56, 1);
     if (type2 != 0 && type1 != type2) {
-        id = BOX2_ACTOR_TYPE_ICON + type2;
+        id = TYPE_ICON_ACTOR(type2);
         Box2Obj_SetVisible(app, id, TRUE);
         Box2Obj_SetPos(app, id, 122, 56, 1);
     }
@@ -1042,6 +1070,9 @@ void Box2Obj_PutTypeIcons(Box2AppWork *app, Box2PokeInfo *info) {
     for (i = BOX2_ACTOR_TYPE_ICON; i < BOX2_ACTOR_TYPE_ICON + 17; i++) {
         Box2Obj_SetVisible(app, i, FALSE);
     }
+#ifdef PAPERWHITE2
+    Box2Obj_SetVisible(app, BOX2_ACTOR_FAIRY_TYPE_ICON, FALSE);
+#endif
     if (info->egg == 0) {
         ShowTypeIcons(app, info->type1, info->type2);
     }

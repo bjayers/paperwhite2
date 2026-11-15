@@ -13,7 +13,14 @@
 #define BOX2_ACTOR_POKEICON 55
 #define BOX2_ACTOR_ITEM_OUTLINE 121
 #define BOX2_ACTOR_RANGE_DOT 129
+#ifdef PAPERWHITE2
+// Paper White 2: the Fairy type's label, an actor and a character resource after the original ones (box2_obj.c)
+#define BOX2_ACTOR_FAIRY_TYPE_ICON 145
+#define BOX2_ACTOR_MAX 146
+#define BOX2_CHR_FAIRY_TYPE_ICON 129
+#else
 #define BOX2_ACTOR_MAX 145
+#endif
 // How many type icons and copies of the item icon that outline it there are
 #define BOX2_TYPE_ICON_MAX 17
 #define BOX2_ITEM_OUTLINE_MAX 8

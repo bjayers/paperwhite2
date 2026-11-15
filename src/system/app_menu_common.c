@@ -9,6 +9,9 @@
 #include "nnsys/g2d.h"
 #include "pml/poke_party.h"
 #include "system/app_menu_common.h"
+#ifdef PAPERWHITE2
+#include "constants/types.h"
+#endif
 
 // The graphics that the game's menus share: the archive's id, and the files of its icons. The file's name is a
 // guess: the ROM has no string for it
@@ -22,6 +25,13 @@
 static const u8 sTypeIconPalettes[] = {
     0, 0, 1, 1, 0, 0, 2, 1, 0, 0, 1, 2, 0, 1, 1, 2, 0, 0, 1, 1, 2, 0,
 };
+
+#ifdef PAPERWHITE2
+// Paper White 2: the Fairy type's label, a new file after the archive's last, drawn in palette 2's free colors 8 and 9
+// (res/graphics/app_menu_common/182.png, 033.pal)
+#define FAIRY_TYPE_ICON_CHAR_FILE 182
+#define FAIRY_TYPE_ICON_PALETTE 2
+#endif
 
 static const u8 sIconPalettes[] = {
     0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1,
@@ -43,10 +53,22 @@ u32 AppMenuCommon_GetTypeIconPaletteFile(void) {
 }
 
 u8 AppMenuCommon_GetTypeIconPaletteIndex(u8 type) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the Fairy type's label is in palette 2
+    if (type == TYPE_FAIRY) {
+        return FAIRY_TYPE_ICON_PALETTE;
+    }
+#endif
     return sTypeIconPalettes[type];
 }
 
 u32 AppMenuCommon_GetTypeIconCharFile(u8 type) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the Fairy type's label is a new file; type 18 would be a contest category's
+    if (type == TYPE_FAIRY) {
+        return FAIRY_TYPE_ICON_CHAR_FILE;
+    }
+#endif
     return 0x22 + type;
 }
 

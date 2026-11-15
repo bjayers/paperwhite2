@@ -226,9 +226,10 @@
 #define PALETTE_CURSOR 3
 #define PALETTE_KNOB 4
 
-// Matchups: a chart of the attacking types in the types' order, MATCHUPS_COLUMNS to a row, each its type icon (an OBJ
-// centered on its place) with the damage multiplier against the species centered under it in font 0. The page's
-// ability buttons are below it (paperwhite2_pokedex_info.c), so the placeholder panel ends above them
+// Matchups: a chart of the attacking types by slot (Fairy's last, paperwhite2/type_chart.h), MATCHUPS_COLUMNS to a row,
+// each its type icon (an OBJ centered on its place) with the damage multiplier against the species centered under it in
+// font 0. The page's ability buttons are below it (paperwhite2_pokedex_info.c), so the placeholder panel ends above
+// them
 #define MATCHUPS_PANEL_X 4
 #define MATCHUPS_PANEL_Y 20
 #define MATCHUPS_PANEL_WIDTH 248
@@ -528,11 +529,12 @@ struct PokedexInfoPanels {
     // Each sub-page's art's characters on BG_ART, all loaded with the page so that changing sub-page only changes the
     // screen; 0 for a sub-page without art
     u32 artChars[POKEDEX_INFO_SUBPAGE_COUNT];
-    // The Matchups' type icons, loaded with the page and shown on Matchups only
+    // The Matchups' type icons, by slot (paperwhite2/type_chart.h, the Fairy type's last), loaded with the page and
+    // shown on Matchups only
     u32 typeIconPalette;
     u32 typeIconCellAnims;
-    u32 typeIconChars[TYPE_CHART_SIZE];
-    ClActor *typeIcons[TYPE_CHART_SIZE];
+    u32 typeIconChars[TYPE_SLOT_COUNT];
+    ClActor *typeIcons[TYPE_SLOT_COUNT];
     // Moves: the page's set, the moves' and places' names, and the rows' type icons (the Matchups' characters), the
     // cursor and the scroll knob, shown on Moves only
     const PokedexInfoMoves *moves;
@@ -803,14 +805,16 @@ static void PokedexInfoPanels_CreateTypeIcons(PokedexInfoPanels *panels, ClActUn
     setup.priority = 0;
     // Over the panels' windows
     setup.bgPriority = PRIORITY_PANELS;
-    for (i = 0; i < TYPE_CHART_SIZE; i++) {
+    for (i = 0; i < TYPE_SLOT_COUNT; i++) {
+        u32 type = PaperWhite2_SlotType(i);
+
         setup.x = MATCHUPS_ICON_X + i % MATCHUPS_COLUMNS * MATCHUPS_COLUMN_PITCH;
         setup.y = MATCHUPS_ICON_Y + i / MATCHUPS_COLUMNS * MATCHUPS_ROW_PITCH;
         panels->typeIconChars[i] =
-            ClActSys_LoadChars(arc, AppMenuCommon_GetTypeIconCharFile(i), FALSE, CLACT_VRAM_SUB, panels->heapId);
+            ClActSys_LoadChars(arc, AppMenuCommon_GetTypeIconCharFile(type), FALSE, CLACT_VRAM_SUB, panels->heapId);
         panels->typeIcons[i] = ClActor_Create(unit, panels->typeIconChars[i], panels->typeIconPalette,
                                               panels->typeIconCellAnims, &setup, CLACT_SURFACE_SUB, panels->heapId);
-        ClActor_SetPalette(panels->typeIcons[i], AppMenuCommon_GetTypeIconPaletteIndex(i), TRUE);
+        ClActor_SetPalette(panels->typeIcons[i], AppMenuCommon_GetTypeIconPaletteIndex(type), TRUE);
         // Semi-transparent, as the entry's type icons are (PokedexInfo_InitTypeIcons), so that the page's fades darken
         // them with the BGs
         ClActor_SetObjMode(panels->typeIcons[i], GX_OAM_MODE_XLU);
@@ -822,7 +826,7 @@ static void PokedexInfoPanels_CreateTypeIcons(PokedexInfoPanels *panels, ClActUn
 static void PokedexInfoPanels_FreeTypeIcons(PokedexInfoPanels *panels) {
     u32 i;
 
-    for (i = 0; i < TYPE_CHART_SIZE; i++) {
+    for (i = 0; i < TYPE_SLOT_COUNT; i++) {
         ClActor_Delete(panels->typeIcons[i]);
         ClActSys_FreeChars(panels->typeIconChars[i]);
     }
@@ -931,7 +935,7 @@ void PokedexInfoPanels_Show(PokedexInfoPanels *panels, u32 subpage, u16 species,
         PokedexInfoPanels_DrawMatchups(panels, personal, ability);
         break;
     }
-    for (i = 0; i < TYPE_CHART_SIZE; i++) {
+    for (i = 0; i < TYPE_SLOT_COUNT; i++) {
         ClActor_SetVisible(panels->typeIcons[i], subpage == POKEDEX_INFO_SUBPAGE_MATCHUPS);
     }
     PokedexInfoPanels_UpdateMoveActors(panels, subpage == POKEDEX_INFO_SUBPAGE_MOVES);
@@ -1327,10 +1331,10 @@ static void PokedexInfoPanels_UpdateMoveActors(PokedexInfoPanels *panels, BOOL s
         if (shown && moves->scroll + i < moves->count) {
             u32 type = PML_MoveGetParam(moves->moves[moves->scroll + i].move, MOVE_PARAM_TYPE);
 
-            if (type < TYPE_CHART_SIZE) {
+            if (type < TYPE_CHART_SIZE && type != TYPE_NULL) {
                 NNSG2dImageProxy proxy;
 
-                ClActSys_GetCharProxy(panels->typeIconChars[type], &proxy);
+                ClActSys_GetCharProxy(panels->typeIconChars[PaperWhite2_TypeSlot(type)], &proxy);
                 ClActor_SetImageProxy(panels->moveIcons[i], &proxy);
                 ClActor_SetPalette(panels->moveIcons[i], AppMenuCommon_GetTypeIconPaletteIndex(type), TRUE);
                 visible = TRUE;
@@ -1364,11 +1368,11 @@ static void PokedexInfoPanels_DrawMatchups(PokedexInfoPanels *panels, PersonalDa
         PokedexInfoPanels_DrawPanel(bitmap, MATCHUPS_PANEL_X, MATCHUPS_PANEL_Y - CONTENT_TOP, MATCHUPS_PANEL_WIDTH,
                                     MATCHUPS_PANEL_HEIGHT);
     }
-    for (i = 0; i < TYPE_CHART_SIZE; i++) {
-        PokedexInfoPanels_PrintMultiplier(panels, bitmap, PokedexInfoPanels_GetMultiplier(i, type1, type2, ability),
-                                          MATCHUPS_ICON_X + i % MATCHUPS_COLUMNS * MATCHUPS_COLUMN_PITCH,
-                                          MATCHUPS_ICON_Y + i / MATCHUPS_COLUMNS * MATCHUPS_ROW_PITCH +
-                                              MATCHUPS_VALUE_OFFSET_Y);
+    for (i = 0; i < TYPE_SLOT_COUNT; i++) {
+        PokedexInfoPanels_PrintMultiplier(
+            panels, bitmap, PokedexInfoPanels_GetMultiplier(PaperWhite2_SlotType(i), type1, type2, ability),
+            MATCHUPS_ICON_X + i % MATCHUPS_COLUMNS * MATCHUPS_COLUMN_PITCH,
+            MATCHUPS_ICON_Y + i / MATCHUPS_COLUMNS * MATCHUPS_ROW_PITCH + MATCHUPS_VALUE_OFFSET_Y);
     }
 }
 

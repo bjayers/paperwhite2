@@ -47,6 +47,7 @@
 #include "system/wordset.h"
 #include "text/system/btlv_input.h"
 #ifdef PAPERWHITE2
+#include "constants/types.h"
 #include "paperwhite2/battle_move_preview.h"
 #endif
 
@@ -225,6 +226,10 @@ static const s32 data_ov168_021f3720[4][2] = { { 64, 10 }, { 192, 10 }, { 64, 58
 static const u32 data_ov168_021f3864[17] ATTRIBUTE_ALIGN(4) = {
     464, 470, 473, 471, 472, 476, 475, 477, 479, 465, 466, 468, 467, 469, 478, 474, 480,
 };
+#ifdef PAPERWHITE2
+// Paper White 2: the Fairy type's tile palette, a new file after the archive's last (res/graphics/btlv/572.pal)
+#define FAIRY_MOVE_TILE_PALETTE 572
+#endif
 static const BtlvInputButtonSet data_ov168_021f3610 = { data_ov168_021f3700, data_ov168_021f3670, data_ov168_021f368c };
 // The scroll of BG 4 for the button rise of each slot
 static const BtlvInputScroll data_ov168_021f3740[4] = { { 256, 448 }, { 256, 192 }, { 0, 192 }, { 0, 448 } };
@@ -2450,7 +2455,12 @@ static void BtlvInput_DrawMoveTiles(BtlvInput *work, const BtlvInputMoveParam *p
     for (i = 0; i < 4; i++) {
         if (param->moves[i] != MOVE_NONE) {
             type = PML_MoveGetParam(param->moves[i], MOVE_PARAM_TYPE);
+#ifdef PAPERWHITE2
+            // Paper White 2: the Fairy type's tiles have their own palette, past the table's
+            palette = type == TYPE_FAIRY ? FAIRY_MOVE_TILE_PALETTE : data_ov168_021f3864[type];
+#else
             palette = data_ov168_021f3864[type];
+#endif
             work->moveActors[i] = ClActor_Create(work->moveUnit, work->moveChars[i], work->movePalette,
                                                  work->moveCellAnims, &data_ov168_021f35f2, 1, work->heapId);
             ClActor_SetSurfacePos(work->moveActors[i], &data_ov168_021f3638[i], 1);

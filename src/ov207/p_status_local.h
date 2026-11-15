@@ -16,6 +16,7 @@
 
 #ifdef PAPERWHITE2
 #include "paperwhite2/pokedex_shortcut.h"
+#include "paperwhite2/type_chart.h"
 #endif
 
 // The summary screen's work and the functions its files share. The ROM names p_status.c and the pages' files
@@ -28,7 +29,16 @@
 #define PSTA_RES_CELL(i) (25 + (i))
 #define PSTA_RES_COUNT 38
 
+#ifdef PAPERWHITE2
+// Paper White 2: the type labels are by slot, the Fairy type's in slot 17 (paperwhite2/type_chart.h)
+#define PSTA_TYPE_COUNT TYPE_SLOT_COUNT
+#define PSTA_TYPE_SLOT(type) PaperWhite2_TypeSlot(type)
+#define PSTA_SLOT_TYPE(slot) PaperWhite2_SlotType(slot)
+#else
 #define PSTA_TYPE_COUNT 17
+#define PSTA_TYPE_SLOT(type) (type)
+#define PSTA_SLOT_TYPE(slot) (slot)
+#endif
 
 // PStatusWork.shownPage before the first page is drawn
 #define PSTA_PAGE_NONE 4

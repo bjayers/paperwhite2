@@ -11,6 +11,9 @@
 #include "gfl/str.h"
 #include "gfl/tcb.h"
 #include "save/bag.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/type_chart.h"
+#endif
 #include "struct_decls.h"
 #include "system/app_keycursor.h"
 #include "system/app_taskmenu.h"
@@ -78,7 +81,12 @@ struct ItemMenuWork {
     u32 pocketTabPlt;
     u32 pocketTabChr;
     u32 pocketTabCel;
+#ifdef PAPERWHITE2
+    // Paper White 2: by slot, the Fairy type's in slot 17 (paperwhite2/type_chart.h)
+    u32 typeIconChr[TYPE_SLOT_COUNT];
+#else
     u32 typeIconChr[17];
+#endif
     u32 typeIconPlt;
     u32 typeIconCel;
     u32 categoryIconChr[3];
@@ -95,7 +103,11 @@ struct ItemMenuWork {
     ClActor *scrollBar;
     ClActor *pocketTabs[6];
     ClActor *categoryIcons[3];
+#ifdef PAPERWHITE2
+    ClActor *typeIcons[TYPE_SLOT_COUNT];
+#else
     ClActor *typeIcons[17];
+#endif
     ClActor *buttons[7];
     ClActor *filterButton;
     ClActor *sortButton;

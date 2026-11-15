@@ -19,6 +19,9 @@
 #include "nitro/math.h"
 #include "nitro/mi.h"
 #include "nitro/os.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/type_chart.h"
+#endif
 #include "nnsys/g2d.h"
 #include "system/app_menu_common.h"
 #include "system/bgwinfrm.h"
@@ -50,6 +53,18 @@ static const BGSysVRAMConfig sPokedexSearchVRAMConfig = {
     GX_VRAM_TEX_NONE,  GX_VRAM_TEXPLTT_NONE,    GX_OBJVRAMMODE_CHAR_1D_128K, GX_OBJVRAMMODE_CHAR_1D_128K,
 };
 
+#ifdef PAPERWHITE2
+// Paper White 2: the messages of the types by slot, the Fairy type's last (paperwhite2/type_chart.h), and of none
+static const u16 sPokedexSearchTypeMsgs[POKEDEX_SEARCH_TYPE_COUNT + 1] = {
+    PokedexSearchMain_Text_Normal,   PokedexSearchMain_Text_Fighting, PokedexSearchMain_Text_Flying,
+    PokedexSearchMain_Text_Poison,   PokedexSearchMain_Text_Ground,   PokedexSearchMain_Text_Rock,
+    PokedexSearchMain_Text_Bug,      PokedexSearchMain_Text_Ghost,    PokedexSearchMain_Text_Steel,
+    PokedexSearchMain_Text_Fire,     PokedexSearchMain_Text_Water,    PokedexSearchMain_Text_Grass,
+    PokedexSearchMain_Text_Electric, PokedexSearchMain_Text_Psychic,  PokedexSearchMain_Text_Ice,
+    PokedexSearchMain_Text_Dragon,   PokedexSearchMain_Text_Dark,     PokedexSearchMain_Text_Fairy,
+    PokedexSearchMain_Text_Empty_9,
+};
+#else
 // The messages of the types, and of none
 static const u16 sPokedexSearchTypeMsgs[POKEDEX_SEARCH_TYPE_COUNT + 1] = {
     PokedexSearchMain_Text_Normal,   PokedexSearchMain_Text_Fighting, PokedexSearchMain_Text_Flying,
@@ -59,6 +74,7 @@ static const u16 sPokedexSearchTypeMsgs[POKEDEX_SEARCH_TYPE_COUNT + 1] = {
     PokedexSearchMain_Text_Electric, PokedexSearchMain_Text_Psychic,  PokedexSearchMain_Text_Ice,
     PokedexSearchMain_Text_Dragon,   PokedexSearchMain_Text_Dark,     PokedexSearchMain_Text_Empty_9,
 };
+#endif
 
 // The shapes in the order of the list
 static const u8 sPokedexSearchShapeOrder[POKEDEX_SEARCH_SHAPE_COUNT] = { 0, 13, 1, 7, 5, 12, 8, 4, 6, 3, 2, 9, 11, 10 };
@@ -624,11 +640,20 @@ BOOL PokedexSearchMain_UpdateFrameMove(PokedexSearchWork *wk) {
 }
 
 u32 PokedexSearchMain_ListPosToType(PokedexSearchWork *wk, u32 pos) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the list's last type is the Fairy type, in its slot
+    return PaperWhite2_SlotType(pos);
+#else
     return pos;
+#endif
 }
 
 u32 PokedexSearchMain_TypeToListPos(PokedexSearchWork *wk, u32 type) {
+#ifdef PAPERWHITE2
+    return PaperWhite2_TypeSlot(type);
+#else
     return type;
+#endif
 }
 
 u32 PokedexSearchMain_GetListPosTypeMsg(PokedexSearchWork *wk, u32 pos) {
@@ -636,7 +661,11 @@ u32 PokedexSearchMain_GetListPosTypeMsg(PokedexSearchWork *wk, u32 pos) {
 }
 
 u32 PokedexSearchMain_GetTypeMsg(PokedexSearchWork *wk, u32 type) {
+#ifdef PAPERWHITE2
+    return sPokedexSearchTypeMsgs[PaperWhite2_TypeSlot(type)];
+#else
     return sPokedexSearchTypeMsgs[type];
+#endif
 }
 
 void PokedexSearchMain_ShapeToListPos(PokedexSearchWork *wk) {

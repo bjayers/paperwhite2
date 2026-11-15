@@ -36,6 +36,7 @@
 #include "text/system/btl_server_flow_title.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/species.h"
+#include "paperwhite2/type_chart.h"
 #endif
 
 // pokedex_info.c, zukan_info.c by the ROM's own string: a Pokémon's Pokédex entry on one screen. Its sprite, its types,
@@ -57,6 +58,18 @@
 #define ARCID_FORM_NAME_TABLE 97
 #define ARCID_POKE_FOOTPRINT 165
 #define ARCID_POKE_FOOTPRINT_FORM 229
+
+#ifdef PAPERWHITE2
+// Paper White 2: the detail screen's labels of every type are by slot, the Fairy type's in slot 17
+// (paperwhite2/type_chart.h)
+#define POKEDEX_INFO_TYPE_COUNT TYPE_SLOT_COUNT
+#define POKEDEX_INFO_TYPE_SLOT(type) PaperWhite2_TypeSlot(type)
+#define POKEDEX_INFO_SLOT_TYPE(slot) PaperWhite2_SlotType(slot)
+#else
+#define POKEDEX_INFO_TYPE_COUNT TYPE_NULL
+#define POKEDEX_INFO_TYPE_SLOT(type) (type)
+#define POKEDEX_INFO_SLOT_TYPE(slot) (slot)
+#endif
 
 #ifdef PAPERWHITE2
 // Paper White 2: the calls of PokedexInfo_Update, from the one in the frame that hid the previous Pokémon's type icons
@@ -177,8 +190,8 @@ struct PokedexInfo {
     /* 0x0d0 */ ClActor *typeActors[2][2];
     /* 0x0e0 */ u32 typeSlot;
     /* 0x0e4 */ BOOL allTypesLoaded;
-    /* 0x0e8 */ u32 allTypeChars[TYPE_NULL];
-    /* 0x12c */ ClActor *allTypeActors[TYPE_NULL];
+    /* 0x0e8 */ u32 allTypeChars[POKEDEX_INFO_TYPE_COUNT];
+    /* 0x12c */ ClActor *allTypeActors[POKEDEX_INFO_TYPE_COUNT];
     /* 0x170 */ u8 shownTypes[2];
     /* 0x174 */ u32 footprintChars[2];
     /* 0x17c */ u32 footprintPalette;
@@ -1523,12 +1536,13 @@ static void PokedexInfo_InitTypeIcons(PokedexInfo *info) {
         info->allTypesLoaded = TRUE;
         info->shownTypes[0] = TYPE_NULL;
         info->shownTypes[1] = TYPE_NULL;
-        for (i = 0; i < TYPE_NULL; i++) {
-            info->allTypeChars[i] =
-                ClActSys_LoadChars(arc, AppMenuCommon_GetTypeIconCharFile(i), FALSE, draw, info->heapId);
+        for (i = 0; i < POKEDEX_INFO_TYPE_COUNT; i++) {
+            info->allTypeChars[i] = ClActSys_LoadChars(
+                arc, AppMenuCommon_GetTypeIconCharFile(POKEDEX_INFO_SLOT_TYPE(i)), FALSE, draw, info->heapId);
             info->allTypeActors[i] = ClActor_Create(info->unit, info->allTypeChars[i], info->typePalette,
                                                     info->typeCellAnims, &setup, surface, info->heapId);
-            ClActor_SetPalette(info->allTypeActors[i], AppMenuCommon_GetTypeIconPaletteIndex(i), TRUE);
+            ClActor_SetPalette(info->allTypeActors[i], AppMenuCommon_GetTypeIconPaletteIndex(POKEDEX_INFO_SLOT_TYPE(i)),
+                               TRUE);
             ClActor_SetPriority(info->allTypeActors[i], 2);
             ClActor_SetObjMode(info->allTypeActors[i], 1);
             ClActor_SetVisible(info->allTypeActors[i], FALSE);
@@ -1545,7 +1559,7 @@ static void PokedexInfo_FreeTypeIcons(PokedexInfo *info) {
         PokedexInfo_FreeTypeActors(info, i);
     }
     if (info->allTypesLoaded) {
-        for (i = 0; i < TYPE_NULL; i++) {
+        for (i = 0; i < POKEDEX_INFO_TYPE_COUNT; i++) {
             ClActor_Delete(info->allTypeActors[i]);
             ClActSys_FreeChars(info->allTypeChars[i]);
         }
@@ -1587,35 +1601,37 @@ static void PokedexInfo_ShowTypesInGameLanguage(PokedexInfo *info, u32 type1, u3
 
         if (info->shownTypes[0] != TYPE_NULL) {
             if (info->shownTypes[0] != type1 && info->shownTypes[0] != type2) {
-                ClActor_SetVisible(info->allTypeActors[info->shownTypes[0]], FALSE);
+                ClActor_SetVisible(info->allTypeActors[POKEDEX_INFO_TYPE_SLOT(info->shownTypes[0])], FALSE);
                 info->shownTypes[0] = TYPE_NULL;
             } else {
                 if (info->shownTypes[0] == type2) {
-                    ClActor_SetSurfacePos(info->allTypeActors[info->shownTypes[0]], &pos[1], sub);
+                    ClActor_SetSurfacePos(info->allTypeActors[POKEDEX_INFO_TYPE_SLOT(info->shownTypes[0])], &pos[1],
+                                          sub);
                 }
-                ClActor_SetVisible(info->allTypeActors[info->shownTypes[0]], TRUE);
+                ClActor_SetVisible(info->allTypeActors[POKEDEX_INFO_TYPE_SLOT(info->shownTypes[0])], TRUE);
             }
         }
         if (info->shownTypes[1] != TYPE_NULL) {
             if (info->shownTypes[1] != type1 && info->shownTypes[1] != type2) {
-                ClActor_SetVisible(info->allTypeActors[info->shownTypes[1]], FALSE);
+                ClActor_SetVisible(info->allTypeActors[POKEDEX_INFO_TYPE_SLOT(info->shownTypes[1])], FALSE);
                 info->shownTypes[1] = TYPE_NULL;
             } else {
                 if (info->shownTypes[1] == type1) {
-                    ClActor_SetSurfacePos(info->allTypeActors[info->shownTypes[1]], &pos[0], sub);
+                    ClActor_SetSurfacePos(info->allTypeActors[POKEDEX_INFO_TYPE_SLOT(info->shownTypes[1])], &pos[0],
+                                          sub);
                 }
-                ClActor_SetVisible(info->allTypeActors[info->shownTypes[1]], TRUE);
+                ClActor_SetVisible(info->allTypeActors[POKEDEX_INFO_TYPE_SLOT(info->shownTypes[1])], TRUE);
             }
         }
         if (type1 != TYPE_NULL) {
             info->shownTypes[0] = type1;
-            ClActor_SetVisible(info->allTypeActors[info->shownTypes[0]], TRUE);
-            ClActor_SetSurfacePos(info->allTypeActors[info->shownTypes[0]], &pos[0], sub);
+            ClActor_SetVisible(info->allTypeActors[POKEDEX_INFO_TYPE_SLOT(info->shownTypes[0])], TRUE);
+            ClActor_SetSurfacePos(info->allTypeActors[POKEDEX_INFO_TYPE_SLOT(info->shownTypes[0])], &pos[0], sub);
         }
         if (type2 != TYPE_NULL) {
             info->shownTypes[1] = type2;
-            ClActor_SetVisible(info->allTypeActors[info->shownTypes[1]], TRUE);
-            ClActor_SetSurfacePos(info->allTypeActors[info->shownTypes[1]], &pos[1], sub);
+            ClActor_SetVisible(info->allTypeActors[POKEDEX_INFO_TYPE_SLOT(info->shownTypes[1])], TRUE);
+            ClActor_SetSurfacePos(info->allTypeActors[POKEDEX_INFO_TYPE_SLOT(info->shownTypes[1])], &pos[1], sub);
         }
     } else {
         ArcTool *arc;
@@ -1691,6 +1707,12 @@ static void PokedexInfo_ShowTypesInLanguage(PokedexInfo *info, u32 type1, u32 ty
         if (type != TYPE_NULL) {
             info->typeChars[slot][i] =
                 ClActSys_LoadChars(arc, AppMenuCommon_GetTypeIconCharFile(type), FALSE, draw, info->heapId);
+#ifdef PAPERWHITE2
+            // Paper White 2: the languages' sheets have no Fairy label, so it keeps the game language's
+            if (type == TYPE_FAIRY) {
+                continue;
+            }
+#endif
             column = sTypeIconTiles[type][1] << 7;
             row = sTypeIconTiles[type][0] << 11;
             ClActSys_WriteCharData(info->typeChars[slot][i], &tiles[row + column], 0x80, 0, draw);
@@ -1927,10 +1949,10 @@ static void PokedexInfo_SetFootprintsVisible(PokedexInfo *info, BOOL visible) {
     ClActor_SetVisible(info->footprints[info->footprintSlot], visible);
     if (info->allTypesLoaded) {
         if (info->shownTypes[0] != TYPE_NULL) {
-            ClActor_SetVisible(info->allTypeActors[info->shownTypes[0]], visible);
+            ClActor_SetVisible(info->allTypeActors[POKEDEX_INFO_TYPE_SLOT(info->shownTypes[0])], visible);
         }
         if (info->shownTypes[1] != TYPE_NULL) {
-            ClActor_SetVisible(info->allTypeActors[info->shownTypes[1]], visible);
+            ClActor_SetVisible(info->allTypeActors[POKEDEX_INFO_TYPE_SLOT(info->shownTypes[1])], visible);
         }
     } else {
         for (i = 0; i < 2; i++) {
