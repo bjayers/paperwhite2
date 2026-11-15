@@ -879,7 +879,17 @@ void PokedexInfo_FreeText(PokedexInfo *info) {
     }
     GFL_BGSysQueueScrLoad(info->frontBG);
     PokedexInfo_FreeWindows(info);
+    // The type icons are hidden in the other slot (whose hidden set, if one is still held, goes now) and freed a frame
+    // later, as a change's previous ones are (PokedexInfo_FreeOtherSlots). Freed at once, Area's map loaded its places'
+    // and box's characters into their VRAM in the same update, which takes several frames, while the screen still
+    // showed them: for 2-3 frames the labels showed pieces of the map's OBJs whenever they were the highest in VRAM
+    if (info->typeSlot != 0) {
+        info->typeSlot = 0;
+    } else {
+        info->typeSlot = 1;
+    }
     PokedexInfo_FreeTypeActors(info, info->typeSlot);
+    PokedexInfo_HideOtherTypes(info);
     PokedexInfo_SetFootprintsVisible(info, FALSE);
     // The text comes back with the description
     info->otherText = FALSE;

@@ -2265,6 +2265,24 @@ goes, the new set's 3, as the original's two slots always had: 30 on Stats, 31 f
 family. A tab can't be taken within 20 frames of a change
 (the button's flash, the touch bar's arrow), so Area and Evo never load beside a hidden set.
 
+**The type icons as Area's map opens** (2026-11-15, the FAIRY label's flicker after the Fairy type): the move panel and
+Area's map take the entry's text (`PokedexInfo_FreeText`), which freed the shown type icons at once. Area's opening is
+one update that takes about 8 frames to load, and the OAM that hides the icons goes out only after it, but Area's
+places' and box's characters (34, 56 and 24 blocks of 128 bytes) went to the first free run of the main OBJ VRAM in that
+same update, which took the icons' VRAM when they were the highest in it: for 2-3 frames the labels showed pieces of the
+map's place markers (traced: Gardevoir, Moves, Evo, Area: the FAIRY label at block 40 freed in the update's frame 5,
+Area's characters at 40+34 in frame 10, the label's OAM unchanged until frame 13). Any type's could: Masquerain's BUG
+and FLYING did the same in a random run of the page's tabs, Up and Down. Whether it happens depends on where the icons
+were last loaded: coming to Evo from Data or Moves loads them again (`PokedexInfo_SetLanguage`), into a free run that
+can be the highest, and the Fairy retypes' second label (Gardevoir's Psychic/Fairy, Azumarill's, Mawile's) shifted those
+places, so it showed on going on from Evo to Area. Under `PAPERWHITE2` the icons go to the other slot, hidden, and are
+freed a frame later with a change's hidden set (`PokedexInfo_FreeOtherSlots`). The move panel loads its icons before the
+free, so it never met this. Area's opening now holds the icons with its own OBJs for that frame: 32 slots with a dual
+type (the page's 28, with the 18 Matchups labels and the entry's two, and Area's icons, two places' and box's), the
+ClAct system's 32. Evo's family taps and Up and Down on Evo also reach 32 for a frame since the 18th Matchups label (31
+before), and nothing reaches 33: no failed allocation in about 760 actions on every sub-page (STATUS.md, 2026-11-15).
+The page has no slot to spare for another OBJ resource.
+
 ### Pokédex shortcuts from the party and the summary
 
 `include/paperwhite2/pokedex_shortcut.h`. The Pokédex's detail screen opens on the Info page of a party Pokémon from

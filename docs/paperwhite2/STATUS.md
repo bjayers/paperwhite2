@@ -2,6 +2,31 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-15: the Pokédex Info page's type labels flickering on the way to Area (ROM session, on a branch)
+
+The user saw the FAIRY label on the Info page's top screen flicker on changing tabs, mostly around Evo, not every
+time. plugins.md's "The type icons as Area's map opens" has the mechanism.
+
+- **Cause, proven:** Area's map takes the entry's text (`PokedexInfo_FreeText`), which freed the shown type labels at
+  once; Area's opening loads for about 8 frames in one update, and its places' and box's characters went into the
+  labels' VRAM in that update while the old OAM still showed the labels: 2-3 frames of the map's markers in place of
+  PSYCHIC and FAIRY (Gardevoir: Stats, Data, Moves, Evo, Area, frames 10-12 of the change). Not Fairy's own doing:
+  Masquerain's BUG and FLYING did the same on the same ROM. It happens when the labels were last loaded at the top of
+  the used VRAM, which coming to Evo from Data or Moves does; the Fairy retypes' extra labels moved those places.
+  Not the label's resource (its mapping is set to the engine's at load, as every label's), not its palette (rows 2-4
+  never change), not a slot or VRAM shortage (no failed allocation, 360+ free blocks).
+- **Fix:** `src/ov296/pokedex_info.c`: the labels are hidden in the other slot and freed a frame later, with a change's
+  hidden set (`PokedexInfo_FreeOtherSlots`).
+- **Proof** (py-desmume, the scratchpad's `fairyflk/`; each frame's OAM over the labels checked against the 26 label
+  members' characters, and every allocation at 32 slots trapped): the same steps before and after
+  (`shots/proof_evo_area.png`, and Masquerain's in `shots/proof_masquerain.png`). Before, random runs of tabs, D-pad,
+  L/R, Up/Down and Evo taps showed it 2 times in 120 actions and 2 in 150; after, none in 700 random actions from
+  Gardevoir through the neighbouring Pokémon (Fairy and not), nor in 62 actions on every tab of a party of Clefable,
+  Gardevoir, Togekiss, Azumarill, Mawile and Flaaffy from the summary's INFO; no failed allocation. Peak 32 slots for a
+  frame (Area's opening holding the labels, Evo's Up/Down and family taps, with a dual type), never 33.
+- **Also found:** the page now peaks at 32 of the ClAct system's 32 character slots for a frame (with a dual type, since
+  the 18th Matchups label; 31 before): no room is left for another resource on the page.
+
 ## 2026-11-15: the Fairy type foundation (ROM session, on the `fairy` branch)
 
 `docs/paperwhite2/design/fairy-type.md` §0 has what was built and the placeholders; `plugins.md`'s "Fairy type" the
