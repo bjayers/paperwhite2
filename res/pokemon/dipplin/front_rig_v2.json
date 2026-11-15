@@ -1,0 +1,262 @@
+{
+  "$schema": "../battle_sprite_rig_v2.schema.json",
+  "format": 2,
+  "side": "front",
+  "step": 6,
+  "box": { "width": 128, "height": 96, "x": 0, "y": 0 },
+  "stop_flags": 0,
+  "pause": true,
+  "keeps_moving": [],
+  "pieces": [
+    { "name": "apple_back", "rectangles": [ { "sheet": [ 0, 32 ], "size": [ 32, 32 ], "at": [ -17, 32 ] } ] },
+    { "name": "apple_front", "rectangles": [ { "sheet": [ 0, 0 ], "size": [ 32, 32 ], "at": [ -17, 32 ] } ] },
+    { "name": "stem", "rectangles": [ { "sheet": [ 32, 0 ], "size": [ 16, 48 ], "at": [ -6, 40 ] } ] },
+    { "name": "head_upper", "rectangles": [ { "sheet": [ 48, 32 ], "size": [ 32, 16 ], "at": [ -24, 10 ] } ] },
+    { "name": "head_lower", "rectangles": [ { "sheet": [ 80, 32 ], "size": [ 32, 16 ], "at": [ -19, 14 ] } ] },
+    { "name": "eye_l", "rectangles": [ { "sheet": [ 64, 0 ], "size": [ 16, 32 ], "at": [ -4, 23 ] } ] },
+    { "name": "eye_r", "rectangles": [ { "sheet": [ 48, 0 ], "size": [ 16, 32 ], "at": [ -11, 23 ] } ] },
+    { "name": "tail_1", "rectangles": [ { "sheet": [ 32, 48 ], "size": [ 16, 16 ], "at": [ -4, 5 ] } ] },
+    { "name": "tongue", "rectangles": [ { "sheet": [ 48, 48 ], "size": [ 16, 16 ], "at": [ -13, 8 ] } ] },
+    { "name": "tail_2", "rectangles": [ { "sheet": [ 64, 48 ], "size": [ 16, 16 ], "at": [ -5, 10 ] } ] },
+    { "name": "leaf_r", "rectangles": [ { "sheet": [ 32, 64 ], "size": [ 16, 16 ], "at": [ -8, 12 ] } ] },
+    { "name": "leaf_l", "rectangles": [ { "sheet": [ 48, 64 ], "size": [ 16, 16 ], "at": [ -7, 12 ] } ] },
+    { "name": "apple_base", "rectangles": [ { "sheet": [ 0, 64 ], "size": [ 32, 32 ], "at": [ -17, 32 ] } ] },
+    { "name": "eye_r_b", "rectangles": [ { "sheet": [ 80, 0 ], "size": [ 16, 32 ], "at": [ -11, 23 ] } ] },
+    { "name": "eye_l_b", "rectangles": [ { "sheet": [ 96, 0 ], "size": [ 16, 32 ], "at": [ -4, 23 ] } ] },
+    { "name": "eye_r_c", "rectangles": [ { "sheet": [ 112, 0 ], "size": [ 16, 32 ], "at": [ -11, 23 ] } ] },
+    { "name": "eye_l_c", "rectangles": [ { "sheet": [ 128, 0 ], "size": [ 16, 32 ], "at": [ -4, 23 ] } ] }
+  ],
+  "bones": [
+    {
+      "name": "apple_back",
+      "head": [ -47, -64 ],
+      "tail": [ -47, -91 ],
+      "parent": null,
+      "default": { "piece": 0, "move": [ 47, 64 ] }
+    },
+    {
+      "name": "apple_front",
+      "head": [ 0, 0 ],
+      "tail": [ 0, -12 ],
+      "parent": 0,
+      "default": { "piece": 1, "move": [ -47, -64 ] }
+    },
+    {
+      "name": "stem",
+      "head": [ 0, -30 ],
+      "tail": [ 4, -64 ],
+      "parent": 3,
+      "connected": true,
+      "default": { "piece": 2 }
+    },
+    {
+      "name": "head_upper",
+      "head": [ 7, -24 ],
+      "tail": [ 0, -30 ],
+      "parent": 0,
+      "default": { "piece": 3, "move": [ -47, -64 ] }
+    },
+    { "name": "tongue", "head": [ 4, -23 ], "tail": [ -4, -22 ], "parent": 3, "default": { "piece": 8 } },
+    { "name": "head_lower", "head": [ 3, -13 ], "tail": [ -1, -22 ], "parent": 3, "default": { "piece": 4 } },
+    { "name": "eye_l", "head": [ 0, -30 ], "tail": [ 7, -43 ], "parent": 3, "default": { "piece": 5 } },
+    { "name": "eye_r", "head": [ -1, -30 ], "tail": [ -6, -44 ], "parent": 3, "default": { "piece": 6 } },
+    {
+      "name": "tail_1",
+      "head": [ 9, -14 ],
+      "tail": [ 16, -9 ],
+      "parent": 0,
+      "default": { "piece": 7, "move": [ -47, -64 ] }
+    },
+    {
+      "name": "tail_2",
+      "head": [ 16, -9 ],
+      "tail": [ 21, -14 ],
+      "parent": 8,
+      "connected": true,
+      "default": { "piece": 9 }
+    },
+    { "name": "leaf_r", "head": [ 18, -12 ], "tail": [ 15, -18 ], "parent": 9, "default": { "piece": 10 } },
+    { "name": "leaf_l", "head": [ 18, -12 ], "tail": [ 20, -19 ], "parent": 9, "default": { "piece": 11 } },
+    { "name": "apple_base", "head": [ 0, 0 ], "tail": [ 0, -6 ], "parent": null, "default": { "piece": 12 } }
+  ],
+  "layers": [ 7, 6, 1, 5, 4, 3, 2, 0, 11, 10, 9, 8, 12 ],
+  "sequences": [
+    {
+      "name": "Idle",
+      "frames": 72,
+      "parts": [
+        { "bone": 0, "keys": [ { "frame": 36, "move": [ 47, 66 ], "scale": [ 1, 0.91650390625 ] } ] },
+        { "bone": 2, "keys": [ { "frame": 36, "rotation": 2.2 } ] },
+        {
+          "bone": 3,
+          "keys": [
+            { "frame": 0, "move": [ -47, -63 ] },
+            { "frame": 12, "move": [ -47, -62 ] },
+            { "frame": 36, "move": [ -47, -63 ] },
+            { "frame": 60, "move": [ -47, -63 ] }
+          ]
+        },
+        {
+          "bone": 6,
+          "keys": [
+            { "frame": 36, "rotation": 7.8 },
+            { "frame": 54, "piece": 14, "rotation": 3.9 },
+            { "frame": 60, "piece": 16, "rotation": 2.925 },
+            { "frame": 66, "piece": 14, "rotation": 2.19375 },
+            { "frame": 72, "piece": 5, "rotation": 1.4625 }
+          ]
+        },
+        {
+          "bone": 7,
+          "keys": [
+            { "frame": 36, "rotation": -3.8 },
+            { "frame": 54, "piece": 13, "rotation": -1.9 },
+            { "frame": 60, "piece": 15, "rotation": -1.425 },
+            { "frame": 66, "piece": 13, "rotation": -1.06875 },
+            { "frame": 72, "piece": 6, "rotation": -0.7125 }
+          ]
+        },
+        { "bone": 8, "keys": [ { "frame": 18, "rotation": -20.4 }, { "frame": 54, "rotation": 7.9 } ] },
+        { "bone": 9, "keys": [ { "frame": 18, "rotation": -10.5 }, { "frame": 54, "rotation": 19.7 } ] },
+        { "bone": 10, "keys": [ { "frame": 18, "rotation": 18.5 }, { "frame": 54, "rotation": -34.7 } ] },
+        { "bone": 11, "keys": [ { "frame": 18, "rotation": 21.4 }, { "frame": 54, "rotation": 11.8 } ] },
+        { "bone": 12, "keys": [ { "frame": 36, "scale": [ 1, 0.73291015625 ] } ] }
+      ]
+    },
+    {
+      "name": "Head",
+      "frames": 180,
+      "root": { "keys": [ { "frame": 72 } ] },
+      "parts": [
+        {
+          "bone": 0,
+          "keys": [
+            { "frame": 36, "move": [ 47, 66 ], "scale": [ 1, 0.91650390625 ] },
+            { "frame": 72 },
+            { "frame": 90, "rotation": -1.8, "scale": [ 1, 1.024658203125 ] },
+            { "frame": 114, "rotation": -2.2 },
+            { "frame": 144, "move": [ 47, 66 ], "scale": [ 1, 0.91650390625 ] }
+          ]
+        },
+        {
+          "bone": 1,
+          "keys": [
+            { "frame": 36 },
+            { "frame": 72 },
+            { "frame": 90, "rotation": -1.8, "scale": [ 1, 1.024658203125 ] },
+            { "frame": 114, "rotation": -2.2 },
+            { "frame": 144 }
+          ]
+        },
+        {
+          "bone": 2,
+          "keys": [
+            { "frame": 36, "rotation": 2.2 },
+            { "frame": 72 },
+            { "frame": 84, "rotation": 14.1 },
+            { "frame": 108, "rotation": 14.1 },
+            { "frame": 120 },
+            { "frame": 138, "rotation": 2.2 }
+          ]
+        },
+        {
+          "bone": 3,
+          "keys": [
+            { "frame": 36 },
+            { "frame": 54, "move": [ -47, -69.5 ], "scale": [ 0.776123046875, 1.175048828125 ] },
+            { "frame": 78, "move": [ -47, -75 ] },
+            { "frame": 84, "move": [ -48, -76 ] },
+            { "frame": 108, "move": [ -48, -76 ] },
+            { "frame": 120, "move": [ -47, -75 ] },
+            { "frame": 138 }
+          ]
+        },
+        { "bone": 4, "keys": [ { "frame": 72 }, { "frame": 120 } ] },
+        {
+          "bone": 5,
+          "keys": [
+            { "frame": 72, "move": [ -6, -1 ], "rotation": 26.1 },
+            { "frame": 84, "move": [ -1, 1 ], "rotation": 6.9 },
+            { "frame": 108, "move": [ -1, 1 ], "rotation": 6.9 },
+            { "frame": 120, "move": [ -6, -1 ], "rotation": 26.1 }
+          ]
+        },
+        {
+          "bone": 6,
+          "keys": [
+            { "frame": 36, "rotation": 7.8 },
+            { "frame": 72, "piece": 14 },
+            { "frame": 90, "rotation": 6, "scale": [ 1, 1.12841796875 ] },
+            { "frame": 126, "piece": 5 },
+            { "frame": 144, "rotation": 7.8 }
+          ]
+        },
+        {
+          "bone": 7,
+          "keys": [
+            { "frame": 36, "rotation": -3.8 },
+            { "frame": 72, "piece": 13 },
+            { "frame": 90, "rotation": -6.2, "scale": [ 1, 1.12841796875 ] },
+            { "frame": 126, "piece": 6 },
+            { "frame": 144, "rotation": -3.8 }
+          ]
+        },
+        {
+          "bone": 8,
+          "keys": [
+            { "frame": 18, "rotation": -20.4 },
+            { "frame": 36, "rotation": 1 },
+            { "frame": 72 },
+            { "frame": 90, "rotation": -16.7, "scale": [ 1.30322265625, 1 ] },
+            { "frame": 144, "move": [ -49, -64 ], "rotation": 21.4, "scale": [ 1.104736328125, 1 ] }
+          ]
+        },
+        {
+          "bone": 9,
+          "keys": [
+            { "frame": 18, "rotation": -10.5 },
+            { "frame": 36, "rotation": -28.4 },
+            { "frame": 72 },
+            { "frame": 90, "rotation": 25.5 },
+            { "frame": 144, "rotation": -34.8 }
+          ]
+        },
+        {
+          "bone": 10,
+          "keys": [
+            { "frame": 18, "rotation": 18.5 },
+            { "frame": 36, "rotation": 41.1 },
+            { "frame": 72 },
+            { "frame": 90, "rotation": -21.3 },
+            { "frame": 144, "rotation": 26.3 }
+          ]
+        },
+        {
+          "bone": 11,
+          "keys": [
+            { "frame": 18, "rotation": 21.4 },
+            { "frame": 36, "rotation": 46.9 },
+            { "frame": 72 },
+            { "frame": 90, "rotation": 19 },
+            { "frame": 144, "rotation": 46.3 }
+          ]
+        },
+        {
+          "bone": 12,
+          "keys": [
+            { "frame": 36, "scale": [ 1, 0.73291015625 ] },
+            { "frame": 72 },
+            { "frame": 90, "rotation": -1.8, "scale": [ 1, 1.024658203125 ] },
+            { "frame": 114, "rotation": -2.2 },
+            { "frame": 144, "scale": [ 1, 0.73291015625 ] }
+          ]
+        }
+      ]
+    }
+  ],
+  "loop_clips": [],
+  "timeline": {
+    "name": "stay",
+    "blocks": [ { "sequence": 0 }, { "sequence": 0 }, { "sequence": 0 }, { "sequence": 0 }, { "sequence": 1 } ]
+  }
+}
