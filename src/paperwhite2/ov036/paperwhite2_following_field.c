@@ -2507,14 +2507,6 @@ static void UpdateTerrain(void) {
         if (actor->movementFlags & FOLLOWING_ACTOR_MOVEMENT_SPLASHED) {
             FldAct_SetSplashed(actor, FALSE);
         }
-        // A flying follower stays above the ground: out of deep sand, with its shadow. A walker that the L/R choice
-        // turned into one on the sand comes back up
-        if (sFlying) {
-            VecFx32 ground = { 0, 0, 0 };
-
-            FldAct_SetAttrDrawOffset(actor, &ground);
-            actor->movementFlags &= ~FOLLOWING_ACTOR_MOVEMENT_SHADOW_HIDDEN;
-        }
         sTerrainActor = NULL;
         sShaded = FALSE;
         sTerrainTile = TILE_TYPE_NONE;
@@ -2550,15 +2542,6 @@ static void UpdateTerrain(void) {
     param.tileClass = (u16)tile;
     param.effects = effects;
     ActorTerrainEffect_Splash(actor, &param);
-    // The end of a step's effects that the actors' own pass gives an NPC (ActorTerrainEffect_ApplyMoveEnd): deep sand
-    // sinks it 7 units through the attribute draw offset, which the billboard's position adds, and a tile without the
-    // shadow flag (deep sand among them) hides its shadow. They read the tile's flags, the season (a winter puddle has
-    // no shadow) and the actor's config (its shadow)
-    param.tileFlags = tile != TILE_TYPE_NONE ? (u16)GetTileFlags(tile) : 0;
-    param.config = GetActorMdlInfo(actor);
-    param.season = (u8)FieldEffects_GetSeason(effects);
-    ActorTerrainEffect_DeepSand(actor, &param);
-    ActorTerrainEffect_UpdateShadowVisible(actor, &param);
     // Grass stays an effect of entering, once a tile crossed
     if (tile != TILE_TYPE_NONE && (GetTileFlags(tile) & TILE_FLAG_GRASS)) {
         PaperWhite2_FldActEnterGrass(actor, tile);

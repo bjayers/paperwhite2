@@ -2,19 +2,6 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
-## 2026-11-14: the follower sinks into deep sand (ROM session, on a branch)
-
-- **Cause, proven in DeSmuME:** on the Desert Resort's deep sand the player read a sink of -7 and a hidden shadow, the
-  follower 0 and a shown shadow. The game sinks an actor and hides its shadow in its end-of-step terrain pass, which
-  the follower's own movement never runs; its terrain update had only the splash and the grass. Never ported (Pokeweb
-  lacked it too), not a regression of the rewrite.
-- **Fix:** `UpdateTerrain` (`paperwhite2_following_field.c`) also runs `ActorTerrainEffect_DeepSand` and
-  `ActorTerrainEffect_UpdateShadowVisible`; flying types stay up with their shadow. following-pokemon.md, Deep sand.
-- **Tested:** Pignite, Joltik, Zekrom, Gastly sink with no shadow and come back off the sand; Pidove stays up; Castelia
-  unchanged. DSi check intact.
-
-Next: the user's look on the Desert Resort (and Route 4's sand, if it has deep sand).
-
 ## 2026-11-13: new moves and abilities, step 5: the Applin line's real moves and abilities (ROM session, on a branch)
 
 design/moves-and-abilities.md section 15 has the details; new-species.md section 18.2 marks every stand-in replaced.
