@@ -149,6 +149,10 @@ static const BattleEventHandlerEntry *EventAddBabiriBerry(u32 *numHandlers);
 static void HandlerBabiriBerry(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work);
 static const BattleEventHandlerEntry *EventAddChilanBerry(u32 *numHandlers);
 static void HandlerChilanBerry(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work);
+#ifdef PAPERWHITE2
+static const BattleEventHandlerEntry *EventAddRoseliBerry(u32 *numHandlers);
+static void HandlerRoseliBerry(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work);
+#endif
 static BOOL CommonResistBerry(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work, u8 type,
                               BOOL anyEffectiveness);
 static void HandlerCommonResistBerryDamageAfter(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work);
@@ -449,6 +453,11 @@ static void HandlerSteelGemDecide(BattleEventItem *item, BtlServerFlow *flow, u8
 static const BattleEventHandlerEntry *EventAddNormalGem(u32 *priority);
 static void HandlerNormalGemPower(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work);
 static void HandlerNormalGemDecide(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work);
+#ifdef PAPERWHITE2
+static const BattleEventHandlerEntry *EventAddFairyGem(u32 *numHandlers);
+static void HandlerFairyGemPower(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work);
+static void HandlerFairyGemDecide(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work);
+#endif
 static void CommonGemDecide(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work, u8 type);
 static void CommonGemPower(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work, u8 type);
 static void HandlerGemEnd(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work);
@@ -625,6 +634,11 @@ static const ItemEventAddEntry sItemEventAddTable[] = {
     { ITEM_DARK_GEM, EventAddDarkGem },
     { ITEM_STEEL_GEM, EventAddSteelGem },
     { ITEM_NORMAL_GEM, EventAddNormalGem },
+#ifdef PAPERWHITE2
+    // Paper White 2: the Fairy type's Berry and Gem, unused items 123 and 124
+    { ITEM_ROSELI_BERRY, EventAddRoseliBerry },
+    { ITEM_FAIRY_GEM, EventAddFairyGem },
+#endif
     { ITEM_NONE, NULL },
 };
 
@@ -637,7 +651,7 @@ static BattleEventItem *ItemEvent_AddItemCore(BattleMon *mon, u16 itemId) {
     const BattleEventHandlerEntry *handlers;
     u32 numHandlers;
 
-    for (i = 0; i < 0xac; i++) {
+    for (i = 0; i < NELEMS(sItemEventAddTable); i++) {
         if (itemId == sItemEventAddTable[i].item) {
             subPriority = RawBattleMonStat(mon, BATTLEMON_SPEED);
             monId = GetMonID(mon);
@@ -1761,6 +1775,23 @@ static const BattleEventHandlerEntry *EventAddChilanBerry(u32 *numHandlers) {
 static void HandlerChilanBerry(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
     CommonResistBerry(item, flow, monId, work, 0, TRUE);
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: the Roseli Berry halves a supereffective Fairy-type hit, as the other type-resist Berries do theirs
+static const BattleEventHandlerEntry sHandlersRoseliBerry[] = {
+    { BATTLE_EVENT_DAMAGE_RATIO, HandlerRoseliBerry },
+    { BATTLE_EVENT_BEFORE_DAMAGE_DISPLAY, HandlerCommonResistBerryDamageAfter },
+};
+
+static const BattleEventHandlerEntry *EventAddRoseliBerry(u32 *numHandlers) {
+    *numHandlers = NELEMS(sHandlersRoseliBerry);
+    return sHandlersRoseliBerry;
+}
+
+static void HandlerRoseliBerry(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
+    CommonResistBerry(item, flow, monId, work, TYPE_FAIRY, FALSE);
+}
+#endif
 
 static BOOL CommonResistBerry(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work, u8 type,
                               BOOL anyEffectiveness) {
@@ -4453,6 +4484,28 @@ static void HandlerNormalGemPower(BattleEventItem *item, BtlServerFlow *flow, u8
 static void HandlerNormalGemDecide(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
     CommonGemPower(item, flow, monId, work, TYPE_NORMAL);
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: the Fairy Gem powers up its holder's first Fairy-type damaging move by half, as the other Gems do
+static const BattleEventHandlerEntry sHandlersFairyGem[] = {
+    { BATTLE_EVENT_DAMAGE_PROCESS_START, HandlerFairyGemDecide },
+    { BATTLE_EVENT_MOVE_POWER_RATIO, HandlerFairyGemPower },
+    { BATTLE_EVENT_DAMAGE_PROCESS_END, HandlerGemEnd },
+};
+
+static const BattleEventHandlerEntry *EventAddFairyGem(u32 *numHandlers) {
+    *numHandlers = NELEMS(sHandlersFairyGem);
+    return sHandlersFairyGem;
+}
+
+static void HandlerFairyGemPower(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
+    CommonGemPower(item, flow, monId, work, TYPE_FAIRY);
+}
+
+static void HandlerFairyGemDecide(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
+    CommonGemDecide(item, flow, monId, work, TYPE_FAIRY);
+}
+#endif
 
 static void CommonGemDecide(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work, u8 type) {
     u16 move;

@@ -283,8 +283,15 @@ static const u16 ITEM_GRAPHICS_CHARS_AND_PALETTES[][2] = {
     [ITEM_SWEET_APPLE] = { ITEM_ICON_NONE, ITEM_ICON_PALETTE_NONE },
     [ITEM_SYRUPY_APPLE] = { ITEM_ICON_NONE, ITEM_ICON_PALETTE_NONE },
 #endif
-    [ITEM_UNUSED_123] = { ITEM_ICON_NONE, ITEM_ICON_PALETTE_NONE },
-    [ITEM_UNUSED_124] = { ITEM_ICON_NONE, ITEM_ICON_PALETTE_NONE },
+#ifdef PAPERWHITE2
+    // Paper White 2: the Roseli Berry and the Fairy Gem, which take unused items 123 and 124, have their own icons (the
+    // gem the gems' shared one, with its own palette)
+    [ITEM_ROSELI_BERRY] = { ITEM_ICON_ROSELI_BERRY, ITEM_ICON_PALETTE_ROSELI_BERRY },
+    [ITEM_FAIRY_GEM] = { ITEM_ICON_FIRE_GEM, ITEM_ICON_PALETTE_FAIRY_GEM },
+#else
+    [ITEM_ROSELI_BERRY] = { ITEM_ICON_NONE, ITEM_ICON_PALETTE_NONE },
+    [ITEM_FAIRY_GEM] = { ITEM_ICON_NONE, ITEM_ICON_PALETTE_NONE },
+#endif
     [ITEM_UNUSED_125] = { ITEM_ICON_NONE, ITEM_ICON_PALETTE_NONE },
     [ITEM_UNUSED_126] = { ITEM_ICON_NONE, ITEM_ICON_PALETTE_NONE },
     [ITEM_UNUSED_127] = { ITEM_ICON_NONE, ITEM_ICON_PALETTE_NONE },
@@ -1144,6 +1151,12 @@ u16 PML_ItemGetMailItemID(u8 mail) {
 BOOL PML_ItemIsBerry(u16 item) {
     u32 i;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the Roseli Berry, unused item 123, is a Berry too (Bug Bite, Pluck, Harvest, Unnerve, Ripen)
+    if (item == ITEM_ROSELI_BERRY) {
+        return TRUE;
+    }
+#endif
     for (i = 0; i < NELEMS(BERRY_ITEM_IDS); i++) {
         if (item == BERRY_ITEM_IDS[i]) {
             return TRUE;

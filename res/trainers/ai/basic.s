@@ -1186,6 +1186,10 @@ Basic_NaturalGiftBerries:
     TableEntry ITEM_CUSTAP_BERRY
     TableEntry ITEM_JABOCA_BERRY
     TableEntry ITEM_ROWAP_BERRY
+#ifdef PAPERWHITE2
+    // Paper White 2: the Roseli Berry, unused item 123
+    TableEntry ITEM_ROSELI_BERRY
+#endif
     TableEntry TABLE_END
 
 Basic_CheckTailwind:
