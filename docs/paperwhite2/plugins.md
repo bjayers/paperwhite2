@@ -134,7 +134,8 @@ only, and a new overlay file would take a file ID before the game's files.
 1. MoveEffectiveness and TypeIcons (battle): done, see below.
 2. ToggleableSeasons: done, see below (Seasons), with the Season app at the Centers' globe (Season app).
 3. Following Pokémon (`bjayers/pokeweb-serverless`, `runtime/following-pokemon/`), with its data in
-   `res/paperwhite2/following/`.
+   `res/paperwhite2/following/`. `following-pokemon.md` has the port and its fixes (the latest: the follower sinks
+   into deep sand and loses its shadow there, as the player and NPCs do; flying types stay up).
 
 ## Ported plugins
 

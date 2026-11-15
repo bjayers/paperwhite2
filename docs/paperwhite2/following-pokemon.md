@@ -770,6 +770,26 @@ state it goes back to after the events (`FollowingScene_GetResumeState`) is `FOL
 follower stays hidden through the menu and walks in on the player's first step, as without one. A follower that was out
 when the menu opened stays where it was, on its trail behind the player.
 
+## Deep sand: the follower sinks and loses its shadow
+
+The player and every NPC sink 7 units into deep sand (`TILE_CLASS_DEEP_SAND`, the Desert Resort) and lose their
+shadow there: at the end of each step the actors' own pass (`ActorTerrainEffect_ApplyMoveEnd`, `field_actor_tool.c`)
+runs `ActorTerrainEffect_DeepSand`, which sets the actor's attribute draw offset (added to the billboard's position by
+`CopyActorPosAllAdd`), and `ActorTerrainEffect_UpdateShadowVisible`, which sets `ACTOR_MOVEMENT_FLAG_HIDE_SHADOW` on a
+tile without the shadow flag (0x80). The follower's movement writes its own coordinates, so that pass never runs for
+it; its terrain update (`UpdateTerrain`, `paperwhite2_following_field.c`) ran only the shallow water's splash and the
+grass. This was never ported, not lost in the rewrite: Pokeweb's `terrain_update` (`runtime/following-pokemon/field.c`)
+had the same two effects, and the port (2044b2579a) copied it. In DeSmuME on the Desert Resort's sand (tile
+`0x000c000c`) the player read a sink of -7 and its shadow hidden while the follower, on the same sand, read 0 and its
+shadow shown.
+
+The terrain update now runs the same two original functions once a tile, with the tile's flags, the season and the
+actor's config, so the follower sinks and hides its shadow exactly as an NPC does and comes back up off the sand.
+Flying-type followers, which already skip the splash and the grass, stay above the sand: the update clears their
+offset and the hidden-shadow flag. A levitating Pokémon of another type (Gastly) sinks, as it also splashes. Tested in
+DeSmuME (2026-11-14) with Pignite, Joltik, Zekrom (two tiles back), Gastly and Pidove: on deep sand -7 and the shadow
+hidden, Pidove at 0; off the sand and in Castelia 0 with the shadow shown.
+
 ## What remains
 
 Every step of the base package is ported (1 to 6, above), each built with `--hack`, no warnings, `verify_dsi_rom.py`
