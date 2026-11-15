@@ -770,6 +770,16 @@ state it goes back to after the events (`FollowingScene_GetResumeState`) is `FOL
 follower stays hidden through the menu and walks in on the player's first step, as without one. A follower that was out
 when the menu opened stays where it was, on its trail behind the player.
 
+## Walking sprites in the editor (2026-11-15)
+
+A follower's walking sheet can be imported in the Pokémon Editor (Follower card, **Import a walking sprite…**, and the
+Battle sprite card's zip, which carries each sheet in `follower/`): replace a sheet its rows show, or give a species
+that follows with another's sheet (Flapple and Appletun with Budew's) a walking sprite of its own, which adds
+`OBJ_CODE_POKEMON_<SPECIES>` after the last walking code, its `res/field/actors/pokemon/<species>/` sheet, and points
+its rows at it with the layout's record fields and profile (6 frames mirrored, 8 asymmetric). `GetIndexOfObjID` ends
+the walking codes at the generated `WALKING_LAST_OBJ_CODE`, so no C changes. Details and proof:
+`docs/paperwhite2/design/battle-sprites.md` section 14.7.
+
 ## What remains
 
 Every step of the base package is ported (1 to 6, above), each built with `--hack`, no warnings, `verify_dsi_rom.py`

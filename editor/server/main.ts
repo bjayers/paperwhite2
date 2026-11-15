@@ -868,6 +868,36 @@ const routes: Record<string, Handler> = {
       rmSync(dir, { recursive: true, force: true });
     }
   },
+  // A walking sprite imported on the Follower card (battle_sprite.py walking-check|walking-import): a PNG and/or a palette
+  // for the sheet an object code shows, or, without sheet, a new walking sprite (a new object code and sheet, the group's
+  // follower rows pointed at it)
+  "POST /api/walking-sprite/check": async (req, res) => {
+    const b = (await readJson(req)) as { species: string; form?: number; sheet?: string | null; rows?: string[]; files?: { name: string; data: string }[]; write?: boolean };
+    const form = b.form ?? 0;
+    if (!/^SPECIES_[A-Z0-9_]+$/.test(b.species ?? "") || !Number.isInteger(form) || form < 0) return error(res, 400, "Name a species and its form");
+    if (b.sheet != null && !/^OBJ_CODE_[A-Z0-9_]+$/.test(b.sheet)) return error(res, 400, "Name the sheet's object code");
+    if (b.rows != null && (!Array.isArray(b.rows) || b.rows.some((r) => !/^[a-z0-9_]+$/.test(r)))) return error(res, 400, "Name follower rows");
+    const files = Array.isArray(b.files) ? b.files : [];
+    if (files.some((f) => typeof f.name !== "string" || typeof f.data !== "string")) return error(res, 400, "Give each file a name and its data");
+    const dir = mkdtempSync(join(tmpdir(), "paperwhite-sprite-"));
+    try {
+      const paths = files.map((f, i) => {
+        mkdirSync(join(dir, String(i)));
+        const path = join(dir, String(i), basename(f.name).replace(/[^A-Za-z0-9_.-]/g, "_") || "file");
+        writeFileSync(path, Buffer.from(f.data, "base64"));
+        return path;
+      });
+      const args = [b.write ? "walking-import" : "walking-check", b.species, "--form", String(form),
+        ...(b.sheet ? ["--sheet", b.sheet] : []), ...(b.rows ? ["--rows", b.rows.join(",")] : []), ...paths];
+      const run = await python.tool(BATTLE_SPRITE_TOOL, args);
+      const line = run.stdout.trim().split("\n").pop() ?? "";
+      if (!line.startsWith("{")) return error(res, 500, run.stderr.trim().split("\n").pop() || "battle_sprite.py failed");
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+      res.end(line);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
   // The Rig Editor's check of a battle sprite's rig (server/python/rig_check.py): mcss_rig.check's errors and warnings,
   // the game's limits that the schema can't say, and the five files' sizes as the build would write them
   "POST /api/battle-sprite/rig-check": async (req, res) => {

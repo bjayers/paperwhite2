@@ -199,8 +199,10 @@ u32 GetIndexOfObjID(u16 objCode) {
     if (objCode >= OBJ_CODE_FOLLOWER_BULBASAUR && objCode <= FOLLOWING_LAST_OBJ_CODE) {
         return (u16)(objCode - OBJ_CODE_FOLLOWER_BULBASAUR + 0x3f0);
     }
-    // Paper White 2: the walking Pokémon that the original game has no sprite for, the rows after the followers'
-    if (objCode >= OBJ_CODE_POKEMON_PURRLOIN && objCode <= OBJ_CODE_POKEMON_DIPPLIN) {
+    // Paper White 2: the walking Pokémon that the original game has no sprite for, the rows after the followers'; the
+    // last is the last walking code (generated from obj_codes.txt like the followers', so that a new walking sprite
+    // needs no change here)
+    if (objCode >= OBJ_CODE_POKEMON_PURRLOIN && objCode <= WALKING_LAST_OBJ_CODE) {
         return (u16)(objCode - OBJ_CODE_POKEMON_PURRLOIN + 0x3f0 +
                      (FOLLOWING_LAST_OBJ_CODE - OBJ_CODE_FOLLOWER_BULBASAUR + 1));
     }

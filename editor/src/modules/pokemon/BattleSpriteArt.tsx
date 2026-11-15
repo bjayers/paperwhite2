@@ -9,12 +9,13 @@ import { useEffect, useRef, useState } from "react";
 import { api, type BattleSpriteCheck, type BattleSpriteSide } from "../../api.ts";
 import { documents } from "../../documents.ts";
 import { navigate } from "../../navigation.ts";
+import { WalkingPreview } from "./WalkingSpriteImport.tsx";
 
 const SIDES = ["front", "back"] as const;
 /** The preview's frames are a game frame's 1/60 s times the strip's step. */
 const FRAME_MS = 1000 / 60;
 
-async function base64Of(file: File): Promise<string> {
+export async function base64Of(file: File): Promise<string> {
   const buffer = new Uint8Array(await file.arrayBuffer());
   let binary = "";
   for (let i = 0; i < buffer.length; i += 0x8000) binary += String.fromCharCode(...buffer.subarray(i, i + 0x8000));
@@ -123,7 +124,7 @@ export function BattleSpriteArt({ species, form, folder, speciesName, onWritten 
   };
   const cancel = () => { setFiles(null); setCheck(null); setStills(false); };
   const apply = async () => {
-    const unsaved = documents.dirtyPaths().filter(groupFiles(folder));
+    const unsaved = documents.dirtyPaths().filter((p) => groupFiles(folder)(p) || (check?.changed ?? []).includes(p));
     if (unsaved.length) {
       alert(`Save or revert your changes first (${unsaved.join(", ")}): this writes the files on disk.`);
       return;
@@ -231,6 +232,15 @@ export function BattleSpriteArt({ species, form, folder, speciesName, onWritten 
                       </figure>
                     ))}
                   </div>
+                  {(check.walking?.length ?? 0) > 0 && (
+                    <>
+                      <span className="pkm-row-label">Walking</span>
+                      <div className="pkm-row-control">
+                        <WalkingPreview items={check.walking!} playing={playing} />
+                        <div className="muted pkm-hint">The follower's walking sheets from follower/, in their own colours (no shiny palette: shiny rows show these).</div>
+                      </div>
+                    </>
+                  )}
                   <span className="pkm-row-label">Palette</span>
                   <div className="pkm-row-control">
                     {(["normal", "shiny"] as const).map((kind) => (

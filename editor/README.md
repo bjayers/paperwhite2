@@ -414,8 +414,8 @@ Forms (`FormPage.tsx`, docs/paperwhite2/design/forms-and-species.md section 11.6
   palettes, a shiny-coloured copy of each picture, a guide per sheet (each piece's rectangle numbered, with the parts it
   belongs to) and a README of the rules, and also the party/box icon (`icon.png` as it is, a 2x preview and
   `icon_palette.pal`, its bank of the shared icon palettes) and the follower's walking sprite sheets
-  (`follower/<code>.png` and `.pal`, each sheet its follower rows show, with a 3x preview; export only, as there is no
-  checked import for overworld sprites). **Import art…** takes any of them back (PNGs, .pal files or the zip; the icon
+  (`follower/<code>.png` and `.pal`, each sheet its follower rows show, with a 3x preview; they import back too, below).
+  **Import art…** takes any of them back (PNGs, .pal files or the zip; the icon
   checked as the form icon import checks it, an original Pokémon's in the bank the game gives it): the
   errors, warnings (pixels outside the pieces, colours changed in one palette only) and the files it changes, and a
   preview of the new art animated on the rig, normal and shiny, with the stills, the sheets (changed pixels outside the
@@ -434,6 +434,17 @@ Forms (`FormPage.tsx`, docs/paperwhite2/design/forms-and-species.md section 11.6
   (picking one also sets the row's animation profile to the sheet's: 8 frames asymmetric, 6 mirrored), and **Open in
   the Follower Editor** on that form's rows (`#tool/followers?species=…&form=N`). A row with a sheet of its own shows
   it, without a picker. The rows save with the page's Save.
+  **Import a walking sprite…** (`WalkingSpriteImport.tsx`; design doc section 14.7): a PNG (and a JASC `.pal`) of one
+  row of square frames (32×32 with 6 or 8, or 64×64 with 6), checked in its own 16 colours (index 0 transparent; the
+  .pal wins; an indexed PNG's changed colours recolour that index; a new colour takes a free one) and previewed walking
+  down, up, left and right beside what the first row shows now. **For** is either *Replace* one of the sheets the rows
+  show (its size and frame count stay; refused when another species' followers show it too) or *A new walking sprite*
+  for the checked rows, for a species whose rows show another's sheet (Flapple and Appletun with Budew's): it adds
+  `OBJ_CODE_POKEMON_<SPECIES>` to `generated/obj_codes.txt` after the other walking Pokémon's, writes
+  `res/field/actors/pokemon/<species>/{data.json,sprite.png,sprite.pal}` and points the rows at it (their `"sprite"`,
+  record fields and animation profile follow the sheet: 6 frames mirrored, 8 asymmetric). Apply writes res/ itself
+  (`POST /api/walking-sprite/check`, with `write`), so unsaved edits to those files are refused. The Battle sprite
+  card's zip import takes the `follower/` sheets back as the *Replace* form and shows them under Walking.
 - **Don't mirror (asymmetric)** under a species' or form's title: the personal data's `asymmetric` flag
   (`PERSONAL_NO_FLIP`), which keeps the Pokédex's pages and list, the trade and the musical from flipping the sprite.
   On a form with a record it is the record's; a form without one shows its species' ("· Pichu's"), and changing it

@@ -19,7 +19,9 @@ The header has, for src/paperwhite2/main/paperwhite2_pokemon_forms.c (include/pa
   (docs/paperwhite2/design/save-expansion.md);
 - FOLLOWING_LAST_OBJ_CODE, the last follower's object code in generated/obj_codes.txt (OBJ_CODE_FOLLOWER_*), the end of
   the followers' range that GetIndexOfObjID (src/system/field_actor_savedata.c) maps, so that a form's followers
-  added after the others need no change to the C;
+  added after the others need no change to the C; and WALKING_LAST_OBJ_CODE, the last of the walking Pokémon's
+  (OBJ_CODE_POKEMON_ from 0x4000 on, the rows after the followers'), so that a species' new walking sprite
+  (the editor's Import a walking sprite) needs no change either;
 - the added species (tools/data/species_list.py, include/paperwhite2/species.h): their first ID, count and the last
   real species, where their battle sprite groups and icons start (after the hack's form groups,
   tools/data/pokemon_graphics.py) and their first cry (tools/data/pokemon_cries.py), their icons' palettes, which
@@ -127,6 +129,15 @@ def last_follower() -> str:
     return max(codes, key=lambda name: (codes[name], name))
 
 
+def last_walking() -> str:
+    """The walking Pokémon's object code with the highest value (OBJ_CODE_POKEMON_ from PURRLOIN = 0x4000 on)."""
+    codes = {name: number for name, number in load_list("obj_codes").items()
+             if name.startswith("OBJ_CODE_POKEMON_") and number >= 0x4000}
+    if not codes:
+        raise FormsError("generated/obj_codes.txt has no OBJ_CODE_POKEMON_ codes from 0x4000")
+    return max(codes, key=lambda name: (codes[name], name))
+
+
 def species_icon_palettes() -> list[int]:
     """Each added species' icon palettes, as icon_palettes() gives the forms'."""
     palettes = []
@@ -217,6 +228,9 @@ def header() -> str:
         f"#define POKEDEX_SPECIES_MAX {pokedex_species_max()}",
         "// The last follower's object code (generated/obj_codes.txt), the end of GetIndexOfObjID's followers",
         f"#define FOLLOWING_LAST_OBJ_CODE {last_follower()}",
+        "// The last walking Pokémon's object code of the hack's own (generated/obj_codes.txt), the end of GetIndexOfObjID's",
+        "// walking sprites, which follow the followers' rows",
+        f"#define WALKING_LAST_OBJ_CODE {last_walking()}",
         *species_lines(),
         *numbering_lines(),
         "",

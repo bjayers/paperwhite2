@@ -490,9 +490,8 @@ server (`GET /api/battle-sprite/export`, `POST /api/battle-sprite/check`, with `
   `OBJ_CODE_POKEMON_PICHU_FORM_1`, `follower_accelgor` for a follower's own sheet), once each, as they are in
   `res/field/actors/`; `preview/follower_<code>.png` three times its size; and the README lists every row (normal,
   female, shiny, placeholder) with its sheet and frames (up, up step, down, down step, left, left step, and right,
-  right step on an 8-frame sheet; 6 frames mirror the left ones). **Export only**: there is no checked import for
-  overworld sprites, which the README says (a sheet is replaced by hand; which sheet a row shows is the Pokémon page's
-  Follower card or the Follower Editor).
+  right step on an 8-frame sheet; 6 frames mirror the left ones). They import back (section 14.7); which sheet a
+  row shows is the Pokémon page's Follower card or the Follower Editor.
 
 ### 14.2 Import: the checks
 
@@ -567,6 +566,48 @@ visible box is the size of the current still's, at the same place, else centred 
 cell animations with their frames, multi-cells with nodes, pivots and play modes, the animations, the box, idle nodes
 and stop flags), and `mcss.render` draws any frame of any animation; `battle_sprite.py`'s guide, checks and preview
 are the editor's "Pictures" step for a fixed layout. The writer is built (section 15); next, let pieces move and resize.
+
+### 14.7 The walking sprites' import (2026-11-15)
+
+`battle_sprite.py` also checks and writes the follower's walking sheets (`walking_sheets`, `plan_walking`,
+`walking_uploads`, `walking_check`); the Follower card's **Import a walking sprite…** and the zip's `follower/` files
+share them. A walking sheet is a field actor's `sprite.png` + `sprite.pal` (`res/field/actors/<group>/<name>/`, packed
+by `tools/data/field_actor_data.py`), 16 colours of its own, index 0 transparent. No shiny palette: the 975 shiny rows
+show the normal one (`"placeholder": true`) until the shiny palettes (`shiny-palettes.md`) are built, and a follower's
+own shiny sheet is just another sheet.
+
+- **Replace a sheet** (a file `follower/<code>.png`, `.pal` or both, by the exported names; or the card with a chosen
+  sheet): the size and frame count stay (a different size is an error: the actor's record and the follower profile follow
+  the layout). Colours as the battle art's: the `.pal` wins, an indexed PNG's changed colour recolours that index, a
+  palette the editor reordered or an RGB(A) PNG is matched by colour, a new colour takes an index no pixel uses, more than
+  15 colours is an error. A sheet that another species' follower rows show too (Budew's, under Flapple) is an error to
+  change from here: it is the other species' sprite. Unchanged files write nothing (compared by decoded pixels and
+  colours, since 64 of the sheets' PNGs were written by another encoder); a change writes that sheet's `sprite.png`
+  and `sprite.pal` only.
+- **A new walking sprite** (card only; a species whose rows show another species' sheet): the PNG's layout must be one
+  the 990 sheets have, 6 or 8 frames of 32×32 or 6 of 64×64, with the actor record they have (`LAYOUTS`:
+  `sprite_controller_type` 13 or 14, atlas 21 or 30, billboard 0 or 2, scene node 10 or 11). It writes
+  `OBJ_CODE_POKEMON_<SPECIES>[_FORM_<n>]` after the last `OBJ_CODE_POKEMON_` line of `generated/obj_codes.txt` (the
+  block from `OBJ_CODE_POKEMON_PURRLOIN = 0x4000`: the table's rows after the followers'), the code's directory
+  `res/field/actors/pokemon/<species>/` (data.json, sprite.png, sprite.pal), and sets the checked rows (by default those
+  with a `"sprite"`) to `"sprite": <code>` with the actor record fields and `animation_profile` of the layout. The
+  frame layout is the sheet's, not a choice. `GetIndexOfObjID`'s range for these codes ends at the generated
+  `WALKING_LAST_OBJ_CODE` (`pokemon_forms.py`, like `FOLLOWING_LAST_OBJ_CODE`), so a new code needs no C change.
+  The packer puts the sheet in the graphics archive at its code's place among the sprites without a `sprite_batch`, which
+  moves the later batches' members by one; the registry and positioning are written by the packer from the same list.
+- **Preview:** each sheet walks (standing and stepping frames alternating) facing down, up, left and right (right =
+  left mirrored on 6 frames) at 2× (1× for 64), the new sheet beside what the first row shows now, the sheet 2× and
+  its palette. Warnings for an empty frame.
+
+Proven: all 930 (group, sheet) pairs of res/ (every sheet of every species' and form's rows, 990 sheets over them) import
+unchanged with their PNG and palette, the PNG alone and the palette alone: no error, nothing written
+(`test_battle_sprite.py` `WalkingSprites`, 8 tests with a recolour, a PNG recolour, a wrong size, too many colours,
+a shared sheet, a new Flapple, a 6-frame sheet, the zip; `editor/tests/battle-sprite.test.ts`, 3 more). In the editor
+(port 7516, screenshots in the scratchpad's `little-d/shots/`): Flapple's new walking sprite (Applin's sheet turned
+green to blue) and Applin's sheet recoloured red by a `.pal`, previewed and applied; the `--hack` ROM built, DSi intact.
+In py-desmume on a copy of the user's save (party slot 0 made Flapple, then Applin, and the field rebuilt by the debug
+warp): Flapple follows with the blue sheet and Applin with the red one, walking behind the player in the Pokémon Center.
+Reverted after.
 
 ## 15. Built (2026-11-12): the rig writer and its JSON form
 
