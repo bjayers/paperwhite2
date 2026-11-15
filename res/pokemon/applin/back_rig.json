@@ -157,11 +157,11 @@
         { "picture": 5, "frames": 6, "rotation": 510, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
         { "picture": 5, "frames": 6, "rotation": 1529, "scale": [ 1, 1 ], "move": [ 2, -1 ] },
         { "picture": 5, "frames": 6, "rotation": 2038, "scale": [ 1, 1 ], "move": [ 3, -1 ] },
-        { "picture": 5, "frames": 6, "rotation": 2380, "scale": [ 1.059326171875, 1.021240234375 ], "move": [ 2, -1 ] },
-        { "picture": 5, "frames": 6, "rotation": 2843, "scale": [ 1.18017578125, 1.06005859375 ], "move": [ 0, 0 ] },
-        { "picture": 5, "frames": 6, "rotation": 2214, "scale": [ 1.244140625, 1.07666015625 ], "move": [ -2, 0 ] },
-        { "picture": 5, "frames": 6, "rotation": 1712, "scale": [ 1.185302734375, 1.055908203125 ], "move": [ -2, 0 ] },
-        { "picture": 5, "frames": 6, "rotation": 2474, "scale": [ 1.06201171875, 1.018310546875 ], "move": [ -2, 0 ] },
+        { "picture": 5, "frames": 6, "rotation": 2500, "scale": [ 1.062744140625, 1.017822265625 ], "move": [ 2, -1 ] },
+        { "picture": 5, "frames": 6, "rotation": 3131, "scale": [ 1.188232421875, 1.052978515625 ], "move": [ 0, 0 ] },
+        { "picture": 5, "frames": 6, "rotation": 2513, "scale": [ 1.2509765625, 1.07080078125 ], "move": [ -2, 0 ] },
+        { "picture": 5, "frames": 6, "rotation": 1893, "scale": [ 1.188232421875, 1.05322265625 ], "move": [ -2, 0 ] },
+        { "picture": 5, "frames": 6, "rotation": 2526, "scale": [ 1.062744140625, 1.017822265625 ], "move": [ -2, 0 ] },
         { "picture": 5, "frames": 6, "rotation": 2985, "scale": [ 1, 1 ], "move": [ -2, 0 ] },
         { "picture": 5, "frames": 6, "rotation": 2240, "scale": [ 1, 1 ], "move": [ -2, 0 ] },
         { "picture": 5, "frames": 6, "rotation": 747, "scale": [ 1, 1 ], "move": [ 0, 0 ] }
@@ -176,17 +176,17 @@
         { "picture": 7, "frames": 6, "rotation": 250, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
         { "picture": 7, "frames": 6, "rotation": 560, "scale": [ 1, 1 ], "move": [ 2, -1 ] },
         { "picture": 7, "frames": 6, "rotation": 99, "scale": [ 1, 1 ], "move": [ 3, -2 ] },
-        { "picture": 7, "frames": 6, "rotation": 65107, "scale": [ 1.056396484375, 1.02392578125 ], "move": [ 2, -2 ] },
-        { "picture": 7, "frames": 6, "rotation": 65105, "scale": [ 1.1669921875, 1.072021484375 ], "move": [ 0, -1 ] },
+        { "picture": 7, "frames": 6, "rotation": 65128, "scale": [ 1.062744140625, 1.017822265625 ], "move": [ 2, -2 ] },
+        { "picture": 7, "frames": 6, "rotation": 65049, "scale": [ 1.188232421875, 1.052978515625 ], "move": [ 0, -1 ] },
+        { "picture": 7, "frames": 6, "rotation": 64171, "scale": [ 1.2509765625, 1.07080078125 ], "move": [ -2, -1 ] },
+        { "picture": 7, "frames": 6, "rotation": 63811, "scale": [ 1.188232421875, 1.05322265625 ], "move": [ -2, -1 ] },
         {
           "picture": 7,
           "frames": 6,
-          "rotation": 64356,
-          "scale": [ 1.223388671875, 1.094970703125 ],
+          "rotation": 65154,
+          "scale": [ 1.062744140625, 1.017822265625 ],
           "move": [ -2, -1 ]
         },
-        { "picture": 7, "frames": 6, "rotation": 63999, "scale": [ 1.171142578125, 1.06884765625 ], "move": [ -2, -1 ] },
-        { "picture": 7, "frames": 6, "rotation": 65216, "scale": [ 1.058837890625, 1.021484375 ], "move": [ -2, -1 ] },
         { "picture": 7, "frames": 6, "rotation": 1046, "scale": [ 1, 1 ], "move": [ -2, -1 ] },
         { "picture": 7, "frames": 6, "rotation": 1271, "scale": [ 1, 1 ], "move": [ -2, -1 ] },
         { "picture": 7, "frames": 6, "rotation": 487, "scale": [ 1, 1 ], "move": [ 0, 0 ] }
@@ -201,11 +201,11 @@
         { "picture": 8, "frames": 6, "rotation": 797, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
         { "picture": 8, "frames": 6, "rotation": 2599, "scale": [ 1, 1 ], "move": [ 2, -1 ] },
         { "picture": 8, "frames": 6, "rotation": 4177, "scale": [ 1, 1 ], "move": [ 3, -2 ] },
-        { "picture": 8, "frames": 6, "rotation": 5480, "scale": [ 1.055908203125, 1.024658203125 ], "move": [ 2, -2 ] },
-        { "picture": 8, "frames": 6, "rotation": 6462, "scale": [ 1.1640625, 1.07470703125 ], "move": [ 0, -1 ] },
-        { "picture": 8, "frames": 6, "rotation": 5968, "scale": [ 1.218994140625, 1.098876953125 ], "move": [ -2, -1 ] },
-        { "picture": 8, "frames": 6, "rotation": 5303, "scale": [ 1.168212890625, 1.071533203125 ], "move": [ -2, -1 ] },
-        { "picture": 8, "frames": 6, "rotation": 5558, "scale": [ 1.05810546875, 1.02197265625 ], "move": [ -2, -1 ] },
+        { "picture": 8, "frames": 6, "rotation": 5709, "scale": [ 1.062744140625, 1.017822265625 ], "move": [ 2, -2 ] },
+        { "picture": 8, "frames": 6, "rotation": 7122, "scale": [ 1.188232421875, 1.052978515625 ], "move": [ 0, -1 ] },
+        { "picture": 8, "frames": 6, "rotation": 6791, "scale": [ 1.2509765625, 1.07080078125 ], "move": [ -2, -1 ] },
+        { "picture": 8, "frames": 6, "rotation": 5884, "scale": [ 1.188232421875, 1.05322265625 ], "move": [ -2, -1 ] },
+        { "picture": 8, "frames": 6, "rotation": 5735, "scale": [ 1.062744140625, 1.017822265625 ], "move": [ -2, -1 ] },
         { "picture": 8, "frames": 6, "rotation": 5124, "scale": [ 1, 1 ], "move": [ -2, -1 ] },
         { "picture": 8, "frames": 6, "rotation": 3310, "scale": [ 1, 1 ], "move": [ -2, -1 ] },
         { "picture": 8, "frames": 6, "rotation": 1034, "scale": [ 1, 1 ], "move": [ 0, 0 ] }
@@ -292,13 +292,13 @@
       "play": "loop",
       "keys": [
         { "picture": 5, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
-        { "picture": 5, "frames": 6, "rotation": 64899, "scale": [ 1.038330078125, 1 ], "move": [ 1, -1 ] },
-        { "picture": 5, "frames": 6, "rotation": 63286, "scale": [ 1.129638671875, 1.0009765625 ], "move": [ 1, -2 ] },
-        { "picture": 5, "frames": 6, "rotation": 61588, "scale": [ 1.2177734375, 1.004150390625 ], "move": [ 2, -3 ] },
-        { "picture": 5, "frames": 6, "rotation": 60865, "scale": [ 1.253173828125, 1.00634765625 ], "move": [ 1, -4 ] },
-        { "picture": 5, "frames": 6, "rotation": 61588, "scale": [ 1.2177734375, 1.004150390625 ], "move": [ 2, -3 ] },
-        { "picture": 5, "frames": 6, "rotation": 63286, "scale": [ 1.129638671875, 1.0009765625 ], "move": [ 1, -2 ] },
-        { "picture": 5, "frames": 6, "rotation": 64899, "scale": [ 1.038330078125, 1 ], "move": [ 1, -1 ] }
+        { "picture": 5, "frames": 6, "rotation": 64910, "scale": [ 1.038330078125, 1 ], "move": [ 1, -1 ] },
+        { "picture": 5, "frames": 6, "rotation": 63397, "scale": [ 1.130615234375, 1 ], "move": [ 1, -2 ] },
+        { "picture": 5, "frames": 6, "rotation": 61884, "scale": [ 1.222900390625, 1 ], "move": [ 2, -3 ] },
+        { "picture": 5, "frames": 6, "rotation": 61259, "scale": [ 1.26123046875, 1 ], "move": [ 1, -4 ] },
+        { "picture": 5, "frames": 6, "rotation": 61884, "scale": [ 1.222900390625, 1 ], "move": [ 2, -3 ] },
+        { "picture": 5, "frames": 6, "rotation": 63397, "scale": [ 1.130615234375, 1 ], "move": [ 1, -2 ] },
+        { "picture": 5, "frames": 6, "rotation": 64910, "scale": [ 1.038330078125, 1 ], "move": [ 1, -1 ] }
       ]
     },
     {
@@ -307,13 +307,13 @@
       "play": "loop",
       "keys": [
         { "picture": 7, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
-        { "picture": 7, "frames": 6, "rotation": 64480, "scale": [ 1.038330078125, 1 ], "move": [ 1, -1 ] },
-        { "picture": 7, "frames": 6, "rotation": 61969, "scale": [ 1.127197265625, 1.003173828125 ], "move": [ 0, -1 ] },
-        { "picture": 7, "frames": 6, "rotation": 59486, "scale": [ 1.20654296875, 1.013671875 ], "move": [ 1, -2 ] },
-        { "picture": 7, "frames": 6, "rotation": 58459, "scale": [ 1.235595703125, 1.020751953125 ], "move": [ 0, -2 ] },
-        { "picture": 7, "frames": 6, "rotation": 59486, "scale": [ 1.20654296875, 1.013671875 ], "move": [ 1, -2 ] },
-        { "picture": 7, "frames": 6, "rotation": 61969, "scale": [ 1.127197265625, 1.003173828125 ], "move": [ 0, -1 ] },
-        { "picture": 7, "frames": 6, "rotation": 64480, "scale": [ 1.038330078125, 1 ], "move": [ 1, -1 ] }
+        { "picture": 7, "frames": 6, "rotation": 64475, "scale": [ 1.038330078125, 1 ], "move": [ 1, -1 ] },
+        { "picture": 7, "frames": 6, "rotation": 61913, "scale": [ 1.130615234375, 1 ], "move": [ 0, -1 ] },
+        { "picture": 7, "frames": 6, "rotation": 59351, "scale": [ 1.222900390625, 1 ], "move": [ 1, -2 ] },
+        { "picture": 7, "frames": 6, "rotation": 58292, "scale": [ 1.26123046875, 1 ], "move": [ 0, -2 ] },
+        { "picture": 7, "frames": 6, "rotation": 59351, "scale": [ 1.222900390625, 1 ], "move": [ 1, -2 ] },
+        { "picture": 7, "frames": 6, "rotation": 61913, "scale": [ 1.130615234375, 1 ], "move": [ 0, -1 ] },
+        { "picture": 7, "frames": 6, "rotation": 64475, "scale": [ 1.038330078125, 1 ], "move": [ 1, -1 ] }
       ]
     },
     {
@@ -322,13 +322,13 @@
       "play": "loop",
       "keys": [
         { "picture": 8, "frames": 6, "rotation": 0, "scale": [ 1, 1 ], "move": [ 0, 0 ] },
-        { "picture": 8, "frames": 6, "rotation": 15, "scale": [ 1.0380859375, 1.000244140625 ], "move": [ 1, -1 ] },
-        { "picture": 8, "frames": 6, "rotation": 65342, "scale": [ 1.123779296875, 1.006103515625 ], "move": [ 0, -1 ] },
-        { "picture": 8, "frames": 6, "rotation": 64892, "scale": [ 1.19091796875, 1.02685546875 ], "move": [ 1, -2 ] },
-        { "picture": 8, "frames": 6, "rotation": 64665, "scale": [ 1.21142578125, 1.041015625 ], "move": [ 0, -2 ] },
-        { "picture": 8, "frames": 6, "rotation": 64892, "scale": [ 1.19091796875, 1.02685546875 ], "move": [ 1, -2 ] },
-        { "picture": 8, "frames": 6, "rotation": 65342, "scale": [ 1.123779296875, 1.006103515625 ], "move": [ 0, -1 ] },
-        { "picture": 8, "frames": 6, "rotation": 15, "scale": [ 1.0380859375, 1.000244140625 ], "move": [ 1, -1 ] }
+        { "picture": 8, "frames": 6, "rotation": 51, "scale": [ 1.038330078125, 1 ], "move": [ 1, -1 ] },
+        { "picture": 8, "frames": 6, "rotation": 173, "scale": [ 1.130615234375, 1 ], "move": [ 0, -1 ] },
+        { "picture": 8, "frames": 6, "rotation": 295, "scale": [ 1.222900390625, 1 ], "move": [ 1, -2 ] },
+        { "picture": 8, "frames": 6, "rotation": 347, "scale": [ 1.26123046875, 1 ], "move": [ 0, -2 ] },
+        { "picture": 8, "frames": 6, "rotation": 295, "scale": [ 1.222900390625, 1 ], "move": [ 1, -2 ] },
+        { "picture": 8, "frames": 6, "rotation": 173, "scale": [ 1.130615234375, 1 ], "move": [ 0, -1 ] },
+        { "picture": 8, "frames": 6, "rotation": 51, "scale": [ 1.038330078125, 1 ], "move": [ 1, -1 ] }
       ]
     }
   ],
