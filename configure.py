@@ -303,6 +303,8 @@ DATA_PACKS = [
     # Zone headers, which give each zone the number of its events in res/field/events/order.json
     ("tools/data/zone_data.py", "res/field/zones", ["a/0/1/2"], False, ["res/field/events"]),
     ("tools/data/trade_data.py", "res/field/trades", ["a/1/6/3"], False),  # In-game trades
+    # The marts' item lists and their counts (the BP and tutor shops' lists are C, see shop_data.py)
+    ("tools/data/shop_data.py", "res/field/shops", ["a/2/8/2", "a/2/8/3"], False),
     # The Join Avenue's tables, whose people's texts are message IDs of the avenue's text bank
     ("tools/data/join_avenue_data.py", "res/field/join_avenue", ["a/2/4/4"], False,
      ["res/text/script/global_10685.txt"]),
@@ -401,14 +403,17 @@ HACK_MEMBER_SOURCES = ["res/field/zones", "include/paperwhite2/conditions.h", "i
 # the root for what it holds (graphics_archive.ARCHIVE_ROOTS)
 DATA_PACKS += [("tools/data/graphics_archive.py", str(directory.relative_to(ROOT)), [directory_archive(directory)], True)
                for directory in archive_directories()]
-# What every packer reads besides its data: the scripts, and the move tutors' tables, which name the species data's
-# tutor bits (tools/data/species_data.py). A packer also depends on the modules of tools/ that it imports
+# What every packer reads besides its data: the scripts, and scrcmd_shop.c, whose shop tables tools/data/shop_data.py
+# reads (as species_data.py does through it). A packer also depends on the modules of tools/ that it imports
 # (script_imports).
 DATA_PACK_TOOLS = ["tools/data/datajson.py", "tools/text/text_ids.py", "tools/data/gen_constants.py", "tools/data/narc.py",
                    "tools/text/text_sources.py", "tools/text/text_data.py", "tools/text/msgdata.py",
                    "src/ov036/scrcmd_shop.c", "tools/data/facility_data.py", "tools/data/make_constants.py"]
-# The C files a packer reads its tables from, besides scrcmd_shop.c, and the headers it reads an enum from
-DATA_PACK_SOURCES = {"tools/data/pokemon_graphics.py": ["src/system/poke_icon.c"],
+# The C files a packer reads its tables from, besides scrcmd_shop.c, the headers it reads an enum from, and other data:
+# the move tutors' lists, which name the species data's tutor bits
+DATA_PACK_SOURCES = {"tools/data/species_data.py": ["res/field/shops/move_tutors.json",
+                                                    "res/field/shops/move_tutors.schema.json"],
+                     "tools/data/pokemon_graphics.py": ["src/system/poke_icon.c"],
                      "tools/data/pokemon_cries.py": ["src/system/poke_icon.c"],
                      "tools/data/weather_calendar_data.py": ["include/system/zone_weather.h"]}
 
@@ -1205,6 +1210,16 @@ def main():
                 implicit=["tools/paperwhite2/trainer_scaling.py",
                           "res/paperwhite2/trainer_scaling/trainer_scaling.schema.json", "tools/data/datajson.py",
                           "tools/data/gen_constants.py", "generated/trainer_classes.txt", "generated/trainers.txt"])
+        constant_headers.append(output)
+        # Paper White 2: the BP exchange's and the move tutors' lists, from res/field/shops/ (tools/data/shop_data.py;
+        # the marts' lists are the archives that DATA_PACKS packs)
+        n.rule("shops_header", "$python tools/data/shop_data.py header res/field/shops $out", "Generating $out",
+               restat="1")
+        output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "shops_config.h"
+        n.build([output], "shops_header", [f"res/field/shops/{kind}{suffix}" for kind in ("bp_shops", "move_tutors")
+                                           for suffix in (".json", ".schema.json")],
+                implicit=["tools/data/shop_data.py", *script_imports("tools/data/shop_data.py"),
+                          "src/ov036/scrcmd_shop.c", "generated/items.txt", "generated/moves.txt"])
         constant_headers.append(output)
         # Paper White 2: the Pokémon Center attendants' fees, from res/paperwhite2/pokemon_center/services.json
         # (docs/paperwhite2/design/pokemon-center.md)

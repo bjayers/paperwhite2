@@ -21,7 +21,7 @@ res/
     maps/{models,textures}/
     props/{exterior,interior}/{models,textures}/
     actors/                 the overworld's people and objects, with pokemon/ and models/ for its Pokémon and 3D models
-    trades/  places/  grottoes/  weather_calendar/  castelia_rush/
+    trades/  shops/  places/  grottoes/  weather_calendar/  castelia_rush/
   pokedex/habitats/         the Pokédex's habitat lists, an area each
   lighting/{field,battle}/
   town_map/
@@ -91,6 +91,7 @@ which documents the format and can write them again.
 | `a/0/4/7`, `a/0/4/8` | `res/field/actors/<code>/` (JSON, PNG, palette, Nitro model), and in Paper White 2 `res/paperwhite2/following/` | The field actors' models: their table and graphics, and the Following Pokémon's data | `tools/data/field_actor_data.py` |
 | `a/1/2/7` | `res/field/encounters/` (JSON) | Wild encounters | `tools/data/encounter_data.py` |
 | `a/1/6/3` | `res/field/trades/` (JSON) | In-game trades | `tools/data/trade_data.py` |
+| `a/2/8/2`, `a/2/8/3` | `res/field/shops/` (JSON) | The shops' goods: the Poké Mart's badge tiers and the fixed marts (and, as C tables, the BP exchange and the move tutors) | `tools/data/shop_data.py` |
 | `a/2/4/4` | `res/field/join_avenue/` (JSON) | The Join Avenue's tables: shops, goods, lots, NPCs, ranks, local people | `tools/data/join_avenue_data.py` |
 | `a/2/1/2`, `a/2/1/1` | `res/trainers/facilities/battle_subway/` (JSON) | Battle Subway and Trial House trainers and Pokémon | `tools/data/facility_data.py` |
 | `a/2/6/2`, `a/2/6/1` | `res/trainers/facilities/black_tower/` (JSON) | Black Tower and White Treehollow trainers and Pokémon | `tools/data/facility_data.py` |
@@ -325,8 +326,9 @@ table of the species' Unova Pokédex numbers, which their files hold as `regiona
 numbers match the game's Unova Pokédex, from #000 for Victini to #300. The TMs and HMs a species learns are named, and
 so are its tutor moves: the record keeps them as a bit per move of each tutor, and the packer finds each move's bit, the
 type tutor's (the pledges, the starters' ultimate moves and Draco Meteor, in the order `PokeParty_GetTutorMoveID` tests
-them) or its place in the shop table of the tutor of Driftveil City, Lentimas Town, Humilau City or Nacrene City in
-`src/ov036/scrcmd_shop.c`. A mod that changes a tutor's table keeps every species' tutor moves. Three flags are named
+them) or its place in the list of the tutor of Driftveil City, Lentimas Town, Humilau City or Nacrene City in
+`res/field/shops/move_tutors.json` (see [Shops](#shops)). A mod that changes a tutor's list keeps every species' tutor
+moves. Three flags are named
 after the species that have them: `underground` (Diglett and Dugtrio, tested by the battle animations), `asymmetric`
 (species that don't look the same mirrored, such as Kingler and Absol) and `palette_forms` (Arceus, whose forms only
 change its palette).
@@ -807,6 +809,40 @@ and the Pokémon's nickname and trainer's name, which the text takes (see [Text]
 names' message IDs from its place, and `res/field/trades/trade.schema.json` documents each field: the IVs, nature and sex
 are null for random ones. The field scripts name the trades they start, as `FieldTradeCheck 0x8022, TRADE_GIGALITH,
 0x8020`. Both versions have the same trades.
+
+## Shops
+
+`Scrcmd_Shop_CallFriendlyShopBuy` (`src/ov036/scrcmd_shop.c`) opens a shop by its ID, which a field script sets in
+0x8000 before calling global script 10110 (2280 for the move tutors). `res/field/shops/` has every shop's goods, a file
+for each kind with its schema beside it, and each shop is named after where it is, from the scripts that open it:
+
+- `poke_mart.json`: shop 255, every Pokémon Center's first clerk. Its list grows with the badges: `BADGE_SHOP_DAT_IDS`
+  picks one of six tiers (0 badges, 1–2, 3–4, 5–6, 7, 8), files 0 to 5 of `a/2/8/2`. Each tier's `badges` say which
+  counts it is for, which the packer checks against the C table.
+- `marts.json`: the shops 0 to 25, each with a fixed list, file shop + 6: the Pokémon Centers' second clerks (some sell
+  TMs: a list whose first item is a TM shows the TMs' numbers), Shopping Mall Nine's counters (White 2's department
+  store: medicine, TMs, Poké Balls, vitamins and battle items, the last shared with Nacrene City's Café Warehouse) and
+  Driftveil City's market. `group` says which, for the editor.
+- `special_marts.json`: the shops 239 to 242 and 247 to 250, whose six levels follow `KeyDataSave_GetProgress`
+  (`SPECIAL_POKE_MART_HEADERS`). No script opens them and their lists are empty in White 2; they are there so the
+  archive is whole.
+- `bp_shops.json`: the Battle Subway's and the PWT's BP exchange, shops 254 (items) and 253 (TMs), each item with its
+  price in BP.
+- `move_tutors.json`: the four shards' tutors, shops 243 to 246, in the order of `MOVE_TUTOR_SHOP_ITEMS`, each move with
+  its price in shards and its place in the menu. A move's place in the list is its bit in a species' tutor word, so
+  `species_data.py` packs `learnset.by_tutor` from these lists: a species learns a tutor's new move only once its data
+  lists it, and a move taken out of a list must leave the species' lists too.
+
+A mart's items cost the item's own price (`ITEM_PARAM_PRICE`, ten times the `price` of
+`res/items/<item>/data.json`, less with the Bargain Pass Power), so the marts' lists hold only items; the BP and tutor
+shops give each its price. A list holds at most 45 (`ShopUIWork`'s entries), and a tutor at most 32 moves. `tools/data/shop_data.py pack` builds `a/2/8/2` (each list's
+items as u16s) and `a/2/8/3` (a byte per list, its length) for both builds. The BP and tutor lists are C tables, which
+the matching build keeps as `scrcmd_shop.c` writes them; Paper White 2's build writes them from the JSON
+(`shop_data.py header`, `paperwhite2/shops_config.h`: `scrcmd_shop.c` under `PAPERWHITE2` for the BP exchange,
+`src/paperwhite2/main/paperwhite2_move_tutors.c` for the tutors, which the Pokédex reads too). With the data unchanged
+both builds come out as before, byte for byte. Join Avenue's shops are not these: no script opens them with this
+command, and their goods are rows of the avenue's own tables (`res/field/join_avenue/`, `a/2/4/4`,
+`join_avenue_data.py`), which its own code sells.
 
 ## Battle facilities
 

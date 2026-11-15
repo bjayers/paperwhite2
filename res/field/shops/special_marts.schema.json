@@ -1,0 +1,33 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "The special marts: res/field/shops/special_marts.json",
+    "description": "The shops 239 to 242 and 247 to 250, whose lists grow with a level that KeyDataSave_GetProgress keeps (its value 1 for the first four, 0 for the others), one of six by sSpecialMartLevels, the files that SPECIAL_POKE_MART_HEADERS names + 6 of archive a/2/8/2 (ShopUI_LoadSpecialPokeMartItems in src/ov036/scrcmd_shop.c). No script opens them and all their lists are empty in White 2; tools/data/shop_data.py packs them so that the archive is whole. A string value is the name of a constant from generated/ or include/constants/.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "special_marts" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "special_marts": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [ "shop", "levels" ],
+                "properties": {
+                    "shop": { "type": "integer", "minimum": 239, "maximum": 250, "description": "The shop's ID, in the order of SPECIAL_POKE_MART_HEADERS" },
+                    "levels": {
+                        "type": "array",
+                        "minItems": 6,
+                        "maxItems": 6,
+                        "description": "The items of each level, in menu order",
+                        "items": {
+                            "type": "array",
+                            "maxItems": 45,
+                            "items": { "type": "string", "x-constant": "ITEM_" }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

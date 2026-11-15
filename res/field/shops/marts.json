@@ -1,0 +1,366 @@
+{
+    "$schema": "marts.schema.json",
+    "marts": [
+        {
+            "shop": 0,
+            "name": "Accumula Town: Pokémon Center, second clerk",
+            "group": "pokemon_center",
+            "items": [
+                "ITEM_REPEAT_BALL",
+                "ITEM_NEST_BALL",
+                "ITEM_QUICK_BALL",
+                "ITEM_GREET_MAIL",
+                "ITEM_FAVORED_MAIL",
+                "ITEM_RSVP_MAIL",
+                "ITEM_THANKS_MAIL",
+                "ITEM_INQUIRY_MAIL",
+                "ITEM_LIKE_MAIL",
+                "ITEM_REPLY_MAIL"
+            ]
+        },
+        {
+            "shop": 1,
+            "name": "Striaton City: Pokémon Center, second clerk (TMs)",
+            "group": "pokemon_center",
+            "items": [ "ITEM_TM04", "ITEM_TM08" ]
+        },
+        {
+            "shop": 2,
+            "name": "Nacrene City: Pokémon Center, second clerk",
+            "group": "pokemon_center",
+            "items": [
+                "ITEM_BRIDGE_MAIL_S",
+                "ITEM_GREET_MAIL",
+                "ITEM_FAVORED_MAIL",
+                "ITEM_RSVP_MAIL",
+                "ITEM_THANKS_MAIL",
+                "ITEM_INQUIRY_MAIL",
+                "ITEM_LIKE_MAIL",
+                "ITEM_REPLY_MAIL"
+            ]
+        },
+        {
+            "shop": 3,
+            "name": "Castelia City: Pokémon Center, second clerk",
+            "group": "pokemon_center",
+            "items": [
+                "ITEM_HEAL_BALL",
+                "ITEM_NET_BALL",
+                "ITEM_NEST_BALL",
+                "ITEM_GREET_MAIL",
+                "ITEM_FAVORED_MAIL",
+                "ITEM_RSVP_MAIL",
+                "ITEM_THANKS_MAIL",
+                "ITEM_INQUIRY_MAIL",
+                "ITEM_LIKE_MAIL",
+                "ITEM_REPLY_MAIL"
+            ]
+        },
+        {
+            "shop": 4,
+            "name": "Nimbasa City: Pokémon Center, second clerk (TMs)",
+            "group": "pokemon_center",
+            "items": [ "ITEM_TM73", "ITEM_TM74", "ITEM_TM16", "ITEM_TM33" ]
+        },
+        {
+            "shop": 5,
+            "name": "Driftveil City: Pokémon Center, second clerk",
+            "group": "pokemon_center",
+            "items": [
+                "ITEM_NET_BALL",
+                "ITEM_NEST_BALL",
+                "ITEM_DUSK_BALL",
+                "ITEM_BRIDGE_MAIL_D",
+                "ITEM_GREET_MAIL",
+                "ITEM_FAVORED_MAIL",
+                "ITEM_RSVP_MAIL",
+                "ITEM_THANKS_MAIL",
+                "ITEM_INQUIRY_MAIL",
+                "ITEM_LIKE_MAIL",
+                "ITEM_REPLY_MAIL"
+            ]
+        },
+        {
+            "shop": 6,
+            "name": "Mistralton City: Pokémon Center, second clerk (TMs)",
+            "group": "pokemon_center",
+            "items": [ "ITEM_TM07", "ITEM_TM11", "ITEM_TM18", "ITEM_TM37" ]
+        },
+        {
+            "shop": 7,
+            "name": "Icirrus City: Pokémon Center, second clerk",
+            "group": "pokemon_center",
+            "items": [
+                "ITEM_DUSK_BALL",
+                "ITEM_TIMER_BALL",
+                "ITEM_QUICK_BALL",
+                "ITEM_BRIDGE_MAIL_T",
+                "ITEM_GREET_MAIL",
+                "ITEM_FAVORED_MAIL",
+                "ITEM_RSVP_MAIL",
+                "ITEM_THANKS_MAIL",
+                "ITEM_INQUIRY_MAIL",
+                "ITEM_LIKE_MAIL",
+                "ITEM_REPLY_MAIL"
+            ]
+        },
+        {
+            "shop": 8,
+            "name": "Opelucid City: Pokémon Center, second clerk",
+            "group": "pokemon_center",
+            "items": [
+                "ITEM_DUSK_BALL",
+                "ITEM_TIMER_BALL",
+                "ITEM_QUICK_BALL",
+                "ITEM_BRIDGE_MAIL_V",
+                "ITEM_GREET_MAIL",
+                "ITEM_FAVORED_MAIL",
+                "ITEM_RSVP_MAIL",
+                "ITEM_THANKS_MAIL",
+                "ITEM_INQUIRY_MAIL",
+                "ITEM_LIKE_MAIL",
+                "ITEM_REPLY_MAIL"
+            ]
+        },
+        {
+            "shop": 9,
+            "name": "Victory Road: Pokémon Center, second clerk",
+            "group": "pokemon_center",
+            "items": [
+                "ITEM_HEAL_BALL",
+                "ITEM_NET_BALL",
+                "ITEM_NEST_BALL",
+                "ITEM_QUICK_BALL",
+                "ITEM_DUSK_BALL",
+                "ITEM_TIMER_BALL",
+                "ITEM_REPEAT_BALL",
+                "ITEM_LUXURY_BALL"
+            ]
+        },
+        {
+            "shop": 10,
+            "name": "Pokémon League: Pokémon Center, second clerk",
+            "group": "pokemon_center",
+            "items": [
+                "ITEM_HEAL_BALL",
+                "ITEM_NET_BALL",
+                "ITEM_NEST_BALL",
+                "ITEM_QUICK_BALL",
+                "ITEM_DUSK_BALL",
+                "ITEM_TIMER_BALL",
+                "ITEM_REPEAT_BALL",
+                "ITEM_LUXURY_BALL"
+            ]
+        },
+        {
+            "shop": 11,
+            "name": "Lacunosa Town: Pokémon Center, second clerk (TMs)",
+            "group": "pokemon_center",
+            "items": [ "ITEM_TM14", "ITEM_TM25", "ITEM_TM38" ]
+        },
+        {
+            "shop": 12,
+            "name": "Undella Town: Pokémon Center, second clerk",
+            "group": "pokemon_center",
+            "items": [
+                "ITEM_LUXURY_BALL",
+                "ITEM_DIVE_BALL",
+                "ITEM_GREET_MAIL",
+                "ITEM_FAVORED_MAIL",
+                "ITEM_RSVP_MAIL",
+                "ITEM_THANKS_MAIL",
+                "ITEM_INQUIRY_MAIL",
+                "ITEM_LIKE_MAIL",
+                "ITEM_REPLY_MAIL"
+            ]
+        },
+        {
+            "shop": 13,
+            "name": "Black City and White Forest: Pokémon Center, second clerk",
+            "group": "pokemon_center",
+            "items": [
+                "ITEM_BRIDGE_MAIL_M",
+                "ITEM_GREET_MAIL",
+                "ITEM_FAVORED_MAIL",
+                "ITEM_RSVP_MAIL",
+                "ITEM_THANKS_MAIL",
+                "ITEM_INQUIRY_MAIL",
+                "ITEM_LIKE_MAIL",
+                "ITEM_REPLY_MAIL"
+            ]
+        },
+        {
+            "shop": 14,
+            "name": "Shopping Mall Nine and Nacrene City's Café Warehouse: battle items",
+            "group": "shopping_mall_nine",
+            "items": [
+                "ITEM_X_SPEED",
+                "ITEM_X_ATTACK",
+                "ITEM_X_DEFEND",
+                "ITEM_GUARD_SPEC",
+                "ITEM_DIRE_HIT",
+                "ITEM_X_ACCURACY",
+                "ITEM_X_SPECIAL",
+                "ITEM_X_SP_DEF"
+            ]
+        },
+        {
+            "shop": 15,
+            "name": "Driftveil City: the market's herb shop",
+            "group": "market",
+            "items": [ "ITEM_HEAL_POWDER", "ITEM_ENERGY_POWDER", "ITEM_ENERGY_ROOT", "ITEM_REVIVAL_HERB" ]
+        },
+        {
+            "shop": 16,
+            "name": "Driftveil City: the market's incense shop",
+            "group": "market",
+            "items": [
+                "ITEM_ODD_INCENSE",
+                "ITEM_SEA_INCENSE",
+                "ITEM_ROSE_INCENSE",
+                "ITEM_WAVE_INCENSE",
+                "ITEM_ROCK_INCENSE",
+                "ITEM_PURE_INCENSE",
+                "ITEM_LUCK_INCENSE",
+                "ITEM_LAX_INCENSE",
+                "ITEM_FULL_INCENSE"
+            ]
+        },
+        {
+            "shop": 17,
+            "name": "Shopping Mall Nine: medicine counter",
+            "group": "shopping_mall_nine",
+            "items": [
+                "ITEM_POTION",
+                "ITEM_SUPER_POTION",
+                "ITEM_HYPER_POTION",
+                "ITEM_MAX_POTION",
+                "ITEM_REVIVE",
+                "ITEM_ANTIDOTE",
+                "ITEM_PARLYZ_HEAL",
+                "ITEM_BURN_HEAL",
+                "ITEM_ICE_HEAL",
+                "ITEM_AWAKENING",
+                "ITEM_FULL_HEAL",
+                "ITEM_ESCAPE_ROPE",
+                "ITEM_POKE_TOY",
+                "ITEM_REPEL",
+                "ITEM_SUPER_REPEL",
+                "ITEM_MAX_REPEL"
+            ]
+        },
+        {
+            "shop": 18,
+            "name": "Shopping Mall Nine: TM counter",
+            "group": "shopping_mall_nine",
+            "items": [ "ITEM_TM15", "ITEM_TM68" ]
+        },
+        {
+            "shop": 19,
+            "name": "Shopping Mall Nine: Poké Ball counter",
+            "group": "shopping_mall_nine",
+            "items": [
+                "ITEM_POKE_BALL",
+                "ITEM_GREAT_BALL",
+                "ITEM_ULTRA_BALL",
+                "ITEM_HEAL_BALL",
+                "ITEM_NET_BALL",
+                "ITEM_NEST_BALL",
+                "ITEM_DUSK_BALL",
+                "ITEM_QUICK_BALL",
+                "ITEM_TIMER_BALL",
+                "ITEM_GREET_MAIL",
+                "ITEM_FAVORED_MAIL",
+                "ITEM_RSVP_MAIL",
+                "ITEM_THANKS_MAIL",
+                "ITEM_INQUIRY_MAIL",
+                "ITEM_LIKE_MAIL",
+                "ITEM_REPLY_MAIL"
+            ]
+        },
+        {
+            "shop": 20,
+            "name": "Shopping Mall Nine: vitamin counter",
+            "group": "shopping_mall_nine",
+            "items": [ "ITEM_PROTEIN", "ITEM_IRON", "ITEM_CALCIUM", "ITEM_ZINC", "ITEM_CARBOS", "ITEM_HP_UP" ]
+        },
+        {
+            "shop": 21,
+            "name": "Aspertia City: Pokémon Center, second clerk",
+            "group": "pokemon_center",
+            "items": [
+                "ITEM_GREET_MAIL",
+                "ITEM_FAVORED_MAIL",
+                "ITEM_RSVP_MAIL",
+                "ITEM_THANKS_MAIL",
+                "ITEM_INQUIRY_MAIL",
+                "ITEM_LIKE_MAIL",
+                "ITEM_REPLY_MAIL"
+            ]
+        },
+        {
+            "shop": 22,
+            "name": "Virbank City: Pokémon Center, second clerk",
+            "group": "pokemon_center",
+            "items": [
+                "ITEM_HEAL_BALL",
+                "ITEM_NET_BALL",
+                "ITEM_GREET_MAIL",
+                "ITEM_FAVORED_MAIL",
+                "ITEM_RSVP_MAIL",
+                "ITEM_THANKS_MAIL",
+                "ITEM_INQUIRY_MAIL",
+                "ITEM_LIKE_MAIL",
+                "ITEM_REPLY_MAIL"
+            ]
+        },
+        {
+            "shop": 23,
+            "name": "Humilau City: Pokémon Center, second clerk",
+            "group": "pokemon_center",
+            "items": [
+                "ITEM_LUXURY_BALL",
+                "ITEM_DIVE_BALL",
+                "ITEM_NET_BALL",
+                "ITEM_GREET_MAIL",
+                "ITEM_FAVORED_MAIL",
+                "ITEM_RSVP_MAIL",
+                "ITEM_THANKS_MAIL",
+                "ITEM_INQUIRY_MAIL",
+                "ITEM_LIKE_MAIL",
+                "ITEM_REPLY_MAIL"
+            ]
+        },
+        {
+            "shop": 24,
+            "name": "Floccesy Town: Pokémon Center, second clerk",
+            "group": "pokemon_center",
+            "items": [
+                "ITEM_GREET_MAIL",
+                "ITEM_FAVORED_MAIL",
+                "ITEM_RSVP_MAIL",
+                "ITEM_THANKS_MAIL",
+                "ITEM_INQUIRY_MAIL",
+                "ITEM_LIKE_MAIL",
+                "ITEM_REPLY_MAIL"
+            ]
+        },
+        {
+            "shop": 25,
+            "name": "Lentimas Town: Pokémon Center, second clerk",
+            "group": "pokemon_center",
+            "items": [
+                "ITEM_HEAL_BALL",
+                "ITEM_NEST_BALL",
+                "ITEM_DUSK_BALL",
+                "ITEM_GREET_MAIL",
+                "ITEM_FAVORED_MAIL",
+                "ITEM_RSVP_MAIL",
+                "ITEM_THANKS_MAIL",
+                "ITEM_INQUIRY_MAIL",
+                "ITEM_LIKE_MAIL",
+                "ITEM_REPLY_MAIL"
+            ]
+        }
+    ]
+}

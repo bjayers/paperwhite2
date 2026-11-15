@@ -33,7 +33,6 @@ import argparse
 import csv
 import io
 import json
-import re
 import struct
 import sys
 from pathlib import Path
@@ -44,6 +43,7 @@ from tools.data import species_list  # noqa: E402
 from tools.data.datajson import DataError, label, load, load_schema, name, value, write  # noqa: E402
 from tools.data.gen_constants import load as load_list  # noqa: E402
 from tools.data.narc import read_narc, write_narc  # noqa: E402
+from tools.data.shop_data import tutor_moves as shard_tutor_moves  # noqa: E402
 from tools.text.text_data import message_lines  # noqa: E402
 from tools.text.text_sources import article, to_json  # noqa: E402
 
@@ -91,18 +91,14 @@ EVOLUTION_METHOD_MASK = 0xFF
 # to 5 for the pledges and the starters' ultimate moves, and bit 6, Draco Meteor, is set for dragons only
 TYPE_TUTOR_MOVES = ["MOVE_GRASS_PLEDGE", "MOVE_FIRE_PLEDGE", "MOVE_WATER_PLEDGE", "MOVE_FRENZY_PLANT",
                     "MOVE_BLAST_BURN", "MOVE_HYDRO_CANNON", "MOVE_DRACO_METEOR"]
-# The four move tutors' moves are their shop tables in this file, in the order of MOVE_TUTOR_SHOP_ITEMS: a move's bit
-# in its tutor's word is its place in the table (ShopUI_LoadMoveTutorItems, PML_UtilCheckMoveTutorPaid)
-TUTOR_SHOPS = Path(__file__).parents[2] / "src/ov036/scrcmd_shop.c"
+# The four move tutors' moves are their shops' lists in res/field/shops/move_tutors.json, in the order of
+# MOVE_TUTOR_SHOP_ITEMS: a move's bit in its tutor's word is its place in the list (ShopUI_LoadMoveTutorItems,
+# PML_UtilCheckMoveTutorPaid). tools/data/shop_data.py checks them
 
 
 def tutor_moves() -> list[list[str]]:
     """Returns the moves of each of the record's five tutor words, by bit: the type tutor's, then the four tutors'."""
-    source = TUTOR_SHOPS.read_text()
-    tables = {match[1]: re.findall(r"\{ \{ (MOVE_\w+), \d+ \}, \d+ \}", match[2]) for match in
-              re.finditer(r"static const MoveTutorShopItem (MOVE_TUTOR_ITEMS_\w+)\[\] = \{(.*?)\n\};", source, re.S)}
-    order = re.search(r"MOVE_TUTOR_SHOP_ITEMS\[\] = \{(.*?)\};", source, re.S)[1]
-    return [TYPE_TUTOR_MOVES] + [tables[name.strip()] for name in order.split(",") if name.strip()]
+    return [TYPE_TUTOR_MOVES] + shard_tutor_moves()
 
 
 def machine_bit(machine: str) -> int:

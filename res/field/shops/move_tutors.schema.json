@@ -1,0 +1,42 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "The move tutors: res/field/shops/move_tutors.json",
+    "description": "The four tutors who teach moves for shards, shops 243 to 246, in the order of MOVE_TUTOR_SHOP_ITEMS in src/ov036/scrcmd_shop.c, which is the order of their words in a species' personal data. A move's place in its tutor's list is its bit in that word, so tools/data/species_data.py reads the lists from here to pack each species' learnset.by_tutor: a species learns a tutor's move only when its data lists it, and a move taken out of a list must leave the species' lists too. The matching build keeps its C tables; Paper White 2's build writes them from this file (tools/data/shop_data.py header, paperwhite2/shops_config.h), for the tutors and the Pokédex. A string value is the name of a constant from generated/ or include/constants/.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [ "tutors" ],
+    "properties": {
+        "$schema": { "type": "string", "description": "This schema, for editors" },
+        "tutors": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [ "shop", "name", "shard", "moves" ],
+                "properties": {
+                    "shop": { "type": "integer", "minimum": 243, "maximum": 246, "description": "The shop's ID, as global script 2280 gives it" },
+                    "name": { "type": "string", "description": "Where the tutor is, for people and editors; the game doesn't read it" },
+                    "shard": { "type": "string", "x-constant": "ITEM_", "description": "The shard the tutor takes (MOVE_TUTOR_CURRENCY_ITEMS in scrcmd_shop.c; the packer checks it)" },
+                    "moves": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 32,
+                        "description": "The moves by their bit in the tutor's word, at least one and at most 32",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [ "move", "price", "menu_position" ],
+                            "properties": {
+                                "move": { "type": "string", "x-constant": "MOVE_" },
+                                "price": { "type": "integer", "minimum": 1, "maximum": 999, "description": "Its price in shards, which the Bag holds at most 999 of" },
+                                "menu_position": { "type": "integer", "minimum": 0, "maximum": 31, "description": "Its place in the tutor's menu, from 0; the list's places are 0 to its length less one, each once" }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
