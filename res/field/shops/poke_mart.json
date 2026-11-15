@@ -1,0 +1,111 @@
+{
+    "$schema": "poke_mart.schema.json",
+    "name": "Poké Mart: every Pokémon Center's first clerk",
+    "tiers": [
+        { "badges": [ 0 ], "items": [ "ITEM_POKE_BALL", "ITEM_POTION" ] },
+        {
+            "badges": [ 1, 2 ],
+            "items": [
+                "ITEM_POKE_BALL",
+                "ITEM_GREAT_BALL",
+                "ITEM_POTION",
+                "ITEM_SUPER_POTION",
+                "ITEM_ANTIDOTE",
+                "ITEM_PARLYZ_HEAL",
+                "ITEM_AWAKENING",
+                "ITEM_BURN_HEAL",
+                "ITEM_ICE_HEAL",
+                "ITEM_ESCAPE_ROPE",
+                "ITEM_REPEL"
+            ]
+        },
+        {
+            "badges": [ 3, 4 ],
+            "items": [
+                "ITEM_POKE_BALL",
+                "ITEM_GREAT_BALL",
+                "ITEM_POTION",
+                "ITEM_SUPER_POTION",
+                "ITEM_HYPER_POTION",
+                "ITEM_REVIVE",
+                "ITEM_ANTIDOTE",
+                "ITEM_PARLYZ_HEAL",
+                "ITEM_AWAKENING",
+                "ITEM_BURN_HEAL",
+                "ITEM_ICE_HEAL",
+                "ITEM_ESCAPE_ROPE",
+                "ITEM_REPEL",
+                "ITEM_SUPER_REPEL"
+            ]
+        },
+        {
+            "badges": [ 5, 6 ],
+            "items": [
+                "ITEM_POKE_BALL",
+                "ITEM_GREAT_BALL",
+                "ITEM_ULTRA_BALL",
+                "ITEM_POTION",
+                "ITEM_SUPER_POTION",
+                "ITEM_HYPER_POTION",
+                "ITEM_REVIVE",
+                "ITEM_ANTIDOTE",
+                "ITEM_PARLYZ_HEAL",
+                "ITEM_AWAKENING",
+                "ITEM_BURN_HEAL",
+                "ITEM_ICE_HEAL",
+                "ITEM_FULL_HEAL",
+                "ITEM_ESCAPE_ROPE",
+                "ITEM_REPEL",
+                "ITEM_SUPER_REPEL",
+                "ITEM_MAX_REPEL"
+            ]
+        },
+        {
+            "badges": [ 7 ],
+            "items": [
+                "ITEM_POKE_BALL",
+                "ITEM_GREAT_BALL",
+                "ITEM_ULTRA_BALL",
+                "ITEM_POTION",
+                "ITEM_SUPER_POTION",
+                "ITEM_HYPER_POTION",
+                "ITEM_MAX_POTION",
+                "ITEM_REVIVE",
+                "ITEM_ANTIDOTE",
+                "ITEM_PARLYZ_HEAL",
+                "ITEM_AWAKENING",
+                "ITEM_BURN_HEAL",
+                "ITEM_ICE_HEAL",
+                "ITEM_FULL_HEAL",
+                "ITEM_ESCAPE_ROPE",
+                "ITEM_REPEL",
+                "ITEM_SUPER_REPEL",
+                "ITEM_MAX_REPEL"
+            ]
+        },
+        {
+            "badges": [ 8 ],
+            "items": [
+                "ITEM_POKE_BALL",
+                "ITEM_GREAT_BALL",
+                "ITEM_ULTRA_BALL",
+                "ITEM_POTION",
+                "ITEM_SUPER_POTION",
+                "ITEM_HYPER_POTION",
+                "ITEM_MAX_POTION",
+                "ITEM_FULL_RESTORE",
+                "ITEM_REVIVE",
+                "ITEM_ANTIDOTE",
+                "ITEM_PARLYZ_HEAL",
+                "ITEM_AWAKENING",
+                "ITEM_BURN_HEAL",
+                "ITEM_ICE_HEAL",
+                "ITEM_FULL_HEAL",
+                "ITEM_ESCAPE_ROPE",
+                "ITEM_REPEL",
+                "ITEM_SUPER_REPEL",
+                "ITEM_MAX_REPEL"
+            ]
+        }
+    ]
+}

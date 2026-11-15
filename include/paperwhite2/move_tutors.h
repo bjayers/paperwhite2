@@ -4,8 +4,8 @@
 #include "types.h"
 
 // Paper White 2: the move tutors' lists, in ARM9 main so that the Pokédex can read them as well as the field's tutors
-// (src/paperwhite2/main/paperwhite2_move_tutors.c). The shards' tutors' lists were scrcmd_shop.c's, which the hack's
-// build reads from here instead, unchanged
+// (src/paperwhite2/main/paperwhite2_move_tutors.c). The shards' tutors' lists are res/field/shops/move_tutors.json's,
+// which the matching build has as scrcmd_shop.c's tables; the hack's build reads them from here instead
 
 // The free tutors' moves by their bit in a species' PERSONAL_TUTORS (PokeParty_CheckMoveTutorNormal): the three
 // Pledges and the three ultimate moves at the PWT, and Draco Meteor in Opelucid City

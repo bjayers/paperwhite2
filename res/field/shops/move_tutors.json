@@ -1,0 +1,93 @@
+{
+    "$schema": "move_tutors.schema.json",
+    "tutors": [
+        {
+            "shop": 246,
+            "name": "Driftveil City",
+            "shard": "ITEM_RED_SHARD",
+            "moves": [
+                { "move": "MOVE_BUG_BITE", "price": 2, "menu_position": 1 },
+                { "move": "MOVE_COVET", "price": 2, "menu_position": 0 },
+                { "move": "MOVE_SUPER_FANG", "price": 6, "menu_position": 6 },
+                { "move": "MOVE_DUAL_CHOP", "price": 6, "menu_position": 9 },
+                { "move": "MOVE_SIGNAL_BEAM", "price": 4, "menu_position": 4 },
+                { "move": "MOVE_IRON_HEAD", "price": 4, "menu_position": 5 },
+                { "move": "MOVE_SEED_BOMB", "price": 6, "menu_position": 8 },
+                { "move": "MOVE_DRILL_RUN", "price": 4, "menu_position": 2 },
+                { "move": "MOVE_BOUNCE", "price": 4, "menu_position": 3 },
+                { "move": "MOVE_LOW_KICK", "price": 8, "menu_position": 10 },
+                { "move": "MOVE_GUNK_SHOT", "price": 8, "menu_position": 11 },
+                { "move": "MOVE_UPROAR", "price": 6, "menu_position": 7 },
+                { "move": "MOVE_THUNDER_PUNCH", "price": 10, "menu_position": 13 },
+                { "move": "MOVE_FIRE_PUNCH", "price": 10, "menu_position": 12 },
+                { "move": "MOVE_ICE_PUNCH", "price": 10, "menu_position": 14 }
+            ]
+        },
+        {
+            "shop": 245,
+            "name": "Lentimas Town",
+            "shard": "ITEM_BLUE_SHARD",
+            "moves": [
+                { "move": "MOVE_MAGIC_COAT", "price": 4, "menu_position": 3 },
+                { "move": "MOVE_BLOCK", "price": 6, "menu_position": 4 },
+                { "move": "MOVE_EARTH_POWER", "price": 8, "menu_position": 10 },
+                { "move": "MOVE_FOUL_PLAY", "price": 8, "menu_position": 12 },
+                { "move": "MOVE_GRAVITY", "price": 10, "menu_position": 14 },
+                { "move": "MOVE_MAGNET_RISE", "price": 4, "menu_position": 2 },
+                { "move": "MOVE_IRON_DEFENSE", "price": 2, "menu_position": 1 },
+                { "move": "MOVE_LAST_RESORT", "price": 2, "menu_position": 0 },
+                { "move": "MOVE_SUPERPOWER", "price": 10, "menu_position": 13 },
+                { "move": "MOVE_ELECTROWEB", "price": 6, "menu_position": 6 },
+                { "move": "MOVE_ICY_WIND", "price": 6, "menu_position": 7 },
+                { "move": "MOVE_AQUA_TAIL", "price": 8, "menu_position": 9 },
+                { "move": "MOVE_DARK_PULSE", "price": 10, "menu_position": 16 },
+                { "move": "MOVE_ZEN_HEADBUTT", "price": 8, "menu_position": 11 },
+                { "move": "MOVE_DRAGON_PULSE", "price": 10, "menu_position": 15 },
+                { "move": "MOVE_HYPER_VOICE", "price": 6, "menu_position": 5 },
+                { "move": "MOVE_IRON_TAIL", "price": 6, "menu_position": 8 }
+            ]
+        },
+        {
+            "shop": 244,
+            "name": "Humilau City",
+            "shard": "ITEM_YELLOW_SHARD",
+            "moves": [
+                { "move": "MOVE_BIND", "price": 2, "menu_position": 0 },
+                { "move": "MOVE_SNORE", "price": 2, "menu_position": 1 },
+                { "move": "MOVE_KNOCK_OFF", "price": 4, "menu_position": 3 },
+                { "move": "MOVE_SYNTHESIS", "price": 6, "menu_position": 4 },
+                { "move": "MOVE_HEAT_WAVE", "price": 10, "menu_position": 8 },
+                { "move": "MOVE_ROLE_PLAY", "price": 8, "menu_position": 7 },
+                { "move": "MOVE_HEAL_BELL", "price": 4, "menu_position": 2 },
+                { "move": "MOVE_TAILWIND", "price": 10, "menu_position": 12 },
+                { "move": "MOVE_SKY_ATTACK", "price": 8, "menu_position": 6 },
+                { "move": "MOVE_PAIN_SPLIT", "price": 10, "menu_position": 11 },
+                { "move": "MOVE_GIGA_DRAIN", "price": 10, "menu_position": 9 },
+                { "move": "MOVE_DRAIN_PUNCH", "price": 10, "menu_position": 10 },
+                { "move": "MOVE_ROOST", "price": 6, "menu_position": 5 }
+            ]
+        },
+        {
+            "shop": 243,
+            "name": "Nacrene City: Café Warehouse",
+            "shard": "ITEM_GREEN_SHARD",
+            "moves": [
+                { "move": "MOVE_GASTRO_ACID", "price": 6, "menu_position": 1 },
+                { "move": "MOVE_WORRY_SEED", "price": 6, "menu_position": 0 },
+                { "move": "MOVE_SPITE", "price": 8, "menu_position": 6 },
+                { "move": "MOVE_AFTER_YOU", "price": 8, "menu_position": 3 },
+                { "move": "MOVE_HELPING_HAND", "price": 8, "menu_position": 2 },
+                { "move": "MOVE_TRICK", "price": 10, "menu_position": 8 },
+                { "move": "MOVE_MAGIC_ROOM", "price": 8, "menu_position": 4 },
+                { "move": "MOVE_WONDER_ROOM", "price": 8, "menu_position": 5 },
+                { "move": "MOVE_ENDEAVOR", "price": 12, "menu_position": 11 },
+                { "move": "MOVE_OUTRAGE", "price": 10, "menu_position": 10 },
+                { "move": "MOVE_RECYCLE", "price": 10, "menu_position": 7 },
+                { "move": "MOVE_SNATCH", "price": 12, "menu_position": 14 },
+                { "move": "MOVE_STEALTH_ROCK", "price": 10, "menu_position": 9 },
+                { "move": "MOVE_SLEEP_TALK", "price": 12, "menu_position": 12 },
+                { "move": "MOVE_SKILL_SWAP", "price": 12, "menu_position": 13 }
+            ]
+        }
+    ]
+}

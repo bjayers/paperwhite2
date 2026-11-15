@@ -57,6 +57,7 @@
 
 #ifdef PAPERWHITE2
 #include "paperwhite2/move_tutors.h"
+#include "paperwhite2/shops_config.h"
 #endif
 
 // The command's shop IDs past the Poké Marts', whose items are in file ID + 6 of ARCID_SHOP_ITEMS. The special marts'
@@ -328,7 +329,13 @@ static u8 ShopUI_UpdateInput(ShopUIWork *wk);
 static void ShopUI_ClearListScreen(u32 index);
 static void GetMoveTutorShopSortimentBits(GameSystem *gsys, u32 moveIndex, u32 tutor, u8 *learnable);
 
+#ifdef PAPERWHITE2
+// Paper White 2: the BP exchange's lists are res/field/shops/bp_shops.json's (tools/data/shop_data.py writes
+// paperwhite2/shops_config.h), here and in BP_SHOP_ITEMS_TMS and BP_SHOP_ITEMS_NORMAL
+static const u8 BP_SHOP_ITEM_COUNTS[] = { PAPERWHITE2_BP_SHOP_ITEM_COUNTS };
+#else
 static const u8 BP_SHOP_ITEM_COUNTS[] = { 42, 18 };
+#endif
 
 #ifndef PAPERWHITE2
 // Paper White 2: the tutors' lists are in ARM9 main (paperwhite2/move_tutors.h), for the Pokédex too
@@ -409,6 +416,9 @@ static const SpecialPokeMartHeader SPECIAL_POKE_MART_HEADERS[] = {
 
 // clang-format off
 static const ShopItem BP_SHOP_ITEMS_TMS[] = {
+#ifdef PAPERWHITE2
+    PAPERWHITE2_BP_SHOP_ITEMS_1
+#else
     { ITEM_TM17, 6 },
     { ITEM_TM20, 6 },
     { ITEM_TM32, 6 },
@@ -427,12 +437,14 @@ static const ShopItem BP_SHOP_ITEMS_TMS[] = {
     { ITEM_TM60, 24 },
     { ITEM_TM64, 24 },
     { ITEM_TM77, 24 },
+#endif
 };
 
 // clang-format on
 
 #ifndef PAPERWHITE2
-// Paper White 2: these four lists are paperwhite2_move_tutors.c's in the hack's build, the same moves and prices
+// Paper White 2: these four lists are paperwhite2_move_tutors.c's in the hack's build, from
+// res/field/shops/move_tutors.json
 // clang-format off
 static const MoveTutorShopItem MOVE_TUTOR_ITEMS_HUMILAU_CITY[] = {
     { { MOVE_BIND, 2 }, 0 },
@@ -520,6 +532,9 @@ static const MoveTutorShopItem MOVE_TUTOR_ITEMS_LENTIMAS_TOWN[] = {
 
 // clang-format off
 static const ShopItem BP_SHOP_ITEMS_NORMAL[] = {
+#ifdef PAPERWHITE2
+    PAPERWHITE2_BP_SHOP_ITEMS_0
+#else
     { ITEM_PROTEIN, 1 },
     { ITEM_CALCIUM, 1 },
     { ITEM_IRON, 1 },
@@ -562,6 +577,7 @@ static const ShopItem BP_SHOP_ITEMS_NORMAL[] = {
     { ITEM_FOCUS_SASH, 24 },
     { ITEM_LIFE_ORB, 24 },
     { ITEM_RARE_CANDY, 24 },
+#endif
 };
 
 // clang-format on
