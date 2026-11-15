@@ -1,0 +1,59 @@
+/* The Pokémon Center page. Colours are the shell's tokens, so it follows the theme. Sections are laid out as the
+   Ambients panel's: a heading with a summary, a label column beside the controls, a hint under each. */
+
+.pc-editor { display: flex; flex-direction: column; flex: 1; min-height: 0; background: var(--panel); }
+.pc-header { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1px solid var(--border); }
+.pc-header h2 { margin: 0; font-size: 16px; }
+.pc-header .spacer { flex: 1; }
+.pc-header > * { white-space: nowrap; }
+.pc-header .pc-note { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pc-error { color: var(--error); }
+.pc-bar { margin: 8px 14px 0; }
+.pc-page { padding: 12px 20px 48px; max-width: 980px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.pc-tabs { margin: 8px 0 4px; align-self: flex-start; }
+.pc-note { font-size: 12px; margin: 2px 0 8px; }
+.pc-box { border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; margin: 6px 0; }
+.pc-box h5 { margin: 0 0 10px; font-size: 13px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.pc-grid { display: grid; grid-template-columns: 170px 1fr; gap: 12px 14px; align-items: start; }
+.pc-label { font-size: 13px; padding-top: 5px; }
+.pc-control { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.pc-hint { flex-basis: 100%; font-size: 12px; }
+.pc-number { width: 90px; }
+.pc-small { width: 64px; }
+.pc-text { width: 140px; font-family: var(--mono); }
+.pc-unit { font-size: 12px; color: var(--muted); }
+.pc-readout { font-size: 12px; color: var(--accent); font-variant-numeric: tabular-nums; }
+.pc-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.pc-pair { display: inline-flex; align-items: center; gap: 6px; margin-right: 10px; }
+.pc-list { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex-basis: 100%; }
+.pc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.pc-chip { display: inline-flex; align-items: center; gap: 2px; }
+.pc-chip .search-select { width: 150px; }
+.pc-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pc-line .search-select { width: 190px; }
+.pc-add { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; }
+.pc-add .search-select { width: 200px; }
+.pc-x { padding: 0 7px; line-height: 20px; }
+.pc-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.pc-control button.active, .pc-tabs button.active { border-color: var(--accent); background: var(--selected); }
+.pc-shares { display: flex; flex-direction: column; gap: 3px; width: 100%; max-width: 560px; }
+.pc-share { display: grid; grid-template-columns: 110px 1fr 56px; gap: 8px; align-items: center; font-size: 12px; }
+.pc-share-bar { height: 8px; background: var(--panel-2); border-radius: 4px; overflow: hidden; }
+.pc-share-bar > span { display: block; height: 100%; background: var(--accent); }
+.pc-share-value { text-align: right; font-variant-numeric: tabular-nums; }
+.pc-tier { border: 1px solid var(--border); border-radius: 6px; margin: 8px 0 0; }
+.pc-tier-head { display: flex; align-items: center; gap: 10px; padding: 6px 10px; cursor: pointer; flex-wrap: wrap; background: var(--panel-2); border-radius: 6px; }
+.pc-tier-head .muted { font-size: 12px; }
+.pc-tier-head .pc-x { margin-left: auto; }
+.pc-caret { width: 12px; }
+.pc-lang { font-weight: 600; min-width: 80px; }
+.pc-tier-body { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 6px; }
+.pc-name-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.pc-name-cols .pc-hint { grid-column: 1 / -1; }
+.pc-names { display: flex; flex-direction: column; gap: 4px; }
+.pc-names textarea { width: 100%; font-family: var(--mono); font-size: 12px; resize: vertical; }
+.pc-weights, .pc-ivs { display: flex; flex-wrap: wrap; gap: 4px 8px; }
+.pc-weight { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; }
+.pc-weight input { width: 52px; }
+.pc-form { align-items: flex-start; }
+.pc-page > * { flex-shrink: 0; }
