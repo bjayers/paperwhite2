@@ -28,6 +28,9 @@
 #include "system/game_event.h"
 #include "system/game_system.h"
 #include "system/version.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/type_chart.h"
+#endif
 
 // Where the player returns to after the credits, in each version
 static const VecFx32 sEndingPositionA = { 31 * 16 * FX32_ONE, 47 * 16 * FX32_ONE, 16 * FX32_ONE };
@@ -314,11 +317,22 @@ void EventGameClear_GiveMonotypeMedals(GameClearWork *work) {
             continue;
         }
         type1 = PokeParty_GetParam(pkm, PKM_PARAM_TYPE1, NULL);
+#ifdef PAPERWHITE2
+        // Paper White 2: the medals are the original types', so a Fairy type counts for none, which typeCounts hasn't
+        if (type1 < ORIGINAL_TYPE_COUNT) {
+            typeCounts[type1]++;
+        }
+        type2 = PokeParty_GetParam(pkm, PKM_PARAM_TYPE2, NULL);
+        if (type1 != type2 && type2 < ORIGINAL_TYPE_COUNT) {
+            typeCounts[type2]++;
+        }
+#else
         typeCounts[type1]++;
         type2 = PokeParty_GetParam(pkm, PKM_PARAM_TYPE2, NULL);
         if (type1 != type2) {
             typeCounts[type2]++;
         }
+#endif
         eligible++;
     }
     for (i = 0; i < 17; i++) {

@@ -4,6 +4,9 @@
 #include "constants/sound.h"
 #include "constants/species.h"
 #include "constants/text_banks.h"
+#ifdef PAPERWHITE2
+#include "constants/types.h"
+#endif
 #include "demo/hall_of_fame_demo.h"
 #include "demo/hall_of_fame_demo_main.h"
 #include "gfl/arc.h"
@@ -265,6 +268,13 @@ void HallOfFameDemoMain_GetPokeData(HallOfFameDemoWork *wk) {
 
     wk->species = PokeParty_GetParam(pkm, PKM_PARAM_SPECIES, NULL);
     wk->type = PokeParty_GetParam(pkm, PKM_PARAM_TYPE1, NULL);
+#ifdef PAPERWHITE2
+    // Paper White 2: the particles and plate palettes are by the original types, so a Fairy type uses Psychic's until
+    // it has its own
+    if (wk->type == TYPE_FAIRY) {
+        wk->type = TYPE_PSYCHIC;
+    }
+#endif
     wk->form = PokeParty_GetParam(pkm, PKM_PARAM_FORM, NULL);
     PokeParty_EncryptPkm(pkm, wasEncrypted);
 }

@@ -70,8 +70,10 @@ const BtlCalcRatio data_ov167_021d74cc[13] = {
 };
 
 #ifdef PAPERWHITE2
-// Paper White 2: the type chart is in ARM9 main (paperwhite2/type_chart.h), unchanged, so that the Pokédex can read it
+// Paper White 2: the type chart is in ARM9 main (paperwhite2/type_chart.h), so that the Pokédex can read it, and has
+// the Fairy type
 #define BTL_TYPE_CHART PaperWhite2_TypeChart
+#define BTL_TYPE_CHART_SIZE TYPE_CHART_SIZE
 #else
 // The damage of each attacking type against each defending type in halves: 0, 2 (half), 4 (normal) or 8 (double)
 const u8 data_ov167_021d7500[17][17] = {
@@ -86,6 +88,7 @@ const u8 data_ov167_021d7500[17][17] = {
     { 4, 2, 4, 4, 4, 4, 4, 8, 2, 4, 4, 4, 4, 8, 4, 4, 2 },
 };
 #define BTL_TYPE_CHART data_ov167_021d7500
+#define BTL_TYPE_CHART_SIZE 17
 #endif
 
 // Reconstructed, not known from the ROM. MWCC puts data_ov167_021d74ba with the file's other small tables, as the
@@ -214,7 +217,7 @@ u8 GetTypeWeaknesses(u8 attackType, u8 *defenseTypes) {
     u8 count;
     u8 i;
 
-    for (i = 0, count = 0; i < 17; i++) {
+    for (i = 0, count = 0; i < BTL_TYPE_CHART_SIZE; i++) {
         if (BTL_TYPE_CHART[attackType][i] == 0 || BTL_TYPE_CHART[attackType][i] == 2) {
             defenseTypes[count++] = i;
         }

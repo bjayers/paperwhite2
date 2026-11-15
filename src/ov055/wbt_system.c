@@ -7,6 +7,9 @@
 #include "gfl/str.h"
 #include "nitro/math.h"
 #include "pml/poke_party.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/type_chart.h"
+#endif
 
 static void WbtEntrant_Init(WbtEntrant *entrant, HeapID heapId);
 static void WbtEntrant_Free(WbtEntrant *entrant);
@@ -464,6 +467,11 @@ void WbtSystem_PlayFirstRounds(WbtSystem *sys, MATHRandContext32 *rand) {
     }
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: the simulated matches read the battle's chart (paperwhite2/type_chart.h), which has the Fairy type and
+// Gen 6's Steel, so that a Fairy Pokémon of a PWT Trainer reads no further than the chart
+#define WBT_TYPE_CHART PaperWhite2_TypeChart
+#else
 // The type chart, in damage multiples of 4
 // clang-format off
 static const u8 sTypeChart[17][17] = {
@@ -487,6 +495,8 @@ static const u8 sTypeChart[17][17] = {
 };
 
 // clang-format on
+#define WBT_TYPE_CHART sTypeChart
+#endif
 
 // How well one type attacks another: 0 not at all, 1 not very well, 2 normally and 3 super effectively. Type 17 is
 // no type
@@ -494,7 +504,7 @@ static u8 WbtMatch_GetTypeEffectiveness(u32 attackType, u32 defenseType) {
     if (attackType == 17 || defenseType == 17) {
         return 2;
     }
-    switch (sTypeChart[attackType][defenseType]) {
+    switch (WBT_TYPE_CHART[attackType][defenseType]) {
     case 0:
         return 0;
     case 2:

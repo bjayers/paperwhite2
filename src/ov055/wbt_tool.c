@@ -12,6 +12,9 @@
 #include "save/event_work.h"
 #include "save/wbt_save.h"
 #include "system/game_data.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/type_chart.h"
+#endif
 
 typedef struct {
     u16 name;
@@ -135,12 +138,23 @@ u8 WbtTool_GetPartyMainType(PokeParty *party, u64 seed) {
         pkm = PokeParty_GetPkm(party, i);
         type1 = PokeParty_GetParam(pkm, PKM_PARAM_TYPE1, NULL);
         type2 = PokeParty_GetParam(pkm, PKM_PARAM_TYPE2, NULL);
+#ifdef PAPERWHITE2
+        // Paper White 2: the Type Expert tournaments are the original types', so a Fairy type counts for none, as no
+        // type does, which counts hasn't
+        if (type1 < ORIGINAL_TYPE_COUNT) {
+            counts[type1]++;
+        }
+        if (type1 != type2 && type2 < ORIGINAL_TYPE_COUNT) {
+            counts[type2]++;
+        }
+#else
         if (type1 != 17) {
             counts[type1]++;
         }
         if (type1 != type2 && type2 != 17) {
             counts[type2]++;
         }
+#endif
     }
     max = 0;
     n = 0;
