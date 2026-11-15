@@ -5,7 +5,9 @@
 #include "battle/btl_handler.h"
 #include "battle/btl_pokeparam.h"
 #include "battle/btl_server_cmd.h"
+#include "battle/btl_main.h"
 #include "battle/btl_server_flow.h"
+#include "battle/handler_common.h"
 #include "constants/abilities.h"
 #include "constants/battle.h"
 #include "constants/moves.h"
@@ -17,6 +19,7 @@
 #include "pml/item.h"
 #include "pml/move.h"
 #include "text/system/0018.h"
+#include "text/system/0019.h"
 
 // Paper White 2: the battle's side of the added moves and abilities (docs/paperwhite2/design/moves-and-abilities.md):
 // whose handlers each takes, and the handlers of the ones whose rules are new. Each move's or ability's handlers are
@@ -32,6 +35,12 @@
 #define CONDITION_FLAG_PUMPED 9
 // The positions of the foes next to a position, HandlerGetAlivePartyCount's code (BtlMain's position group 1)
 #define ADJACENT_FOES_OF(pos) ((1 << 8) | (pos))
+// The cause of a move's failure that shows "But it failed!", Protect's when the user moves last
+#define MOVE_FAIL_CAUSE_FAILED 0x1a
+// The most Pokémon on the field, a triple battle's
+#define FIELD_MON_MAX 6
+// Fairy Lock lasts the turn it is used in and the next, whose choices it locks
+#define FAIRY_LOCK_TURNS 2
 
 #if PAPERWHITE2_MOVE_ADDED_COUNT != 0
 // Each added move's "handlers_like", or itself, from the first
@@ -220,6 +229,164 @@ static const BattleEventHandlerEntry sDragonCheerHandlers[] = {
 const BattleEventHandlerEntry *PaperWhite2_EventAddDragonCheer(u32 *priority) {
     *priority = NELEMS(sDragonCheerHandlers);
     return sDragonCheerHandlers;
+}
+#endif
+
+#ifdef MOVE_FLOWER_SHIELD
+// Flower Shield raises the Defense of each of its targets, every Pokémon on the field (MOVE_TARGET_ALL), that is a
+// Grass type, the user's side's and the foes' alike, by one. With no Grass type there, the move fails
+static void HandlerFlowerShield(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
+    u32 count;
+    u32 i;
+    u8 targetId;
+    u8 grass[FIELD_MON_MAX];
+    u32 grassCount;
+    BattleHandlerStatChangeParam *param;
+
+    if (BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACKER) == monId) {
+        count = BattleEventVar_GetValue(BATTLE_EVENT_VAR_TARGET_COUNT);
+        grassCount = 0;
+        for (i = 0; i < count; i++) {
+            targetId = BattleEventVar_GetValue(BATTLE_EVENT_VAR_TARGET_1 + i);
+            if (DoesMonHaveType(GetBattleMon(flow, targetId), TYPE_GRASS)) {
+                grass[grassCount++] = targetId;
+            }
+        }
+        if (grassCount != 0) {
+            param = BattleHandler_PushWork(flow, BATTLE_HANDLER_STAT_CHANGE, monId);
+            param->stat = BATTLEMON_DEFENSE_STAGE;
+            param->change = 1;
+            param->unk0e = 1;
+            param->count = grassCount;
+            for (i = 0; i < grassCount; i++) {
+                param->monIds[i] = grass[i];
+            }
+            BattleHandler_PopWork(flow, param);
+        }
+    }
+}
+
+static const BattleEventHandlerEntry sFlowerShieldHandlers[] = {
+    { BATTLE_EVENT_UNCATEGORIZED_MOVE, HandlerFlowerShield },
+};
+
+const BattleEventHandlerEntry *PaperWhite2_EventAddFlowerShield(u32 *priority) {
+    *priority = NELEMS(sFlowerShieldHandlers);
+    return sFlowerShieldHandlers;
+}
+#endif
+
+#ifdef MOVE_FAIRY_LOCK
+// Fairy Lock locks the field for the turn it is used in and the next, with its message; it fails while the field is
+// already locked. Gravity's handler
+static void HandlerFairyLock(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
+    BattleHandlerAddFieldEffectParam *param;
+
+    if (BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACKER) == monId &&
+        !IsFieldEffectActive(FIELD_CONDITION_FAIRY_LOCK)) {
+        param = BattleHandler_PushWork(flow, BATTLE_HANDLER_ADD_FIELD_EFFECT, monId);
+        param->effect = FIELD_CONDITION_FAIRY_LOCK;
+        param->value = SetConditionTurns(FAIRY_LOCK_TURNS);
+        BattleHandler_StrSetup(&param->string, BATTLE_HANDLER_STR_STANDARD, Bank0019_Text_NoOneCanRunAway);
+        BattleHandler_PopWork(flow, param);
+    }
+}
+
+static const BattleEventHandlerEntry sFairyLockHandlers[] = {
+    { BATTLE_EVENT_FIELD_EFFECT_MOVE, HandlerFairyLock },
+};
+
+const BattleEventHandlerEntry *PaperWhite2_EventAddFairyLock(u32 *priority) {
+    *priority = NELEMS(sFairyLockHandlers);
+    return sFairyLockHandlers;
+}
+
+BOOL PaperWhite2_IsFairyLocked(BattleMon *mon, BOOL active) {
+    return active && !DoesMonHaveType(mon, TYPE_GHOST);
+}
+
+// The locked field, on the server: a Pokémon that tries to flee can't (ServerEvent_CheckEscapeBlocked, as Shadow Tag's
+// handler). The clients refuse a switch or an escape by their own check (btl_client.c's IsMonTrapped)
+static void HandlerFieldFairyLock(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
+    if (PaperWhite2_IsFairyLocked(GetBattleMon(flow, BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON)), TRUE)) {
+        BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_FAIL_FLAG, TRUE);
+    }
+}
+
+static const BattleEventHandlerEntry sFieldFairyLockHandlers[] = {
+    { BATTLE_EVENT_CHECK_ESCAPE_BLOCKED, HandlerFieldFairyLock },
+};
+
+const BattleEventHandlerEntry *PaperWhite2_EventAddFieldFairyLock(u32 *numHandlers) {
+    *numHandlers = NELEMS(sFieldFairyLockHandlers);
+    return sFieldFairyLockHandlers;
+}
+#endif
+
+#ifdef MOVE_CRAFTY_SHIELD
+// Crafty Shield fails when its user moves last in the turn, as Protect does, but never for being used again in a row
+// (Gen 6's: Quick Guard and Wide Guard have Protect's chance here)
+static void HandlerCraftyShieldCheckFail(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
+    if (BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON) == monId && IsMonLastInTurnOrder(flow, monId)) {
+        BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_FAIL_CAUSE, MOVE_FAIL_CAUSE_FAILED);
+    }
+}
+
+// Crafty Shield protects its user's side for the turn, with its message. Quick Guard's handler
+static void HandlerCraftyShield(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
+    u8 side;
+    BattleHandlerAddSideEffectParam *param;
+
+    if (BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACKER) == monId) {
+        side = GetSideFromMonID(monId);
+        param = BattleHandler_PushWork(flow, BATTLE_HANDLER_ADD_SIDE_EFFECT, monId);
+        param->effect = SIDE_CONDITION_CRAFTY_SHIELD;
+        param->side = side;
+        param->cont = SetConditionTurns(1);
+        BattleHandler_StrSetup(&param->string, BATTLE_HANDLER_STR_STANDARD, Bank0019_Text_CraftyShieldProtectedTeam);
+        BattleHandler_AddArg(&param->string, side);
+        BattleHandler_PopWork(flow, param);
+    }
+}
+
+static const BattleEventHandlerEntry sCraftyShieldHandlers[] = {
+    { BATTLE_EVENT_CHECK_MOVE_FAIL_LATE, HandlerCraftyShieldCheckFail },
+    { BATTLE_EVENT_UNCATEGORIZED_MOVE_NO_TARGET, HandlerCraftyShield },
+};
+
+const BattleEventHandlerEntry *PaperWhite2_EventAddCraftyShield(u32 *priority) {
+    *priority = NELEMS(sCraftyShieldHandlers);
+    return sCraftyShieldHandlers;
+}
+
+// The shielded side: a status move, an ally's too, has no effect on its Pokémon, but for one a Pokémon uses on itself
+// and one that targets every Pokémon on the field (Gen 6's: Perish Song, Flower Shield). Damaging moves hit as before.
+// Quick Guard's side handler, keyed on the category
+static void HandlerSideCraftyShield(BattleEventItem *item, BtlServerFlow *flow, u8 side, s32 *work) {
+    u8 defenderId;
+    u16 move;
+    BattleHandlerString *string;
+
+    defenderId = BattleEventVar_GetValue(BATTLE_EVENT_VAR_DEFENDER);
+    if (side == GetSideFromMonID(defenderId) && defenderId != BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACKER)) {
+        move = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MOVE);
+        if (PML_MoveGetCategory(move) == MOVE_CATEGORY_STATUS &&
+            PML_MoveGetParam(move, MOVE_PARAM_TARGET) != MOVE_TARGET_ALL &&
+            BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_NO_EFFECT, TRUE)) {
+            string = (BattleHandlerString *)BattleEventVar_GetValue(BATTLE_EVENT_VAR_STRING);
+            BattleHandler_StrSetup(string, BATTLE_HANDLER_STR_SET, Bank0018_Text_CraftyShieldProtected);
+            BattleHandler_AddArg(string, defenderId);
+        }
+    }
+}
+
+static const BattleEventHandlerEntry sSideCraftyShieldHandlers[] = {
+    { BATTLE_EVENT_CHECK_NO_EFFECT, HandlerSideCraftyShield },
+};
+
+const BattleEventHandlerEntry *PaperWhite2_EventAddSideCraftyShield(u32 *numHandlers) {
+    *numHandlers = NELEMS(sSideCraftyShieldHandlers);
+    return sSideCraftyShieldHandlers;
 }
 #endif
 

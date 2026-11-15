@@ -24,6 +24,8 @@
 #include "pml/move.h"
 #include "pml/poke_party.h"
 #ifdef PAPERWHITE2
+#include "constants/items.h"
+#include "constants/types.h"
 #include "paperwhite2/battle_handlers.h"
 #include "paperwhite2/moves.h"
 #endif
@@ -879,6 +881,15 @@ static const MoveEventAddEntry sMoveEventAddTable[] = {
 #endif
 #if defined(PAPERWHITE2) && defined(MOVE_DRAGON_CHEER)
     { MOVE_DRAGON_CHEER, PaperWhite2_EventAddDragonCheer },
+#endif
+#if defined(PAPERWHITE2) && defined(MOVE_FLOWER_SHIELD)
+    { MOVE_FLOWER_SHIELD, PaperWhite2_EventAddFlowerShield },
+#endif
+#if defined(PAPERWHITE2) && defined(MOVE_FAIRY_LOCK)
+    { MOVE_FAIRY_LOCK, PaperWhite2_EventAddFairyLock },
+#endif
+#if defined(PAPERWHITE2) && defined(MOVE_CRAFTY_SHIELD)
+    { MOVE_CRAFTY_SHIELD, PaperWhite2_EventAddCraftyShield },
 #endif
 };
 
@@ -3903,6 +3914,12 @@ static void HandlerJudgement(BattleEventItem *item, BtlServerFlow *flow, u8 monI
         case 313:
             type = 8;
             break;
+#ifdef PAPERWHITE2
+        // Paper White 2: the Pixie Plate makes it Fairy
+        case ITEM_PIXIE_PLATE:
+            type = TYPE_FAIRY;
+            break;
+#endif
         }
         BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_MOVE_TYPE, type);
     }
@@ -6326,6 +6343,12 @@ static void HandlerTeleportCheckFail(BattleEventItem *item, BtlServerFlow *flow,
     if (CheckCondition(mon, CONDITION_BIND) && CheckCondition(mon, CONDITION_MEAN_LOOK)) {
         BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_FAIL_CAUSE, 0x1a);
     }
+#if defined(PAPERWHITE2) && defined(MOVE_FAIRY_LOCK)
+    // Paper White 2: no one flees while Fairy Lock is in effect (paperwhite2_battle.c)
+    if (PaperWhite2_IsFairyLocked(mon, IsFieldEffectActive(FIELD_CONDITION_FAIRY_LOCK))) {
+        BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_FAIL_CAUSE, 0x1a);
+    }
+#endif
 }
 
 static void HandlerTeleport(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {

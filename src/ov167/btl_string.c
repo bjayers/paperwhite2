@@ -15,6 +15,10 @@
 #include "stdarg.h"
 #include "system/printsys.h"
 #include "system/wordset.h"
+#ifdef PAPERWHITE2
+#include "constants/moves.h"
+#include "text/system/0019.h"
+#endif
 
 typedef void (*BtlStringFunc)(StrBuf *strbuf, u16 message, const u32 *args);
 
@@ -68,6 +72,10 @@ static const u32 sMovieMsgFiles[] = { 0x137, 0x138, 0x136, 0x135, 0x134 };
 static const u16 sSideMessages[] = {
     0x94, 0x96, 0x98, 0x9a, 0x9c, 0x9e, 0xa0, 0xa2, 0xb0, 0x84, 0x86, 0x80, 0x82, 0x7c,
     0x7e, 0x88, 0x8a, 0x8c, 0x8e, 0x90, 0x92, 0xa4, 0xa6, 0xa8, 0xaa, 0xac, 0xae,
+#if defined(PAPERWHITE2) && defined(MOVE_CRAFTY_SHIELD)
+    // Paper White 2: Crafty Shield's (paperwhite2_battle.c)
+    Bank0019_Text_CraftyShieldProtectedTeam,
+#endif
 };
 
 // clang-format off

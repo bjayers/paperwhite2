@@ -25,6 +25,19 @@ u32 PaperWhite2_GetCriticalAttack(BattleMon *mon, u32 stat);
 const BattleEventHandlerEntry *PaperWhite2_EventAddFickleBeam(u32 *priority);
 // Dragon Cheer: raises every ally's critical-hit stage, a Dragon type's twice (MOVE_TARGET_ALL_ALLIES)
 const BattleEventHandlerEntry *PaperWhite2_EventAddDragonCheer(u32 *priority);
+// Flower Shield: every Grass-type Pokémon on the field's Defense rises
+const BattleEventHandlerEntry *PaperWhite2_EventAddFlowerShield(u32 *priority);
+// Fairy Lock: for the turn after, no Pokémon on the field can switch out or flee (FIELD_CONDITION_FAIRY_LOCK), whose
+// handlers PaperWhite2_EventAddFieldFairyLock gives field_handlers.c
+const BattleEventHandlerEntry *PaperWhite2_EventAddFairyLock(u32 *priority);
+const BattleEventHandlerEntry *PaperWhite2_EventAddFieldFairyLock(u32 *numHandlers);
+// Whether Fairy Lock, active or not by active, keeps the Pokémon from switching out and fleeing: every Pokémon but a
+// Ghost type, as in Gen 6. The client's switch and escape checks ask it (btl_client.c), and Teleport (move_handlers.c)
+BOOL PaperWhite2_IsFairyLocked(BattleMon *mon, BOOL active);
+// Crafty Shield: for the turn, the user's side is protected from status moves (SIDE_CONDITION_CRAFTY_SHIELD), whose
+// handlers PaperWhite2_EventAddSideCraftyShield gives side_handlers.c
+const BattleEventHandlerEntry *PaperWhite2_EventAddCraftyShield(u32 *priority);
+const BattleEventHandlerEntry *PaperWhite2_EventAddSideCraftyShield(u32 *numHandlers);
 // Syrup Bomb's syrup at the end of a turn (condition_effects.c): the Pokémon's Speed falls
 void PaperWhite2_ConditionEndTurnSyrup(BtlServerFlow *flow, u8 monId);
 // Sweet Syrup: on entering, once a battle, the adjacent foes' evasion falls

@@ -4,12 +4,20 @@
 #include "battle/btl_pokeparam.h"
 #include "battle/field_handlers.h"
 #include "gfl/heap.h"
+#ifdef PAPERWHITE2
+#include "constants/moves.h"
+#endif
 
 // Overlay 167's btl_field.c (named by its string): the weather and the effects of the whole field, such as Trick
 // Room and Gravity. The battle server's flow uses the static copy here; the main module allocates another for the
 // clients. Function names from swan (https://github.com/ds-pokemon-hacking/swan, GPL-3.0) where it has them.
 
+#if defined(PAPERWHITE2) && defined(MOVE_FAIRY_LOCK)
+// Paper White 2: Fairy Lock's (FIELD_CONDITION_FAIRY_LOCK) follows the original 8
+#define FIELD_EFFECT_COUNT 9
+#else
 #define FIELD_EFFECT_COUNT 8
+#endif
 // Effect 3 is Imprison, whose user is the first of its depending Pokemon
 #define FIELD_EFFECT_IMPRISON 3
 #define FIELD_DEPEND_POKE_MAX 6

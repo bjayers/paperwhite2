@@ -63,6 +63,9 @@
 #define SIDE_CONDITION_RAINBOW 11
 #define SIDE_CONDITION_SEA_OF_FIRE 12
 #define SIDE_CONDITION_SWAMP 13
+// Paper White 2: Crafty Shield's, for a turn: the side's Pokémon are protected from status moves. Only the hack's
+// battle has it (side_handlers.c)
+#define SIDE_CONDITION_CRAFTY_SHIELD 14
 
 // Conditions of the whole field. The AI scripts tell which is which, and overlay 169's field_handlers.c the rest
 #define FIELD_CONDITION_WEATHER 0
@@ -73,6 +76,9 @@
 #define FIELD_CONDITION_MUD_SPORT 5
 #define FIELD_CONDITION_WONDER_ROOM 6
 #define FIELD_CONDITION_MAGIC_ROOM 7
+// Paper White 2: Fairy Lock's, for the turn it is used and the next: no Pokémon on the field can switch out or flee.
+// Only the hack's battle has it (field_handlers.c, btl_field.c)
+#define FIELD_CONDITION_FAIRY_LOCK 8
 
 // Move categories, the category of the move data (MOVE_PARAM_CATEGORY)
 #define MOVE_CATEGORY_STATUS 0

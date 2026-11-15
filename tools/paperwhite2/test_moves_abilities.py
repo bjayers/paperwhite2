@@ -246,12 +246,17 @@ class RepositoryTest(unittest.TestCase):
                                                    ("MOVE_MOONBLAST", names.index("MOVE_MOONLIGHT"), 0),
                                                    ("MOVE_DAZZLING_GLEAM", names.index("MOVE_FLASH"), 0),
                                                    ("MOVE_BABY_DOLL_EYES", names.index("MOVE_CHARM"), 0),
-                                                   ("MOVE_AROMATIC_MIST", names.index("MOVE_AROMATHERAPY"), 0)])
+                                                   ("MOVE_AROMATIC_MIST", names.index("MOVE_AROMATHERAPY"), 0),
+                                                   # and the three with C (fairy-type.md, section 12.4)
+                                                   ("MOVE_FLOWER_SHIELD", names.index("MOVE_GROWTH"), 0),
+                                                   ("MOVE_FAIRY_LOCK", names.index("MOVE_IMPRISON"), 0),
+                                                   ("MOVE_CRAFTY_SHIELD", names.index("MOVE_WIDE_GUARD"), 0)])
         self.assertEqual(ability_list.added_table(),
                          [("ABILITY_BULLETPROOF", 0), ("ABILITY_SWEET_SYRUP", 0), ("ABILITY_RIPEN", 0)])
         # Their own handlers in the hack's battle code; Apple Acid and Syrup Bomb are data only (the syrup is a
         # condition, built whatever inflicts it)
-        for move in ("MOVE_GRAV_APPLE", "MOVE_BODY_PRESS", "MOVE_FICKLE_BEAM", "MOVE_DRAGON_CHEER"):
+        for move in ("MOVE_GRAV_APPLE", "MOVE_BODY_PRESS", "MOVE_FICKLE_BEAM", "MOVE_DRAGON_CHEER", "MOVE_FLOWER_SHIELD",
+                     "MOVE_FAIRY_LOCK", "MOVE_CRAFTY_SHIELD"):
             self.assertTrue(move_list.has_own_handlers(move), move)
         self.assertFalse(move_list.has_own_handlers("MOVE_APPLE_ACID"))
         self.assertFalse(move_list.has_own_handlers("MOVE_SYRUP_BOMB"))

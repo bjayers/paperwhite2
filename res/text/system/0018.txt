@@ -1163,4 +1163,7 @@ Bank0018_Text_FoesCoveredInSyrup = The foe's {0102:0} got covered\nin sticky can
 Bank0018_Text_GoingAllOut = {0102:0} is going all out\nfor this attack!
 Bank0018_Text_WildGoingAllOut = The wild {0102:0} is going all out\nfor this attack!
 Bank0018_Text_FoesGoingAllOut = The foe's {0102:0} is going all out\nfor this attack!
+Bank0018_Text_CraftyShieldProtected = Crafty Shield protected\n{0102:0}!
+Bank0018_Text_CraftyShieldProtectedWild = Crafty Shield protected\nthe wild {0102:0}!
+Bank0018_Text_CraftyShieldProtectedFoes = Crafty Shield protected\nthe foe's {0102:0}!
 \pad{54}
