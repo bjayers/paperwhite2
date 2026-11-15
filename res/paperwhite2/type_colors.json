@@ -1,0 +1,81 @@
+{
+    "$schema": "type_colors.schema.json",
+    "types": {
+        "TYPE_NORMAL": {
+            "fill": [ 131, 131, 131 ],
+            "edge": [ 82, 82, 82 ]
+        },
+        "TYPE_FIGHTING": {
+            "fill": [ 230, 148, 32 ],
+            "edge": [ 74, 57, 49 ]
+        },
+        "TYPE_FLYING": {
+            "fill": [ 115, 172, 213 ],
+            "edge": [ 65, 82, 148 ]
+        },
+        "TYPE_POISON": {
+            "fill": [ 148, 82, 205 ],
+            "edge": [ 74, 57, 82 ]
+        },
+        "TYPE_GROUND": {
+            "fill": [ 164, 115, 57 ],
+            "edge": [ 115, 82, 24 ]
+        },
+        "TYPE_ROCK": {
+            "fill": [ 172, 164, 131 ],
+            "edge": [ 115, 82, 24 ]
+        },
+        "TYPE_BUG": {
+            "fill": [ 164, 164, 41 ],
+            "edge": [ 65, 106, 57 ]
+        },
+        "TYPE_GHOST": {
+            "fill": [ 115, 65, 115 ],
+            "edge": [ 74, 57, 82 ]
+        },
+        "TYPE_STEEL": {
+            "fill": [ 106, 172, 205 ],
+            "edge": [ 82, 82, 82 ]
+        },
+        "TYPE_FIRE": {
+            "fill": [ 230, 98, 57 ],
+            "edge": [ 115, 32, 8 ]
+        },
+        "TYPE_WATER": {
+            "fill": [ 49, 156, 230 ],
+            "edge": [ 65, 82, 148 ]
+        },
+        "TYPE_GRASS": {
+            "fill": [ 65, 156, 57 ],
+            "edge": [ 65, 106, 57 ]
+        },
+        "TYPE_ELECTRIC": {
+            "fill": [ 230, 189, 41 ],
+            "edge": [ 115, 82, 24 ]
+        },
+        "TYPE_PSYCHIC": {
+            "fill": [ 238, 106, 139 ],
+            "edge": [ 106, 57, 57 ]
+        },
+        "TYPE_ICE": {
+            "fill": [ 74, 205, 205 ],
+            "edge": [ 65, 82, 148 ]
+        },
+        "TYPE_DRAGON": {
+            "fill": [ 90, 106, 189 ],
+            "edge": [ 74, 57, 148 ]
+        },
+        "TYPE_DARK": {
+            "fill": [ 82, 65, 65 ],
+            "edge": [ 74, 57, 49 ]
+        },
+        "TYPE_NULL": {
+            "fill": [ 131, 131, 131 ],
+            "edge": [ 82, 82, 82 ]
+        },
+        "TYPE_FAIRY": {
+            "fill": [ 238, 131, 180 ],
+            "edge": [ 164, 65, 115 ]
+        }
+    }
+}

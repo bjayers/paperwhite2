@@ -1234,6 +1234,14 @@ def main():
                           # (the Wonder Trade's pre-evolutions and least levels)
                           *sorted(str(path) for path in Path("res/pokemon").glob("*/data.json"))])
         constant_headers.append(output)
+        # Paper White 2: the battle HUD's type wedge colors, from res/paperwhite2/type_colors.json
+        # (docs/paperwhite2/plugins.md, Type Icons)
+        n.rule("type_colors", "$python tools/paperwhite2/type_colors.py $in $out", "Generating $out", restat="1")
+        output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "type_colors_config.h"
+        n.build([output], "type_colors", ["res/paperwhite2/type_colors.json"],
+                implicit=["tools/paperwhite2/type_colors.py", *script_imports("tools/paperwhite2/type_colors.py"),
+                          "res/paperwhite2/type_colors.schema.json", "tools/data/datajson.py", "generated/types.txt"])
+        constant_headers.append(output)
         # Paper White 2: the hack's forms' sprite groups, icon palettes and forms that never evolve, and the added
         # species' bases, from res/pokemon (include/paperwhite2/pokemon_forms.h, include/paperwhite2/species.h)
         n.rule("pokemon_forms", "$python tools/paperwhite2/pokemon_forms.py $out", "Generating $out", restat="1")

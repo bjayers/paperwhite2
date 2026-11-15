@@ -134,6 +134,17 @@ export class Python {
     });
   }
 
+  /** Runs type_icons.py (the type labels' list, exports, and a PNG checked as a label or the sheet) on this checkout. */
+  typeIcons(args: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
+    return new Promise((resolve) => {
+      const child = spawn(pythonFor(this.root), ["-I", join(HERE, "type_icons.py"), ...args], { cwd: this.root });
+      let stdout = "", stderr = "";
+      child.stdout.on("data", (c) => (stdout += c));
+      child.stderr.on("data", (c) => (stderr += c));
+      child.on("close", (code) => resolve({ code: code ?? 1, stdout, stderr }));
+    });
+  }
+
   stop() {
     this.validator?.kill();
   }

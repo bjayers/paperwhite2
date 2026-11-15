@@ -185,6 +185,67 @@ export interface ItemIcons {
 /** A PNG checked as an item's icon (POST /api/item-icons/check), and whether it was written. */
 export type ItemIconCheck = SpriteSheetCheck;
 
+export type Rgb8 = [number, number, number];
+
+/** One type's label (GET /api/type-icons): its 32×16 picture as palette indices (0-15, 0 transparent) in rows, the
+ * archive member and file it is, and which of the label palette's rows it is drawn in. */
+export interface TypeLabel {
+  id: number;
+  constant: string;
+  name: string;
+  member: number;
+  path: string;
+  row: number;
+  pixels: number[];
+}
+
+/** An entry of a palette row: the labels (type IDs) and other menu icons that draw with it. */
+export interface TypeRowEntry {
+  index: number;
+  labels: number[];
+  others: string[];
+}
+
+export interface TypeRow {
+  row: number;
+  colors: Rgb8[];
+  entries: TypeRowEntry[];
+}
+
+/** A type's battle move button palette (a/0/1/1 member): its first 16 colors; 8-13 are the button's gradient. */
+export interface TypeButton {
+  id: number;
+  member: number;
+  path: string;
+  colors: Rgb8[];
+}
+
+export interface TypeIcons {
+  width: number;
+  height: number;
+  /** The label palette (033.pal), whose three rows of 16 the labels are drawn in */
+  palettePath: string;
+  labels: TypeLabel[];
+  rows: TypeRow[];
+  buttons: TypeButton[];
+}
+
+/** What a PNG would change as a label, or as the sheet of all of them (POST /api/type-icons/check). */
+export interface TypeIconCheck {
+  ok: boolean;
+  message: string;
+  written: boolean;
+  /** The labels it gives, as they would be */
+  labels: { id: number; name: string; row: number; pixels: number[]; pixelsChanged: boolean }[];
+  /** The palette entries whose color changes, and who else draws with each */
+  changes: { row: number; index: number; from: Rgb8; to: Rgb8; users: string[]; shared: boolean }[];
+  /** The three rows as they would be */
+  rows: { row: number; colors: Rgb8[] }[];
+  /** The files it writes */
+  files: string[];
+  nothing: boolean;
+}
+
 /** What the art converter (tools/paperwhite2/screen_art.py) says about art for a target (POST /api/art/convert). */
 export interface ArtReport {
   target: string;

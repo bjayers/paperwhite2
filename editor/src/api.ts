@@ -4,7 +4,7 @@ import { WRITE_HEADER, type BuildState, type DataFile, type Entry, type ScanMatc
   type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
 import { schemaPart, splitSchemaId, type Schema } from "../shared/schema.ts";
 import type { Usage, UsageKind } from "../server/usage.ts";
-import type { ArtReport, ItemIconCheck, ItemIcons, SpriteSheet, SpriteSheetCheck } from "../shared/api.ts";
+import type { ArtReport, ItemIconCheck, ItemIcons, SpriteSheet, SpriteSheetCheck, TypeIconCheck, TypeIcons } from "../shared/api.ts";
 
 /** Whether a request failed because what it asked for isn't there (the server's 404: a file deleted on disk). */
 export function isNotFound(e: unknown): boolean {
@@ -436,6 +436,13 @@ export const api = {
   /** Checks a PNG (base64) as an item's icon; with write, saves its icon and palette over the item's files. */
   itemIconCheck: (item: string, data: string, write = false) =>
     request<ItemIconCheck>("POST", "/api/item-icons/check", { item, data, write }),
+  /** Every type's label, the label palette's rows with who shares each entry, and the move buttons' palettes. */
+  typeIcons: () => request<TypeIcons>("GET", "/api/type-icons"),
+  /** The address of a type's label (its ID) or the sheet of all of them ("sheet") as an indexed PNG, to draw over. */
+  typeIconExportUrl: (type: number | "sheet") => `/api/type-icons/export?type=${type}`,
+  /** Checks a PNG (base64) as a type's label, or the sheet; with write, saves the labels and the palette it changes. */
+  typeIconCheck: (type: number | "sheet", data: string, write = false) =>
+    request<TypeIconCheck>("POST", "/api/type-icons/check", { type, data, write }),
   /** The original game's form counts and the species whose forms have records there (tools/paperwhite2/pokemon_form.py). */
   pokemonForms: () => request<PokemonFormsInfo>("GET", "/api/pokemon-forms"),
   /** Adds a form to a species, copied from its form `from` (0 the species); check only says what it would change. */

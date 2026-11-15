@@ -96,7 +96,7 @@ what it reads, including the scripts' gifts and static battles and the swarm tab
 
 ## Graphics & Palettes
 
-The game's 2D art (`src/modules/palettes/`), in five pages. The art itself is drawn in an image editor such as
+The game's 2D art (`src/modules/palettes/`), in six pages. The art itself is drawn in an image editor such as
 Aseprite; these turn it into the game's files and set its colors.
 
 ### Screens
@@ -130,6 +130,39 @@ build, files of `res/items/` (`server/python/item_icons.py`, with the packer's `
 transparent) or RGB(A) with at most 15 colors besides transparent pixels, and shows it as the game will
 (`POST /api/item-icons/check`); **Apply to the game's files** writes its icon and palette over the item's files, and
 the next build packs them. Files that other items show too are named, since Apply changes those items' icon as well.
+
+### Type icons
+
+Every type's label (the 32×16 picture on the summary, bag, PC box, Pokédex, battle party list and move menu), the row of
+the label palette it is drawn in, the battle move button's colors and the battle HUD wedge's colors, a type at a time
+(`src/modules/palettes/TypeIconsPage.tsx`, `server/python/type_icons.py`; the labels, their rows and the buttons'
+palettes are read from `src/system/app_menu_common.c` and `src/ov168/btlv_input.c`, so a label or row that code
+moves follows). The list is by palette row. Per type:
+
+- **Label art**: **Export PNG** gives the label as an indexed PNG whose palette is its row's (draw with those indices;
+  recolor by changing the PNG's palette); **Export all labels (sheet)** gives all 19 on one 128×80 sheet whose colors
+  0-15, 16-31 and 32-47 are rows 0, 1 and 2 (a label's pixels use its own row's colors). **Import PNG** and **Import
+  sheet** check the size and that no pixel uses a color outside the label's own row (`POST /api/type-icons/check`),
+  then list the pictures and the palette entries whose color would change, naming the other labels and menu icons that
+  draw with each ("also used by ...: they change too"). **Apply** writes the labels that have other pixels
+  (`res/graphics/app_menu_common/NNN.png`) and, only if a color changed, `033.pal` (the other rows' lines stay as they
+  are). An unchanged export imports as "nothing to write".
+- **Palette row**: the row's 16 entries, each with how many labels and menu icons use it (0 transparent, 14 and 15 the
+  letters' shadow and letters, which every label of the row shares; `free` for entries 1-13 that nothing uses). Click
+  an entry to edit it live (every label of the row, the previews and the list redraw); **Save row** writes only that row.
+- **Where it shows**: the label on stand-in backgrounds of the summary and bag, the Pokédex and the box.
+- **Battle move button**: the type's palette in `res/graphics/btlv/` (entries 8-13, the button's gradient, light to
+  dark) with a schematic of the button, not the game's art. **Save** writes that palette.
+- **Battle HUD wedge**: the type's fill and edge in `res/paperwhite2/type_colors.json` (rounded to the DS's 5 bits an
+  axis; `tools/paperwhite2/type_colors.py` packs them into `paperwhite2/type_colors_config.h`, which the HUD's C reads),
+  with buttons that take a color from the label's own entries, and a schematic wedge alone or beside a second type.
+
+How many colors a label can use is set by its row: three rows of 13 shared entries serve 9, 6 and 4 labels, so a
+flashier label recolors the entries it shares unless it uses the free ones (the page lists them per row, and says what
+changing a shared entry does to the others). A new row (more colors per label) would be a code change on every screen
+that loads the type palette (each loads exactly three rows), and moving a label to a less crowded row is a table in
+`app_menu_common.c`; the page does neither. ??? (type 17) is listed because its member (51) is a contest picture in
+row 0.
 
 ### Palettes
 

@@ -8,7 +8,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { basename, extname, join, resolve, sep } from "node:path";
 import { fileText, parseJson, setIn, JsonSyntaxError } from "../shared/json.ts";
 import { splitSchemaId } from "../shared/schema.ts";
-import { WRITE_HEADER, type DataFile, type ItemIconCheck, type SpriteSheet, type ProjectInfo, type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
+import { WRITE_HEADER, type DataFile, type ItemIconCheck, type TypeIconCheck,type SpriteSheet, type ProjectInfo, type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
 import { Builder } from "./build.ts";
 import { narcMember } from "./narc.ts";
 import { Git } from "./git.ts";
@@ -323,6 +323,45 @@ const routes: Record<string, Handler> = {
         result.written = true;
       }
       json(res, { ok: result.ok, message: result.message, written: result.written, preview: result.preview });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  },
+  // The type labels, their palette rows and the move buttons' palettes (type_icons.py)
+  "GET /api/type-icons": async (_req, res) => {
+    const run = await python.typeIcons(["list"]);
+    if (run.code !== 0) return error(res, 500, run.stderr.trim().split("\n").pop() || "type_icons.py failed");
+    json(res, JSON.parse(run.stdout));
+  },
+  // A label (?type=ID) or the sheet of all of them (?type=sheet) as an indexed PNG, to draw over
+  "GET /api/type-icons/export": async (_req, res, url) => {
+    const type = url.searchParams.get("type") ?? "";
+    if (!/^(sheet|\d{1,3})$/.test(type)) return error(res, 400, "A type's ID, or sheet");
+    const run = await python.typeIcons(type === "sheet" ? ["export-sheet"] : ["export", type]);
+    if (run.code !== 0) return error(res, 400, run.stderr.trim().split("\n").pop() || "type_icons.py failed");
+    res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "no-cache" });
+    res.end(Buffer.from(run.stdout.trim(), "base64"));
+  },
+  // A PNG checked as a type's label ({ type: ID, data: base64 }) or as the sheet of all of them ({ type: "sheet" });
+  // with write and a PNG that fits, the labels with other pixels and the palette are written over their files
+  "POST /api/type-icons/check": async (req, res) => {
+    const body = (await readJson(req)) as { type: number | "sheet"; data: string; write?: boolean };
+    if (body.type !== "sheet" && !Number.isInteger(body.type)) return error(res, 400, "A type's ID, or sheet");
+    const dir = mkdtempSync(join(tmpdir(), "paperwhite-type-icons-"));
+    try {
+      const png = join(dir, "import.png");
+      writeFileSync(png, Buffer.from(body.data ?? "", "base64"));
+      const out = join(dir, "out");
+      mkdirSync(out);
+      const args = body.type === "sheet" ? ["check-sheet", png] : ["check-label", String(body.type), png];
+      const run = await python.typeIcons(body.write ? [...args, out] : args);
+      if (run.code !== 0) return error(res, 400, run.stderr.trim().split("\n").pop() || "type_icons.py failed");
+      const result = JSON.parse(run.stdout) as TypeIconCheck;
+      if (body.write && result.ok) {
+        for (const file of result.files) await project.writeAtomic(file, readFileSync(join(out, basename(file))));
+        result.written = result.files.length > 0;
+      }
+      json(res, result);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
