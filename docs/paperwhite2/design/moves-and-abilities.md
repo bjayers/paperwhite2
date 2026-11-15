@@ -967,3 +967,21 @@ learners, shortened names and proof. What they showed about the tools:
   Bulletproof.
 - **Learnsets and tutors are data**: `by_level`, `egg_moves`, and a tutor's move by its place in `move_tutors.json`
   with `by_tutor` in each learner (sorted in the tutors' bit order, as `species_data.py` dumps them).
+
+## 17. Built: Flower Shield, Fairy Lock and Crafty Shield (2026-11-15)
+
+Moves 574-576 (`moves.py add`, their C in `paperwhite2_battle.c`): `fairy-type.md` section 12.4 has their data, rules
+and proof. New engine pieces, each built only in the hack's battle and only while its move's constant exists:
+
+- **A field condition**, `FIELD_CONDITION_FAIRY_LOCK` (8): `btl_field.c`'s `FIELD_EFFECT_COUNT` 9 and a row in
+  `field_handlers.c`'s table whose handlers come from the hack's file (`PaperWhite2_EventAddFieldFairyLock`). A
+  field condition needs a row there even with no handlers: `FieldStatusaddEffectCore` refuses an effect without one.
+- **A side condition**, `SIDE_CONDITION_CRAFTY_SHIELD` (14): `side_handlers.c`'s `NUM_SIDE_EFFECTS` 15 and a row
+  (`PaperWhite2_EventAddSideCraftyShield`). `ServerDisplay_SideEffectEnd` has no message for it, as for Quick Guard;
+  `BattleHandler_RemoveSideEffectCore` (Defog, Rapid Spin) still loops over the original 14.
+- **Standard messages** go in bank 19 (`BtlString`'s file 0x13; the studio's movies load bank 17 instead, whose same
+  IDs are other lines: these moves' messages would show wrong in a Pokéstar Studios battle, where nothing uses them). A
+  standard message with a variant for the other side (`… your team!` / `… the foe's team!`) needs its ID in
+  `btl_string.c`'s `sSideMessages`.
+- **Trapping** is checked in two places: the clients' `IsMonTrapped` (the switch, the escape, the AI's switch) and the
+  server's `ServerEvent_CheckEscapeBlocked` (an event, so a field condition's handler can answer it).

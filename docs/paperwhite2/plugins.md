@@ -2664,7 +2664,7 @@ reads 17 as "no type" (Roost, STAB, Color Change, Conversion 2, the PWT's "any t
 - **Cheren's text:** `tools/paperwhite2/cheren_type_text.py` writes `local_tvt_person_chelen_type.txt` from the chart:
   a message whose weaknesses still match is kept as the game wrote it, the others and the 18 Fairy pairs are written
   in its words. Run it after any chart edit (`--check` says what would change).
-- **Hidden Power** stays without Fairy (`hpTypes[16]`); Arceus and Gen 6's stat changes are later work.
+- **Hidden Power** stays without Fairy (`hpTypes[16]`); Gen 6's stat changes are later work.
 - **Fairy moves** (`fairy-type.md` section 12): Fairy Wind, Disarming Voice, Draining Kiss, Play Rough, Moonblast,
   Dazzling Gleam, Baby-Doll Eyes and Aromatic Mist, moves 566-573, data only (`moves.py add`, borrowed animations and
   AI effects; five names shortened to 12 characters), in 17 species' level-up lists and Teddiursa's egg moves;
@@ -2673,6 +2673,14 @@ reads 17 as "no type" (Roost, STAB, Color Change, Conversion 2, the PWT's "any t
 - **Fairy items** (`items.md`): the Roseli Berry (123) and the Fairy Gem (124), rows at the end of
   `sItemEventAddTable` under `PAPERWHITE2` with the resist Berries' and the Gems' common handlers and `TYPE_FAIRY`;
   `ItemEvent_AddItemCore` runs to `NELEMS(sItemEventAddTable)`; `PML_ItemIsBerry` counts the Roseli Berry.
+- **Flower Shield, Fairy Lock, Crafty Shield** (574-576, `fairy-type.md` section 12.4): handlers in
+  `paperwhite2_battle.c`; Fairy Lock's field condition (`FIELD_CONDITION_FAIRY_LOCK`, `btl_field.c`, `field_handlers.c`,
+  checked by `btl_client.c`'s `IsMonTrapped` and Teleport), Crafty Shield's side condition
+  (`SIDE_CONDITION_CRAFTY_SHIELD`, `side_handlers.c`, its message in `btl_string.c`'s `sSideMessages`); messages in banks
+  18 and 19.
+- **The Pixie Plate and Arceus's Fairy form** (item 125, form 17; `items.md`): `poke_tool.c`'s plate type and
+  `PaperWhite2_GetArceusPlateForm` (`plist_item.c`, `box2_main.c`), `HandlerJudgement`, `IsArceusPlate`, the plate's
+  handler row; the form's palettes after the hack's sprite groups (`PAPERWHITE2_PALETTE_FORM_FILES`, `pokegra.c`).
 
 ## Adding global scripts
 

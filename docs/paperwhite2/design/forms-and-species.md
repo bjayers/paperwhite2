@@ -600,6 +600,12 @@ Proven: adding a Vulpix form with a record and a 7th Rotom form, then removing b
 editor), leaves `res/` and `generated/` as they were, and the `--hack` ROM byte for byte the one before
 (`d11fd024...`).
 
+**Palette-only forms** (since 2026-11-15, Arceus's Fairy form): `add` takes a `palette_forms` species too, copying
+only the template's `normal.pal` and `shiny.pal` (no record, no sprite offset change). The original game's 16 palette
+pairs end where the hack's form groups start, so the hack's follow its added species' groups in the battle sprites'
+archive (`form_groups.palette_form_groups`, `PAPERWHITE2_PALETTE_FORM_FILES`, `GetPokemonDataIDBase`); `fairy-type.md`
+section 12.4.
+
 ### 11.6 The editor (built 2026-11-12)
 
 - **The list** has every species and, under it, each of its `forms.count` forms by its Pokédex name (`pokedex.forms`),

@@ -21,6 +21,7 @@ registrable item needs a larger save.
 | Tart Apple, Sweet Apple, Syrupy Apple | `ITEM_TART_APPLE`, `ITEM_SWEET_APPLE`, `ITEM_SYRUPY_APPLE` (unused items 120-122) | Items | no | none (data only) |
 | Roseli Berry | `ITEM_ROSELI_BERRY` (unused item 123) | Berries | no | none (a row in `item_handlers.c`) |
 | Fairy Gem | `ITEM_FAIRY_GEM` (unused item 124) | Items | no | none (a row in `item_handlers.c`) |
+| Pixie Plate | `ITEM_PIXIE_PLATE` (unused item 125) | Items | no | `pml/poke_party.h` (`PaperWhite2_GetArceusPlateForm`) |
 
 ## Exp. Share
 
@@ -137,7 +138,7 @@ apple is used up; on anything else, "It won't have any effect."
 - **Obtained:** nowhere yet; the debug menu's Give item (120, 121, 122). Places they could go: a shop (Castelia's or
   the Shopping Mall Nine), hidden or visible items near where Applin will live (it lives in orchards and the like in
   Galar), or an NPC who hands one over with an Applin.
-- **Free unused IDs left:** 115, 125-133, 426, 427 and 622 (after the Roseli Berry and the Fairy Gem).
+- **Free unused IDs left:** 115, 126-133, 426, 427 and 622 (after the Roseli Berry, the Fairy Gem and the Pixie Plate).
 
 ## Roseli Berry, Fairy Gem
 
@@ -166,3 +167,21 @@ description and `sort_index`.
   other resist Berries are found or with a Berry-giving NPC; the Fairy Gem as a hidden item, a dust cloud's or rustling
   grass's find (a case in `effect_encount.c`), or a Battle Subway prize with the other Gems.
 
+
+## Pixie Plate
+
+Arceus's Fairy plate (docs/paperwhite2/design/fairy-type.md section 12.4): unused item 125 renamed with
+`tools/data/rename_constant.py`, its `data.json` the Mind Plate's (price 100, Fling 90) with its name, description, hold
+effect 147 and `sort_index` 90 (with the Pink Scarf).
+
+- **Held:** Fairy moves ×1.2 (`HandlerPixiePlate`, the plates' `CommonTypeBoostingItem`, a row at the end of
+  `sItemEventAddTable`); Judgment becomes Fairy (`HandlerJudgement`); a Multitype Arceus is Fairy
+  (`PML_ItemGetArceusPlateType`) and takes **form 17**, its Fairy form (`PaperWhite2_GetArceusPlateForm`, in the party
+  screen's and the PC's form changes); `IsArceusPlate` counts it, so it can't be taken from Arceus in battle.
+- **Icon:** placeholder, the plates' shared icon with its own palette, a copy of the Mind Plate's
+  (`res/items/pixie_plate/icon.pal`, `ITEM_ICON_PALETTE_PIXIE_PLATE` at the end of `generated/item_icons.txt`, its row
+  of `ITEM_GRAPHICS_CHARS_AND_PALETTES` under `#ifdef PAPERWHITE2`).
+- **Description:** "An item to be held by a Pokémon. It is a stone tablet that boosts the power of Fairy-type moves.",
+  the plates' words.
+- **Obtained:** nowhere yet; the debug menu's Give item (125). The other plates are found in the Abyssal Ruins,
+  Victory Road and the like; one could go there, or with an Arceus event.
