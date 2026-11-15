@@ -242,12 +242,12 @@ function ItemList({ path, at, items, limit, options, info, previous, title, summ
               <Icon thing={t} />
               <span className="shp-picker"><SearchSelect value={item} options={options} invalid={!t} onChange={(v) => set(items.map((x, j) => (j === i ? v : x)))} /></span>
               <span className="shp-price" title="A mart sells an item at the item's own price (its data's price × 10, GetItemParam), less with the Bargain Pass Power">
-                {t ? `$${t.price * 10}` : ""}
+                {t ? `₽${(t.price ?? 0) * 10}` : ""}
               </span>
               <span className="shp-tags">
                 {previous && !previous.includes(item) && <span className="shp-tag shp-new">new</span>}
                 {twice && <span className="shp-tag shp-warn">listed twice</span>}
-                {t && t.price === 0 && <span className="shp-tag shp-warn">price 0</span>}
+                {t && !t.price && <span className="shp-tag shp-warn">price 0</span>}
               </span>
             </>
           );
