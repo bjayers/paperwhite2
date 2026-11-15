@@ -2,6 +2,31 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-15: the Shop Editor and every shop's goods as data (ROM session, on a branch)
+
+docs/data.md's Shops and editor/README.md's Shop Editor have the details.
+
+- **Data:** `res/field/shops/` (a JSON and schema per kind): `poke_mart.json` (shop 255's six badge tiers, checked
+  against `BADGE_SHOP_DAT_IDS`), `marts.json` (shops 0 to 25, named after where they are: the Pokémon Centers' second
+  clerks, Shopping Mall Nine's counters, Driftveil's market), `special_marts.json` (239–242, 247–250: no script opens
+  them, empty), `bp_shops.json` (253/254, BP prices) and `move_tutors.json` (243–246, shard prices, menu places).
+  `tools/data/shop_data.py` packs `a/2/8/2`/`a/2/8/3` for both builds; the hack's build writes the BP and tutor C tables
+  from the JSON (`paperwhite2/shops_config.h`; `scrcmd_shop.c` under `PAPERWHITE2`, `paperwhite2_move_tutors.c`), the
+  matching build keeps scrcmd_shop.c's. `species_data.py` takes the tutor bits from `move_tutors.json`.
+- **Proof:** with the data unchanged the hack ROM is `92194b47…` as before (DSi intact); the marts' archives match the
+  ROM's; the species archives are byte-identical to the old packer's; the plain build's modules all match (its archive
+  and SHA1 failures are the hack's imported data, as before).
+- **Editor:** the Shop Editor (`editor/src/modules/shops/`): shops by kind, the Poké Mart a section per tier, item icons
+  and pickers, drag to reorder, BP and shard prices, the tutors' moves with the species that learn them; removing or
+  replacing a tutor move that species learn changes their tutor lists too, after asking.
+- **In game** (py-desmume, scratchpad `shops/`): a test build with the 3–4-badge tier's Poké Ball changed to a Rare
+  Candy (and, for the test only, Castelia's second clerk opening shop 255, since the harness couldn't reach the first
+  clerk) listed Rare Candy ₽4800 first; both changes reverted.
+- **Join Avenue's shops** stay in the Join Avenue Editor: they aren't this system (no script opens them with
+  `CallFriendlyShopBuy`; their goods are rows of `a/2/4/4`, sold by the avenue's own code).
+
+Next: the user's own edits; the special marts could be opened by a script if wanted.
+
 ## 2026-11-13: new moves and abilities, step 5: the Applin line's real moves and abilities (ROM session, on a branch)
 
 design/moves-and-abilities.md section 15 has the details; new-species.md section 18.2 marks every stand-in replaced.

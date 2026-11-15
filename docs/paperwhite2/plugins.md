@@ -1963,7 +1963,8 @@ characters and cells are converted by `tools/paperwhite2/obj_remap.py` into `ARC
 (characters), 138 (cells) and 139 (its animations, copied); its palette is `ARCID_MOVE_TUTOR`'s 5. The data: the
 learnset, the machines' bits (`PML_ItemGetTMMoveID`), the tutors' bits with **the tutors' lists in ARM9 main**
 (`src/paperwhite2/main/paperwhite2_move_tutors.c`, `include/paperwhite2/move_tutors.h`, the type tutor's 7 moves and
-the four shard tutors' lists, which `scrcmd_shop.c` reads under `PAPERWHITE2` instead of its own, unchanged), and
+the four shard tutors' lists, written from `res/field/shops/move_tutors.json` by `tools/data/shop_data.py header`
+into `paperwhite2/shops_config.h`, which `scrcmd_shop.c` reads under `PAPERWHITE2` instead of its own), and
 archive 124's egg moves (by species). The tutors' towns, from the scripts that open them: `global_2280.s`'s Script_4
 to 7, started by the events of driftveil_city_2, lentimas_town_2, humilau_city_2 and nacrene_city_8 (the shops 246 to
 243 of `global_10110.s`); the Pledges and ultimate moves at the PWT (`pwt.json`), Draco Meteor in Opelucid City
