@@ -2544,6 +2544,11 @@ static u16 PML_ItemGetArceusPlateType(u16 item) {
         return TYPE_DARK;
     case ITEM_IRON_PLATE:
         return TYPE_STEEL;
+#ifdef PAPERWHITE2
+    // Paper White 2: the Pixie Plate, unused item 125, makes Arceus Fairy (its form ARCEUS_FORM_FAIRY)
+    case ITEM_PIXIE_PLATE:
+        return TYPE_FAIRY;
+#endif
     default:
         return TYPE_NORMAL;
     }
@@ -2590,6 +2595,14 @@ void copyPartyPkm(const PartyPkm *src, PartyPkm *dest) {
 u16 _getTypeForPlate(u16 item) {
     return PML_ItemGetArceusPlateType(item);
 }
+
+#ifdef PAPERWHITE2
+u16 PaperWhite2_GetArceusPlateForm(u16 item) {
+    u16 type = PML_ItemGetArceusPlateType(item);
+
+    return type == TYPE_FAIRY ? ARCEUS_FORM_FAIRY : type;
+}
+#endif
 
 u32 PML_ItemGetGenesectDriveForme(u16 item) {
     switch (item) {

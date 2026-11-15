@@ -237,7 +237,12 @@ u32 PokeList_GetItemMenuMessage(PokeListWork *wk, u16 item) {
 void PokeList_UpdateArceusForm(PokeListWork *wk, PartyPkm *pkm, u16 item) {
     if (PokeParty_GetParam(pkm, PKM_PARAM_SPECIES, NULL) == SPECIES_ARCEUS) {
         u32 form = PokeParty_GetParam(pkm, PKM_PARAM_FORM, NULL);
+#ifdef PAPERWHITE2
+        // Paper White 2: the Pixie Plate's Fairy form isn't its type's number
+        u16 type = PaperWhite2_GetArceusPlateForm(item);
+#else
         u16 type = _getTypeForPlate(item);
+#endif
 
         if (form != type) {
             PokeParty_ChangeForme(pkm, type);

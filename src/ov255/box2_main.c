@@ -1009,7 +1009,12 @@ BOOL Box2Main_PokeItemFormChange(Box2SysWork *syswk, BoxPkm *pkm) {
     if (species == SPECIES_ARCEUS) {
         item = PML_PkmGetParam(pkm, PKM_PARAM_ITEM, NULL);
         form = PML_PkmGetParam(pkm, PKM_PARAM_FORM, NULL);
+#ifdef PAPERWHITE2
+        // Paper White 2: the Pixie Plate's Fairy form isn't its type's number
+        newForm = PaperWhite2_GetArceusPlateForm(item);
+#else
         newForm = _getTypeForPlate(item);
+#endif
         if (form != newForm) {
             PokeChangeForme(syswk, pkm, newForm);
         }

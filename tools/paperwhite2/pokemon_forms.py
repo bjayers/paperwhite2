@@ -44,7 +44,8 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(1, str(ROOT / "tools" / "data"))
 from tools.data.gen_constants import load as load_list  # noqa: E402
 from tools.data.pokemon_graphics import (ADDED_FORM_FILES, GROUP_FILES, GROUPS, ICON_FILES,  # noqa: E402
-                                         ORIGINAL_FORM_GROUPS, added_form_groups, form_names, icon_bank, species_names,
+                                         ORIGINAL_FORM_GROUPS, added_form_groups, added_palette_files, form_names,
+                                         icon_bank, species_names,
                                          template_species)
 from tools.data.pokemon_cries import ADDED_CRY_FIRST  # noqa: E402
 from tools.data.pokedex_data import PokedexDataError, initial_groups  # noqa: E402
@@ -168,6 +169,8 @@ def species_lines() -> list[str]:
         f"#define PAPERWHITE2_SPECIES_SPRITE_FILES {ADDED_FORM_FILES + added_form_groups() * GROUP_FILES}",
         f"#define PAPERWHITE2_SPECIES_ICON_FILES {len(ICON_FILES) + (GROUPS['icons'][1] + groups) * 2}",
         f"#define PAPERWHITE2_SPECIES_CRY_FIRST {ADDED_CRY_FIRST}",
+        "// The first battle sprite file of the hack's palette-only forms (Arceus's Fairy form), after their groups",
+        f"#define PAPERWHITE2_PALETTE_FORM_FILES {added_palette_files()}",
         "// Their icons' palettes, as POKEMON_FORMS_ICON_PALETTES, then an unused 0",
         "#define PAPERWHITE2_SPECIES_ICON_PALETTES " + ", ".join(f"0x{v:02x}" for v in [*species_icon_palettes(), 0]),
         "// Those that never enter the Pokédex (\"pokedex\": false), a bit each from the first",
