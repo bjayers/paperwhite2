@@ -345,7 +345,12 @@ void ItemMenuDisp_Init(ItemMenuWork *work) {
     GFL_ArcToolFree(arc);
 
     GFL_BGSysLoadNCLRDefault(23, 5, PALTYPE_MAIN_BG, 0x180, 0x20, work->heapId);
+#ifdef PAPERWHITE2
+    // Paper White 2: one more, the Fairy type's label; the original's 54 are all used
+    work->actorUnit = ClActUnit_Create(55, 0, work->heapId);
+#else
     work->actorUnit = ClActUnit_Create(54, 0, work->heapId);
+#endif
     GFL_BGSysSetBGEnabledB(GX_PLANEMASK_OBJ, TRUE);
     GFL_BGSysSetBGEnabledA(GX_PLANEMASK_OBJ, TRUE);
 
