@@ -1417,6 +1417,14 @@ edited in the Overworld Editor's Ambients tab.
   while the player is past its startle radius and 2 tiles more from its place, unseen once that's off the screen;
   without, not until the zone is entered again. A line can also climb (`path.height`, units), straight up with no width
   or depth.
+- **Chained reactions** (`react.chain`, `AMBIENT_FLAG_CHAIN` in the record's flags, off by default so a zone without it
+  packs the same bytes): whenever an ambient starts to react, for the player or for another, each other ambient at home
+  with the flag whose own `near` radius (tiles, square as the player's is) holds the reacting one's place
+  (`Ambients_AlertOthers`) waits 2 to 8 frames at random (`AMBIENT_CHAIN_DELAY_MIN`/`MAX`, counted while no event runs)
+  and then reacts by the same code (`Ambients_StartReaction`: its kind, heading away from the player, sprite, emote and
+  cry), so a flock lifts off in a ripple, and the chain carries on as those alert theirs. A delay waiting isn't set
+  again, and one that reacts first for the player drops it. The work is a loop over at most 8 ambients on a reaction
+  only. The Reaction section's **Chain** checkbox sets it.
 - **A perch's turns** go to the directions its `faces` names (all four without it): a bit each in the record's flags
   from `AMBIENT_FLAG_FACES_SHIFT`, which `Ambients_PickFacing` picks among at random.
 - **In the editor:** each ambient's path is drawn round its place at its height (brighter when chosen), and the map's

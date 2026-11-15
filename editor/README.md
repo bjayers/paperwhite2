@@ -237,6 +237,9 @@ trainer's line of sight), Proxies (background events), Triggers, Warps and Level
   **Browse…**, a grid of every model's sprite filtered by name and by bank (the code's high digit: 0 people and
   objects, 1 walking Pokémon, 2 3D models, 3 followers); **Show script** beside the script; the others on its tile;
   **←** back to the list. Remove leaves the other NPCs' IDs as they are.
+- **Ambients' Reaction section:** what an ambient does when the player comes near (flies, runs or hides, its radius,
+  heading, spread, speed, sprite, emote, cry and return). **Chain** (`react.chain`): it also flies or runs off when another
+  ambient within its range does, 2 to 8 frames later, so a flock lifts off in a ripple.
 - **Rectangles** (triggers, warps, camera rects): the chosen one has handles; drag it to move it, its edges and
   corners to resize it, or **Draw** and drag on the map. Each is one undo step.
 - **Chunk sizes** follow the zone's map type (`MAP_CONFIGS` in `src/ov036/fieldmap.c`): 512 units and 32 tiles for most,

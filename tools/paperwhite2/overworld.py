@@ -73,6 +73,8 @@ PATHS = {"perch": 0, "hover": 1, "ellipse": 2, "line": 3, "eight": 4, "wander": 
 WANDER_EVERY, PACE, WAIT, UP, FLYOVER_RANGE, FLYOVER_HEIGHT, FLAG_BACK = 3, 2, 4, 4, 12, 64, 0x1
 SHADOWS = {"none": 0, "feet": 1, "ground": 2}
 FLAG_TURNS, FLAG_HOPS = 0x1, 0x2
+# It reacts too when another ambient within its reaction's radius does (AMBIENT_FLAG_CHAIN)
+FLAG_CHAIN = 0x4
 # The directions a perch turns to: a bit each from bit 4 (AMBIENT_FLAG_FACES_SHIFT), none for all four
 FLAG_FACES_SHIFT = 4
 # A reaction (SpawnAmbient's react fields, include/paperwhite2/spawns.h): its kind (0 none), its emote (0 none, else
@@ -224,6 +226,8 @@ def ambient_bytes(ambient: dict, where: str) -> bytes:
     flags = (FLAG_TURNS if p.get("turns", True) else 0) | (FLAG_HOPS if p.get("hops", True) else 0)
     for face in p.get("faces", []):
         flags |= 1 << (value(face, where) + FLAG_FACES_SHIFT)
+    if ambient.get("react", {}).get("chain"):
+        flags |= FLAG_CHAIN
     offset = ambient.get("offset", {})
     # (fx32 world units: 16 a tile, from the tile's middle)
     x = round((ambient["x"] * 16 + 8 + offset.get("x", 0)) * 4096)

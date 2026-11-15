@@ -134,10 +134,12 @@ enum {
     AMBIENT_SHADOW_GROUND,
 };
 
-// A perch's turns and hops, and the directions it turns to: a bit for each DIR_* from AMBIENT_FLAG_FACES_SHIFT, none
+// A perch's turns and hops, a chained reaction, and the directions it turns to: a bit for each DIR_* from AMBIENT_FLAG_FACES_SHIFT, none
 // for all four
 #define AMBIENT_FLAG_TURNS 0x1
 #define AMBIENT_FLAG_HOPS 0x2
+// It reacts too when another ambient within its reaction's radius does (a flock lifting off together)
+#define AMBIENT_FLAG_CHAIN 0x4
 #define AMBIENT_FLAG_FACES_SHIFT 4
 #define AMBIENT_FACES_ALL 0xf
 
