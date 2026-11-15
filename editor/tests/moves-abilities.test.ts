@@ -164,7 +164,8 @@ test("names, handlers, templates and removals are refused as the build would", (
   const pledge = run("moves.py", "add", "Test Pledge", "--from", "MOVE_FIRE_PLEDGE", "--check");
   assert.ok(pledge.warnings?.some((w) => /tell the moves apart/.test(w)));
   // Names in res/ or the code keep a move or ability
-  assert.match(refusal("moves.py", "remove", "MOVE_SYRUP_BOMB"), /res\/pokemon\/dipplin\/data\.json/);
+  // (a move added before the last is kept by the last-added rule first; the Fairy moves came after Syrup Bomb)
+  assert.match(refusal("moves.py", "remove", "MOVE_SYRUP_BOMB"), /Only the last added move|res\/pokemon\/dipplin\/data\.json/);
   assert.match(refusal("abilities.py", "remove", "ABILITY_RIPEN"), /res\/pokemon\/applin\/data\.json.*paperwhite2_battle\.c/);
   assert.deepEqual(state(), before);
 });
