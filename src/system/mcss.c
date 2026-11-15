@@ -380,6 +380,15 @@ void MCSSSys_Draw(MCSSSystem *system) {
             MCSS_MulVecMtx44(&pos, &viewProj, &pos, &w);
             pos.x = FX_Mul(FX_Div(pos.x, w), 128 * FX32_ONE);
             pos.y = FX_Mul(FX_Div(pos.y, w), 96 * FX32_ONE);
+#ifdef PAPERWHITE2
+            // Paper White 2: the projected position rounded to a whole pixel, then half a pixel up and left. The 3D
+            // engine samples at pixels' corners, so there a quad at scale 1 has its edges between sample points, and
+            // draws as the Rig Editor's preview does; at a whole pixel to within fixed point (the Pokédex Info page's
+            // sprite) the error decides, and a part could cover a row more than its texels and show its first texel
+            // row twice (Dipplin's apple rim as a double line)
+            pos.x = ((pos.x + FX32_HALF) & ~(FX32_ONE - 1)) - FX32_HALF;
+            pos.y = ((pos.y + FX32_HALF) & ~(FX32_ONE - 1)) + FX32_HALF;
+#endif
             pos.z = -pos.z;
             offsetX = FX32_CONST(mcSrt.px);
             offsetY = FX32_CONST(-mcSrt.py);

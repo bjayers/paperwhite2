@@ -234,6 +234,17 @@ to that pivot. The sprite's origin is its **feet**: Pichu's nodes sit at y −4 
 sprite scale x mirrors it (`flip`, texture `s = 512 − s − width`), which the trade and the hack's Pokédex use.
 The shadow is the same quads, flattened (`shadowRotX`, default 0xc400) with the shadow palette at half alpha.
 
+**Where the DS samples (verified 2026-11-14, Dipplin in the Pokédex Info page, DeSmuME):** the 3D engine samples a
+quad's texture at each pixel's top-left corner, from the vertices' true positions, where `mcss.render` and the Rig
+Editor sample at pixel centres. The two agree when the sprite's projected position is half a pixel up and left of a
+whole pixel. A sprite placed through a camera (the orthographic path's projected `pos`, e.g. the Pokédex Info page's
+`(50 − 128) × 0.2654` units) lands on whole pixels to within the fixed-point error instead, so an edge of a part at
+scale 1 falls exactly on sample points and the error decides it: a 32-row part covered 33 rows and drew its first
+texel row twice (Dipplin's apple rim, the back part's top row, as a two-pixel black line). The hack's build rounds
+that projected position to a whole pixel and moves it the half pixel (`MCSS_Draw`, `#ifdef PAPERWHITE2`); unscaled
+frames then match `mcss.render` pixel for pixel. Scaled and turned frames still differ by a pixel along some edges
+(the hardware's edge stepping and fixed point), as any two nearest-neighbour renderers do.
+
 ## 4. How the game drives the animation (verified)
 
 - **Battle** (`src/ov168/btlv_mcss.c`): `BtlvMcss_Add` adds the sprite at its position's default place and scale
