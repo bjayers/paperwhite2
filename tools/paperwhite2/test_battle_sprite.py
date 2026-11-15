@@ -4,6 +4,7 @@
 
     python3 -m unittest tools.paperwhite2.test_battle_sprite
 """
+import json
 import shutil
 import sys
 import tempfile
@@ -12,7 +13,8 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from tools.data.nitro_2d import color5, read_indexed_png, read_palette, write_indexed_png, write_rgba_png  # noqa: E402
+from tools.data.nitro_2d import (color5, read_indexed_png, read_palette, write_indexed_png, write_palette,  # noqa: E402
+                                 write_rgba_png)
 from tools.paperwhite2 import battle_sprite, mcss  # noqa: E402
 
 POKEMON = battle_sprite.POKEMON
@@ -219,7 +221,7 @@ class IconAndFollower(unittest.TestCase):
         readme = files["README.txt"].decode()
         for row in ("pichu_form_1 ", "pichu_form_1_shiny", "pichu_form_1_female ", "pichu_form_1_female_shiny"):
             self.assertIn(row, readme)
-        self.assertIn("doesn't take them back", readme)
+        self.assertIn("Import them back", readme)
         # A sheet a follower has of its own (no "sprite") is exported under its own code
         own = exported(POKEMON / "accelgor")
         self.assertIn("follower/follower_accelgor.png", own)
@@ -239,7 +241,7 @@ class IconAndFollower(unittest.TestCase):
         self.assertNotEqual(found, bank)
         self.assertNotIn((POKEMON / "pichu/form_1/icon.png").resolve(), battle_sprite.pokemon_form.original_icon_banks())
 
-    def test_an_edited_icon_is_written_and_follower_sheets_are_ignored(self):
+    def test_an_edited_icon_is_written_and_an_unchanged_follower_sheet_writes_nothing(self):
         with Workspace("pichu/form_1") as work:
             width, height, pixels, colours = read_indexed_png(work.folder / "icon.png")
             mirrored = bytes(pixels[y * width + width - 1 - x] for y in range(height) for x in range(width))
@@ -250,7 +252,8 @@ class IconAndFollower(unittest.TestCase):
             self.assertTrue(result["ok"], result["errors"])
             self.assertEqual([p.rsplit("/", 1)[-1] for p in result["changed"]], ["icon.png"])
             self.assertTrue(result["preview"]["icons"]["icon"]["changed"])
-            self.assertTrue(any("follower sheet" in n for n in result["notes"]))
+            self.assertEqual([item["stem"] for item in result["walking"]], ["pokemon_pichu_form_1"])
+            self.assertFalse(result["walking"][0]["changed"])
             self.assertEqual(read_indexed_png(work.folder / "icon.png")[2], mirrored)
 
     def test_a_wrong_icon_is_refused(self):
@@ -262,6 +265,190 @@ class IconAndFollower(unittest.TestCase):
             result = battle_sprite.check(work.folder, [work.file("icon_female.png", (work.folder / "icon.png").read_bytes())],
                                          False, False, preview=False)
             self.assertFalse(result["ok"])
+
+
+class WalkingTree:
+    """A copy of the follower rows and walking sprites of a few species (and generated/obj_codes.txt), which the
+    walking sprite functions write into: battle_sprite's ACTORS, FOLLOWERS and OBJ_CODES point at it meanwhile."""
+
+    SPECIES = ("budew", "flapple", "applin", "accelgor")
+
+    def __enter__(self):
+        self.temp = tempfile.TemporaryDirectory()
+        root = Path(self.temp.name)
+        self.actors = root / "actors"
+        for name in self.SPECIES:
+            for source in (battle_sprite.FOLLOWERS).glob(f"{name}*"):
+                shutil.copytree(source, self.actors / "followers" / source.name)
+        for name in ("budew", "applin"):
+            shutil.copytree(battle_sprite.ACTORS / "pokemon" / name, self.actors / "pokemon" / name)
+        self.codes = root / "obj_codes.txt"
+        shutil.copy(battle_sprite.OBJ_CODES, self.codes)
+        self.saved = (battle_sprite.ACTORS, battle_sprite.FOLLOWERS, battle_sprite.OBJ_CODES)
+        battle_sprite.ACTORS, battle_sprite.FOLLOWERS, battle_sprite.OBJ_CODES = (
+            self.actors, self.actors / "followers", self.codes)
+        return self
+
+    def __exit__(self, *_):
+        battle_sprite.ACTORS, battle_sprite.FOLLOWERS, battle_sprite.OBJ_CODES = self.saved
+        self.temp.cleanup()
+
+    def snapshot(self) -> dict[str, bytes]:
+        return {p.relative_to(self.temp.name).as_posix(): p.read_bytes()
+                for p in Path(self.temp.name).rglob("*") if p.is_file()}
+
+    def sheet(self, name: str):
+        return read_indexed_png(self.actors / "pokemon" / name / "sprite.png")
+
+
+class WalkingSprites(unittest.TestCase):
+    """The walking sprites' checked import: each sheet replaced in its own colours, and a new one for a species that
+    shows another species' (Flapple: Budew's)."""
+
+    def test_every_sheet_imports_unchanged(self):
+        """Each walking sprite of res/field/actors that a follower row shows, imported as it is (its PNG and its
+        palette, and the PNG alone): nothing to write, no error."""
+        rows = battle_sprite.follower_rows()
+        real = battle_sprite.follower_rows
+        battle_sprite.follower_rows = lambda: rows
+        try:
+            seen = 0
+            for species, form in sorted({(r["species"], r["form"]) for r in rows}):
+                name, _ = battle_sprite.species_names(species)
+                for code, sheet in battle_sprite.walking_sheets(name, form).items():
+                    png = (sheet["directory"] / "sprite.png").read_bytes()
+                    pal = (sheet["directory"] / "sprite.pal").read_bytes()
+                    for given in ((png, pal), (png, None), (None, pal)):
+                        plan = battle_sprite.plan_walking(name, form, code, *given, preview=False)
+                        self.assertEqual(plan["errors"], [], code)
+                        self.assertEqual(plan["writes"], {}, code)
+                    seen += 1
+            self.assertGreater(seen, 900)
+        finally:
+            battle_sprite.follower_rows = real
+
+    def test_a_recoloured_import_writes_only_that_sheet(self):
+        with WalkingTree() as tree:
+            before = tree.snapshot()
+            directory = tree.actors / "pokemon/applin"
+            colours = read_palette(directory / "sprite.pal")
+            recoloured = [colours[0], (255, 0, 0), *colours[2:]]
+            plan = battle_sprite.plan_walking("applin", 0, "OBJ_CODE_POKEMON_APPLIN", None,
+                                              write_palette(recoloured).encode())
+            self.assertEqual(plan["errors"], [])
+            self.assertEqual(sorted(p.name for p in plan["writes"]), ["sprite.pal", "sprite.png"])
+            self.assertTrue(all(p.parent == directory for p in plan["writes"]))
+            for path, data in plan["writes"].items():
+                path.write_bytes(data)
+            width, height, pixels, png_colours = tree.sheet("applin")
+            self.assertEqual(png_colours[1], (255, 0, 0))
+            self.assertEqual(read_palette(directory / "sprite.pal")[1], (255, 0, 0))
+            self.assertEqual(pixels, read_indexed_png(battle_sprite.ACTORS / "pokemon/applin/sprite.png")[2])
+            after = tree.snapshot()
+            self.assertEqual({k for k in after if after[k] != before.get(k)},
+                             {"actors/pokemon/applin/sprite.pal", "actors/pokemon/applin/sprite.png"})
+            self.assertEqual(plan["item"]["palette"][1], "#ff0000")
+
+    def test_a_png_with_a_changed_colour_recolours_that_index(self):
+        with WalkingTree() as tree:
+            width, height, pixels, colours = tree.sheet("applin")
+            edited = list(colours)
+            edited[3] = (10, 20, 30)
+            plan = battle_sprite.plan_walking("applin", 0, "OBJ_CODE_POKEMON_APPLIN",
+                                              write_indexed_png(width, height, pixels, edited), None)
+            self.assertEqual(plan["errors"], [])
+            self.assertEqual(len(plan["writes"]), 2)
+            written = [d for p, d in plan["writes"].items() if p.name == "sprite.pal"][0].decode()
+            self.assertIn(f"{battle_sprite.expand(battle_sprite.color5((10, 20, 30)))[0]} ", written)
+            self.assertTrue(any("Colour 3" in n for n in plan["notes"]), plan["notes"])
+
+    def test_wrong_sizes_and_too_many_colours_are_refused(self):
+        with WalkingTree() as tree:
+            width, height, pixels, colours = tree.sheet("applin")
+            half = write_indexed_png(width // 2, height, bytes(width // 2 * height), colours)
+            plan = battle_sprite.plan_walking("applin", 0, "OBJ_CODE_POKEMON_APPLIN", half, None)
+            self.assertIn("not 256 by 32", plan["errors"][0])
+            self.assertEqual(plan["writes"], {})
+            # 16 distinct opaque colours need 16 indices besides transparent
+            rgba = bytearray()
+            for i in range(width * height):
+                shade = (i // 4) % 16 * 16 + 8
+                rgba += bytes((shade, 255 - shade, 77, 255))
+            plan = battle_sprite.plan_walking("applin", 0, "OBJ_CODE_POKEMON_APPLIN",
+                                              write_rgba_png(width, height, bytes(rgba)), None)
+            self.assertTrue(any("colours besides transparent" in e for e in plan["errors"]), plan["errors"])
+            self.assertEqual(plan["writes"], {})
+            # A palette of fewer than 16 colours
+            plan = battle_sprite.plan_walking("applin", 0, "OBJ_CODE_POKEMON_APPLIN", None, write_palette(colours[:8]).encode())
+            self.assertIn("8 colours, not 16", plan["errors"][0])
+            # A sheet that another species' followers show isn't changed from here
+            plan = battle_sprite.plan_walking("flapple", 0, "OBJ_CODE_POKEMON_BUDEW",
+                                              write_indexed_png(192, 32, bytes(192 * 32), colours), None)
+            self.assertTrue(any("also the walking sprite of other species" in e for e in plan["errors"]), plan["errors"])
+
+    def test_a_new_walking_sprite_makes_the_code_the_sheet_and_the_rows(self):
+        with WalkingTree() as tree:
+            width, height, pixels, colours = tree.sheet("applin")
+            before = tree.codes.read_text()
+            plan = battle_sprite.plan_walking("flapple", 0, None, write_indexed_png(width, height, pixels, colours), None)
+            self.assertEqual(plan["errors"], [])
+            for path, data in plan["writes"].items():
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(data)
+            # The code follows the last walking Pokémon's, once
+            lines = tree.codes.read_text().splitlines()
+            self.assertEqual(lines[-1], "OBJ_CODE_POKEMON_FLAPPLE")
+            self.assertEqual(lines[:-1], before.splitlines())
+            folder = tree.actors / "pokemon/flapple"
+            self.assertEqual(read_indexed_png(folder / "sprite.png")[2], pixels)
+            actor = json.loads((folder / "data.json").read_text())
+            self.assertEqual((actor["sprite_controller_type"], actor["sprite_atlas_size"]), (14, 21))
+            self.assertEqual(actor, json.loads((tree.actors / "pokemon/applin/data.json").read_text()))
+            names = sorted(p.name for p in (tree.actors / "followers").glob("flapple*"))
+            self.assertEqual(len(names), 4)
+            for name in names:
+                data = json.loads((tree.actors / "followers" / name / "data.json").read_text())
+                self.assertEqual(data["sprite"], "OBJ_CODE_POKEMON_FLAPPLE")
+                self.assertEqual(data["follower"]["animation_profile"], "asymmetric")
+                self.assertEqual(data["sprite_controller_type"], 14)
+            # It is the species' own now: replacing it again is allowed, and the button's job is done
+            self.assertIn("OBJ_CODE_POKEMON_FLAPPLE", battle_sprite.walking_sheets("flapple", 0))
+            again = battle_sprite.plan_walking("flapple", 0, None, write_indexed_png(width, height, pixels, colours), None)
+            self.assertTrue(any("exists already" in e for e in again["errors"]), again["errors"])
+            self.assertEqual(again["writes"], {})
+
+    def test_a_six_frame_sheet_is_mirrored_and_a_wrong_layout_refused(self):
+        with WalkingTree() as tree:
+            plan = battle_sprite.plan_walking("flapple", 0, None, write_indexed_png(192, 32, bytes(192 * 32), [(0, 0, 0)] * 16), None)
+            self.assertEqual(plan["errors"], [])
+            self.assertEqual(plan["item"]["layout"], "mirrored")
+            row = [d for p, d in plan["writes"].items() if p == tree.actors / "followers/flapple/data.json"][0]
+            data = json.loads(row)
+            self.assertEqual((data["sprite_controller_type"], data["follower"]["animation_profile"]), (13, "mirrored"))
+            self.assertIn("Frame 1 is empty", plan["warnings"][0])
+            for size in ((200, 32), (224, 32), (96, 32), (192, 64)):
+                bad = battle_sprite.plan_walking("flapple", 0, None,
+                                                 write_indexed_png(*size, bytes(size[0] * size[1]), [(0, 0, 0)] * 16), None)
+                self.assertTrue(bad["errors"] and not bad["writes"], size)
+
+    def test_the_zip_flow_takes_a_follower_sheet_back(self):
+        """An exported zip with a follower sheet's palette recoloured: only that sheet is written."""
+        with WalkingTree() as tree, Workspace("applin") as work:
+            zipped = Path(work.temp.name) / "art.zip"
+            battle_sprite.export(work.folder, zipped)
+            unchanged = battle_sprite.check(work.folder, [zipped], False, False, preview=False)
+            self.assertEqual(unchanged["changed"], [], unchanged["errors"])
+            self.assertEqual([i["stem"] for i in unchanged["walking"]], ["pokemon_applin"])
+            colours = read_palette(tree.actors / "pokemon/applin/sprite.pal")
+            pal = write_palette([colours[0], (255, 0, 0), *colours[2:]]).encode()
+            result = battle_sprite.check(work.folder, [work.file("pokemon_applin.pal", pal)], False, True, preview=False)
+            self.assertTrue(result["ok"], result["errors"])
+            self.assertEqual(sorted(p.rsplit("/", 1)[-1] for p in result["changed"]), ["sprite.pal", "sprite.png"])
+            self.assertEqual(tree.sheet("applin")[3][1], (255, 0, 0))
+            # A sheet the group's rows don't show is skipped with a warning
+            stray = battle_sprite.check(work.folder, [work.file("pokemon_budew.pal", pal)], False, False, preview=False)
+            self.assertTrue(any("not a walking sprite" in w for w in stray["warnings"]), stray["warnings"])
+            self.assertEqual(stray["changed"], [])
 
 
 class Rig(unittest.TestCase):

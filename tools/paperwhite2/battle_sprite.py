@@ -5,6 +5,7 @@ Art; docs/paperwhite2/design/battle-sprites.md section 14).
     battle_sprite.py export SPECIES [--form N] OUT.zip
     battle_sprite.py check SPECIES [--form N] [FILE...] [--stills-from-sheets]
     battle_sprite.py import SPECIES [--form N] FILE... [--stills-from-sheets]
+    battle_sprite.py walking-check|walking-import SPECIES [--form N] [--sheet OBJ_CODE] [--rows ROW,...] PNG [PAL]
 
 SPECIES is a species' directory in res/pokemon (pichu) or its constant (SPECIES_PICHU); --form N takes its form_<N>/
 art. The art is a group's images, all in one 16-colour palette (index 0 transparent): the 256 by 128 sheets that MCSS
@@ -46,8 +47,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from tools.data.nitro_2d import (color5, read_indexed_png, read_palette, unfilter_png, write_indexed_png,  # noqa: E402
-                                 write_palette, write_rgba_png)
+from tools.data.nitro_2d import (color5, palette_indices, read_indexed_png, read_palette, unfilter_png,  # noqa: E402
+                                 write_indexed_png, write_palette, write_rgba_png)
 from tools.paperwhite2 import mcss, mcss_rig, pokemon_form  # noqa: E402
 
 POKEMON = ROOT / "res" / "pokemon"
@@ -85,7 +86,7 @@ preview/*.png             the assembled sprite (first frame), normal and shiny, 
                           the follower sheets 3x: not imported
 icon.png, icon_palette.pal  the party and box icon and its bank's colours (see below)
 follower/*.png, *.pal     the follower's walking sprite sheets, when it has followers (see
-                          below): for reference, not imported
+                          below): imported, each in its own colours
 
 How the sprite is built
 -----------------------
@@ -510,10 +511,14 @@ A walking sprite (POKEMON_...) is also what the field shows when a map puts that
 Shiny rows marked "placeholder" show the normal colours for now (docs/paperwhite2/design/
 shiny-palettes.md).
 
-These are for reference and editing only: the importer doesn't take them back yet (there is no
-checked import for overworld sprites). To use an edited sheet, keep its size, frame count and 16
-colours and put it in place of that sprite.png by hand; which sheet each row shows is set on the
-Pokemon page's Follower card or in the Follower Editor.
+Import them back with the rest (the zip, or follower/<code>.png and .pal alone): each replaces the sheet
+its name says. A sheet keeps its size and frame count; keep 16 colours at most with index 0 transparent
+(the .pal's colours win; an indexed PNG's changed colours recolour that index; a new colour takes a free
+one). A sheet that other species' followers show too (a stand-in such as Budew's for a new species) is
+not changed from here: use the Follower card's "Import a walking sprite..." to give the species one of
+its own, which makes a new object code and points its follower rows at it. Frame layout: 6 frames
+(32x32 or 64x64) mirror the left-facing ones to face right, 8 frames (32x32) have their own. Shiny rows
+marked "placeholder" show these colours for now.
 """
 
 
@@ -576,6 +581,7 @@ def follower_files(folder: Path) -> tuple[dict[str, bytes], str]:
     if not rows:
         return {}, ""
     files, lines = {}, []
+    sheets = walking_sheets(species, form)
     for row in rows:
         directory = actor_directory(row["code"])
         stem = follower_stem(row["code"])
@@ -587,7 +593,9 @@ def follower_files(folder: Path) -> tuple[dict[str, bytes], str]:
             continue
         width, height, pixels, colours = read_indexed_png(sheet)
         lines.append(f"  {row['row']:28} ({kind}{', placeholder' if row['placeholder'] else ''}): "
-                     f"follower/{stem}.png, {width // height} frames of {height}x{height}")
+                     f"follower/{stem}.png, {width // height} frames of {height}x{height}"
+                     + (", another species' sheet too: not changed from here" if sheets.get(row["code"], {}).get("others")
+                        else ""))
         if f"follower/{stem}.png" in files:
             continue
         files[f"follower/{stem}.png"] = sheet.read_bytes()
@@ -803,7 +811,7 @@ def gather(paths: list[Path]) -> tuple[list[tuple[str, bytes]], list[str]]:
                         if member.is_dir():
                             continue
                         parts = member.filename.replace("\\", "/").split("/")
-                        if any(p in ("guide", "preview", "follower", "__MACOSX") for p in parts[:-1]) \
+                        if any(p in ("guide", "preview", "__MACOSX") for p in parts[:-1]) \
                                 or parts[-1].startswith("."):
                             ignored.append(member.filename)
                             continue
@@ -1087,27 +1095,28 @@ def sheet_preview(rig: dict, before: bytes, after: bytes, palette: list) -> byte
 def check(folder: Path, paths: list[Path], stills_from_sheets: bool, write: bool, preview: bool = True) -> dict:
     group = Group(folder)
     uploads, ignored = gather(paths)
-    # The icons are checked apart (they are in the icon palettes' colours, not the sprite's); the follower sheets
-    # and the icon's bank colours are the export's for reference only
+    # The icons are checked apart (they are in the icon palettes' colours, not the sprite's), and so are the follower
+    # sheets (each in its own 16 colours, walking_uploads); the icon's bank colours are the export's for reference only
     icons = [(n, d) for n, d in uploads if n.lower().removesuffix(".png") in ICONS and n.lower().endswith(".png")]
-    followers = [n for n, _ in uploads if is_follower_file(n)]
-    uploads = [(n, d) for n, d in uploads if (n, d) not in icons and n not in followers
+    follower_given = [(n, d) for n, d in uploads if is_follower_file(n)]
+    uploads = [(n, d) for n, d in uploads if (n, d) not in icons and (n, d) not in follower_given
                and n.lower() != "icon_palette.pal"]
     resolved, normal, shiny, new_indices, errors, warnings, notes = resolve(group, uploads, stills_from_sheets)
     icon_writes, icon_errors, icon_notes, icon_previews = resolve_icons(folder, icons)
     errors += icon_errors
     notes += icon_notes
+    walking = {"errors": [], "warnings": [], "notes": [], "writes": {}, "items": []}
+    if follower_given:
+        species, form = identity(folder)
+        walking = walking_uploads(species, form, follower_given)
+        errors += walking["errors"]
+        warnings += walking["warnings"]
+        notes += walking["notes"]
     if ignored:
-        follower_count = sum("follower" in n.replace("\\", "/").split("/")[:-1] for n in ignored)
-        if len(ignored) > follower_count:
-            notes.append(f"Ignored {len(ignored) - follower_count} files of guide/ and preview/ (they're for reading, "
-                         "not importing)")
-        followers += ["follower/"] * follower_count
-    if followers:
-        notes.append(f"Ignored {len(followers)} follower sheet files: the follower's walking sprite is exported for "
-                     "reference, and isn't imported here (there is no checked import for overworld sprites yet)")
+        notes.append(f"Ignored {len(ignored)} files of guide/ and preview/ (they're for reading, not importing)")
     given = sorted({role(n)[1] + ("_shiny" if role(n)[0] == "shiny" else "") if role(n) and role(n)[0] != "pal"
-                    else n.lower() for n, _ in uploads if role(n)} | {n.lower().removesuffix(".png") for n, _ in icons})
+                    else n.lower() for n, _ in uploads if role(n)} | {n.lower().removesuffix(".png") for n, _ in icons}
+                   | {n.lower() for n, _ in follower_given})
     for sheet in group.sides():
         count, box = outside_pixels(group.rigs[side_of(sheet)], group.images[sheet], resolved[sheet])
         if count:
@@ -1134,7 +1143,7 @@ def check(folder: Path, paths: list[Path], stills_from_sheets: bool, write: bool
     if folder.name == "spinda" and resolved["front"] != group.images["front"]:
         warnings.append("Spinda: the game paints its spots onto the front sheet at fixed pixels (mcss_tool.c), so "
                         "keep its head where it is")
-    writes = {} if errors else {**changes(group, resolved, normal, shiny), **icon_writes}
+    writes = {} if errors else {**changes(group, resolved, normal, shiny), **icon_writes, **walking['writes']}
     if write and not errors:
         for path, data in writes.items():
             with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as temporary:
@@ -1148,6 +1157,8 @@ def check(folder: Path, paths: list[Path], stills_from_sheets: bool, write: bool
         result["message"] = "Nothing changes: the art is the same as the sprite's"
     else:
         result["message"] = f"{'Wrote' if write else 'Writes'} {len(writes)} files"
+    if walking["items"]:
+        result["walking"] = walking["items"]
     if preview and not errors:
         palette_normal, palette_shiny = normal, shiny
         sides = {}
@@ -1173,6 +1184,352 @@ def check(folder: Path, paths: list[Path], stills_from_sheets: bool, write: bool
     return result
 
 
+# --- the walking sprites: checked import and new sheets -------------------------------------------------------------
+
+OBJ_CODES = ROOT / "generated" / "obj_codes.txt"
+# A sheet's layout, (frames, size), and the record fields its actor has (all 990 sheets of res/field/actors are one of
+# these): sprite_controller_type, sprite_atlas_size, billboard_size, scene_node_type. 6 frames mirror the left-facing
+# ones to face right (the "mirrored" follower profile), 8 have their own right-facing ones ("asymmetric")
+LAYOUTS = {(6, 32): (13, 21, 0, 10), (8, 32): (14, 21, 0, 10), (6, 64): (13, 30, 2, 11)}
+PROFILES = {6: "mirrored", 8: "asymmetric"}
+# Each direction's standing frame; the stepping one follows it
+FACING = {"down": 2, "up": 0, "left": 4, "right": 6}
+WALKING_CODE = "OBJ_CODE_POKEMON_"
+
+
+def species_names(species: str) -> tuple[str, str]:
+    """A species' directory in res/pokemon and its constant, from either."""
+    name = species.removeprefix("SPECIES_").lower() if species.startswith("SPECIES_") else species
+    return name, "SPECIES_" + name.upper()
+
+
+def follower_rows() -> list[dict]:
+    """Every follower row (res/field/actors/followers/*/data.json): its species and form, its data, and the object code
+    whose sprite.png it shows (its own, or the one its "sprite" names)."""
+    rows = []
+    for path in sorted(FOLLOWERS.glob("*/data.json")):
+        try:
+            data = json.loads(path.read_text())
+        except (OSError, ValueError):
+            continue
+        follower = data.get("follower")
+        if not follower:
+            continue
+        rows.append({"row": path.parent.name, "path": path, "data": data, "species": follower.get("species"),
+                     "form": follower.get("form", 0), "shiny": bool(follower.get("shiny")),
+                     "code": data.get("sprite") or f"OBJ_CODE_FOLLOWER_{path.parent.name.upper()}",
+                     "own": (path.parent / "sprite.png").is_file()})
+    return rows
+
+
+def walking_sheets(species: str, form: int) -> dict[str, dict]:
+    """The sheets the group's follower rows show, by object code: its directory, the group's rows that show it and
+    the other species' rows that show it (a sheet shared with another species isn't the group's own)."""
+    _, constant = species_names(species)
+    everyone = follower_rows()
+    sheets: dict[str, dict] = {}
+    for row in everyone:
+        if row["species"] != constant or row["form"] != form:
+            continue
+        directory = actor_directory(row["code"])
+        if not (directory / "sprite.png").is_file() or not (directory / "sprite.pal").is_file():
+            continue
+        sheet = sheets.setdefault(row["code"], {"code": row["code"], "stem": follower_stem(row["code"]),
+                                                "directory": directory, "rows": [], "others": []})
+        sheet["rows"].append(row["row"])
+    for sheet in sheets.values():
+        sheet["others"] = sorted(r["row"] for r in everyone if r["code"] == sheet["code"] and r["species"] != constant)
+    return sheets
+
+
+def read_sheet(directory: Path) -> tuple[int, int, bytes, list]:
+    """A sheet as the packer reads it: its size, its pixels as indices of sprite.pal, and its 16 colours (5-bit)."""
+    colours = read_palette(directory / "sprite.pal")
+    width, height, pixels, png_colours = read_indexed_png(directory / "sprite.png")
+    return width, height, palette_indices(directory / "sprite.png", pixels, png_colours, colours), \
+        [color5(c) for c in colours]
+
+
+def fit_sheet(picture: Picture, base: list | None, label: str, recolour: bool) -> tuple[bytes, list, list, list]:
+    """A picture as a sheet's pixels in a 16-colour palette: (pixels, palette, errors, notes).
+
+    base is the palette to keep (16 colours of 5 bits), or None for a new sheet: then an indexed PNG whose used
+    indices are below 16 keeps them, and any other picture's colours take indices in the order they appear. With
+    recolour an indexed PNG's index below 16 in a colour the palette lacks recolours that index. A colour that fits
+    nowhere takes an index no pixel uses, or is an error."""
+    errors, notes = [], []
+    count = picture.width * picture.height
+    palette = list(base) if base else [None] * COLOURS
+    if palette[0] is None:
+        palette[0] = color5(picture.palette[0]) if picture.indices is not None and picture.palette else (0, 0, 0)
+    if base is None and picture.indices is not None:
+        used = {picture.indices[i] for i in range(count) if not picture.transparent[i]}
+        if used and max(used) < COLOURS and all(i < len(picture.palette) for i in used):
+            for i in used:
+                palette[i] = color5(picture.palette[i])
+    elif base is not None and recolour and picture.indices is not None:
+        for index in sorted({picture.indices[i] for i in range(count) if not picture.transparent[i]}):
+            colour = color5(picture.palette[index]) if index < len(picture.palette) else None
+            if index < COLOURS and colour is not None and palette[index] != colour and colour not in palette[1:]:
+                notes.append(f"Colour {index}: {colour_text(palette[index])} to {colour_text(colour)}")
+                palette[index] = colour
+    out = bytearray(count)
+    unmatched: dict[tuple, list[int]] = {}
+    reordered = False
+    for i in range(count):
+        if picture.transparent[i]:
+            continue
+        colour = picture.colour(i)
+        if colour is None:
+            continue
+        if picture.indices is not None and picture.indices[i] < COLOURS and palette[picture.indices[i]] == colour:
+            out[i] = picture.indices[i]
+        elif colour in palette[1:]:
+            out[i] = palette.index(colour, 1)
+            reordered = reordered or picture.indices is not None
+        else:
+            unmatched.setdefault(colour, []).append(i)
+    if reordered:
+        notes.append(f"{label}: its palette's order isn't the sheet's; its colours were matched to the sheet's indices")
+    if unmatched:
+        taken = set(out)
+        free = sorted((i for i in range(1, COLOURS) if i not in taken), key=lambda i: (palette[i] is not None, i))
+        if len(unmatched) > len(free):
+            errors.append(f"{label}: {len(taken - {0}) + len(unmatched)} colours besides transparent, and a walking "
+                          f"sprite has {COLOURS - 1} (16 with the transparent index 0)")
+        else:
+            for (colour, places), index in zip(unmatched.items(), free):
+                palette[index] = colour
+                for i in places:
+                    out[i] = index
+                if base is not None:
+                    notes.append(f"Colour {colour_text(colour)} is new: it takes the free index {index}")
+    return bytes(out), [colour or (0, 0, 0) for colour in palette], errors, notes
+
+
+def walking_strips(pixels: bytes, width: int, size: int, palette: list) -> dict[str, str]:
+    """Each direction's two frames (standing, stepping) side by side, as RGBA PNGs in base64: on a 6-frame sheet the
+    right-facing ones are the left-facing ones mirrored."""
+    strips = {}
+    for direction, frame in FACING.items():
+        mirror = direction == "right" and width // size < 8
+        first = 4 if mirror else frame
+        both = []
+        for k in range(2):
+            rows = [pixels[y * width + (first + k) * size:y * width + (first + k + 1) * size] for y in range(size)]
+            both.append([row[::-1] if mirror else row for row in rows])
+        joined = b"".join(both[0][y] + both[1][y] for y in range(size))
+        strips[direction] = b64(colourise(size * 2, size, joined, palette))
+    return strips
+
+
+def object_code_text(text: str, code: str) -> str:
+    """generated/obj_codes.txt with a walking Pokémon's code after the last of its block (the one that starts at
+    OBJ_CODE_POKEMON_PURRLOIN = 0x4000: the table's rows after the followers', GetIndexOfObjID)."""
+    lines = text.splitlines(keepends=True)
+    last = max((i for i, line in enumerate(lines) if line.split("#")[0].split("=")[0].strip().startswith(WALKING_CODE)),
+               default=None)
+    if last is None:
+        raise ArtError("generated/obj_codes.txt has no OBJ_CODE_POKEMON_ codes to follow")
+    if not lines[last].endswith("\n"):
+        lines[last] += "\n"
+    return "".join(lines[:last + 1] + [f"{code}\n"] + lines[last + 1:])
+
+
+def json_text(data) -> bytes:
+    return (json.dumps(data, indent=4, ensure_ascii=False) + "\n").encode()
+
+
+def code_names() -> set[str]:
+    return {line.split("#")[0].split("=")[0].strip() for line in OBJ_CODES.read_text().splitlines()
+            if line.split("#")[0].strip()}
+
+
+def plan_walking(species: str, form: int, sheet: str | None, png: bytes | None, pal: bytes | None,
+                 rows: list[str] | None = None, preview: bool = True) -> dict:
+    """An import of a walking sprite: of the sheet an existing object code shows (its PNG, its palette, or both), or,
+    with sheet None, a new one for a species that has none of its own: a new object code after the walking Pokémon's,
+    its directory, and the group's follower rows (rows, by default those that show another's sheet) pointed at it.
+
+    Returns the errors, warnings, notes, the files to write ({Path: bytes}, none with errors) and the preview item
+    (None when there are errors before a sheet)."""
+    errors, warnings, notes, writes = [], [], [], {}
+    name, constant = species_names(species)
+    label = display_name(POKEMON / name / f"form_{form}" if form else POKEMON / name)
+    fail = lambda message: {"errors": [message], "warnings": [], "notes": [], "writes": {}, "item": None}  # noqa: E731
+    try:
+        picture = read_png(png, "the walking sprite's PNG") if png is not None else None
+        given = read_jasc(pal, "the walking sprite's palette") if pal is not None else None
+    except ArtError as error:
+        return fail(str(error))
+    base = None
+    if given is not None:
+        if len(given) < COLOURS:
+            errors.append(f"the palette has {len(given)} colours, not {COLOURS} (JASC; index 0 is transparent)")
+        else:
+            base = [color5(c) for c in given[:COLOURS]]
+            if len(given) > COLOURS:
+                notes.append(f"The palette has {len(given)} colours; the first {COLOURS} are used")
+    sheets = walking_sheets(name, form)
+    item = {"new": sheet is None}
+    if sheet is not None:
+        # A sheet that exists: its size stays
+        if sheet not in sheets:
+            return fail(f"{sheet} isn't a sheet {label}'s follower rows show")
+        target = sheets[sheet]
+        width, height, current, colours = read_sheet(target["directory"])
+        pixels, palette = current, base or colours
+        if picture is not None:
+            if (picture.width, picture.height) != (width, height):
+                errors.append(f"{target['stem']}.png is {picture.width} by {picture.height} pixels, not {width} by "
+                              f"{height} (this sheet has {width // height} frames of {height}x{height})")
+            else:
+                pixels, palette, found, more = fit_sheet(picture, base or colours, f"{target['stem']}.png", True)
+                errors += found
+                notes += more
+        palette = [colours[0], *palette[1:]]
+        item.update(code=sheet, stem=target["stem"], rows=target["rows"], shared=target["others"])
+        before = (current, colours, width, height, sheet)
+        if pixels != current or palette[1:] != colours[1:]:
+            if target["others"] and not errors:
+                shown = ", ".join(target["others"][:4]) + ("..." if len(target["others"]) > 4 else "")
+                errors.append(f"{target['stem']}.png is also the walking sprite of other species' followers ({shown}): "
+                              f"changing it would change theirs. Give {label} a walking sprite of its own instead")
+            if not errors:
+                colour_list = [expand(c) for c in palette]
+                writes[target["directory"] / "sprite.png"] = write_indexed_png(width, height, pixels, colour_list)
+                writes[target["directory"] / "sprite.pal"] = write_palette(colour_list).encode()
+    else:
+        if picture is None:
+            return fail("Give the new walking sprite's PNG")
+        width, height = picture.width, picture.height
+        frames = width // height if height and width % height == 0 else 0
+        code = f"{WALKING_CODE}{name.upper()}{f'_FORM_{form}' if form else ''}"
+        folder = ACTORS / "pokemon" / (f"{name}_form_{form}" if form else name)
+        if (frames, height) not in LAYOUTS:
+            errors.append(f"the PNG is {width} by {height} pixels: a walking sprite is one row of 6 or 8 square frames, "
+                          "32x32 (or 6 of 64x64): up, up step, down, down step, left, left step, and for 8 frames "
+                          "right, right step")
+        if code in code_names() or folder.exists():
+            errors.append(f"{code} exists already: pick its sheet on the Follower card instead")
+        group = [r for r in follower_rows() if r["species"] == constant and r["form"] == form]
+        if not group:
+            errors.append(f"{label} has no follower rows to show a walking sprite")
+        for requested in rows or []:
+            if requested not in {r["row"] for r in group}:
+                errors.append(f"{requested} is no follower row of {label}")
+        wanted = [r for r in group if (not r["own"] if rows is None else r["row"] in rows)]
+        for row in wanted:
+            if row["own"]:
+                errors.append(f"{row['row']} has a sheet of its own (followers/{row['row']}/sprite.png): replace that "
+                              "sheet instead")
+        if group and not wanted and not errors:
+            errors.append(f"every follower row of {label} has a sheet of its own: replace one instead")
+        pixels, palette, found, more = fit_sheet(picture, base, "the walking sprite", False)
+        errors += found
+        notes += more
+        item.update(code=code, stem=follower_stem(code), rows=[r["row"] for r in wanted], shared=[])
+        # What the first row shows now, for comparison
+        before = None
+        for row in wanted[:1]:
+            directory = actor_directory(row["code"])
+            if (directory / "sprite.png").is_file() and (directory / "sprite.pal").is_file():
+                old = read_sheet(directory)
+                before = (old[2], old[3], old[0], old[1], row["code"])
+        if not errors:
+            record = LAYOUTS[(frames, height)]
+            writes[folder / "data.json"] = json_text({
+                "$schema": "field_actor.schema.json", "type": "sprite", "scene_node_type": record[3], "shadow": True,
+                "footprint_type": 0, "reflections": True, "billboard_size": record[2], "sprite_atlas_size": record[1],
+                "sprite_controller_type": record[0], "gender": None, "collision": {"width": 1, "height": 1},
+                "offset": {"x": 0, "y": 0, "z": 0}})
+            colour_list = [expand(c) for c in palette]
+            writes[folder / "sprite.png"] = write_indexed_png(width, height, pixels, colour_list)
+            writes[folder / "sprite.pal"] = write_palette(colour_list).encode()
+            writes[OBJ_CODES] = object_code_text(OBJ_CODES.read_text(), code).encode()
+            for row in wanted:
+                data = dict(row["data"])
+                data.update(sprite_atlas_size=record[1], sprite_controller_type=record[0], billboard_size=record[2],
+                            scene_node_type=record[3], sprite=code)
+                data["follower"] = {**data["follower"], "animation_profile": PROFILES[frames]}
+                writes[row["path"]] = json_text(data)
+            notes.append(f"A new object code, {code} ({frames} frames of {height}x{height}, {PROFILES[frames]}), after "
+                         f"the walking Pokémon's; {len(wanted)} follower rows point at it")
+            if any(r["shiny"] for r in wanted):
+                notes.append("Its shiny rows show the same colours: shiny walking colours come with the shiny palettes "
+                             "(docs/paperwhite2/design/shiny-palettes.md)")
+    frames = width // height
+    for index in range(frames):
+        if not any(pixels[y * width + index * height + x] for y in range(height) for x in range(height)):
+            warnings.append(f"Frame {index + 1} is empty (every pixel transparent)")
+    used = set(pixels) - {0}
+    notes.append(f"The sheet uses {len(used)} of its {COLOURS - 1} colours besides transparent")
+    drawable = preview and width % height == 0 and (frames, height) in LAYOUTS
+    item.update(changed=bool(writes), size=height, frames=frames, layout=PROFILES.get(frames, "?"), colours=len(used),
+                palette=[colour_text(c) for c in palette], currentCode=before[4] if before else None)
+    if drawable:
+        item.update(strips=walking_strips(pixels, width, height, palette),
+                    sheet=b64(colourise(*scaled(width, height, pixels, 2), palette)),
+                    current=walking_strips(before[0], before[2], before[3], before[1]) if before else None)
+    return {"errors": errors, "warnings": warnings, "notes": notes, "writes": writes, "item": item}
+
+
+def walking_uploads(species: str, form: int, uploads: list[tuple[str, bytes]]) -> dict:
+    """The follower sheets in an import's files (follower/<code>.png and .pal, loose or in the zip): each replaces the
+    sheet its name says, if the group's follower rows show it."""
+    errors, warnings, notes, writes, items = [], [], [], {}, []
+    name, _ = species_names(species)
+    sheets = walking_sheets(name, form)
+    by_stem: dict[str, dict[str, bytes]] = {}
+    for file, data in uploads:
+        stem, _, extension = file.lower().rpartition(".")
+        slot = by_stem.setdefault(stem, {})
+        if extension in slot:
+            errors.append(f"{file}: given twice")
+        slot[extension] = data
+    known = {sheet["stem"]: code for code, sheet in sheets.items()}
+    for stem, files in by_stem.items():
+        if stem not in known:
+            warnings.append(f"{stem}: not a walking sprite of this group's follower rows "
+                            f"({', '.join(sorted(known)) or 'it has none'}), ignored")
+            continue
+        plan = plan_walking(name, form, known[stem], files.get("png"), files.get("pal"))
+        errors += [f"{stem}: {e}" for e in plan["errors"]]
+        warnings += [f"{stem}: {w}" for w in plan["warnings"]]
+        notes += [f"{stem}: {n}" for n in plan["notes"]]
+        writes.update(plan["writes"])
+        if plan["item"]:
+            items.append(plan["item"])
+    return {"errors": errors, "warnings": warnings, "notes": notes, "writes": writes, "items": items}
+
+
+def walking_check(species: str, form: int, sheet: str | None, files: list[Path], rows: list[str] | None,
+                  write: bool) -> dict:
+    """The dedicated import of the Follower card: a PNG and/or a palette for the sheet an object code shows, or for
+    a new one (sheet None); the result is battle sprite's check shape with the preview item in "walking"."""
+    uploads, _ = gather(files)
+    png = next((d for n, d in uploads if n.lower().endswith(".png")), None)
+    pal = next((d for n, d in uploads if n.lower().endswith(".pal")), None)
+    plan = plan_walking(species, form, sheet, png, pal, rows)
+    errors, writes = plan["errors"], plan["writes"]
+    if write and not errors:
+        for path, data in writes.items():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as temporary:
+                temporary.write(data)
+            Path(temporary.name).replace(path)
+    result = {"ok": not errors, "check": not write, "errors": errors, "warnings": plan["warnings"],
+              "notes": plan["notes"], "changed": sorted(rel(p) for p in writes),
+              "walking": [plan["item"]] if plan["item"] else []}
+    if errors:
+        result["message"] = f"Can't import: {errors[0]}" + (f" (and {len(errors) - 1} more)" if len(errors) > 1 else "")
+    elif not writes:
+        result["message"] = "Nothing changes: the sheet is the same as the walking sprite's"
+    else:
+        result["message"] = f"{'Wrote' if write else 'Writes'} {len(writes)} files"
+    return result
+
+
 def info(folder: Path) -> dict:
     """What the group has, and whether its sheets are another group's (a form's copy of its species')."""
     group = Group(folder)
@@ -1188,6 +1545,13 @@ def info(folder: Path) -> dict:
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
+    for name in ("walking-check", "walking-import"):
+        p = commands.add_parser(name)
+        p.add_argument("species")
+        p.add_argument("--form", type=int, default=0)
+        p.add_argument("--sheet", help="the object code whose sheet to replace; without it a new walking sprite")
+        p.add_argument("--rows", help="the follower rows (comma separated) a new walking sprite is for")
+        p.add_argument("files", type=Path, nargs="*")
     for name in ("export", "check", "import", "info"):
         p = commands.add_parser(name)
         p.add_argument("species")
@@ -1200,6 +1564,11 @@ def main():
             p.add_argument("--no-preview", action="store_true")
     args = parser.parse_args()
     try:
+        if args.command.startswith("walking-"):
+            rows = [r for r in (args.rows or "").split(",") if r] if args.rows is not None else None
+            result = walking_check(args.species, args.form, args.sheet, args.files, rows, args.command == "walking-import")
+            print(json.dumps(result, ensure_ascii=False))
+            sys.exit(0 if result["ok"] or args.command == "walking-check" else 1)
         folder = folder_of(args.species, args.form)
         if args.command == "export":
             result = export(folder, args.out)

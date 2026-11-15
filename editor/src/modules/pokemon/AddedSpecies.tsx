@@ -254,7 +254,7 @@ export function FollowerCard({ list, added, onChanged }: { list: Listed[]; added
           </div>
         </Row>
       </div>
-      {has && <><h4>Walking sprites</h4><FollowerSprites species={added.species} form={0} /></>}
+      {has && <><h4>Walking sprites</h4><FollowerSprites species={added.species} form={0} name={added.name} /></>}
       {message && <p className={`pkm-note${message.ok ? "" : " pkm-error"}`}>{message.text}</p>}
     </section>
   );

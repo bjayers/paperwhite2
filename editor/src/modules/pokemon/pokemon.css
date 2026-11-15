@@ -131,3 +131,9 @@ button.danger { color: var(--error); border-color: var(--error); }
 .pkm-follower-sheet canvas { image-rendering: pixelated; background: var(--panel-2); border-radius: 4px; }
 .pkm-mirror { margin-top: 8px; display: flex; flex-direction: column; gap: 2px; }
 .pkm-mirror .pkm-check { font-size: 13px; font-weight: 600; }
+
+/* Walking sprites (WalkingSpriteImport.tsx) */
+.bsp-walking { display: flex; flex-direction: column; gap: 12px; }
+.bsp-walking-item { display: flex; flex-direction: column; gap: 6px; }
+.bsp-walking-import { margin-bottom: 8px; }
+.bsp-rowpick { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; }

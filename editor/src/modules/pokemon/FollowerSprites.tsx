@@ -14,6 +14,7 @@ import { FIELD_ACTOR_SCHEMA, FOLLOWERS, variantLabel, type Variant } from "../fo
 import { parsePal } from "../palettes/pal.ts";
 import { readIndexedPng, type IndexedImage } from "../palettes/png.ts";
 import { Row } from "./FormPage.tsx";
+import { WalkingSpriteImport } from "./WalkingSpriteImport.tsx";
 
 const WALKING = "res/field/actors/pokemon";
 
@@ -153,7 +154,7 @@ function FollowerRow({ row, sheets }: { row: Variant; sheets: Option[] }) {
 }
 
 /** The follower rows of a species' form, with their sprites: on a Follower card. */
-export function FollowerSprites({ species, form, epoch = 0 }: { species: string; form: number; epoch?: number }) {
+export function FollowerSprites({ species, form, name, epoch = 0 }: { species: string; form: number; name?: string; epoch?: number }) {
   const [rows, setRows] = useState<Variant[] | null>(null);
   const [sheets, setSheets] = useState<Option[]>([]);
   const [reread, setReread] = useState(0);
@@ -176,9 +177,14 @@ export function FollowerSprites({ species, form, epoch = 0 }: { species: string;
   if (!rows) return <p className="muted pkm-note">Reading the followers…</p>;
   if (!rows.length) return <p className="muted pkm-note">No follower rows: while it leads the party, the next party member follows (as for an Egg).</p>;
   return (
-    <div className="pkm-rows">
-      {rows.map((row) => <FollowerRow key={row.path} row={row} sheets={sheets} />)}
-    </div>
+    <>
+      <WalkingSpriteImport species={species} form={form} name={name ?? species.replace(/^SPECIES_/, "").toLowerCase()}
+        rows={rows.map((r) => ({ name: r.name, sprite: r.sprite }))}
+        onWritten={() => { rowsPromise = null; sheetsPromise = null; sheetCache.clear(); setReread((n) => n + 1); }} />
+      <div className="pkm-rows">
+        {rows.map((row) => <FollowerRow key={row.path} row={row} sheets={sheets} />)}
+      </div>
+    </>
   );
 }
 
@@ -203,7 +209,7 @@ export function FollowerSpritesCard({ species, form, name }: { species: string; 
       <p className="muted pkm-note">The overworld sprite that follows the player while {name} leads: each sex and shininess is a row of its own
         (<code>{FOLLOWERS}/</code>), showing a walking sprite. Pick the sheet each row shows; Save writes it, and the next build uses it.
         {form ? " Add form gave this form copies of its template's rows." : ""}</p>
-      <FollowerSprites species={species} form={form} />
+      <FollowerSprites species={species} form={form} name={name} />
     </section>
   );
 }

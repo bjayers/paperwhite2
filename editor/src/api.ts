@@ -288,6 +288,29 @@ export interface RigCheck {
     resident: number; animations_compressed: number } | null;
 }
 
+/** One walking sprite sheet in an import's preview (battle_sprite.py plan_walking): each direction's standing and stepping
+ * frames side by side (RGBA PNGs in base64; none when the size is wrong), the sheet it replaces or the new one, and the
+ * follower rows it is for. */
+export interface WalkingItem {
+  new: boolean;
+  changed: boolean;
+  code: string;
+  stem: string;
+  rows: string[];
+  /** Other species' follower rows that show this sheet too (an existing sheet isn't changed from here then). */
+  shared: string[];
+  size: number;
+  frames: number;
+  layout: "mirrored" | "asymmetric" | "?";
+  colours: number;
+  palette: string[];
+  strips?: Record<"down" | "up" | "left" | "right", string>;
+  sheet?: string;
+  /** What the first row shows now, and its code. */
+  current?: Record<"down" | "up" | "left" | "right", string> | null;
+  currentCode?: string | null;
+}
+
 export interface BattleSpriteCheck {
   ok: boolean;
   check: boolean;
@@ -298,6 +321,8 @@ export interface BattleSpriteCheck {
   warnings?: string[];
   notes?: string[];
   changed?: string[];
+  /** The walking sprite sheets the files hold (the zip's follower/ files, or the Follower card's import). */
+  walking?: WalkingItem[];
   preview?: {
     sides: Record<string, BattleSpriteSide>;
     stills: Record<string, { normal: string; shiny: string; changed: boolean }>;
@@ -462,6 +487,10 @@ export const api = {
   /** Checks battle sprite art (files in base64; none for the current art's preview); with write, imports it. */
   battleSpriteCheck: (b: { species: string; form: number; files: { name: string; data: string }[]; stillsFromSheets?: boolean; write?: boolean }) =>
     request<BattleSpriteCheck>("POST", "/api/battle-sprite/check", b),
+  /** Checks a walking sprite for the Follower card (a PNG and/or .pal for the sheet `sheet` names, else a new walking sprite
+   * for the group's `rows`); with write, imports it: the sheet's files, or the new object code, sheet and rows. */
+  walkingSpriteCheck: (b: { species: string; form: number; sheet?: string | null; rows?: string[]; files: { name: string; data: string }[]; write?: boolean }) =>
+    request<BattleSpriteCheck>("POST", "/api/walking-sprite/check", b),
   /** A battle sprite rig's checks as the build runs them (mcss_rig.check) and the five files' sizes. */
   rigCheck: (text: string) => request<RigCheck>("POST", "/api/battle-sprite/rig-check", { text }),
   /** Converts a PNG or .cgb into a C-Gear picture and adds it; the tool's report. */
