@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Entralink room",
+  "description": "One room of the Entralink roguelike (docs/paperwhite2/design/entralink-roguelike-prototype.md, The room format): the rounds it is kept to, its role, its weather, its battles and the NPCs standing in it. Its ID is the file's name. Edited in the editor's Entree page; it replaces challenges/ once the game reads it (the wiring step), until then the game reads challenges/.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [ "name", "role", "battles", "npcs" ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "name": { "type": "string", "description": "The room's name, for the editor" },
+    "rounds": {
+      "type": "array", "minItems": 1, "maxItems": 3,
+      "items": { "enum": [ 1, 2, 3 ] },
+      "description": "The rounds of a run it is kept to, each once: 1 before the first boss, 2 before the second, 3 before the final room. Left out, it can come up in any round"
+    },
+    "role": {
+      "enum": [ "room", "boss", "final" ],
+      "description": "room: a room of a round. boss: the room ending round 1 or 2, from the bosses' own pool. final: the run's last room"
+    },
+    "weather": {
+      "type": "string", "x-constant": "BTL_WEATHER_",
+      "description": "The weather of its battles from their start (constants/battle.h; BTL_WEATHER_NONE for clear); random if left out"
+    },
+    "battles": {
+      "type": "array", "maxItems": 8, "items": { "$ref": "#/$defs/battle" },
+      "description": "Its battles, each started by the battle NPCs that name it"
+    },
+    "npcs": {
+      "type": "array", "maxItems": 16, "items": { "$ref": "#/$defs/npc" },
+      "description": "What stands in the room. If none spawns, the room is free and the player goes on"
+    }
+  },
+  "$defs": {
+    "battle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "id", "format", "enemies" ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9_]+$", "description": "Its name in the room, which battle NPCs name it by" },
+        "format": {
+          "enum": [ "single", "double", "triple", "raid" ],
+          "description": "single: one enemy. double: one or two. triple: one to three. raid: exactly one, in the center of a triple battle against three of the player's Pokémon"
+        },
+        "enemies": { "type": "array", "minItems": 1, "maxItems": 3, "items": { "$ref": "#/$defs/enemy" } }
+      }
+    },
+    "enemy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "species" ],
+      "properties": {
+        "species": { "type": "string", "x-constant": "SPECIES_" },
+        "form": { "type": "integer", "minimum": 0, "maximum": 255, "description": "0 if left out" },
+        "level": { "type": "integer", "minimum": 1, "maximum": 100, "description": "Its base level, 70 if left out; the run will scale it with the rooms visited" },
+        "moves": {
+          "type": "array", "minItems": 1, "maxItems": 4,
+          "items": { "type": "string", "x-constant": "MOVE_" },
+          "description": "Its moves, in order, replacing the ones it has by its level"
+        },
+        "ability": {
+          "type": "string",
+          "description": "An ABILITY_* it has whatever its species', or \"hidden\" for its hidden one; without it, one of its species' two"
+        },
+        "item": { "type": "string", "x-constant": "ITEM_", "description": "Its held item; none if left out" },
+        "gender": { "enum": [ "male", "female" ], "description": "As its species allows; random if left out" },
+        "shiny": { "type": "boolean", "description": "false if left out" }
+      }
+    },
+    "npc": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "type", "x", "z", "facing" ],
+      "properties": {
+        "type": {
+          "enum": [ "battle", "item", "rest", "buff" ],
+          "description": "battle: starts the battle it names. item: gives an item. rest: opens the rest menu. buff: opens the buff menu (both built later)"
+        },
+        "battle": { "type": "string", "pattern": "^[a-z0-9_]+$", "description": "A battle NPC's battle, by its id; several NPCs may start the same one" },
+        "enemy": {
+          "type": "integer", "minimum": 0, "maximum": 2,
+          "description": "A battle NPC: the enemy of its battle (0 the first) whose overworld sprite it shows and whose cry it plays; 0 if left out"
+        },
+        "item": { "type": "string", "x-constant": "ITEM_", "description": "An item NPC's item" },
+        "count": { "type": "integer", "minimum": 1, "maximum": 99, "description": "How many of its item it gives; 1 if left out" },
+        "sprite": {
+          "type": "string", "x-constant": "OBJ_CODE_",
+          "description": "Its overworld sprite. Without it a battle NPC shows its enemy's walking Pokémon and an item NPC the item ball (OBJ_CODE_110); rest and buff NPCs need one"
+        },
+        "flag": {
+          "type": "string", "x-constant": "EVENT_FLAG_",
+          "description": "It spawns only while this flag is set; always if left out"
+        },
+        "chance": { "type": "integer", "minimum": 1, "maximum": 100, "description": "Its chance to spawn, in percent; 100 if left out" },
+        "x": { "type": "integer", "minimum": 0, "maximum": 31, "description": "Its tile, 0-31 from the room's left; every forest clearing has the same 32 by 32 grid and exits" },
+        "z": { "type": "integer", "minimum": 0, "maximum": 31, "description": "Its tile, 0-31 from the room's top" },
+        "facing": { "enum": [ "DIR_UP", "DIR_DOWN", "DIR_LEFT", "DIR_RIGHT" ] }
+      }
+    }
+  }
+}

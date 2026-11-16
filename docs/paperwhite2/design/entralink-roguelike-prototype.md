@@ -96,6 +96,48 @@ Parenthesised values are the defaults. A room is 32 by 32 tiles: the exits are a
 and x 5 / x 26 at z 15-17 (left, right); the player arrives at x 15 z 23. Each enemy gets its own actor (IDs 0-2);
 talking to any of them starts the battle, and a win removes them all.
 
+## The room format
+
+`res/paperwhite2/entralink/rooms/<id>.json`, one room each, with `room.schema.json` beside them; its ID is the file's
+name. Edited in the editor's **Entree** page (`editor/src/modules/entree/`). It **replaces `challenges/` at the wiring
+step**: until the game and the packer read it, the game still reads `run.json` and `challenges/` (the format above), and
+the four rooms here are the prototype's four challenges converted (Dialga, Ho-Oh and the Rayquaza raid generic rooms,
+Darkrai the final room). All names are the repo's constants.
+
+| Field | What |
+| --- | --- |
+| `name` | For the editor |
+| `rounds` | Optional: the rounds it is kept to, any of `1` (before the first boss), `2` (before the second), `3` (before the final room). Left out, a generic room that can come up in any round |
+| `role` | `room` (one of a round's rooms), `boss` (ends round 1 or 2; the bosses have their own pool) or `final` (the run's last room) |
+| `weather` | Optional `BTL_WEATHER_*` for its battles from their start (`BTL_WEATHER_NONE` for clear); left out, random (designed later) |
+| `battles[]` | Up to 8 of: `id` (lower case, the name NPCs use), `format` (`single` 1 enemy, `double` 1-2, `triple` 1-3, `raid` exactly 1 in the center), `enemies[]` (1-3, as a challenge's without `actor`: `species`, `form`, `level`, `moves`, `ability`, `item`, `gender`, `shiny`, same defaults) |
+| `npcs[]` | Up to 16 of the NPC record below. If none spawns, the room is free and the player goes on |
+
+An NPC:
+
+| Field | What |
+| --- | --- |
+| `type` | `battle` (talking starts the battle it names), `item` (gives an item), `rest` (opens the rest menu) or `buff` (the buff menu); the last two are built later |
+| `battle` | A battle NPC's battle, by `id`. Several NPCs may start one battle (Kyogre and Groudon side by side for one double battle); several battles, one NPC each, let the player choose |
+| `enemy` | A battle NPC's enemy (0 the first, the default) whose overworld sprite it shows and whose cry it plays |
+| `item`, `count` | An item NPC's item (`ITEM_*`) and how many (1) |
+| `sprite` | Optional `OBJ_CODE_*`: its own overworld sprite, any Pokémon's or person's. Without it a battle NPC shows its enemy's walking Pokémon (`OBJ_CODE_POKEMON_<species>`), an item NPC the item ball (`OBJ_CODE_110`); rest and buff NPCs need one. A new Nightmare with no walking sprite needs one too (the editor warns) |
+| `flag` | Optional `EVENT_FLAG_*`: it spawns only while the flag is set (the Nightmare Ball after a finished run) |
+| `chance` | Its chance to spawn, 1-100 percent (100) |
+| `x`, `z`, `facing` | Its tile (0-31) and `DIR_*` |
+
+**No map per room.** The game will pick the clearing by the door taken (the left door leads to a clearing with an
+entrance on its right), so a room is placed on the clearings' shared 32 by 32 grid: every clearing has its exits at the
+same tiles (x 15-16 z 9, x 15-16 z 24, x 5 and x 26 at z 15-17) and only some of them. The editor draws one clearing
+faintly behind the grid, switchable, and checks each NPC against all nine: on an exit of any clearing is an error, on a
+tile blocked in any is a warning, as is standing where the player arrives (x 15 z 23).
+
+**Levels are base values:** the run will scale the enemies with the number of rooms visited (designed later).
+
+The editor's other checks: a battle NPC naming no battle or a missing one, a battle no NPC starts, more enemies than the
+format takes, a battle NPC showing an enemy its battle doesn't have, an item NPC without an item, two NPCs on one tile,
+and over all the rooms: no final room, a round with no rooms, round 1 or 2 with no boss.
+
 ## How it works
 
 - **Run state:** three saved event variables (room 1-5, 0 outside a run; the pool places drawn, a nibble a room; the

@@ -23,6 +23,25 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 Decide: held items taken from or given to a copy in the party screen (duplicated or lost at the run's end), and bag
 items (stones, Rare Candy) used on copies; hiding the party screen's Item command in a run would do until the run bag.
 
+## 2026-11-15: the Entree Editor and the room format (ROM session, on a branch)
+
+`docs/paperwhite2/design/entralink-roguelike-prototype.md`, "The room format", has the format and its checks.
+
+- **Data:** `res/paperwhite2/entralink/rooms/<id>.json` with `room.schema.json`: a name, optional rounds (1-3; none =
+  any round), a role (room / boss / final), optional battle weather (none = random), battles (id, format, enemies) and
+  NPCs (battle / item / rest / buff, which battle and which enemy it shows, item and count, sprite override, flag,
+  chance, tile and facing). No map per room: the game will pick the clearing by the door taken. The prototype's four
+  challenges are converted; `challenges/` and `run.json` stay until the wiring step (game and packer untouched).
+- **Editor:** the "Entree" page (`editor/src/modules/entree/`): rooms listed and filtered by round and role (new,
+  duplicate, delete, rename); the clearings' shared grid in the Overworld Editor's map view, overhead, with a chosen
+  clearing faint behind it (`MapView`'s new `modelOpacity`), its exits and blocked tiles, NPCs as their sprites (click,
+  drag, Shift+click to add); headed sections Room, Battles, NPCs and the checks. Saving writes through the build's
+  validator; deleting is allowed for room files only (`server/weather.ts` `removable`).
+- **Checks:** `tsc` clean; `tests/entree.test.ts` passes. `npm test`: 223 of 224, the other is
+  `scriptlang.test.ts` failing on the prototype's `global_10490.s` script 8 (reopens differently), from before this work.
+
+Next: wire the game and the packer to `rooms/` (rounds, roles, NPC types, chances, flags), then drop `challenges/`.
+
 ## 2026-11-15: the Entralink roguelike's first prototype (ROM session, on a branch)
 
 `docs/paperwhite2/design/entralink-roguelike-prototype.md` has what was built, the data format, the proof and the gaps.

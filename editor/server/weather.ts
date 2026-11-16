@@ -27,10 +27,12 @@ export function weatherCalendarLimit(root: string): { max: number; source: strin
 
 /** The files DELETE /api/file may remove: a species' encounter file, a zone's weather calendar (not order.json or
  * the schema), or a battle sprite side's rig source, the first Rig Editor's armature or the second's (Remove armature
- * and Start fresh; never the flat rig the build packs). */
+ * and Start fresh; never the flat rig the build packs), or an Entralink room (the Entree page's Delete and Rename). */
 export function removable(path: string): boolean {
   if (/^res\/pokemon\/[a-z0-9_]+(\/[a-z0-9_]+)*\/(front|back)_rig_(source|v2)\.json$/.test(path)) return true;
   if (/^res\/paperwhite2\/encounters\/species\/[a-z0-9_]+\.json$/.test(path)) return true;
+  // The Entree page's rooms (Delete, and the old file of a renamed room)
+  if (/^res\/paperwhite2\/entralink\/rooms\/[a-z0-9_]+\.json$/.test(path)) return true;
   const m = /^res\/field\/weather_calendar\/([a-z0-9_]+)\.json$/.exec(path);
   return m !== null && m[1] !== "order";
 }
