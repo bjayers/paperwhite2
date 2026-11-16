@@ -13,7 +13,7 @@ import { validate, type Schema } from "../shared/schema.ts";
 import { Python } from "../server/python.ts";
 import { removable } from "../server/weather.ts";
 import {
-  EXIT_SCRIPTS, ROOMS_DIR, ROOM_SCHEMA, checkRoom, checkRooms, freeId, idFromName, newNpc, newRoomData, npcSprite, readRoom,
+  EXIT_SCRIPTS, ROOMS_DIR, ROOM_SCHEMA, assignProgressIds, checkRoom, checkRooms, freeId, idFromName, newNpc, newRoomData, npcSprite, readRoom,
   type Exit, type MapInfo,
 } from "../src/modules/entree/model.ts";
 
@@ -21,6 +21,7 @@ const ROOT = resolve(import.meta.dirname, "../..");
 const constants = new Map(Object.entries(new Python(ROOT).constants()));
 const schema = JSON.parse(readFileSync(join(ROOT, ROOM_SCHEMA), "utf8")) as Schema;
 const files = globSync(`${ROOMS_DIR}/*.json`, { cwd: ROOT }).sort();
+const orders = { battle: Object.keys(schema.$defs!.battle.properties!), enemy: Object.keys(schema.$defs!.enemy.properties!) };
 const errors = (d: JsonValue) => validate(d, schema, constants).map((e) => `${e.path.join(".")}: ${e.message}`);
 const buildCheck = (file: string) =>
   JSON.parse(execFileSync("python3", ["-I", join(ROOT, "editor/server/python/validate.py")], { cwd: ROOT, input: `${file}\t${join(ROOT, ROOM_SCHEMA)}\n` }).toString());
@@ -55,14 +56,16 @@ test("the prototype's four challenges are rooms, written back as they are, and v
 
 test("a new room, edited, saves in the data tools' layout and passes the build's check", () => {
   let data = newRoomData("Kyogre and Groudon");
-  assert.deepEqual(errors(data), []);
+  // A new battle's progress id comes on save
+  assert.deepEqual(errors(data), ["battles.0: progress_id is missing"]);
   data = setIn(data, ["rounds"], [2, 3]);
   data = setIn(data, ["battles", 0], fromPlain({ id: "weather_trio", format: "double", enemies: [
     { species: "SPECIES_KYOGRE", level: 75, moves: ["MOVE_WATER_SPOUT", "MOVE_ICE_BEAM"] }, { species: "SPECIES_GROUDON", shiny: true }] }));
   data = setIn(data, ["npcs", 0, "battle"], "weather_trio");
   data = setIn(data, ["npcs", 1], fromPlain({ type: "battle", battle: "weather_trio", enemy: 1, x: 17, z: 14, facing: "DIR_DOWN" }));
   data = setIn(data, ["npcs", 2], fromPlain({ type: "item", item: "ITEM_POTION", count: 2, chance: 50, x: 12, z: 18, facing: "DIR_DOWN" }));
-  data = setIn(data, ["npcs", 3], fromPlain({ type: "rest", sprite: "OBJ_CODE_LADY", flag: "EVENT_FLAG_0x0001", x: 20, z: 18, facing: "DIR_LEFT" }));
+  data = setIn(data, ["npcs", 3], fromPlain({ type: "rest", sprite: "OBJ_CODE_LADY", requires: ["dialga/dialga", "run/completed"], x: 20, z: 18, facing: "DIR_LEFT" }));
+  data = assignProgressIds([{ path: "x", data }], { next_battle: 4, next_catch: 0 }, orders).changed.get("x")!;
   assert.deepEqual(errors(data), []);
   const room = readRoom(data);
   assert.deepEqual(checkRoom(room, constants, clearings()), []);
@@ -113,7 +116,7 @@ test("the checks", () => {
     "warning: NPC 4 (battle) stands on a blocked tile (3, 3) in every clearing.",
   ]);
   // A rest NPC with no sprite; an item NPC with no item
-  assert.deepEqual(messages({ ...base, npcs: [base.npcs[0], { type: "rest", x: 10, z: 10, facing: "DIR_DOWN" }, { type: "item", x: 11, z: 10, facing: "DIR_DOWN" }] }), [
+  assert.deepEqual(messages({ ...base, npcs: [base.npcs[0], { type: "rest", x: 10, z: 10, facing: "DIR_DOWN", requires: [] }, { type: "item", x: 11, z: 10, facing: "DIR_DOWN", requires: [] }] }), [
     "error: NPC 3 (item) gives no item: choose one.",
     "error: NPC 2 (rest) has no sprite: choose one.",
   ].sort((a, b) => (a.includes("NPC 2") ? -1 : b.includes("NPC 2") ? 1 : 0)));

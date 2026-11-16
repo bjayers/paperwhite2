@@ -22,6 +22,15 @@
       "items": { "type": "string", "x-constant": "ZONE_ENTREE_FOREST" },
       "description": "The zones of the drawn rooms, taken in turn; each needs a bottom exit, where a room is entered"
     },
-    "final_map": { "type": "string", "x-constant": "ZONE_ENTREE_FOREST", "description": "The last room's zone" }
+    "final_map": { "type": "string", "x-constant": "ZONE_ENTREE_FOREST", "description": "The last room's zone" },
+    "field_weather": {
+      "description": "The forest's field weather (include/system/zone_weather.h) in the rooms with no weather of their own; none if left out",
+      "enum": [
+        "WEATHER_SUNNY", "WEATHER_FLAKE", "WEATHER_RAIN", "WEATHER_SANDSTORM", "WEATHER_BLIZZARD",
+        "WEATHER_FLUTTER", "WEATHER_THUNDERSTORM", "WEATHER_GUSTY_RAIN", "WEATHER_DIAMOND_DUST",
+        "WEATHER_TINT_9", "WEATHER_TINT_10", "WEATHER_TINT_11", "WEATHER_SANDSTORM_2", "WEATHER_TINT_13",
+        "WEATHER_TINT_14"
+      ]
+    }
   }
 }

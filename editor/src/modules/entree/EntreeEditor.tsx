@@ -3,8 +3,10 @@
 // grid, top down (the Overworld Editor's map view), with one clearing faint behind it for reference, its exits, and the
 // room's NPCs as their sprites, chosen, dragged and added there (a room has no map of its own: the game picks the
 // clearing by the door taken); and on the right the room's checks and its headed sections, laid out as the Ambients panel
-// is: Room, Battles, NPCs. Every room file is held in the
-// document store, so undo, the build's check on Save and changes on disk work as for any file.
+// is: Room, Battles, NPCs, with the run's own settings (run.json) above the list. Every room file is held in the
+// document store, so undo, the build's check on Save and changes on disk work as for any file. Save first gives the
+// new battles and catchable enemies their progress ids (model.ts, assignProgressIds; progress_ids.json); renaming a
+// battle or a room renames what every room's catches and spawn conditions name of it.
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api } from "../../api.ts";
@@ -18,14 +20,16 @@ import { MapView } from "../overworld/MapView.tsx";
 import { ModelPicker, SpriteImage } from "../overworld/fields.tsx";
 import type { Entity } from "../overworld/entities.ts";
 import { TILE_FLAG_COLLISION, loadZoneMap, tileAt, tileFlags, tileIsValid, type ZoneMap } from "../overworld/terrain.ts";
-import { useNotes } from "../flags/notes.ts";
+import { DialogueField } from "../text/DialogueField.tsx";
+import { weatherLabel, weatherNote } from "../weather/weathers.ts";
 import { useToolActive } from "../active.ts";
 import type { ToolProps } from "../types.ts";
 import {
   ARRIVAL, CLEARINGS_PREFIX, exitAt, ROUNDS, ROUND_NOTES, clearingName, inRound, DEFAULT_CHANCE, DEFAULT_COUNT, DEFAULT_LEVEL, EXIT_SCRIPTS, FACINGS, FORMAT_ENEMIES, FORMATS, ID_PATTERN,
   ITEM_BALL_SPRITE, NPC_TYPES, ROLES, ROOMS_DIR, ROOM_SCHEMA, checkRoom, checkRooms, freeId, idFromName, newNpc,
   newRoomData, npcSprite, readRoom, roomId, roomPath, shownEnemy, walkingSprite,
-  type Round, type Exit, type MapInfo, type NpcType, type Problem, type Role, type Room,
+  DEFAULT_ONCE, PROGRESS_IDS, PROGRESS_IDS_SCHEMA, RUN_COMPLETED, assignProgressIds, battleKey, battleKeys, renameKeys, withoutProgressIds,
+  type Round, type Exit, type MapInfo, type NpcType, type Problem, type ProgressCounters, type Role, type Room,
 } from "./model.ts";
 
 const ARROWS: Record<string, string> = { DIR_UP: "↑", DIR_DOWN: "↓", DIR_LEFT: "←", DIR_RIGHT: "→" };
@@ -47,6 +51,10 @@ const TYPE_NOTES: Record<NpcType, string> = {
   rest: "Opens the rest menu (built later).",
   buff: "Opens the buff menu (built later).",
 };
+const RUN = "res/paperwhite2/entralink/run.json";
+const RUN_SCHEMA = "res/paperwhite2/entralink/run.schema.json";
+/** The schema's own complaint about a battle or catch with no progress id yet: Save gives it one. */
+const awaitsId = (e: { path: JsonPath; message: string }) => e.message === "progress_id is missing";
 const zoneFile = (zone: string) => zone.replace(/^ZONE_/, "").toLowerCase();
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 const asMap = (v: JsonValue | undefined): JsonMap => (v instanceof Map ? v : new Map());
@@ -199,10 +207,31 @@ export function EntreeEditor({ constants }: ToolProps) {
     if (def === "") { if (path) documents.replace(path, next); } else set(at, next);
   };
 
+  /** Gives the new battles and catchable enemies of every room held their progress ids, and progress_ids.json its new
+   * counters, saved first so that no number is given twice even if a room then fails to save. */
+  const giveProgressIds = useCallback(async (): Promise<boolean> => {
+    let counters: ProgressCounters | null = null;
+    const held = await documents.hold(PROGRESS_IDS).catch(() => null);
+    if (held?.data instanceof Map) counters = { next_battle: Number(held.data.get("next_battle") ?? 0), next_catch: Number(held.data.get("next_catch") ?? 0) };
+    const result = assignProgressIds(rooms.flatMap((r) => (r.data ? [{ path: r.path, data: r.data }] : [])), counters,
+      { battle: orderOf("battle"), enemy: orderOf("enemy") });
+    if (result.error) { setNote(result.error); return false; }
+    if (!result.changed.size && counters && counters.next_battle === result.counters.next_battle && counters.next_catch === result.counters.next_catch) return true;
+    const data = fromPlain({ $schema: "progress_ids.schema.json", ...result.counters });
+    if (held) documents.replace(PROGRESS_IDS, data);
+    else documents.create(PROGRESS_IDS, PROGRESS_IDS_SCHEMA, data);
+    if (!(await documents.save(PROGRESS_IDS))) {
+      setNote(`Couldn't save ${PROGRESS_IDS}, so no progress ids were given: ${documents.get(PROGRESS_IDS)?.saveError ?? ""}`);
+      return false;
+    }
+    for (const [p, next] of result.changed) documents.replace(p, next);
+    return true;
+  }, [rooms, schema]);
   const save = useCallback(async () => {
-    for (const p of documents.dirtyPaths().filter((d) => d.startsWith(`${ROOMS_DIR}/`))) await documents.save(p);
+    if (!(await giveProgressIds())) return;
+    for (const p of documents.dirtyPaths().filter((d) => d.startsWith(`${ROOMS_DIR}/`) || d === RUN)) await documents.save(p);
     refresh();
-  }, [refresh]);
+  }, [refresh, giveProgressIds]);
   useEffect(() => {
     if (!toolActive) return;
     const onKey = (e: KeyboardEvent) => {
@@ -229,7 +258,8 @@ export function EntreeEditor({ constants }: ToolProps) {
     if (!current?.data) return;
     const name = `${current.room.name} (copy)`;
     const id = freeId(`${current.id}_copy`, taken);
-    documents.create(roomPath(id), ROOM_SCHEMA, setIn(current.data, ["name"], name));
+    // Its battles and catches are new ones, with progress ids of their own on save
+    documents.create(roomPath(id), ROOM_SCHEMA, setIn(withoutProgressIds(current.data), ["name"], name));
     setSelectedId(id);
   };
   const remove = async () => {
@@ -249,7 +279,13 @@ export function EntreeEditor({ constants }: ToolProps) {
     if (!ID_PATTERN.test(to)) { setNote("An ID is lower-case letters, digits and underscores."); return; }
     if (taken.has(to)) { setNote(`There is already a room ${to}.`); return; }
     const next = roomPath(to);
-    documents.create(next, ROOM_SCHEMA, current.data);
+    // What every room's catches and spawn conditions name of it, renamed with it
+    const from = `${current.id}/`;
+    for (const r of rooms) if (r.id !== current.id && r.data) {
+      const renamed = renameKeys(r.data, from, `${to}/`, true);
+      if (renamed) documents.replace(r.path, renamed);
+    }
+    documents.create(next, ROOM_SCHEMA, renameKeys(current.data, from, `${to}/`, true) ?? current.data);
     if (!(await documents.save(next))) {
       setNote(`Couldn't save ${next}: ${documents.get(next)?.saveError ?? ""}`);
       documents.close(next);
@@ -261,15 +297,27 @@ export function EntreeEditor({ constants }: ToolProps) {
     refresh();
   };
 
-  const schemaErrors = useMemo(() => (current?.data && schema ? validate(current.data, schema, constants) : []), [current?.data, schema, constants]);
-  const problems = useMemo(() => (room ? checkRoom(room, constants, infos) : []), [room, constants, infos]);
+  const schemaErrors = useMemo(() => (current?.data && schema ? validate(current.data, schema, constants).filter((e) => !awaitsId(e)) : []), [current?.data, schema, constants]);
+  const known = useMemo(() => battleKeys(rooms), [rooms]);
+  const problems = useMemo(() => (room ? checkRoom(room, constants, infos, known) : []), [room, constants, infos, known]);
   const overall = useMemo(() => checkRooms(rooms), [rooms]);
   const roomProblems = useMemo(() => new Map(rooms.map((r): [string, number] =>
-    [r.id, checkRoom(r.room, constants, infos).filter((p) => p.severity === "error").length])), [rooms, constants, infos]);
+    [r.id, checkRoom(r.room, constants, infos, known).filter((p) => p.severity === "error").length])), [rooms, constants, infos, known]);
+  /** Every room's battles, for the catches' and spawn conditions' pickers. */
+  const battleOptions: Option[] = useMemo(() => rooms.flatMap((r) => r.room.battles.map((b) => ({
+    value: battleKey(r.id, b.id), label: `${r.room.name || r.id}: ${b.id}`, detail: battleKey(r.id, b.id),
+  }))), [rooms]);
+  /** Renames what every other room's catches and spawn conditions name of one of this room's battles. */
+  const renameKeyElsewhere = (from: string, to: string) => {
+    for (const r of rooms) if (r.id !== current?.id && r.data) {
+      const renamed = renameKeys(r.data, from, to);
+      if (renamed) documents.replace(r.path, renamed);
+    }
+  };
 
   const listed = rooms.filter((r) => (roundFilter === "all" || inRound(r.room, Number(roundFilter) as Round)) && (roleFilter === "all" || r.room.role === roleFilter) &&
     (!text.trim() || `${r.id} ${r.room.name}`.toLowerCase().includes(text.trim().toLowerCase())));
-  const unsaved = rooms.filter((r) => r.dirty);
+  const unsaved = [...rooms.filter((r) => r.dirty).map((r) => r.path), ...(docs.get(RUN)?.dirty ? [RUN] : [])];
 
   // The map's entities: the NPCs, then the exits (as the triggers they are)
   const entities: Entity[] = useMemo(() => {
@@ -277,7 +325,7 @@ export function EntreeEditor({ constants }: ToolProps) {
     const npcs: Entity[] = room.npcs.map((n, i) => ({
       kind: "npc", index: i, x: n.x, z: n.z, y: 0, width: 1, depth: 1,
       label: `${i + 1}: ${n.type}`, model: npcSprite(n, room, constants) ?? undefined, direction: n.facing,
-      faded: (n.chance ?? DEFAULT_CHANCE) < 100 || !!n.flag,
+      faded: (n.chance ?? DEFAULT_CHANCE) < 100 || n.requires.length > 0,
     }));
     const exits: Entity[] = (mapInfo?.exits ?? []).map((e, k) => ({
       kind: "trigger", index: 1000 + k, x: e.x, z: e.z, y: 0, width: e.width, depth: e.depth, label: `${e.side} exit`,
@@ -313,13 +361,14 @@ export function EntreeEditor({ constants }: ToolProps) {
         <span className="muted en-lead">The Entralink roguelike's rooms: their battles and what stands in them. The game reads these at the wiring step; until then it reads challenges/.</span>
         <span className="spacer" />
         {unsaved.length > 0 && <span className="muted">{unsaved.length} unsaved</span>}
-        <button onClick={() => unsaved.forEach((r) => void documents.reload(r.path))} disabled={!unsaved.length}>Revert</button>
+        <button onClick={() => unsaved.forEach((p) => void documents.reload(p))} disabled={!unsaved.length}>Revert</button>
         <button className="primary" onClick={() => void save()} disabled={!unsaved.length} title="Ctrl+S">Save</button>
       </header>
       {error && <p className="ow-error ow-bar">{error}</p>}
-      {unsaved.filter((r) => docs.get(r.path)?.saveError).map((r) => <p key={r.path} className="ow-error ow-bar">{r.path}: {docs.get(r.path)?.saveError}</p>)}
+      {unsaved.filter((p) => docs.get(p)?.saveError).map((p) => <p key={p} className="ow-error ow-bar">{p}: {docs.get(p)?.saveError}</p>)}
       <div className="en-body">
         <aside className="en-list">
+          <RunSection />
           <div className="en-list-section">
             <h5>Rooms <span className="muted">{listed.length === rooms.length ? rooms.length : `${listed.length} of ${rooms.length}`}</span></h5>
             <div className="en-list-actions">
@@ -400,9 +449,10 @@ export function EntreeEditor({ constants }: ToolProps) {
                       onNpc={setNpcIndex} />
               <RoomSection id={current.id} room={room} constants={constants} saved={diskPaths.includes(current.path)}
                            setField={(key, v) => setField([], "", key, v)} rename={rename} />
-              <BattlesSection room={room} constants={constants} get={get} set={set} setField={setField}
-                              replace={(data) => path && documents.replace(path, data)} data={current.data} />
-              <NpcsSection room={room} constants={constants} get={get} set={set} setField={setField} selected={npcIndex}
+              <BattlesSection room={room} constants={constants} get={get} set={set} setField={setField} roomId={current.id}
+                              replace={(data) => path && documents.replace(path, data)} data={current.data} battleOptions={battleOptions}
+                              renameKeyElsewhere={renameKeyElsewhere} />
+              <NpcsSection room={room} constants={constants} get={get} set={set} setField={setField} selected={npcIndex} battleOptions={battleOptions}
                            select={setNpcIndex} add={(type) => { const t = freeTile(); addNpc(type, t.x, t.z); }}
                            openPicker={() => setPicking(true)} npcOrder={orderOf("npc")} />
             </div>
@@ -414,6 +464,61 @@ export function EntreeEditor({ constants }: ToolProps) {
         <ModelPicker constants={constants} value={room.npcs[npcIndex].sprite ?? npcSprite(room.npcs[npcIndex], room, constants) ?? ""}
                      onClose={() => setPicking(false)} onPick={(m) => { setField(["npcs", npcIndex], "npc", "sprite", m); setPicking(false); }} />
       )}
+    </div>
+  );
+}
+
+/** A battle's or a catch's progress id, shown and never edited: its bit in the save. */
+function ProgressId({ id, kind }: { id: number | undefined; kind: "battle" | "catch" }) {
+  const what = kind === "battle" ? "won-ever" : "caught-ever";
+  return id === undefined
+    ? <span className="en-pid en-pid-new" title={`Gets its ${what} progress id when saved`}>new id</span>
+    : <span className="en-pid" title={`Its ${what} bit in the save: given once, never changed`}>{kind === "battle" ? "id" : "catch id"} {id}</span>;
+}
+
+/** A list of keys (battles won, a finished run) chosen from options, each removable; one no room has any more is
+ * shown in red. */
+function KeysPicker({ value, options, onChange, empty }: { value: string[]; options: Option[]; onChange(v: string[]): void; empty: string }) {
+  const byKey = new Map(options.map((o) => [o.value, o]));
+  return (
+    <span className="en-keys">
+      {value.map((k) => (
+        <span key={k} className={`en-chip ${byKey.has(k) ? "" : "en-chip-bad"}`} title={byKey.has(k) ? k : `${k}: no room has this battle`}>
+          {byKey.get(k)?.label ?? k}
+          <button className="icon" title="Remove" onClick={() => onChange(value.filter((x) => x !== k))}>×</button>
+        </span>
+      ))}
+      <SearchSelect value="" options={options.filter((o) => !value.includes(o.value))} placeholder={value.length ? "And…" : empty}
+                    onChange={(v) => { if (v && !value.includes(v)) onChange([...value, v]); }} />
+    </span>
+  );
+}
+
+// ---- Run -------------------------------------------------------------------------------------------------------------
+
+/** run.json's settings for every room: the forest's field weather. */
+function RunSection() {
+  const { docs } = useDocuments();
+  const [schema, setSchema] = useState<Schema | null>(null);
+  useEffect(() => { documents.hold(RUN).catch(() => undefined); api.schema(RUN_SCHEMA).then(setSchema, () => undefined); }, []);
+  const doc = docs.get(RUN);
+  const data = doc?.data instanceof Map ? doc.data : null;
+  const weather = typeof data?.get("field_weather") === "string" ? String(data.get("field_weather")) : "";
+  const choices = (schema?.properties?.field_weather?.enum ?? []).map(String);
+  const order = Object.keys(schema?.properties ?? {});
+  const setWeather = (v: string) => { if (data) documents.replace(RUN, put(data, "field_weather", v || undefined, order)); };
+  if (!data || !choices.length) return null;
+  return (
+    <div className="en-list-section">
+      <h5>Run <span className="muted">every room{doc?.dirty ? " •" : ""}</span></h5>
+      <div className="en-run">
+        <span className="muted small">Field weather</span>
+        <select value={weather} onChange={(e) => setWeather(e.target.value)} title={weather ? weatherNote(weather) : "No field weather"}>
+          <option value="">None</option>
+          {choices.map((w) => <option key={w} value={w}>{weatherLabel(w)}</option>)}
+        </select>
+      </div>
+      <span className="muted small">On the field in the rooms with no weather of their own</span>
     </div>
   );
 }
@@ -474,8 +579,9 @@ function RoomSection({ id, room, constants, saved, setField, rename }: {
         <Row label="Role" hint={ROLE_NOTES[room.role]}>
           <Switch value={room.role} options={ROLES} onChange={(v) => setField("role", v)} titles={ROLE_NOTES} />
         </Row>
-        <Row label="Weather" hint={room.weather ? "From the start of its battles" : "Random (designed later)"}>
-          <SearchSelect value={room.weather ?? ""} options={weathers} placeholder="Random" onChange={(v) => setField("weather", v || undefined)} />
+        <Row label="Weather" hint={room.weather ? "Shows on the field in the room and in its battles from their start"
+          : "On the field the run's field weather (Run, above the rooms), in battle random (designed later)"}>
+          <SearchSelect value={room.weather ?? ""} options={weathers} placeholder="The run's / random" onChange={(v) => setField("weather", v || undefined)} />
         </Row>
       </div>
     </Section>
@@ -492,17 +598,20 @@ interface EditProps {
   setField(at: JsonPath, def: string, key: string, v: JsonValue | undefined): void;
 }
 
-function BattlesSection({ room, constants, get, set, setField, replace, data }: EditProps & { replace(data: JsonValue): void; data: JsonValue }) {
+function BattlesSection({ room, roomId: id, constants, get, set, setField, replace, data, battleOptions, renameKeyElsewhere }: EditProps & {
+  roomId: string; replace(data: JsonValue): void; data: JsonValue; battleOptions: Option[]; renameKeyElsewhere(from: string, to: string): void;
+}) {
   const battles = asList(get(["battles"]));
   const add = () => {
     const id = freeId("battle", new Set(room.battles.map((b) => b.id)));
     set(["battles"], [...battles, fromPlain({ id, format: "single", enemies: [{ species: "SPECIES_BULBASAUR", level: DEFAULT_LEVEL }] })]);
   };
-  /** Renames a battle and the NPCs that start it, in one step. */
+  /** Renames a battle, the NPCs that start it and what every room's catches and spawn conditions name of it. */
   const renameBattle = (i: number, from: string, to: string) => {
     let next = setIn(data, ["battles", i, "id"], to);
     room.npcs.forEach((n, j) => { if (n.type === "battle" && n.battle === from) next = setIn(next, ["npcs", j, "battle"], to); });
-    replace(next);
+    replace(renameKeys(next, battleKey(id, from), battleKey(id, to)) ?? next);
+    renameKeyElsewhere(battleKey(id, from), battleKey(id, to));
   };
   const removeBattle = (i: number) => set(["battles"], battles.filter((_, j) => j !== i));
   return (
@@ -518,6 +627,7 @@ function BattlesSection({ room, constants, get, set, setField, replace, data }: 
                      onChange={(e) => renameBattle(i, b.id, e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_"))} />
               <span className="muted small">{starters.length ? `started by NPC ${starters.map(({ j }) => j + 1).join(", ")}` : "no NPC starts it"}</span>
               <span className="spacer" />
+              <ProgressId id={b.progressId} kind="battle" />
               <button className="icon" title="Remove the battle" onClick={() => removeBattle(i)}>×</button>
             </div>
             <div className="ow-condition">
@@ -527,6 +637,7 @@ function BattlesSection({ room, constants, get, set, setField, replace, data }: 
             </div>
             {b.enemies.map((_, k) => (
               <EnemyCard key={k} at={["battles", i, "enemies", k]} index={k} over={k >= max} constants={constants} get={get} set={set} setField={setField}
+                         battleOptions={battleOptions} ownKey={battleKey(id, b.id)}
                          remove={b.enemies.length > 1 ? () => set(["battles", i, "enemies"], asList(get(["battles", i, "enemies"])).filter((__, j) => j !== k)) : undefined} />
             ))}
             <div className="ow-section-actions en-enemy-add">
@@ -541,8 +652,8 @@ function BattlesSection({ room, constants, get, set, setField, replace, data }: 
   );
 }
 
-function EnemyCard({ at, index, over, constants, get, set, setField, remove }: {
-  at: JsonPath; index: number; over: boolean; constants: Constants; remove?: () => void;
+function EnemyCard({ at, index, over, constants, get, set, setField, remove, battleOptions, ownKey }: {
+  at: JsonPath; index: number; over: boolean; constants: Constants; remove?: () => void; battleOptions: Option[]; ownKey: string;
   get(at: JsonPath): JsonValue | undefined; set(at: JsonPath, v: JsonValue | undefined): void;
   setField(at: JsonPath, def: string, key: string, v: JsonValue | undefined): void;
 }) {
@@ -558,6 +669,13 @@ function EnemyCard({ at, index, over, constants, get, set, setField, remove }: {
   const abilities: Option[] = [{ value: "", label: "Either of its two", detail: "" }, { value: "hidden", label: "Its hidden ability", detail: "" },
     ...constantOptions(constants, "ABILITY_")];
   const sprite = walkingSprite(species, constants);
+  const caught = e.get("catch");
+  const terms = caught instanceof Map ? caught : null;
+  const after = asList(terms?.get("after")).map(String);
+  const once = terms?.get("once") !== false;
+  /** The catch's terms, written with both keys, as the format's example has them. */
+  const setCatch = (next: { after: string[]; once: boolean } | null) =>
+    f("catch", next ? fromPlain({ after: next.after, once: next.once }) : undefined);
   return (
     <div className={`en-enemy ${over ? "en-over" : ""}`}>
       <div className="en-enemy-head">
@@ -594,6 +712,21 @@ function EnemyCard({ at, index, over, constants, get, set, setField, remove }: {
           </span>
           <label className="ow-check"><input type="checkbox" checked={e.get("shiny") === true} onChange={(ev) => f("shiny", ev.target.checked ? true : undefined)} /> Shiny</label>
         </Row>
+        <Row label="Catching" hint={terms ? "Only the Nightmare Ball catches it, always when allowed; a capture wins the battle" : "Only the Nightmare Ball catches, and only enemies allowed here"}>
+          <label className="ow-check">
+            <input type="checkbox" checked={!!terms} onChange={(ev) => setCatch(ev.target.checked ? { after: [], once: DEFAULT_ONCE } : null)} /> Can be caught
+          </label>
+          {terms && <ProgressId id={typeof e.get("progress_id") === "number" ? Number(e.get("progress_id")) : undefined} kind="catch" />}
+        </Row>
+        {terms && <>
+          <Row label="Only after" hint={after.length ? "Catchable once all of these have been won, in any run or earlier in this one" : "Catchable from the first encounter"}>
+            <KeysPicker value={after} options={battleOptions.filter((o) => o.value !== ownKey)} empty="Winning… (any battle)"
+                        onChange={(v) => setCatch({ after: v, once })} />
+          </Row>
+          <Row label="" hint={once ? "Once caught, it can never be caught again" : "It can be caught again in later runs"}>
+            <label className="ow-check"><input type="checkbox" checked={once} onChange={(ev) => setCatch({ after, once: ev.target.checked })} /> Only once</label>
+          </Row>
+        </>}
       </div>
     </div>
   );
@@ -601,14 +734,10 @@ function EnemyCard({ at, index, over, constants, get, set, setField, remove }: {
 
 // ---- NPCs ------------------------------------------------------------------------------------------------------------
 
-function NpcsSection({ room, constants, get, set, setField, selected, select, add, openPicker, npcOrder }: EditProps & {
-  selected: number | null; select(i: number | null): void; add(type: NpcType): void; openPicker(): void; npcOrder: string[];
+function NpcsSection({ room, constants, get, set, setField, selected, select, add, openPicker, npcOrder, battleOptions }: EditProps & {
+  selected: number | null; select(i: number | null): void; add(type: NpcType): void; openPicker(): void; npcOrder: string[]; battleOptions: Option[];
 }) {
-  const { notes } = useNotes();
-  const flags: Option[] = useMemo(() => constantOptions(constants, "EVENT_FLAG_").map((o) => {
-    const note = notes.flags[String(constants.get(o.value))];
-    return note ? { ...o, detail: `${o.detail} ${note}` } : o;
-  }), [constants, notes]);
+  const spawnOptions: Option[] = useMemo(() => [{ value: RUN_COMPLETED, label: "Finished a run", detail: "the final room beaten once" }, ...battleOptions], [battleOptions]);
   const npc = selected !== null ? room.npcs[selected] : undefined;
   const at: JsonPath = ["npcs", selected ?? 0];
   const f = (key: string, v: JsonValue | undefined) => setField(at, "npc", key, v);
@@ -616,11 +745,17 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
     if (!npc || selected === null) return;
     // Drops what the old type used, gives what the new one needs
     let next = newNpc(type, npc.x, npc.z, room);
-    const kept = ["flag", "chance", "facing", ...(type === "rest" || type === "buff" ? ["sprite"] : [])];
+    const kept = ["requires", "chance", "facing", "dialogue", ...(type === "rest" || type === "buff" ? ["sprite"] : [])];
     for (const [k, v] of asMap(get(at))) if (kept.includes(k)) next = put(next, k, v, npcOrder);
     set(at, next);
   };
   const battle = npc?.type === "battle" ? room.battles.find((b) => b.id === npc.battle) : undefined;
+  /** One of its messages: an empty one is left out, and so is the dialogue with none. */
+  const setDialogue = (key: "before" | "after", text: string) => {
+    const old = asMap(get([...at, "dialogue"]));
+    const next = put(old, key, text || undefined, ["before", "after"]);
+    f("dialogue", next.size ? next : undefined);
+  };
   const defaultSprite = npc ? npcSprite({ ...npc, sprite: undefined }, room, constants) : null;
   const sprite = npc ? npcSprite(npc, room, constants) : null;
   return (
@@ -638,7 +773,7 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
             <button key={i} className={`en-npc ${i === selected ? "selected" : ""}`} onClick={() => select(i === selected ? null : i)}>
               {s ? <SpriteImage model={s} direction={n.facing} size={24} /> : <span className="en-nosprite">?</span>}
               <span className="en-npc-name">{i + 1}. {cap(n.type)} <span className="muted">{what}</span></span>
-              <span className="muted small">{n.x}, {n.z} {ARROWS[n.facing]}{(n.chance ?? 100) < 100 ? ` · ${n.chance}%` : ""}{n.flag ? " · flag" : ""}</span>
+              <span className="muted small">{n.x}, {n.z} {ARROWS[n.facing]}{(n.chance ?? 100) < 100 ? ` · ${n.chance}%` : ""}{n.requires.length ? " · after" : ""}{n.dialogue?.before || n.dialogue?.after ? " · 💬" : ""}</span>
             </button>
           );
         })}
@@ -685,13 +820,13 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
                 <button onClick={() => f("sprite", undefined)} title={npc.type === "item" ? `Back to the item ball (${ITEM_BALL_SPRITE})` : "Back to its enemy's walking sprite"}>Default</button>
               )}
             </Row>
-            <Row label="Flag" hint={npc.flag ? "Spawns only while this flag is set" : "Spawns whatever the flags"}>
-              <SearchSelect value={npc.flag ?? ""} options={flags} placeholder="No flag" onChange={(v) => f("flag", v || undefined)} />
-              {npc.flag && <button className="icon" title="No flag" onClick={() => f("flag", undefined)}>×</button>}
-            </Row>
             <Row label="Chance" hint="Its chance to spawn each time the room comes up">
               <NumberBox value={npc.chance ?? DEFAULT_CHANCE} min={1} max={100} onChange={(n) => f("chance", n === 100 ? undefined : n)} />
               <span className="muted">%</span>
+            </Row>
+            <Row label="Spawns after" hint={npc.requires.length ? "Spawns only once all of these hold (battles won in any run)" : "Spawns from the first run"}>
+              <KeysPicker value={npc.requires} options={spawnOptions} empty="Always"
+                          onChange={(v) => f("requires", v.length ? v : undefined)} />
             </Row>
             <Row label="Tile" hint={`Or drag it on the map; the player arrives at ${ARRIVAL.x}, ${ARRIVAL.z}`}>
               <span className="muted">x</span><NumberBox value={npc.x} min={0} max={31} onChange={(n) => f("x", n)} />
@@ -703,6 +838,18 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
               </span>
               <span className="muted">{FACING_NAMES[npc.facing]}</span>
             </Row>
+          </div>
+          <h6 className="en-sub">Dialogue <span className="muted">typed here; the build makes its text</span></h6>
+          <div className="ow-condition en-dialogue">
+            <Row label={npc.type === "battle" ? "Before" : "On talking"}>
+              <DialogueField value={npc.dialogue?.before ?? ""} onChange={(v) => setDialogue("before", v)}
+                             placeholder={npc.type === "battle" ? "What it says before the battle starts" : (npc.type === "item" ? "What it says as it gives its item" : "What it says (its menu comes later)")} />
+            </Row>
+            {npc.type === "battle" && (
+              <Row label="After the battle">
+                <DialogueField value={npc.dialogue?.after ?? ""} onChange={(v) => setDialogue("after", v)} placeholder="What it says once the battle is won, before the room opens" />
+              </Row>
+            )}
           </div>
         </div>
       )}

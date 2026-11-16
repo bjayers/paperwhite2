@@ -5,6 +5,7 @@
     "battles": [
         {
             "id": "rayquaza_raid",
+            "progress_id": 3,
             "format": "raid",
             "enemies": [
                 {

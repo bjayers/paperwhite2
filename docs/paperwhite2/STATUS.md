@@ -2,6 +2,23 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-15: the Entree Editor's dialogue, catching, progress ids and run weather (ROM session, on a branch)
+
+"The room format" (In the editor, step 3) has the details; the game side of the same spec is a separate branch.
+
+- **Schemas:** `room.schema.json` gains `npc.dialogue` (`before`, `after`; `x-message: "game"`, real line breaks as the
+  trainers' messages), `npc.requires` (replacing `flag`: `"<room>/<battle>"` keys and `"run/completed"`),
+  `enemies[].catch` (`after`, `once`), `progress_id` on battles (required, 0-1023) and catchable enemies (0-511);
+  `run.schema.json` gains `field_weather` (the calendar's `WEATHER_*` enum); new `progress_ids.json` and its schema.
+  The four converted rooms have battle ids 0-3; `progress_ids.json` is at 4 / 0.
+- **Editor:** dialogue boxes with preview, wait/new-page buttons, Fit to the window and width/scroll warnings
+  (`text/DialogueField.tsx`, `message.ts` checkMessage/fitMessage); catch toggle, Only after, Only once; Spawns after;
+  ids given on Save, shown read-only; keys follow battle and room renames; Run section with the field weather.
+- **Tests:** `tests/entree-progress.test.ts`, `tests/dialogue.test.ts`; typecheck clean, 232 tests pass.
+
+Open: which word buffer the compiled dialogue fills with the player's name (the box has no Player's name button
+until the game side decides); the game helper's schema wins on field names if it differs.
+
 ## 2026-11-15: the Entralink roguelike's level-100 team and forfeit (ROM session, on a branch)
 
 `docs/paperwhite2/design/entralink-roguelike-prototype.md`, "Step 2", has the design, the proof and the gaps.

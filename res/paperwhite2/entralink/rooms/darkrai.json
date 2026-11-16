@@ -5,6 +5,7 @@
     "battles": [
         {
             "id": "darkrai",
+            "progress_id": 0,
             "format": "single",
             "enemies": [
                 {

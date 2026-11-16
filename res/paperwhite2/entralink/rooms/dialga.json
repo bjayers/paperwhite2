@@ -5,6 +5,7 @@
     "battles": [
         {
             "id": "dialga",
+            "progress_id": 1,
             "format": "single",
             "enemies": [
                 {
