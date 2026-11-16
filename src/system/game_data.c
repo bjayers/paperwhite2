@@ -389,6 +389,14 @@ PokeParty *GameData_GetParty(GameData *gameData) {
     return gameData->party;
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: an Entralink run's copies as the game's party, outside the save, which keeps the real party
+// (paperwhite2/entralink_run_party.h)
+void PaperWhite2_GameData_SetParty(GameData *gameData, PokeParty *party) {
+    gameData->party = party;
+}
+#endif
+
 BoxSaveAccessor *GameData_GetBoxSaveAccessor(GameData *gameData) {
     return gameData->boxes;
 }

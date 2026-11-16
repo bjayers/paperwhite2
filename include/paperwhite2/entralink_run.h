@@ -11,7 +11,8 @@
 // Walking off the hub's top edge starts a run: rooms drawn from res/paperwhite2/entralink/run.json's pool in a random
 // order, then its final challenge, each a room of the Entree Forest with the challenge's enemies standing in it.
 // Talking to one starts the challenge's battle; winning opens the room's exits, any of which leads to the next room.
-// The run's state is three saved variables (EVENT_WORK_ENTRALINK_RUN_*). Its code is
+// The run's state is three saved variables (EVENT_WORK_ENTRALINK_RUN_*), and its team the party's copies at level 100
+// (paperwhite2/entralink_run_party.h). Its code is
 // src/paperwhite2/ov012/paperwhite2_entralink_run.c, in overlay 12 beside the Entree Forest's script commands, which
 // call it; the data is paperwhite2/entralink_run_config.h, which tools/paperwhite2/entralink_run.py writes from
 // res/paperwhite2/entralink/
@@ -75,6 +76,8 @@ u16 EntralinkRun_GetRoomZone(GameData *gameData);
 GameEvent *EntralinkRun_CreateExitEvent(GameSystem *gsys);
 // Puts the room's enemies in it, unless its battle is won (Scrcmd_EntreeForest_EntreeForestSpawnAllPkm)
 void EntralinkRun_SpawnRoom(GameSystem *gsys);
+// Ends a run that the player has left by any other way than its own, as each map loads (ZoneChange_OnFieldLoad)
+void EntralinkRun_OnFieldLoad(GameData *gameData, u16 zoneId);
 
 // Command 0x2f8, EntralinkRun action, arg1, arg2, result: runs one of the run's actions
 // (ENTRALINK_RUN_ACTION_*, paperwhite2/entralink_run_actions.h), and puts what it returns in the variable result

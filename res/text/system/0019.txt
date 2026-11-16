@@ -207,4 +207,5 @@ Bank0019_Text_GainedPrestigePoints = {010c:0} gained\n{0206:1} Prestige Points!
 Bank0019_Text_NoOneCanRunAway = No one will be able to run away\nduring the next turn!
 Bank0019_Text_CraftyShieldProtectedTeam = Crafty Shield protected your team!
 Bank0019_Text_CraftyShieldProtectedFoes = Crafty Shield protected the foe's team!
+Bank0019_Text_EntralinkRunForfeit = If you run, you'll wake from the\nnightmare and your run will end.{be00}\nRun anyway?
 \pad{48}

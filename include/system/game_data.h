@@ -88,6 +88,10 @@ PerapVoice *getChatterDataAddress(GameData *gameData);
 MusicalSave *getMusicalInfoBlkAddress(GameData *gameData);
 ZoneSpawnInfo *GameData_GetNextZone(GameData *gameData);
 PokeParty *GameData_GetParty(GameData *gameData);
+#ifdef PAPERWHITE2
+// Paper White 2: makes another party the game's, for an Entralink run's copies (paperwhite2/entralink_run_party.h)
+void PaperWhite2_GameData_SetParty(GameData *gameData, PokeParty *party);
+#endif
 PlayerState *GameData_GetPlayerState(GameData *gameData);
 TimeSigSave *getTimeSigSaveBlock(GameData *gameData);
 PlayerState *GameData_GetPlayerStateByNetID(GameData *gameData, s32 index);

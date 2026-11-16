@@ -2,6 +2,27 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-15: the Entralink roguelike's level-100 team and forfeit (ROM session, on a branch)
+
+`docs/paperwhite2/design/entralink-roguelike-prototype.md`, "Step 2", has the design, the proof and the gaps.
+
+- **The team:** a run plays with copies of the party at level 100 (stats recalculated, healed; eggs untouched), kept in
+  ARM9 main; `GameData`'s party pointer points at them for the run, so every screen, the follower and the battles show
+  them. HP, PP and status carry between rooms. The real party stays in the save's party block, untouched, so **any
+  save writes the real party** (and nothing in the run's zones can save anyway). Any end (Darkrai, a loss, a forfeit,
+  a map load outside the forest such as the debug warps) puts it back as it was, with prestige written back.
+- **Prestige:** a copy of a level-100 Pokémon gains prestige in run battles and keeps it; copies of the others gain none.
+- **Forfeit:** RUN in a run's battle asks "If you run, you'll wake from the nightmare and your run will end. Run
+  anyway?" (`res/text/system/0019.txt`); Yes always escapes, past traps and Smoke Ball, and ends the run ("You turned
+  away from the nightmare and woke up...", `global_10490.txt`); No returns to the menu.
+- **Proof:** py-desmume on the user's save copy: the copies' levels, stats and healing, the egg; PP carried from room 1
+  to 4; prestige gained (level-100 copy only) and written back after Darkrai; the real party byte for byte after a win
+  (apart from prestige), a loss and a forfeit (against a Speed 999 Shadow Tag foe, No then Yes); a party of one left
+  by the debug warp. `--hack` builds without warnings, DSi intact; plain `modules.ok` passes.
+
+Decide: held items taken from or given to a copy in the party screen (duplicated or lost at the run's end), and bag
+items (stones, Rare Candy) used on copies; hiding the party screen's Item command in a run would do until the run bag.
+
 ## 2026-11-15: the Entralink roguelike's first prototype (ROM session, on a branch)
 
 `docs/paperwhite2/design/entralink-roguelike-prototype.md` has what was built, the data format, the proof and the gaps.

@@ -15,12 +15,14 @@
 #include "field/field_actor.h"
 #include "field/field_event.h"
 #include "field/field_script.h"
+#include "field/zone.h"
 #include "gfl/heap.h"
 #include "gfl/random.h"
 #include "paperwhite2/entralink_run.h"
 #include "paperwhite2/entralink_run_actions.h"
 #include "paperwhite2/entralink_run_battle.h"
 #include "paperwhite2/entralink_run_config.h"
+#include "paperwhite2/entralink_run_party.h"
 #include "pml/poke_party.h"
 #include "save/event_work.h"
 #include "save/player_info.h"
@@ -89,6 +91,8 @@ void EntralinkRun_Start(GameData *gameData) {
     *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_ORDER) = order;
     *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_ROOM) = 1;
     *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_CLEARED) = FALSE;
+    // The team: the party's copies at level 100 (paperwhite2/entralink_run_party.h)
+    EntralinkRun_KeepParty(gameData);
 }
 
 BOOL EntralinkRun_IsActive(GameData *gameData) {
@@ -97,9 +101,22 @@ BOOL EntralinkRun_IsActive(GameData *gameData) {
     return room != 0 && room <= EntralinkRun_GetRoomCount();
 }
 
+// Ends the run, and puts the real party back with the prestige gained
 static void EntralinkRun_End(GameData *gameData) {
     *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_ROOM) = 0;
     *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_CLEARED) = FALSE;
+    EntralinkRun_RestoreParty(gameData);
+}
+
+void EntralinkRun_OnFieldLoad(GameData *gameData, u16 zoneId) {
+    if (!EntralinkRun_IsActive(gameData) && !EntralinkRun_IsPartyKept()) {
+        return;
+    }
+    // A run is only ever in the forest, with its copies as the party: anywhere else (the debug menu's warps), or
+    // without them (a game loaded from a save made in a run), it is over
+    if (!GetZoneIsEntreeForest(zoneId) || !EntralinkRun_IsPartyKept()) {
+        EntralinkRun_End(gameData);
+    }
 }
 
 static BOOL EntralinkRun_IsRoomCleared(GameData *gameData) {
@@ -273,12 +290,12 @@ static GameEvent *EntralinkRun_CreateBattle(GameSystem *gsys, const EntralinkCha
 static u16 EntralinkRun_FinishBattle(GameSystem *gsys, const EntralinkChallenge *challenge) {
     GameData *gameData = GSYS_GetGameData(gsys);
     u32 room = *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_ROOM);
+    u32 result = GameData_GetLastBtlResult(gameData);
 
-    if (GameData_GetLastBtlResult(gameData) != BTL_RESULT_VICTORY) {
-        // A loss or running away ends the run; the party wakes up healed at the hub
-        PokeParty_RecoverAll(GameData_GetParty(gameData));
+    if (result != BTL_RESULT_VICTORY) {
+        // A loss or running away ends the run, with the real party back as it was
         EntralinkRun_End(gameData);
-        return ENTRALINK_RUN_RESULT_LOST;
+        return result == BTL_RESULT_FLEE ? ENTRALINK_RUN_RESULT_FORFEIT : ENTRALINK_RUN_RESULT_LOST;
     }
     EntralinkRun_RemoveEnemies(gsys, challenge);
     *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_CLEARED) = TRUE;

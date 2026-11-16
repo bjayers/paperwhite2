@@ -330,8 +330,8 @@ Movement_RunExitBack3:
     MoveEnd
 
 // Paper White 2: talking to an Entralink run room's enemy (script 10498, paperwhite2_entralink_run.c): its cry and
-// the room's battle. A win opens the exits, or after the final room ends the run at the hub; a loss or running away
-// ends it there too, with the party healed
+// the room's battle. A win opens the exits, or after the final room ends the run at the hub; a loss or a forfeit
+// (running) ends it there too, with the real party back
 Script_9:
     ActorsPauseAll
     ActorSetEyeToEye
@@ -345,7 +345,13 @@ Script_9:
     VMJumpIf CMP_EQ, L_RunRoomCleared
     WorkCmpConst 0x8000, ENTRALINK_RUN_RESULT_RUN_WON
     VMJumpIf CMP_EQ, L_RunWon
+    WorkCmpConst 0x8000, ENTRALINK_RUN_RESULT_FORFEIT
+    VMJumpIf CMP_EQ, L_RunForfeited
     SystemMsg Global10490_Text_WokeFromNightmare, 2
+    VMJump L_RunToHub
+
+L_RunForfeited:
+    SystemMsg Global10490_Text_RanFromNightmare, 2
     VMJump L_RunToHub
 
 L_RunWon:
