@@ -10,7 +10,7 @@ import { api } from "../../api.ts";
 import { parsePal } from "../palettes/pal.ts";
 import { readIndexedPng, type IndexedImage } from "../palettes/png.ts";
 import { parseFont, parseNclr, type Font, type Rgb } from "./font.ts";
-import { parseMessage, wordSample, type Token } from "./message.ts";
+import { parseMessage, TEXT_WIDTH, wordSample, type Token } from "./message.ts";
 
 interface Assets {
   font: Font;
@@ -35,6 +35,13 @@ function loadAssets(): Promise<Assets> {
     assets.catch(() => { assets = null; });
   }
   return assets;
+}
+
+/** The talk window's font, once read (null until then, or when it can't be), for measuring a message's lines. */
+export function useMessageFont(): Font | null {
+  const [font, setFont] = useState<Font | null>(null);
+  useEffect(() => { loadAssets().then((a) => setFont(a.font), () => undefined); }, []);
+  return font;
 }
 
 // The window, in tiles, and where the canvas starts: the frame's row above the window
@@ -77,7 +84,7 @@ function newPrinter(tokens: Token[]): Printer {
   return { tokens, pos: 0, pending: [], lines: [[], []], line: 0, x: 0, color: 0, state: "typing", overflow: 0, cleared: false };
 }
 
-const textWidth = WIN_W * 8 - TEXT_X;
+const textWidth = TEXT_WIDTH;
 
 /** Prints the next letter, or acts on the codes before it; false once it waits or ends. */
 function step(p: Printer, font: Font, words: Record<number, string>): boolean {

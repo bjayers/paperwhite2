@@ -64,3 +64,17 @@
 .en-npc-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .en-nosprite { display: inline-flex; width: 24px; height: 24px; align-items: center; justify-content: center; border: 1px dashed var(--border);
   border-radius: 4px; color: var(--muted); }
+
+/* Progress ids, shown and never edited; the pickers of battles won (catches, spawn conditions); the NPC's dialogue; the run */
+.en-pid { font-size: 11px; font-family: var(--mono); color: var(--muted); border: 1px solid var(--border); border-radius: 3px; padding: 0 5px; }
+.en-pid-new { font-style: italic; font-family: inherit; }
+.en-keys { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; width: 100%; }
+.en-keys .search-select { flex: 1; min-width: 160px; }
+.en-chip { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; padding: 1px 2px 1px 7px; border-radius: 10px; background: var(--selected); border: 1px solid var(--border); }
+.en-chip button.icon { padding: 0 4px; line-height: 1; }
+.en-chip-bad { border-color: var(--error); color: var(--error); }
+.en-sub { margin: 12px 0 6px; font-size: 12px; display: flex; gap: 8px; align-items: baseline; }
+.en-sub .muted { font-weight: normal; }
+.en-run { display: grid; grid-template-columns: 92px 1fr; gap: 6px; align-items: center; }
+.en-run select { min-width: 0; }
+.en-dialogue .ow-condition-label { align-self: start; padding-top: 4px; }

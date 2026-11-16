@@ -138,6 +138,17 @@ The editor's other checks: a battle NPC naming no battle or a missing one, a bat
 format takes, a battle NPC showing an enemy its battle doesn't have, an item NPC without an item, two NPCs on one tile,
 and over all the rooms: no final room, a round with no rooms, round 1 or 2 with no boss.
 
+**In the editor (step 3):** an NPC's dialogue is typed in its panel (Before, or On talking, and After the battle), with
+Wait and New page buttons, a Fit to the window button (breaks lines too wide at a space, adds a wait where a line would
+scroll away unread), warnings for both, and the talk window's preview: the reusable `text/DialogueField.tsx`. An
+enemy's Can be caught, Only after (battles of any room, "Room name: battle id") and Only once; an NPC's Spawns after
+(the same picker, plus Finished a run). Save first gives new battles and catchable enemies their `progress_id` from
+`progress_ids.json` (created if missing; the numbers only go up, from above every id in use, so none is reused or
+changed), shown read-only in the battle's header and beside Can be caught; Duplicate drops the copy's ids so it gets
+new ones. Renaming a battle or a room renames what every room's `after` and `requires` name of it. The Run section above
+the rooms edits `run.json`'s `field_weather`. The checks add: a catch or spawn condition naming a battle no room has, two
+battles or catches with one progress id, a room called `run`, an After message on a non-battle NPC.
+
 ## How it works
 
 - **Run state:** three saved event variables (room 1-5, 0 outside a run; the pool places drawn, a nibble a room; the
