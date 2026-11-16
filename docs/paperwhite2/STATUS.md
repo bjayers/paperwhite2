@@ -22,6 +22,23 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
 Next: the user's playtest; then level 100 battle copies, the run's own flee warning and ball message, a real save.
 
+## 2026-11-15: Fairy step 2's skipped cases tested; Shed Shell fixed (ROM session, on a branch)
+
+`docs/paperwhite2/design/fairy-type.md` section 12.4, "The skipped cases, tested", has each case and its proof.
+
+- **Pass:** Fairy Lock wears off the turn after (switch and Run work again), blocks Run ("Can't escape!"), and lets a
+  Ghost type, Run Away and the Smoke Ball flee and U-turn, Baton Pass and Roar work; Teleport fails under it. Crafty
+  Shield lets Thunder Shock, Perish Song and Spikes through, blocks two Pikachu's Growl on both allies in a double while
+  the ally's own Swords Dance goes through, and fails when used last. Flower Shield fails with no Grass type and in a
+  double raises the Grass ally and both Grass foes, not the non-Grass user. The Pixie Plate given in the party screen
+  makes Arceus form 17 (summary: FAIRY, the form's palette), taken back form 0 (NORMAL).
+- **Fixed, an original bug:** a Shed Shell holder in the lead could never switch, trapped or not ("can't be switched
+  out!"): `CanMonSwitch`'s Shed Shell branch leaves `trapMonId` unset and the stale 0 matched the lead's ID, which the
+  party list reads as a blocked switch. `btl_client.c` sets it under `BUGFIX` or `PAPERWHITE2` (`// BUG:`); Shed Shell
+  now switches with no trap, under Mean Look and under Fairy Lock. DSi check intact.
+
+Next: the PC's give and take of the plate and the Pokédex are still untested.
+
 ## 2026-11-15: Flower Shield, Fairy Lock, Crafty Shield, the Pixie Plate and Arceus-Fairy (ROM session, on a branch)
 
 `docs/paperwhite2/design/fairy-type.md` section 12.4 has what was built and the proof; `items.md` the Pixie Plate;

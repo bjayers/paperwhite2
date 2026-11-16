@@ -575,6 +575,38 @@ the user asked for light testing here):
 - ROM `b9835c5102e305630eeb6f3b0d7c8defba196b83`, `verify_dsi_rom.py` intact; the plain `w2_us` build's code modules
   match (its archive checks fail as before); `test_moves_abilities` passes (21); the editor's `npm test` 219 of 220 (the
   known Applin back-rig failure).
-- **Not run:** Fairy Lock wearing off and blocking a flee, a Ghost type under it, Teleport; Crafty Shield against a
-  damaging move and when used last; Flower Shield with no Grass type, in a double battle; giving the Pixie Plate in the
-  party screen or the PC (the form change through `PaperWhite2_GetArceusPlateForm`, set in memory here); the Pokédex.
+
+**The skipped cases, tested** (2026-11-15, the same harness from Route 6, scratchpad `fairytest2/`; the battles set up by
+memory writes to the party and the wild Pokémon, logged by hooks on the server's and the clients' functions, read from
+the screens):
+
+- **Fairy Lock** (Clefable, its moves written; a wild Snorlax using Splash): blocked a switch in the next turn
+  (`CanMonSwitch` → `TRAP_CONDITION`, the lock active), and after a Tackle that turn, the switch the turn after worked
+  ("You're in charge, Klink!", the lock read as inactive); Run in the next turn: "Can't escape!", then "Got away safely!"
+  the turn after. **Under the lock:** a Gengar (its species written) fled ("Got away safely!": the field handler ran and
+  let it) and switched; a Run Away holder fled (its popup), a Smoke Ball holder fled ("…fled using its Smoke Ball!");
+  U-turn hit and brought Klink in from the party screen, Baton Pass passed to Klink ("Go! Klink!"), Roar ended the
+  battle; Teleport failed ("But it failed!"; without the lock it fled).
+- **Shed Shell didn't work, under Fairy Lock or without it — an original bug, fixed.** A Shed Shell holder in the lead
+  got "can't be switched out!" with no trap at all, and under Mean Look. Cause, read from hooks: `CanMonSwitch`'s Shed
+  Shell branch returns `TRAP_NONE` without setting `trapMonId`, and `BattleClient_ActionSwitchPokemon` passes
+  `trapMonId == the switcher's ID` to the party list as "can't cancel", whose `BPlistMain_GetSwitchError` then answers 6,
+  "can't be switched out"; the slot held a stale 0, the lead's ID. `btl_client.c` is complete (matching), so the
+  original has the read. Fixed under `BUGFIX` or `PAPERWHITE2` (`// BUG:`): the branch sets `trapMonId` 31 and the
+  ability 0, as the other `TRAP_NONE` path does. After it: Shed Shell switched with no trap, under Mean Look and under
+  Fairy Lock (`trapMonId after 31`, "Go! Klink!").
+- **Crafty Shield** (a slower Clefable, a wild Pikachu): Thunder Shock hit through it (30 HP); Perish Song went through
+  ("Oinkums's perish count fell to 3!"); Spikes were laid on the shielded side. Double battle, Clefable's Crafty Shield and
+  Klink's Swords Dance against two Pikachu's Growl: "Crafty Shield protected Oinkums!" and "…Klink!" for both Growls,
+  and Klink's own Swords Dance went through (its animation, the server's stat change on Klink). Used last (the faster Pikachu's own Crafty Shield first, "…protected
+  the foe's team!"): "But it failed!".
+- **Flower Shield** with no Grass type (Clefable against Snorlax): "But it failed!". Double battle, Clefable's Flower
+  Shield with a Chikorita ally against two Oddish: one stat change for the Chikorita and both Oddish
+  (`mons [1, 12, 13]`), not the Clefable.
+- **The Pixie Plate in the party screen** (Klink's slot written to a Multitype Arceus, form 0; the plate from the debug
+  menu's Give item): Item > Give > the Pixie Plate: "Klink was given the Pixie Plate to hold.", the data's form 17
+  (read from the party), the party icon and summary: Type FAIRY, the Pixie Plate, the form's palette. Item > Take:
+  "Received the Pixie Plate from Klink.", form 0, the summary's Type NORMAL and the white palette.
+- ROM `408855c6…` before the fix, `48cd0862…` after it (the Shed Shell, U-turn and Crafty Shield double runs on
+  this one); `verify_dsi_rom.py` intact.
+- **Still not run:** the PC's give and take (`box2_main.c`, the same `PaperWhite2_GetArceusPlateForm`), the Pokédex.
