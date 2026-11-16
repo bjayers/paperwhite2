@@ -13,7 +13,8 @@
 #define ENTRALINK_RUN_ACTION_BATTLE 2
 // After the battle: on a win, removes the room's enemies and opens its exits, and returns
 // ENTRALINK_RUN_RESULT_CLEARED, or ENTRALINK_RUN_RESULT_RUN_WON after the final room, which ends the run. Any other
-// end (a loss, running away) ends the run, heals the party and returns ENTRALINK_RUN_RESULT_LOST
+// end ends the run, puts the real party back and returns ENTRALINK_RUN_RESULT_FORFEIT if the player ran (the battle's
+// Yes/No forfeit), or ENTRALINK_RUN_RESULT_LOST (a loss, or any other end)
 #define ENTRALINK_RUN_ACTION_BATTLE_RESULT 3
 // Ends the run and warps to the hub's entrance; the script waits for the warp
 #define ENTRALINK_RUN_ACTION_WARP_HUB 4
@@ -21,5 +22,6 @@
 #define ENTRALINK_RUN_RESULT_LOST 0
 #define ENTRALINK_RUN_RESULT_CLEARED 1
 #define ENTRALINK_RUN_RESULT_RUN_WON 2
+#define ENTRALINK_RUN_RESULT_FORFEIT 3
 
 #endif // PAPERWHITE2_ENTRALINK_RUN_ACTIONS_H

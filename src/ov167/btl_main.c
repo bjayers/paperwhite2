@@ -1663,6 +1663,14 @@ u16 func_ov167_0219bf14(BtlMainModule *mainModule) {
 }
 
 u32 GetRunMode(BtlMainModule *mainModule) {
+#ifdef PAPERWHITE2
+    // Paper White 2: running from an Entralink run's battle is a forfeit, as from the Battle Subway's: a Yes/No (its
+    // own message, BattleClient_ActionSelectEscape), and then the escape always succeeds, past any trap and Smoke
+    // Ball's message (paperwhite2/entralink_run_battle.h)
+    if (BtlSetup_IsBattleType(mainModule, ENTRALINK_RUN_BTL_SETUP_FLAG)) {
+        return 2;
+    }
+#endif
     switch (mainModule->setup->battleType) {
     case 0:
         return 0;

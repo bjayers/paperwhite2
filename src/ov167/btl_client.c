@@ -42,8 +42,10 @@
 #include "system/pms_data.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/battle_handlers.h"
+#include "paperwhite2/entralink_run_battle.h"
 #include "paperwhite2/moves.h"
 #include "paperwhite2/prestige.h"
+#include "text/system/0019.h"
 #endif
 
 // Function names from swan (https://github.com/ds-pokemon-hacking/swan, GPL-3.0) where it has them
@@ -3010,7 +3012,16 @@ static BOOL BattleClient_ActionSelectEscape(BtlClient *client, s32 *seq) {
             *seq = ESCAPE_SEQ_WAIT_BLOCKED_MSG;
             break;
         case 2:
+#ifdef PAPERWHITE2
+            // Paper White 2: an Entralink run's forfeit warns that it ends the run (paperwhite2/entralink_run_battle.h)
+            if (BtlSetup_IsBattleType(client->mainModule, ENTRALINK_RUN_BTL_SETUP_FLAG)) {
+                Btlv_StringParam_Setup(&client->strParam, 1, Bank0019_Text_EntralinkRunForfeit);
+            } else {
+                Btlv_StringParam_Setup(&client->strParam, 1, 0x4d);
+            }
+#else
             Btlv_StringParam_Setup(&client->strParam, 1, 0x4d);
+#endif
             Btlv_StringParam_SetWait(&client->strParam, 0xff);
             BattleClient_ShowSelectMsg(client, &client->strParam);
             *seq = ESCAPE_SEQ_ASK;

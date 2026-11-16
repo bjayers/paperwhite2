@@ -39,6 +39,7 @@
 #ifdef PAPERWHITE2
 #include "constants/pokemon.h"
 #include "paperwhite2/battle_handlers.h"
+#include "paperwhite2/entralink_run_party.h"
 #include "paperwhite2/pokemon_forms.h"
 #include "paperwhite2/prestige.h"
 #include "text/system/0019.h"
@@ -5597,8 +5598,9 @@ BOOL ServerControl_GiveExp(BtlServerFlow *flow, BattleParty *party, const BtlFlo
             }
 #ifdef PAPERWHITE2
             // Paper White 2: at level 100, the Exp. goes to its prestige, which the screens show past 100, said as the
-            // Exp. is; a new prestige level is said too, in gold (paperwhite2/prestige.h)
-            else {
+            // Exp. is; a new prestige level is said too, in gold (paperwhite2/prestige.h). An Entralink run's copy of a
+            // Pokémon below 100 gains none (paperwhite2/entralink_run_party.h)
+            else if (EntralinkRun_CanGainPrestige(PokeParty_GetBoxPkm(GetSrcData(mon)))) {
                 BoxPkm *pkm = PokeParty_GetBoxPkm(GetSrcData(mon));
 
                 monId = GetMonID(mon);

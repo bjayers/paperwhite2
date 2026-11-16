@@ -9,6 +9,9 @@
 #include "save/event_work.h"
 #include "save/save_control.h"
 #include "system/game_data.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/entralink_run.h"
+#endif
 
 void ZoneChange_OnSeamless(GameData *gameData, Field *field) {
     SaveControl_GetEncountSave(GameData_GetSaveControl(gameData));
@@ -60,6 +63,11 @@ void ZoneChange_OnGameStart(GameData *gameData, u16 zoneId) {
 }
 
 void ZoneChange_OnFieldLoad(GameData *gameData, u16 zoneId) {
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink run ends when the player is no longer in it, so the real party comes back
+    // (paperwhite2/entralink_run.h)
+    EntralinkRun_OnFieldLoad(gameData, zoneId);
+#endif
 }
 
 void ZoneChange_ResetStrengthRocks(MMSys *system) {

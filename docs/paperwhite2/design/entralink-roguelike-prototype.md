@@ -2,7 +2,8 @@
 
 Built 2026-11-15 on `entralink-roguelike.md`'s design and survey (sections 1 and 3), to answer "does it work": a run of
 four rooms in the Entree Forest, each with a legendary to battle, from a cleared Entralink hub. No buffs, no damage or
-HP numbers, no C-Gear screen, no level 100, no run bag yet.
+HP numbers, no C-Gear screen, no run bag yet. Step 2 (same day) added the level-100 team and the forfeit; see "Step 2"
+below.
 
 ## What a run is
 
@@ -18,9 +19,11 @@ HP numbers, no C-Gear screen, no level 100, no run bag yet.
 5. **An exit** says "A nightmare blocks the way." and steps the player back until the room's battle is won; then any
    exit leads to the next room. After Darkrai's battle the player goes straight to the hub's entrance ("The Entralink's
    nightmare is over... for now.").
-6. **A loss or running away** ends the run: "You woke from the nightmare...", the party healed, the hub's entrance.
+6. **A loss** ends the run: "You woke from the nightmare...", the hub's entrance, the real party back as it was.
+   **Running** is a forfeit: a Yes/No warning, and Yes always ends the battle and the run ("You turned away from the
+   nightmare and woke up...").
 7. **Battles** are wild battles (so the scripts' battle result commands and the wild BGM work) with balls refused as
-   in a trainer battle ("Don't be a thief!"), the player's party as it is, Exp. as usual.
+   in a trainer battle ("Don't be a thief!"), fought by the run's team: copies of the party at level 100.
 
 ## Files
 
@@ -30,6 +33,8 @@ HP numbers, no C-Gear screen, no level 100, no run bag yet.
 - `include/paperwhite2/entralink_run_actions.h`: the command's actions and results, for the scripts.
 - `include/paperwhite2/entralink_run_battle.h`: `ENTRALINK_RUN_BTL_SETUP_FLAG` (BtlSetup flag `1 << 20`), which marks a
   run's battle for the battle's hooks.
+- `src/paperwhite2/main/paperwhite2_entralink_run_party.c`, `include/paperwhite2/entralink_run_party.h`: the run's team
+  (step 2). In ARM9 main, since the battle overlay asks it about prestige and its copies must outlive every overlay.
 - Hooks (each `#ifdef PAPERWHITE2`, `// Paper White 2:`):
   - `src/ov033/entree_forest_first_warp.c`: the hub's top edge starts the run.
   - `src/ov012/scrcmd_entree_forest.c`: in a run, the forest's spawn command spawns the room's enemies, an exit leads
@@ -41,11 +46,19 @@ HP numbers, no C-Gear screen, no level 100, no run bag yet.
     which puts a raid's enemy in the center.
   - `src/ov167/btlv_scu.c` (the hack's own wild triple intro): a fainted wild mon isn't shown and has no gauge, and the
     message names only those there ("A wild Rayquaza appeared!").
+  - `src/system/game_data.c` (`PaperWhite2_GameData_SetParty`, declared in `include/system/game_data.h`): makes the
+    copies the game's party and back.
+  - `src/ov012/zone_change.c` (`ZoneChange_OnFieldLoad`): ends a run the player left another way.
+  - `src/ov167/btl_main.c` (`GetRunMode`): a run's battle is run mode 2, the Subway's forfeit.
+  - `src/ov167/btl_client.c` (`BattleClient_ActionSelectEscape`): the forfeit's own question,
+    `Bank0019_Text_EntralinkRunForfeit` in `res/text/system/0019.txt`.
+  - `src/ov167/btl_server_flow.c` (`ServerControl_GiveExp`): no prestige for a copy of a Pokémon below 100.
   - `src/ov012/scrcmd_vm.c`, `src/ov012/script_sys.c`: command 0x2f8 `EntralinkRun`; the debug menu's `Debug` moves to
     0x2f9 (`include/asm/field_script.inc`, `tools/script/field_commands.json`, `res/paperwhite2/scripts/commands.json`).
 - Scripts and text:
   - `res/field/scripts/global_10490.s`: the four exits check `ENTRALINK_RUN_ACTION_CAN_LEAVE`; Script_9 (10498, the
-    enemy's talk script) runs the battle and its outcome. Text: four lines at the end of `global_10490.txt`.
+    enemy's talk script) runs the battle and its outcome. Text: five lines at the end of `global_10490.txt`
+    (`RanFromNightmare` is the forfeit's).
   - `res/field/events/entralink.json`: the hub's events cleared (above); `entralink.s` Script_10 is the remaining NPC's
     Yes/No warp out.
 - `generated/vars.txt`: `EVENT_WORK_ENTRALINK_RUN_ROOM` (0x405b), `_ORDER` (0x405c), `_CLEARED` (0x405d).
@@ -86,8 +99,9 @@ talking to any of them starts the battle, and a win removes them all.
 ## How it works
 
 - **Run state:** three saved event variables (room 1-5, 0 outside a run; the pool places drawn, a nibble a room; the
-  room won). The Entralink's field menu has no Save, so a run can't be saved mid-way; the variables only outlive a run
-  if the player leaves it some other way (the debug menu's warps), and the next run's start resets them.
+  room won). The Entralink's field menu has no Save, so a run can't be saved mid-way. Each map load
+  (`ZoneChange_OnFieldLoad`) ends a run the player is no longer in (any zone outside the forest, or a run without its
+  copies, as after loading a save made in one), so leaving it another way (the debug menu's warps) also ends it.
 - **Rooms:** `EventEntreeForestWarp` with the run's zone instead of `SymbolMap_GetZone`; the zone's init script
   (`EntreeForestSpawnAllPkm`, type 4, which runs on every load) spawns the enemies, skipping any already there and a
   won room's.
@@ -98,6 +112,96 @@ talking to any of them starts the battle, and a win removes them all.
   positions 1 and 5 are empty and the enemy is at 3, the center.
 - **Not catchable:** `ThrowBall` treats a run's battle as a trainer's: the ball is used up with "The Trainer blocked
   the Ball! Don't be a thief!".
+
+## Step 2: the level-100 team and the forfeit (2026-11-15)
+
+### The team
+
+- **At the run's start** (`EntralinkRun_Start`) the party is copied into `sRunParty` (ARM9 main BSS, 0x534 bytes, which
+  no map change, battle or menu frees) and each copy that isn't an egg is set to level 100 (`setLevel`: the level's
+  Exp., stats recalculated) and healed (`PokeParty_Recover`: HP, PP, status). Eggs are copied untouched. Then
+  `GameData`'s party pointer points at the copies. Everything that reads `GameData_GetParty` (the party screen, the
+  summary, the follower, `BtlSetup_LoadPlayerParty` and the battle's copy back) sees the copies with no other hook.
+- **The real party never moves**: it stays in the save's own party block (`SAVE_BLOCK_PARTY`), which nothing writes
+  during a run, since only `GameData` reached it through that pointer. So **any save, whatever made it, writes the real
+  party**, and a power-off loses nothing. This is why the pointer swap was chosen over copying the copies into the
+  party block: the "block every save path" problem goes away.
+- **Damage carries:** HP, PP and status are simply the copies'.
+- **No Exp., moves or evolution:** the copies are level 100, so `ServerControl_GiveExp` gives no Exp., nothing levels,
+  so nothing learns a move or evolves after a battle. Its prestige branch now asks `EntralinkRun_CanGainPrestige`: a
+  copy gains prestige only if its real Pokémon (found by PID in the real party, wherever the player moved the copy) is
+  level 100. Copies do gain EVs from run battles (their stats moved by 1 in the test); they're discarded with them.
+- **The run's end** (`EntralinkRun_End`: Darkrai beaten, a loss, a forfeit, the hub warp, or a map load outside the
+  forest) points `GameData` back at the real party, after writing each level-100 Pokémon's prestige from its copy
+  (only when it changed, so the others stay byte for byte). Held items used up in the run come back, since the real
+  party never changed. A lost run no longer heals: the real party comes back as it went in.
+
+### The forfeit
+
+- `GetRunMode` returns 2 for a run's battle (`ENTRALINK_RUN_BTL_SETUP_FLAG`), the Battle Subway's mode: RUN asks a
+  Yes/No, with the run's own question ("If you run, you'll wake from the nightmare and your run will end. Run
+  anyway?", `Bank0019_Text_EntralinkRunForfeit`); No goes back to the command menu. Yes always escapes: in mode 2 the
+  client skips `CheckEscapeBlocked` and the server `ServerEvent_CheckSureEscape`, the speed roll and
+  `ServerEvent_CheckEscapeBlocked`, so no trap (Mean Look, Shadow Tag, Arena Trap, Fairy Lock) holds and no Smoke
+  Ball or Run Away message shows. The battle ends with `BTL_RESULT_FLEE`, which `EntralinkRun_FinishBattle` returns as
+  `ENTRALINK_RUN_RESULT_FORFEIT`: "You turned away from the nightmare and woke up...", then the hub as for a loss.
+- **Escapes by moves**, unchanged in effect from the prototype but now silent and unblockable (mode 2 makes
+  `ServerControl_EscapeSub` always succeed): the player's Teleport, and Roar/Whirlwind used on the foe
+  (`BattleHandler_QuitBattle`), end the battle at once without the question, which ends the run (Teleport as a
+  forfeit, `BTL_RESULT_FLEE`). A foe that escapes the same way ends it as a loss. In the prototype these already ended
+  the run (any result but a win does); left as they are, since the run's challenges choose the foes' moves.
+
+### Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `roguelike2/`)
+
+The save's party: six Pokémon at levels 15-24. Before the run, slot 0 was poked to level 100 with prestige level 2,
+progress 3 (and damaged, asleep), slot 1 fainted and poisoned, slot 5 made an egg.
+
+- **The copies** (`sRunParty`, read in room 1): five at level 100 with recalculated stats (e.g. Keldeo 323 HP, Attack
+  330), all at full HP, full PP and no status (the fainted, poisoned one at 215/215); the egg byte for byte the same as
+  the real one; slot 0 keeping its prestige. The battle and the party screen show "Lv. 100" and the prestige
+  Pokémon's "Lv. 102".
+- **The real party** in the save's block: unchanged through the whole run (decrypted, compared after walking in the
+  rooms, after battles and at each end).
+- **Carrying over:** a move's PP used in room 1's battle (20 to 19) was still 19 in room 4.
+- **Prestige:** winning the Rayquaza raid gave the level-100 copy 91 Prestige Points and the copies of the others none;
+  after Darkrai the real slot 0's prestige was written back (3074 to 342018), and the real party was otherwise the
+  same as before the run, byte for byte apart from the prestige and its checksum.
+- **A win** (Darkrai, room 4 reached by setting the room variable): back at the hub, run over, party restored.
+- **A loss** (Rayquaza, the copies poked to faint): "You woke from the nightmare...", the hub, the real party exactly as
+  before (including the slot 0's damage and sleep, and the fainted slot 1).
+- **The forfeit** against a foe made faster (Speed 999) and given Shadow Tag in RAM: the question, No back to the
+  command menu, RUN again, Yes ended the battle with no other message, "You turned away from the nightmare and woke
+  up...", the hub, the real party exactly as before.
+- **A party of one**, then the debug menu's "Warp to last Pokémon Center" from room 1: the copy at level 100 in the
+  party screen; the warp ended the run (room 0) and gave back the real party exactly.
+- **No Save** in the field menu in a forest room (screenshot).
+
+Not tested: a real level-100 Pokémon (slot 0 was poked, so its copy kept stale stats until the battle recalculated
+them), Teleport and Roar in a run battle, a run with a full party's held items used up, real hardware.
+
+### Saving, now and later
+
+- **Now:** nothing in the run's zones saves (the field menu has no Save there, no Entralink or forest script uses
+  `Scrcmd_Save_SaveDataWrite`), and even if something did (the C-Gear's wireless parts, if any were reachable), it
+  would write the real party, because the copies are outside the save. The run's variables would be saved mid-run;
+  loading such a save finds a run without its copies, and the first map load ends it.
+- **Later, a real mid-run save** needs the opposite of what a stash would: the real party is already in the save, so
+  it is the **copies** (6 x 220 bytes, 0x534 with the party's header) and the run's state that need a place in the
+  save, in the freed Symbol block (survey 3.3, 2128 bytes), and loading would point `GameData` at them again.
+
+### Gaps found
+
+- **Held items can be duplicated or lost:** taking a copy's held item in the party screen puts it in the real bag,
+  and the real Pokémon still holds it after the run; giving a copy an item from the bag loses it at the run's end.
+  The run bag (design section 1) would settle this; until then the party screen's Item command could be hidden in a
+  run. A decision for the user.
+- **Bag items on the copies:** an evolution stone or a Rare Candy from the real bag works on a copy (the stone evolves
+  it, until the run's end) and is used up. Same fix as above.
+- **The follower** walks as the copy: its steps and any gift it finds in a run are counted on the copy and lost at the
+  end (a gift put in the bag stays).
+- **Time-based form changes** (Shaymin at night, the seasons' Deerling and Sawsbuck, `ShayminForm_*` and
+  `TransformVsPokePartyBySeason` on `SaveControl_GetPokePartySave`) still apply to the real party during a run, as they
+  would outside it; the copies keep the form they started with.
 
 ## The re-entry question
 
@@ -120,8 +224,8 @@ don't need to alternate; they do in run.json now only because the user's plan na
   the two sides empty. Won by attacking.
 - Ho-Oh's battle started in harsh sunlight (its `weather`).
 - After Darkrai's win: the hub's entrance (31, 36), the run over (room 0).
-- A loss (Darkrai): "You woke from the nightmare...", the party healed, the hub's entrance, run over.
-- Running away (a Smoke Ball): the same.
+- A loss (Darkrai): "You woke from the nightmare...", the party healed, the hub's entrance, run over (before step 2).
+- Running away (a Smoke Ball): the same (before step 2's forfeit).
 - A Poké Ball in Dialga's battle: refused, "Don't be a thief!".
 - A new run after a lost one: walking off the top edge again starts a fresh run at room 1 with a new order.
 - The hub's NPC: Yes took the player back to where the debug warp left (the city's spot).
@@ -134,15 +238,14 @@ enemies, a run left by other means (the debug menu's warps), real hardware.
 
 ## Known gaps and next steps
 
-- **Messages:** the ball refusal says "The Trainer blocked the Ball!"; a run's own message is a new battle string.
-  Running away is plain wild-battle running (it can fail against faster enemies); the design wants the Yes/No warning
-  (`GetRunMode` mode 2, survey 3.6) and no failure.
-- **Level 100:** not done. `BtlSetup_LoadPlayerParty` gives the battle the real party, and the battle's end copies it
-  back, so a level-100 battle copy needs the Subway's way (survey 3.4): a copy, then HP, PP and status copied back.
-- **Damage carrying over** happens by itself now (the real party); rest rooms, the run bag, buffs, markers over the
-  exits, the C-Gear screen, rewards: not started.
-- **Save:** a real mid-run save would need the run's state (room, order, buffs, run bag, seed) in the freed Symbol
-  block (survey 3.3) and a Save in the Entralink's menu; the three variables are the prototype's stand-in.
+- **Messages:** the ball refusal says "The Trainer blocked the Ball!" (the user is fine with it: the run's bag won't
+  hold balls).
+- **Level 100 and the forfeit:** done in step 2 (above), with its gaps (held items, bag items on the copies).
+- **Damage carrying over** is the copies'; rest rooms, the run bag, buffs, markers over the exits, the C-Gear screen,
+  rewards: not started.
+- **Save:** a real mid-run save would need the run's state (room, order, buffs, run bag, seed) and the copies in the
+  freed Symbol block (survey 3.3) and a Save in the Entralink's menu; the three variables are the prototype's
+  stand-in.
 - **The forest grid:** a run ignores `SymbolMap` (areas, `deepestArea`); the zones' other layouts (two and three exits)
   aren't used yet. An exit's direction is ignored: every exit leads to the same next room.
 - **Exits** step the player back; a marker in front of each exit would say what lies behind it (design section 1).
