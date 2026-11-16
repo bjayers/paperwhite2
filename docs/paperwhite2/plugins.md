@@ -248,7 +248,8 @@ DEBUG                           L_DebugMenu
   World...
     Time: <Off|period>              Off / Morning / Day / Evening / Night / Late night
     Season: <Off|mode>              Off / Spring / Summer / Autumn / Winter
-    Weather: <Off|weather>          Off / Clear ... Diamond dust (WEATHER_SUNNY to WEATHER_DIAMOND_DUST)
+    Weather: <Off|weather>          Off / Clear ... Diamond dust, then White mist (9), Tints 10, 11, Sandstorm 2, Tints 13, 14
+                                    (WEATHER_SUNNY to WEATHER_TINT_14; the tints and the dark ones, below)
     Flag get/set...                 number (1-0xbf7), then its state with Set / Clear
     Variable get/set...             number (0x4000-0x41ae), then its value with Change value...
   Encounters...

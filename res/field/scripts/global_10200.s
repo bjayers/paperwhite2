@@ -479,7 +479,7 @@ L_DebugSeason:
     SEPlay SEQ_SE_SELECT1
     VMJump L_DebugWorld
 
-// Weather: Off, or a WEATHER_* + 1, WEATHER_SUNNY to WEATHER_DIAMOND_DUST; the tints are left out
+// Weather: Off, or a WEATHER_* + 1, WEATHER_SUNNY to WEATHER_TINT_14, the tints and the second sandstorm included
 L_DebugWeather:
     SystemMsg Global10200_Text_DebugWeatherTitle, 2
     ListMenuAnchorTopRight 31, 1, 0, 1, 0x8020
@@ -493,9 +493,15 @@ L_DebugWeather:
     ListMenuAdd Global10200_Text_DebugWeatherThunderstorm, 65535, 7
     ListMenuAdd Global10200_Text_DebugWeatherHeavyRain, 65535, 8
     ListMenuAdd Global10200_Text_DebugWeatherDiamondDust, 65535, 9
+    ListMenuAdd Global10200_Text_DebugWeatherTint9, 65535, 10
+    ListMenuAdd Global10200_Text_DebugWeatherTint10, 65535, 11
+    ListMenuAdd Global10200_Text_DebugWeatherTint11, 65535, 12
+    ListMenuAdd Global10200_Text_DebugWeatherSandstorm2, 65535, 13
+    ListMenuAdd Global10200_Text_DebugWeatherTint13, 65535, 14
+    ListMenuAdd Global10200_Text_DebugWeatherTint14, 65535, 15
     ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
     ListMenuShow
-    WorkCmpConst 0x8020, 9
+    WorkCmpConst 0x8020, 15
     VMJumpIf CMP_GT, L_DebugWorld
     Debug DEBUG_ACTION_SET_WEATHER, 0x8020, 0, 0x8025
     SEPlay SEQ_SE_SELECT1

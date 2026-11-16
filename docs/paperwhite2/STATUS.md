@@ -2,6 +2,23 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-15: the debug menu's Weather lists every field weather (ROM session, on a branch)
+
+World > Weather: now has all 15 (it stopped at Diamond dust): the 9 before, then White mist (`WEATHER_TINT_9`), Tint
+10 and 11, Sandstorm 2 (desert), Tint 13 and 14 (the Entralink's). It sets the field's weather at once and keeps it
+(any map, indoors too) until Off. For a dark, foggy look to compare (looks only, battle effects follow the weather's
+group):
+
+- **The tints** (`src/ov078/weather_tint.c`) fade the whole screen to a colour at a level taken by the camera's defaults
+  index (34 of them). Almost all are near-white at level 8 (`0x7f5f`), so Tint 10, 11, 13 and 14 look like clear on
+  most maps (seen on Castelia's street, DeSmuME); the dark ones are index 10 (black, level 1) and 24 (dark brown,
+  level 4), so a darker look needs a camera with those, or a new table entry. White mist (9) is a true white fog.
+- **Known limits:** none crash by the code (every weather is a `WeatherData` on archive 0x37, any exterior), but the
+  weather system doesn't check for interiors, so indoors rain and snow fall inside; the sandstorms and tints have no
+  per-zone setup. No separate fog or cave-darkness list: those belong to the zone's fog and the camera, not a weather.
+- **Proof:** py-desmume (user's save, a copy): list shows all entries; White mist fogs the screen; Tints 10 and 13
+  set without a crash. Looks to be judged by the user.
+
 ## 2026-11-15: the Entralink roguelike's level-100 team and forfeit (ROM session, on a branch)
 
 `docs/paperwhite2/design/entralink-roguelike-prototype.md`, "Step 2", has the design, the proof and the gaps.
