@@ -1,0 +1,27 @@
+{
+    "$schema": "../room.schema.json",
+    "name": "Nightmare Rayquaza raid",
+    "role": "room",
+    "battles": [
+        {
+            "id": "rayquaza_raid",
+            "format": "raid",
+            "enemies": [
+                {
+                    "species": "SPECIES_RAYQUAZA",
+                    "level": 70,
+                    "moves": [ "MOVE_OUTRAGE", "MOVE_EXTREME_SPEED", "MOVE_EARTHQUAKE", "MOVE_DRAGON_PULSE" ]
+                }
+            ]
+        }
+    ],
+    "npcs": [
+        {
+            "type": "battle",
+            "battle": "rayquaza_raid",
+            "x": 15,
+            "z": 14,
+            "facing": "DIR_DOWN"
+        }
+    ]
+}

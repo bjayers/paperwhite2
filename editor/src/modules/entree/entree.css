@@ -1,0 +1,66 @@
+/* The Entree page (EntreeEditor.tsx); its sections use the Overworld Editor's (ow-section, ow-condition), as the
+   Ambients panel does */
+
+.en-editor { display: flex; flex-direction: column; flex: 1; min-height: 0; background: var(--panel); }
+.en-header { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--border); }
+.en-header h2 { margin: 0; font-size: 16px; }
+.en-lead { font-size: 13px; }
+.en-header .spacer, .en-map-bar .spacer, .en-battle-head .spacer, .en-enemy-head .spacer { flex: 1; }
+.en-body { display: grid; grid-template-columns: 250px 1fr 470px; flex: 1; min-height: 0; }
+.en-pad { padding: 12px; }
+
+/* The rooms */
+.en-list { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); }
+.en-list-section { padding: 8px 10px 6px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+.en-list-section h5, .en-overall h5 { margin: 0; font-size: 13px; display: flex; gap: 8px; align-items: baseline; }
+.en-list-section h5 .muted { font-weight: normal; }
+.en-list-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; }
+.en-list-actions button.active { border-color: var(--accent); background: var(--selected); }
+.en-confirm { display: inline-flex; gap: 4px; align-items: center; }
+.en-create { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.en-create input { flex: 1; min-width: 0; }
+.en-create .small { flex-basis: 100%; }
+.en-filters { display: grid; grid-template-columns: 34px 1fr; gap: 6px 6px; align-items: center; }
+.en-filters .view-switch button { padding: 2px 6px; font-size: 12px; }
+.en-items { flex: 1; overflow-y: auto; }
+.en-item { display: flex; flex-direction: column; gap: 2px; width: 100%; border: none; border-radius: 0; background: none; text-align: left; padding: 6px 12px; }
+.en-item:hover { background: var(--hover); }
+.en-item.selected { background: var(--selected); box-shadow: inset 3px 0 var(--accent); }
+.en-item-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.en-item-detail { font-size: 12px; display: flex; gap: 6px; align-items: baseline; }
+.en-role { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; padding: 0 4px; border-radius: 3px; border: 1px solid var(--border); }
+.en-role-boss { color: var(--warning); border-color: var(--warning); }
+.en-role-final { color: var(--accent); border-color: var(--accent); }
+.en-bad { color: var(--error); }
+.en-empty { padding: 8px 12px; }
+.en-overall { border-top: 1px solid var(--border); padding: 8px 10px; }
+.en-overall p { margin: 4px 0 0; }
+
+/* The map */
+.en-map-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+
+/* The side panel */
+.en-section .ow-condition { grid-template-columns: 76px 1fr; }
+.en-ok { color: var(--success, #3fb950); margin: 8px 0; }
+.en-problems { margin: 0; padding-left: 18px; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
+.en-problems button.link { text-align: left; padding: 0; color: inherit; text-decoration: underline dotted; }
+.en-error { color: var(--error); }
+.en-warn { color: var(--warning); }
+.en-wide { width: 100%; }
+.en-id { width: 150px; font-family: var(--mono); }
+.en-number { width: 64px; }
+.en-battle, .en-npc-panel { border-top: 1px solid var(--border); padding-top: 10px; margin-top: 10px; }
+.en-battle-head, .en-enemy-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+.en-enemy { border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px 2px; margin: 8px 0; }
+.en-enemy.en-over { border-color: var(--error); }
+.en-enemy-head .search-select { flex: 1; min-width: 140px; }
+.en-moves { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%; }
+.en-enemy-add { margin-top: 4px; }
+.en-npcs { display: flex; flex-direction: column; }
+.en-npc { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 8px; width: 100%; border: none; border-radius: 4px;
+  background: none; text-align: left; padding: 3px 6px; }
+.en-npc:hover { background: var(--hover); }
+.en-npc.selected { background: var(--selected); box-shadow: inset 3px 0 var(--accent); }
+.en-npc-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.en-nosprite { display: inline-flex; width: 24px; height: 24px; align-items: center; justify-content: center; border: 1px dashed var(--border);
+  border-radius: 4px; color: var(--muted); }

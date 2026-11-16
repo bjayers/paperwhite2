@@ -1,0 +1,28 @@
+{
+    "$schema": "../room.schema.json",
+    "name": "Nightmare Dialga",
+    "role": "room",
+    "battles": [
+        {
+            "id": "dialga",
+            "format": "single",
+            "enemies": [
+                {
+                    "species": "SPECIES_DIALGA",
+                    "level": 70,
+                    "item": "ITEM_ADAMANT_ORB",
+                    "moves": [ "MOVE_ROAR_OF_TIME", "MOVE_DRAGON_PULSE", "MOVE_FLASH_CANNON", "MOVE_EARTHQUAKE" ]
+                }
+            ]
+        }
+    ],
+    "npcs": [
+        {
+            "type": "battle",
+            "battle": "dialga",
+            "x": 15,
+            "z": 14,
+            "facing": "DIR_DOWN"
+        }
+    ]
+}

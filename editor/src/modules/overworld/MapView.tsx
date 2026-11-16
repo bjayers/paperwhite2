@@ -28,6 +28,8 @@ export interface MapViewProps {
   overlay: OverlayMode;
   /** The models' detail: the GLBs, or the tiles alone (faster). */
   showModels: boolean;
+  /** The models drawn faint, as a reference under the marks (the Entree page's clearings); 1 if left out. */
+  modelOpacity?: number;
   /** While true, a drag paints tiles rather than moving entities. */
   painting: boolean;
   /** The tile type being painted, to color the tiles as the stroke passes; null to mark them yellow (a height). */
@@ -208,6 +210,7 @@ class MapScene {
   /** The zone and season whose models are loaded. */
   loadedKey: string | null = null;
   loadedModels = false;
+  loadedOpacity = 1;
 
   constructor(private host: HTMLDivElement, props: MapViewProps) {
     this.props = props;
@@ -353,7 +356,7 @@ class MapScene {
     // A new zone loads its models and frames the camera; an edit of the same zone's terrain keeps both
     const zoneChanged = props.map.zone !== this.loadedZone;
     const seasonChanged = `${props.map.zone}:${props.map.season}` !== this.loadedKey;
-    const modelsChanged = props.showModels !== this.loadedModels;
+    const modelsChanged = props.showModels !== this.loadedModels || (props.modelOpacity ?? 1) !== this.loadedOpacity;
     this.props = props;
     this.setOverhead(props.overhead);
     if (seasonChanged || modelsChanged) this.loadChunks(zoneChanged);
@@ -377,6 +380,7 @@ class MapScene {
     this.loadedZone = map.zone;
     const key = (this.loadedKey = `${map.zone}:${map.season}`);
     this.loadedModels = showModels;
+    const opacity = (this.loadedOpacity = this.props.modelOpacity ?? 1);
     this.chunks.clear();
     if (showModels) {
       const loader = chunkLoader(map);
@@ -388,7 +392,10 @@ class MapScene {
             const mesh = o as THREE.Mesh;
             if (mesh.isMesh) {
               const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-              mats.forEach((m) => { (m as THREE.MeshStandardMaterial).alphaTest = 0.5; m.side = THREE.DoubleSide; });
+              mats.forEach((m) => {
+                (m as THREE.MeshStandardMaterial).alphaTest = 0.5; m.side = THREE.DoubleSide;
+                if (opacity < 1) { m.transparent = true; m.opacity = opacity; m.depthWrite = false; (m as THREE.MeshStandardMaterial).alphaTest = 0.5 * opacity; }
+              });
             }
           });
           this.chunks.add(gltf.scene);
