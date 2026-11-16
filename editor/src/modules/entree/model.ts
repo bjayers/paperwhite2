@@ -10,6 +10,8 @@
 import { fromPlain, type JsonMap, type JsonValue } from "../../../shared/json.ts";
 
 export const ROOMS_DIR = "res/paperwhite2/entralink/rooms";
+/** A room file, which only the Entree page saves: its Save gives new battles and catches their progress ids first. */
+export const isRoomFile = (path: string) => path.startsWith(`${ROOMS_DIR}/`) && path.endsWith(".json");
 export const ROOM_SCHEMA = "res/paperwhite2/entralink/room.schema.json";
 export const roomPath = (id: string) => `${ROOMS_DIR}/${id}.json`;
 export const roomId = (path: string) => path.slice(path.lastIndexOf("/") + 1).replace(/\.json$/, "");

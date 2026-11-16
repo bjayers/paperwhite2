@@ -20,7 +20,7 @@ import { MapView } from "../overworld/MapView.tsx";
 import { ModelPicker, SpriteImage } from "../overworld/fields.tsx";
 import type { Entity } from "../overworld/entities.ts";
 import { TILE_FLAG_COLLISION, loadZoneMap, tileAt, tileFlags, tileIsValid, type ZoneMap } from "../overworld/terrain.ts";
-import { DialogueField } from "../text/DialogueField.tsx";
+import { DIALOGUE_INSERTS, DialogueField, type DialogueInsert } from "../text/DialogueField.tsx";
 import { weatherLabel, weatherNote } from "../weather/weathers.ts";
 import { useToolActive } from "../active.ts";
 import type { ToolProps } from "../types.ts";
@@ -31,6 +31,10 @@ import {
   DEFAULT_ONCE, PROGRESS_IDS, PROGRESS_IDS_SCHEMA, RUN_COMPLETED, assignProgressIds, battleKey, battleKeys, renameKeys, withoutProgressIds,
   type Round, type Exit, type MapInfo, type NpcType, type Problem, type ProgressCounters, type Role, type Room,
 } from "./model.ts";
+
+// The run's dialogue: its script puts the player's name in word 0 before every message (global_10490.s)
+const ROOM_INSERTS: DialogueInsert[] = [...DIALOGUE_INSERTS, { label: "Player's name", code: "{0100:0}", title: "The player's name ({0100:0})" }];
+const ROOM_WORDS: Record<number, string> = { 0: "Player" };
 
 const ARROWS: Record<string, string> = { DIR_UP: "↑", DIR_DOWN: "↓", DIR_LEFT: "←", DIR_RIGHT: "→" };
 const FACING_NAMES: Record<string, string> = { DIR_UP: "Up", DIR_DOWN: "Down", DIR_LEFT: "Left", DIR_RIGHT: "Right" };
@@ -842,12 +846,12 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
           <h6 className="en-sub">Dialogue <span className="muted">typed here; the build makes its text</span></h6>
           <div className="ow-condition en-dialogue">
             <Row label={npc.type === "battle" ? "Before" : "On talking"}>
-              <DialogueField value={npc.dialogue?.before ?? ""} onChange={(v) => setDialogue("before", v)}
+              <DialogueField value={npc.dialogue?.before ?? ""} onChange={(v) => setDialogue("before", v)} inserts={ROOM_INSERTS} words={ROOM_WORDS}
                              placeholder={npc.type === "battle" ? "What it says before the battle starts" : (npc.type === "item" ? "What it says as it gives its item" : "What it says (its menu comes later)")} />
             </Row>
             {npc.type === "battle" && (
               <Row label="After the battle">
-                <DialogueField value={npc.dialogue?.after ?? ""} onChange={(v) => setDialogue("after", v)} placeholder="What it says once the battle is won, before the room opens" />
+                <DialogueField value={npc.dialogue?.after ?? ""} onChange={(v) => setDialogue("after", v)} inserts={ROOM_INSERTS} words={ROOM_WORDS} placeholder="What it says once the battle is won, before the room opens" />
               </Row>
             )}
           </div>
