@@ -1,0 +1,15 @@
+{
+    "$schema": "../challenge.schema.json",
+    "name": "Darkrai",
+    "tier": 3,
+    "format": "single",
+    "enemies": [
+        {
+            "species": "SPECIES_DARKRAI",
+            "level": 70,
+            "moves": [ "MOVE_DARK_VOID", "MOVE_DARK_PULSE", "MOVE_NASTY_PLOT", "MOVE_NIGHTMARE" ],
+            "ability": "ABILITY_BAD_DREAMS",
+            "actor": { "x": 15, "z": 14, "facing": "DIR_DOWN" }
+        }
+    ]
+}

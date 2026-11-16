@@ -7,6 +7,9 @@
 #include "field/zone.h"
 #include "struct_decls.h"
 #include "system/game_system.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/entralink_run.h"
+#endif
 
 // Where the warp leads
 static const VecFx32 sWarpPos = { FX32_CONST(248), 0, FX32_CONST(376) };
@@ -35,6 +38,11 @@ GameEvent *CheckEntralinkForestFirstWarpEvent(Field *field, GameSystem *gsys, Fi
         if (playerPos.x >= startX && playerPos.x < startX + (2 << 16) && playerPos.z == (0x56 << 14)) {
             warpPos = sWarpPos;
             warpPos.x += playerPos.x - startX;
+#ifdef PAPERWHITE2
+            // Paper White 2: the forest is the Entralink roguelike's run now, which starts here
+            // (paperwhite2/entralink_run.h)
+            EntralinkRun_Start(GSYS_GetGameData(gsys));
+#endif
             return EventEntreeForestWarp_Create(gsys, 1, &warpPos, 0, 4);
         }
     }

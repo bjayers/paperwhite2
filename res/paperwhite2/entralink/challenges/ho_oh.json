@@ -1,0 +1,15 @@
+{
+    "$schema": "../challenge.schema.json",
+    "name": "Nightmare Ho-Oh",
+    "tier": 1,
+    "format": "single",
+    "weather": "BTL_WEATHER_SUN",
+    "enemies": [
+        {
+            "species": "SPECIES_HO_OH",
+            "level": 70,
+            "moves": [ "MOVE_SACRED_FIRE", "MOVE_BRAVE_BIRD", "MOVE_EARTHQUAKE", "MOVE_RECOVER" ],
+            "actor": { "x": 15, "z": 14, "facing": "DIR_DOWN" }
+        }
+    ]
+}

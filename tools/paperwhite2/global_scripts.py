@@ -111,6 +111,8 @@ HACK_SCRIPTS = {
           "entry by the hack's data; nothing starts it by its ID",
     9605: "The flags and work reset after the Hall of Fame, the original's subroutine of script 9601 given an entry by "
           "the hack's data; nothing starts it by its ID",
+    10498: "The Entralink roguelike's room enemy: its cry and the room's battle, then the room cleared, or the run ended "
+           "at the hub (`SCRID_ENTRALINK_RUN_ENEMY`, src/paperwhite2/ov012/paperwhite2_entralink_run.c)",
     10201: "The debug menu that START opens in the field (`SCRID_PAPERWHITE2_DEBUG_MENU`, src/ov036/fieldmap_event.c), "
            "with its submenus as labeled blocks, under PAPERWHITE2_DEBUG_MENU",
     10851: "The user's: the Pokémon Center lottery girl's daily gift, a random item by chance tiers "

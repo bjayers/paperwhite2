@@ -2,6 +2,26 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-15: the Entralink roguelike's first prototype (ROM session, on a branch)
+
+`docs/paperwhite2/design/entralink-roguelike-prototype.md` has what was built, the data format, the proof and the gaps.
+
+- **The hub** is cleared (no monolith event, no tutorial, one NPC who takes the player home). The way in is the debug
+  menu's Player... > Entralink (outdoors, where vanilla allowed the Pass Power warp).
+- **A run:** walking off the hub's top edge starts it. Rooms 1-3 are Dialga, a Rayquaza 3v1 raid and Ho-Oh in a random
+  order, in `entree_forest` / `entree_forest_6`; room 4 is Darkrai in `entree_forest_2`. Talking to a room's enemy
+  starts its battle; exits stay shut ("A nightmare blocks the way.") until it's won. Winning Darkrai, losing or running
+  away ends the run at the hub's entrance (a loss heals). Balls are refused. The raid's Rayquaza stands in the center.
+- **Data:** `res/paperwhite2/entralink/run.json` and `challenges/<id>.json` (schemas beside them), packed by
+  `tools/paperwhite2/entralink_run.py` into a generated header. New script command 0x2f8 `EntralinkRun`; `Debug` is now
+  0x2f9. Run state: variables 0x405b-0x405d.
+- **Re-entry:** re-entering the same map works as a fresh room (tested by forcing two rooms into `entree_forest`).
+- **Proof:** py-desmume on the user's save copy: a full run through all four rooms to the hub, three random orders, the
+  raid's positions (enemy at 3, 1 and 5 empty) and target screen, blocked exits, a loss, a flee, a refused ball, the hub
+  NPC's warp home, a new run after a lost one. `--hack` builds without warnings, DSi intact; plain `modules.ok` passes.
+
+Next: the user's playtest; then level 100 battle copies, the run's own flee warning and ball message, a real save.
+
 ## 2026-11-15: Flower Shield, Fairy Lock, Crafty Shield, the Pixie Plate and Arceus-Fairy (ROM session, on a branch)
 
 `docs/paperwhite2/design/fairy-type.md` section 12.4 has what was built and the proof; `items.md` the Pixie Plate;

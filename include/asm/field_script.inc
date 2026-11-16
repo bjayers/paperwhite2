@@ -3833,9 +3833,18 @@
     .2byte \a3
     .endm
 
+    // Paper White 2: the Entralink roguelike's: runs one of its actions (ENTRALINK_RUN_ACTION_*, paperwhite2/entralink_run_actions.h) with two arguments and puts the result in a variable; its battle and warp are events the script waits for (include/paperwhite2/entralink_run.h)
+    .macro EntralinkRun a0, a1, a2, a3
+    FieldCommand 760
+    .2byte \a0
+    .2byte \a1
+    .2byte \a2
+    .2byte \a3
+    .endm
+
     // Paper White 2: the debug menu's, under PAPERWHITE2_DEBUG_MENU: runs one of its actions (DEBUG_ACTION_*, paperwhite2/debug_actions.h) with two arguments and puts the result in a variable (include/paperwhite2/debug_commands.h)
     .macro Debug a0, a1, a2, a3
-    FieldCommand 760
+    FieldCommand 761
     .2byte \a0
     .2byte \a1
     .2byte \a2

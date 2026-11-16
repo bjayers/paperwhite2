@@ -50,7 +50,7 @@ and original file names are the user's reference list of Gen 5's global scripts.
 | 10450-10469 | `res/field/scripts/global_10450.s` | 1268 | `musical_scr.ev` | Pokémon Musical dialogue and logic | 10450-10466 (17) | 10467 | 3 |
 | 10470-10479 | `res/field/scripts/global_10470.s` | 1269 | `dun200x_common.ev` | Abyssal ruins ambient | 10470-10477 (8) | 10478 | 2 |
 | 10480-10489 | `res/field/scripts/global_10480.s` | 1270 | `collector_scr.ev` | Rare item collector dialogue | 10480-10484 (5) | 10485 | 5 |
-| 10490-10509 | `res/field/scripts/global_10490.s` | 1271 | `forest_clearing_scr.ev` | Entree forest clearings common dialogs | 10490-10497 (8) | 10498 | 12 |
+| 10490-10509 | `res/field/scripts/global_10490.s` | 1271 | `forest_clearing_scr.ev` | Entree forest clearings common dialogs | 10490-10498 (9) | 10499 | 11 |
 | 10510-10519 | `res/field/scripts/global_10510.s` | 1272 | `ferris_wheel.ev` | Ferris wheel actor dialogue | 10510 (1) | 10511 | 9 |
 | 10520-10529 | `res/field/scripts/global_10520.s` | 1273 | `fungi_scr.ev` | Foongus/Amoonguss ambush | 10520-10521 (2) | 10522 | 8 |
 | 10530-10534 | `res/field/scripts/global_10530.s` | 1274 | `tv_scr.ev` | TV programme | 10530 (1) | 10531 | 4 |
@@ -69,7 +69,7 @@ and original file names are the user's reference list of Gen 5's global scripts.
 | 10865-10884 | `res/field/scripts/global_10865.s` | 1287 | `pokewood_theatre.ev` | Pokéstar studios theatre system | 10865-10869 (5) | 10870 | 15 |
 | 10885-10914 | `res/field/scripts/global_10885.s` | 1288 | `dun2710_common.ev` | Plasma Frigate password hint trainers | 10885-10901 (17) | 10902 | 13 |
 
-2626 IDs used, 4538 free.
+2627 IDs used, 4537 free.
 
 ## Hack scripts
 
@@ -89,6 +89,7 @@ changed without adding entries isn't listed.
 | 9604 | `res/field/scripts/global_9600.s` | Script_5 | The survey's answers by the version and the player's sex, the original's subroutine of script 9600 given an entry by the hack's data; nothing starts it by its ID |
 | 9605 | `res/field/scripts/global_9600.s` | Script_6 | The flags and work reset after the Hall of Fame, the original's subroutine of script 9601 given an entry by the hack's data; nothing starts it by its ID |
 | 10201 | `res/field/scripts/global_10200.s` | Script_2 | The debug menu that START opens in the field (`SCRID_PAPERWHITE2_DEBUG_MENU`, src/ov036/fieldmap_event.c), with its submenus as labeled blocks, under PAPERWHITE2_DEBUG_MENU |
+| 10498 | `res/field/scripts/global_10490.s` | Script_9 | The Entralink roguelike's room enemy: its cry and the room's battle, then the room cleared, or the run ended at the hub (`SCRID_ENTRALINK_RUN_ENEMY`, src/paperwhite2/ov012/paperwhite2_entralink_run.c) |
 | 10851 | `res/field/scripts/global_10850.s` | Script_2 | The user's: the Pokémon Center lottery girl's daily gift, a random item by chance tiers (`EVENT_FLAG_DAILY_0x0af0`), from the Centers' events |
 | 10852 | `res/field/scripts/global_10850.s` | Script_3 | The user's: the seasonal NPC spawns, a map script that hides flags 500-599's NPCs and shows a random few of the current season's |
 | 10853 | `res/field/scripts/global_10850.s` | Script_4 | The user's: gives a random item, 0x8011 plus a random number below 0x8010, through script 2805; 0x8012 is whether the bag had no room (Aspertia City, Route 20) |

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Entralink run",
+  "description": "How a run of the Entralink roguelike is laid out (docs/paperwhite2/design/entralink-roguelike-prototype.md): pool_rooms rooms drawn without repeats from the pool in a random order, then the final challenge. Challenges are named by their file in challenges/. tools/paperwhite2/entralink_run.py checks it and writes it into paperwhite2/entralink_run_config.h.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [ "pool", "pool_rooms", "final", "room_maps", "final_map" ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "pool": {
+      "type": "array", "minItems": 1, "maxItems": 15,
+      "items": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+      "description": "The challenges the rooms before the last are drawn from"
+    },
+    "pool_rooms": {
+      "type": "integer", "minimum": 1, "maximum": 4,
+      "description": "How many rooms are drawn from the pool, at most its size (the run's order is kept in one variable, a nibble a room)"
+    },
+    "final": { "type": "string", "pattern": "^[a-z0-9_]+$", "description": "The last room's challenge" },
+    "room_maps": {
+      "type": "array", "minItems": 1, "maxItems": 8,
+      "items": { "type": "string", "x-constant": "ZONE_ENTREE_FOREST" },
+      "description": "The zones of the drawn rooms, taken in turn; each needs a bottom exit, where a room is entered"
+    },
+    "final_map": { "type": "string", "x-constant": "ZONE_ENTREE_FOREST", "description": "The last room's zone" }
+  }
+}

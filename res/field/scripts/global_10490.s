@@ -1,5 +1,8 @@
 #include "asm/field_script.inc"
 #include "text/script/global_10490.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/entralink_run_actions.h"
+#endif
 
     ScriptEntry Script_1
     ScriptEntry Script_2
@@ -9,6 +12,9 @@
     ScriptEntry Script_6
     ScriptEntry Script_7
     ScriptEntry Script_8
+#ifdef PAPERWHITE2
+    ScriptEntry Script_9
+#endif
     ScriptEntriesEnd
 
 Script_2:
@@ -183,12 +189,27 @@ L_0214:
 
 Script_5:
     ActorsPauseAll
+#ifdef PAPERWHITE2
+    // Paper White 2: in an Entralink run, the room's exits open once its battle is won
+    // (paperwhite2/entralink_run_actions.h)
+    EntralinkRun ENTRALINK_RUN_ACTION_CAN_LEAVE, 0, 0, 0x8000
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_EQ, L_RunExitBlocked0
+#endif
     ActorCmdExec 255, Movement_025C
     ActorCmdWait
     MapChangeEntreeForest 0
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+#ifdef PAPERWHITE2
+
+L_RunExitBlocked0:
+    ActorCmdExec 255, Movement_RunExitBack0
+    ActorCmdWait
+    VMJump L_RunExitBlocked
+    .balign 4, 0
+#endif
 
 Movement_025C:
     Move 0, 1
@@ -196,12 +217,27 @@ Movement_025C:
 
 Script_6:
     ActorsPauseAll
+#ifdef PAPERWHITE2
+    // Paper White 2: in an Entralink run, the room's exits open once its battle is won
+    // (paperwhite2/entralink_run_actions.h)
+    EntralinkRun ENTRALINK_RUN_ACTION_CAN_LEAVE, 0, 0, 0x8000
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_EQ, L_RunExitBlocked1
+#endif
     ActorCmdExec 255, Movement_027C
     ActorCmdWait
     MapChangeEntreeForest 1
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+#ifdef PAPERWHITE2
+
+L_RunExitBlocked1:
+    ActorCmdExec 255, Movement_RunExitBack1
+    ActorCmdWait
+    VMJump L_RunExitBlocked
+    .balign 4, 0
+#endif
     .balign 4, 0
 
 Movement_027C:
@@ -210,12 +246,27 @@ Movement_027C:
 
 Script_7:
     ActorsPauseAll
+#ifdef PAPERWHITE2
+    // Paper White 2: in an Entralink run, the room's exits open once its battle is won
+    // (paperwhite2/entralink_run_actions.h)
+    EntralinkRun ENTRALINK_RUN_ACTION_CAN_LEAVE, 0, 0, 0x8000
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_EQ, L_RunExitBlocked2
+#endif
     ActorCmdExec 255, Movement_029C
     ActorCmdWait
     MapChangeEntreeForest 2
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+#ifdef PAPERWHITE2
+
+L_RunExitBlocked2:
+    ActorCmdExec 255, Movement_RunExitBack2
+    ActorCmdWait
+    VMJump L_RunExitBlocked
+    .balign 4, 0
+#endif
     .balign 4, 0
 
 Movement_029C:
@@ -224,14 +275,95 @@ Movement_029C:
 
 Script_8:
     ActorsPauseAll
+#ifdef PAPERWHITE2
+    // Paper White 2: in an Entralink run, the room's exits open once its battle is won
+    // (paperwhite2/entralink_run_actions.h)
+    EntralinkRun ENTRALINK_RUN_ACTION_CAN_LEAVE, 0, 0, 0x8000
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_EQ, L_RunExitBlocked3
+#endif
     ActorCmdExec 255, Movement_02BC
     ActorCmdWait
     MapChangeEntreeForest 3
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+#ifdef PAPERWHITE2
+
+L_RunExitBlocked3:
+    ActorCmdExec 255, Movement_RunExitBack3
+    ActorCmdWait
+    VMJump L_RunExitBlocked
+    .balign 4, 0
+#endif
     .balign 4, 0
 
 Movement_02BC:
     Move 3, 1
     MoveEnd
+#ifdef PAPERWHITE2
+
+// Paper White 2: an exit of an Entralink run's room before its battle is won: the player steps back
+L_RunExitBlocked:
+    SystemMsg Global10490_Text_NightmareBlocksWay, 2
+    LastKeyWait
+    SystemMsgClose
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+    .balign 4, 0
+
+Movement_RunExitBack0:
+    Move 9, 1
+    MoveEnd
+
+Movement_RunExitBack1:
+    Move 8, 1
+    MoveEnd
+
+Movement_RunExitBack2:
+    Move 11, 1
+    MoveEnd
+
+Movement_RunExitBack3:
+    Move 10, 1
+    MoveEnd
+
+// Paper White 2: talking to an Entralink run room's enemy (script 10498, paperwhite2_entralink_run.c): its cry and
+// the room's battle. A win opens the exits, or after the final room ends the run at the hub; a loss or running away
+// ends it there too, with the party healed
+Script_9:
+    ActorsPauseAll
+    ActorSetEyeToEye
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_SPECIES, 0, 0, 0x8000
+    PVPlay 0x8000, 0
+    PVWait
+    EntralinkRun ENTRALINK_RUN_ACTION_BATTLE, 0, 0, 0x8000
+    EntralinkRun ENTRALINK_RUN_ACTION_BATTLE_RESULT, 0, 0, 0x8000
+    CallWildBattleEnd
+    WorkCmpConst 0x8000, ENTRALINK_RUN_RESULT_CLEARED
+    VMJumpIf CMP_EQ, L_RunRoomCleared
+    WorkCmpConst 0x8000, ENTRALINK_RUN_RESULT_RUN_WON
+    VMJumpIf CMP_EQ, L_RunWon
+    SystemMsg Global10490_Text_WokeFromNightmare, 2
+    VMJump L_RunToHub
+
+L_RunWon:
+    SystemMsg Global10490_Text_DarkraiNightmareOver, 2
+
+L_RunToHub:
+    LastKeyWait
+    SystemMsgClose
+    EntralinkRun ENTRALINK_RUN_ACTION_WARP_HUB, 0, 0, 0x8000
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+L_RunRoomCleared:
+    SystemMsg Global10490_Text_NightmareFaded, 2
+    LastKeyWait
+    SystemMsgClose
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+#endif
