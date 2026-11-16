@@ -8,4 +8,8 @@ Global10490_Text_WouldLikeMoveForest = Would you like {0101:0}\nto move to the F
 Global10490_Text_TheresNoMoreRoom_2 = There's no more room in the Forest\nClearing, so {0101:0} could not move!
 Global10490_Text_MovedDeepestClearing = {0101:0} moved to\nthe Deepest Clearing!{be01}
 Global10490_Text_MovedForestClearing = {0101:0} moved to\nthe Forest Clearing!{be01}
+Global10490_Text_NightmareBlocksWay = A nightmare blocks the way.\nIt won't let you pass!
+Global10490_Text_NightmareFaded = The nightmare faded away!\nThe paths ahead are open.
+Global10490_Text_DarkraiNightmareOver = The Entralink's nightmare is over...\nfor now.
+Global10490_Text_WokeFromNightmare = You woke from the nightmare...
 \pad{d6}

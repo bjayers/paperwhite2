@@ -222,11 +222,11 @@ static const struct OpcodePermissions EVCMD_PERM_TABLE[] = {
 #ifdef PAPERWHITE2
     // Paper White 2: the hack's commands of EVCMD_TABLE (scrcmd_vm.c), which run at every feature level: the
     // conditions' GetPartyLevel and CheckCondition, the map's ReloadMapHere, the HMs' PartyFieldMoveUser, the
-    // Pokémon Center attendants' PokemonCenter, then the debug menu's Debug
-    { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, // 0x2f3
+    // Pokémon Center attendants' PokemonCenter, the Entralink run's EntralinkRun, then the debug menu's Debug
+    { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, // 0x2f3
 #endif
 #ifdef PAPERWHITE2_DEBUG_MENU
-    { 1, 1, 1 }, // 0x2f8
+    { 1, 1, 1 }, // 0x2f9
 #endif
 };
 

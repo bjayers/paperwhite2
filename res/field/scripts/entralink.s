@@ -497,6 +497,22 @@ Script_10:
     ActorsPauseAll
     SEPlay SEQ_SE_MESSAGE
     ActorSetEyeToEye
+#ifdef PAPERWHITE2
+    // Paper White 2: the hub's one NPC (res/field/events/entralink.json) asks and takes the player back to their own
+    // world, as walking off the hub's south edge does (Script_14)
+    // "You can go back to your\nown world from here.[f000]븁\u0000\nDo you want to go back?"
+    SystemMsg Entralink_Text_CanGoBackOwn, 2
+    YesNoWin 0x8010
+    SystemMsgClose
+    WorkCmpConst 0x8010, 0
+    VMJumpIf CMP_NE, L_HubNpcStay
+    CallEntralinkWarpOut
+
+L_HubNpcStay:
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+#endif
     // "You can go back to the original world\nfrom this place.[f000]븁\u0000\nIf you want to go back to the original\nworld, please come back here."
     ParentActorMsg MSGFILE_SCRIPT, Entralink_Text_CanGoBackOriginal, 0, 0
     LastKeyWait

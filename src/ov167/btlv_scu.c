@@ -1264,13 +1264,34 @@ static BOOL BtlvScu_StepWildDoubleAppear(BtlvScu *scu, s32 *seq) {
 }
 
 #ifdef PAPERWHITE2
-// Paper White 2: the three wild mons' message, by how many of them are one species: "Three wild X", "Two wild X and a
-// wild Y", or each one's name
+// Paper White 2: the wild mons' message, by how many of the three are there and how many of them are one species:
+// "Three wild X", "Two wild X and a wild Y", or each one's name. A fainted one isn't there: an Entralink raid
+// (paperwhite2/entralink_run.h) puts its one enemy in the center between two
 static void BtlvScu_FormatWildTripleMsg(BtlvScu *scu, const BtlvScuWildTripleWork *work) {
-    u16 species0 = GetBattleMonSpecies(work->mons[0]);
-    u16 species1 = GetBattleMonSpecies(work->mons[1]);
-    u16 species2 = GetBattleMonSpecies(work->mons[2]);
+    u8 present[3];
+    u32 count = 0;
+    u32 i;
+    u16 species0;
+    u16 species1;
+    u16 species2;
 
+    for (i = 0; i < 3; i++) {
+        if (work->mons[i] != NULL) {
+            present[count++] = i;
+        }
+    }
+    if (count == 1) {
+        BtlString_FormatStdMsg(scu->strbuf, Bank0019_Text_WildAppeared, 1, work->monIds[present[0]]);
+        return;
+    }
+    if (count == 2) {
+        BtlString_FormatStdMsg(scu->strbuf, Bank0019_Text_OhWildAppeared, 2, work->monIds[present[0]],
+                               work->monIds[present[1]]);
+        return;
+    }
+    species0 = GetBattleMonSpecies(work->mons[0]);
+    species1 = GetBattleMonSpecies(work->mons[1]);
+    species2 = GetBattleMonSpecies(work->mons[2]);
     if (species0 == species1 && species1 == species2) {
         BtlString_FormatStdMsg(scu->strbuf, Bank0019_Text_OhThreeWildAppeared, 1, work->monIds[0]);
     } else if (species0 == species1) {
@@ -1288,9 +1309,19 @@ static void BtlvScu_FormatWildTripleMsg(BtlvScu *scu, const BtlvScuWildTripleWor
     }
 }
 
-// Paper White 2: BtlvScu_StepWildDoubleAppear's appearance for three wild mons, with a message that names the three
+// Paper White 2: shows the wild triple battle's mon at the work's index, unless it isn't there (fainted)
+static void BtlvScu_AddWildTripleMon(BtlvScu *scu, const BtlvScuWildTripleWork *work, u32 index) {
+    if (work->mons[index] != NULL) {
+        BtlvEffect_AddPokemon(BattleMon_GetViewSrcData(work->mons[index]),
+                              BattlePosToViewPos(scu->mainModule, work->pos[index]));
+    }
+}
+
+// Paper White 2: BtlvScu_StepWildDoubleAppear's appearance for three wild mons, with a message that names them. A
+// fainted one (an Entralink raid's empty sides) isn't shown and has no gauge
 static BOOL BtlvScu_StepWildTripleAppear(BtlvScu *scu, s32 *seq) {
     BtlvScuWildTripleWork *work = (BtlvScuWildTripleWork *)scu->work;
+    BattleMon *mon;
     u8 viewPos;
     u32 i;
 
@@ -1299,31 +1330,29 @@ static BOOL BtlvScu_StepWildTripleAppear(BtlvScu *scu, s32 *seq) {
         viewPos = GetClientBattlePos(scu->mainModule, scu->clientId, 0);
         for (i = 0; i < 3; i++) {
             work->pos[i] = GetOpposingPos(scu->mainModule, viewPos, i);
-            work->mons[i] = PokeCon_GetPosMonInner(scu->pokeCon, work->pos[i]);
-            work->monIds[i] = GetMonID(work->mons[i]);
+            mon = PokeCon_GetPosMonInner(scu->pokeCon, work->pos[i]);
+            work->mons[i] = IsFainted(mon) ? NULL : mon;
+            work->monIds[i] = GetMonID(mon);
         }
         BtlvScuWinFade_StartHide(&scu->msgFade);
         (*seq)++;
         break;
     case 1:
         if (BtlvScuWinFade_Update(&scu->msgFade)) {
-            BtlvEffect_AddPokemon(BattleMon_GetViewSrcData(work->mons[0]),
-                                  BattlePosToViewPos(scu->mainModule, work->pos[0]));
+            BtlvScu_AddWildTripleMon(scu, work, 0);
             (*seq)++;
         }
         break;
     case 2:
         if (!BtlvEffect_IsBusy()) {
-            BtlvEffect_AddPokemon(BattleMon_GetViewSrcData(work->mons[1]),
-                                  BattlePosToViewPos(scu->mainModule, work->pos[1]));
+            BtlvScu_AddWildTripleMon(scu, work, 1);
             (*seq)++;
         }
         break;
     case 3:
         if (!BtlvEffect_IsBusy()) {
-            viewPos = BattlePosToViewPos(scu->mainModule, work->pos[2]);
-            BtlvEffect_AddPokemon(BattleMon_GetViewSrcData(work->mons[2]), viewPos);
-            BtlvEffect_StartPos(viewPos, 0x231);
+            BtlvScu_AddWildTripleMon(scu, work, 2);
+            BtlvEffect_StartPos(BattlePosToViewPos(scu->mainModule, work->pos[2]), 0x231);
             BtlvScu_EncountFadeIn(2);
             (*seq)++;
         }
@@ -1338,7 +1367,9 @@ static BOOL BtlvScu_StepWildTripleAppear(BtlvScu *scu, s32 *seq) {
     case 5:
         if (BtlvScu_WaitMsg(scu)) {
             for (i = 0; i < 3; i++) {
-                BtlvScuGauge_Show(&scu->gauges[work->pos[i]]);
+                if (work->mons[i] != NULL) {
+                    BtlvScuGauge_Show(&scu->gauges[work->pos[i]]);
+                }
             }
             BtlvScuWinFade_StartHide(&scu->msgFade);
             (*seq)++;

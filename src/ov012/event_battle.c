@@ -55,6 +55,7 @@
 #ifdef PAPERWHITE2
 #include "paperwhite2/battle_weather.h"
 #include "paperwhite2/difficulty.h"
+#include "paperwhite2/entralink_run_battle.h"
 #include "paperwhite2/shiny_candy.h"
 #endif
 
@@ -114,6 +115,13 @@ static GameEventReturnCode EventWildBattleCall_Callback(GameEvent *event, u32 *s
 
         EventBattleCall_Setup(battleWork, gsys, wk->setup);
         battleWork->unk14 = TRUE;
+#ifdef PAPERWHITE2
+        // Paper White 2: an Entralink run's battle reopens the field after a loss too, as the Battle Subway's does:
+        // its script ends the run at the hub instead of whiting out (paperwhite2/entralink_run_battle.h)
+        if (BtlSetup_CheckFlag(wk->setup, ENTRALINK_RUN_BTL_SETUP_FLAG)) {
+            battleWork->unk18 = TRUE;
+        }
+#endif
         pkm = PokeParty_GetPkm(BtlSetup_GetParty(wk->setup, 1), 0);
         species = PokeParty_GetParam(pkm, PKM_PARAM_SPECIES, NULL);
         form = PokeParty_GetParam(pkm, PKM_PARAM_FORM, NULL);

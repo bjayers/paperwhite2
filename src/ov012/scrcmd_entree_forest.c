@@ -26,6 +26,9 @@
 #include "system/game_system.h"
 #include "system/vm.h"
 #include "system/wordset.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/entralink_run.h"
+#endif
 
 #define ITEM_DREAM_BALL 576
 #define SEQ_SE_WARP 0x559
@@ -94,8 +97,17 @@ BOOL Scrcmd_EntreeForest_EntreeForestSpawnAllPkm(VM *vm, FieldScriptEnv *env) {
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
     Field *field = GSYS_GetField(gsys);
     u32 actorIdBase;
-    SymbolMapList *list = SymbolMap_CreatePokemonList(FieldScriptEnv_GetHeapID(env), gsys, &actorIdBase);
+    SymbolMapList *list;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: a run's room has its challenge's enemies instead of the forest's Pokémon
+    // (paperwhite2/entralink_run.h)
+    if (EntralinkRun_IsActive(FieldScriptEnv_GetGameData(env))) {
+        EntralinkRun_SpawnRoom(gsys);
+        return FALSE;
+    }
+#endif
+    list = SymbolMap_CreatePokemonList(FieldScriptEnv_GetHeapID(env), gsys, &actorIdBase);
     if (list != NULL) {
         EntreeForest_SpawnAllPokemon(field, actorIdBase, list->pokemon, list->count, list->unk50_18);
         GFL_HeapFree(list);
@@ -186,6 +198,14 @@ BOOL Scrcmd_EntreeForest_MapChangeEntreeForest(VM *vm, FieldScriptEnv *env) {
     VecFx32 pos;
     VecFx32 playerPos;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: in a run every exit leads to the next room, or to the hub after the last
+    // (paperwhite2/entralink_run.h); the exit's script has checked that the room is cleared
+    if (EntralinkRun_IsActive(gameData)) {
+        ScriptWork_CallEvent(work, EntralinkRun_CreateExitEvent(gsys));
+        return TRUE;
+    }
+#endif
     if (dir == 1 && SymbolMap_IsEntranceArea(area)) {
         field = GSYS_GetField(gsys);
         FieldPlayer_GetWPos(Field_GetPlayer(field), &playerPos);
@@ -406,7 +426,13 @@ static GameEventReturnCode EventEntreeForestWarp_Callback(GameEvent *event, u32 
         (*state)++;
         break;
     case 2:
+#ifdef PAPERWHITE2
+        // Paper White 2: a run's rooms are its own maps, not the forest's grid (paperwhite2/entralink_run.h)
+        data->zoneId =
+            EntralinkRun_IsActive(gameData) ? EntralinkRun_GetRoomZone(gameData) : SymbolMap_GetZone(gsys, data->area);
+#else
         data->zoneId = SymbolMap_GetZone(gsys, data->area);
+#endif
         GameData_SetEntreeForestArea(gameData, data->area);
         GameEvent_ChainNext(event, EventMapChange_CreateGridDefault(gsys, field, data->zoneId, &data->pos, data->dir));
         (*state)++;

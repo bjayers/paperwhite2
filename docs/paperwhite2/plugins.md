@@ -430,8 +430,9 @@ hooks; the text stays.
 
 The hack's script commands follow the original's last, 0x2f2, in `EVCMD_TABLE` (`src/ov012/scrcmd_vm.c`), each with
 its row in `EVCMD_PERM_TABLE` (`src/ov012/script_sys.c`): the conditions' two (0x2f3, 0x2f4) and `ReloadMapHere`
-(0x2f5, Version places below) and `PartyFieldMoveUser` (0x2f6, HMs by learners below) under `PAPERWHITE2`, then
-`Debug` (0x2f7) under `PAPERWHITE2_DEBUG_MENU`, last, so that a
+(0x2f5, Version places below), `PartyFieldMoveUser` (0x2f6, HMs by learners below), `PokemonCenter` (0x2f7) and
+`EntralinkRun` (0x2f8, Entralink roguelike below) under `PAPERWHITE2`, then `Debug` (0x2f9) under
+`PAPERWHITE2_DEBUG_MENU`, last, so that a
 build without the menu keeps the others' IDs. Its entry in
 `tools/script/field_commands.json` has a `"hack"` key, which `field_command_table.py` keeps when it writes the table
 again from the original ROM and `field_script.py inc` writes above the macro. To add another command (rarely needed
@@ -440,7 +441,7 @@ both tables, its entry in the JSON, then `python3 tools/script/field_script.py i
 
 | Command | ID | Arguments | Handler |
 | --- | --- | --- | --- |
-| `Debug action, arg1, arg2, result` | 0x2f7 (759) | a `DEBUG_ACTION_*`, two arguments, each a value or a variable, and the variable for the result | `Scrcmd_PaperWhite2_Debug` (`src/paperwhite2/ov012/paperwhite2_debug_commands.c`); the actions above. A warp action waits a frame, as the map change commands do |
+| `Debug action, arg1, arg2, result` | 0x2f9 (761) | a `DEBUG_ACTION_*`, two arguments, each a value or a variable, and the variable for the result | `Scrcmd_PaperWhite2_Debug` (`src/paperwhite2/ov012/paperwhite2_debug_commands.c`); the actions above. A warp action waits a frame, as the map change commands do |
 
 **Memory.** The menu costs about 4 KB of the budget (the main arena had 159 KB left before it, 155 KB after): the
 command's code and tables in overlay 12, the overrides and the shiny PID in main, the hooks.
@@ -545,7 +546,8 @@ the next unused one (`var_usage.py --check` says whether it is).
 | 0x4058 | `EVENT_WORK_SPAWN_PICK` | the key the zone's NPC spawns were picked for (NPC spawns) |
 | 0x4059 | `EVENT_WORK_REGI_CHAMBER` | the Underground Ruins' chamber (Version places) |
 | 0x405a | `EVENT_WORK_WONDER_TRADE_COUNT` | the Wonder Trades made, at most 65535, the special reward's pity count (Pokémon Center attendants) |
-| 0x405b-0x406f | | free |
+| 0x405b-0x405d | `EVENT_WORK_ENTRALINK_RUN_ROOM`, `_ORDER`, `_CLEARED` | the Entralink roguelike's run (Entralink roguelike) |
+| 0x405e-0x406f | | free |
 
 ### Seasons
 
@@ -2681,6 +2683,15 @@ reads 17 as "no type" (Roost, STAB, Color Change, Conversion 2, the PWT's "any t
 - **The Pixie Plate and Arceus's Fairy form** (item 125, form 17; `items.md`): `poke_tool.c`'s plate type and
   `PaperWhite2_GetArceusPlateForm` (`plist_item.c`, `box2_main.c`), `HandlerJudgement`, `IsArceusPlate`, the plate's
   handler row; the form's palettes after the hack's sprite groups (`PAPERWHITE2_PALETTE_FORM_FILES`, `pokegra.c`).
+
+### Entralink roguelike (prototype)
+
+`docs/paperwhite2/design/entralink-roguelike-prototype.md`: a run of four Entree Forest rooms with a battle each,
+from a cleared hub. `src/paperwhite2/ov012/paperwhite2_entralink_run.c` (`include/paperwhite2/entralink_run.h`), the
+script command `EntralinkRun` (0x2f8, `entralink_run_actions.h`) and global script 10498, hooks in
+`entree_forest_first_warp.c`, `scrcmd_entree_forest.c`, `event_battle.c`, `btl_main.c`, `btl_server_flow_sub.c` and
+`btlv_scu.c`; data in `res/paperwhite2/entralink/` (`tools/paperwhite2/entralink_run.py`); state in variables
+0x405b-0x405d.
 
 ## Adding global scripts
 

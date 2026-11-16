@@ -102,9 +102,14 @@ EVENT_WORK_REGI_CHAMBER
 # Paper White 2: the Wonder Trades made, at most 65535, for its special reward's pity count (0x405a was unused,
 # tools/paperwhite2/var_usage.py; src/paperwhite2/ov012/paperwhite2_wonder_trade.c, docs/paperwhite2/plugins.md)
 EVENT_WORK_WONDER_TRADE_COUNT
-EVENT_WORK_0x405b
-EVENT_WORK_0x405c
-EVENT_WORK_0x405d
+# Paper White 2: the Entralink roguelike prototype's run (0x405b-0x405d were unused, tools/paperwhite2/var_usage.py;
+# src/paperwhite2/ov012/paperwhite2_entralink_run.c, docs/paperwhite2/design/entralink-roguelike-prototype.md): the
+# room the player is in, from 1, or 0 outside a run
+EVENT_WORK_ENTRALINK_RUN_ROOM
+# Paper White 2: the run's rooms drawn from run.json's pool, a place in the pool a nibble, room 1 in the low one
+EVENT_WORK_ENTRALINK_RUN_ORDER
+# Paper White 2: 1 once the room's battle is won, which opens its exits
+EVENT_WORK_ENTRALINK_RUN_CLEARED
 EVENT_WORK_0x405e
 EVENT_WORK_0x405f
 EVENT_WORK_0x4060

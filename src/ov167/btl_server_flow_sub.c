@@ -30,6 +30,7 @@
 #include "system/rtc.h"
 
 #ifdef PAPERWHITE2
+#include "paperwhite2/entralink_run_battle.h"
 #include "paperwhite2/exp_share.h"
 #include "paperwhite2/species.h"
 #endif
@@ -927,7 +928,14 @@ static BOOL ThrowBall(BtlServerFlow *flow, BattleMon *mon, u16 item) {
             break;
         }
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink run's wild battles refuse balls as a trainer's do
+    // (paperwhite2/entralink_run_battle.h)
+    if (BtlSetup_GetBattleType(flow->mainModule) == 0 &&
+        !BtlSetup_IsBattleType(flow->mainModule, ENTRALINK_RUN_BTL_SETUP_FLAG)) {
+#else
     if (BtlSetup_GetBattleType(flow->mainModule) == 0) {
+#endif
         if (targetPos != 6) {
             caught = CheckBallCapture(flow, mon, target, item, &shakes, &critical);
             if (caught) {

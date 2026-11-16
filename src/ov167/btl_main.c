@@ -55,6 +55,7 @@
 #include "text/system/ability_handlers_btl_main.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/battle_weather.h"
+#include "paperwhite2/entralink_run_battle.h"
 #endif
 
 // The name shown for a link opponent whose name is hidden: the other version's
@@ -2563,7 +2564,15 @@ void PokeCon_CreateClientParty(BtlPokeCon *pokeCon, BtlMainModule *mainModule, u
             i++;
         }
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink raid's foe keeps its fainted sides in place, so its one enemy, between them, stands
+    // in the center (paperwhite2/entralink_run_battle.h); the run's other battles have no fainted foes
+    if (!BtlSetup_IsBattleType(mainModule, ENTRALINK_RUN_BTL_SETUP_FLAG) || clientId == GetPlayerClientID(mainModule)) {
+        BattleParty_MoveFaintedToEnd(battleParty);
+    }
+#else
     BattleParty_MoveFaintedToEnd(battleParty);
+#endif
 }
 
 s32 GetPartyPkmnEligibleForBattle(PokeParty *party) {

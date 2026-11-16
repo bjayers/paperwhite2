@@ -11660,6 +11660,35 @@
         },
         {
             "op": 760,
+            "macro": "EntralinkRun",
+            "name": "entralink_run",
+            "handler": "Scrcmd_PaperWhite2_EntralinkRun",
+            "description": "The Entralink roguelike's command (docs/paperwhite2/design/entralink-roguelike-prototype.md): runs the action (ENTRALINK_RUN_ACTION_*, paperwhite2/entralink_run_actions.h) and puts what it returns in the variable. CAN_LEAVE says whether the room's exits may be used, GET_SPECIES gives the room's first enemy's species, BATTLE starts the room's battle and BATTLE_RESULT says after it whether the room is cleared, the run won or lost (ENTRALINK_RUN_RESULT_*), WARP_HUB ends the run and warps to the hub's entrance; the script waits for BATTLE and WARP_HUB. The two arguments are for later actions",
+            "args": [
+                {
+                    "name": "action",
+                    "type": "any",
+                    "kind": "number"
+                },
+                {
+                    "name": "arg1",
+                    "type": "any",
+                    "kind": "number"
+                },
+                {
+                    "name": "arg2",
+                    "type": "any",
+                    "kind": "number"
+                },
+                {
+                    "name": "result",
+                    "type": "var",
+                    "kind": "var"
+                }
+            ]
+        },
+        {
+            "op": 761,
             "macro": "Debug",
             "name": "debug",
             "handler": "Scrcmd_PaperWhite2_Debug",
