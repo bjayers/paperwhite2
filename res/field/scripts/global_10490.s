@@ -302,9 +302,8 @@ Movement_02BC:
     Move 3, 1
     MoveEnd
 #ifdef PAPERWHITE2
-
-// Paper White 2: an exit of an Entralink run's room before its battle is won: the player steps back
 L_RunExitBlocked:
+    // Paper White 2: an exit of an Entralink run's room before its battle is won: the player steps back
     SystemMsg Global10490_Text_NightmareBlocksWay, 2
     LastKeyWait
     SystemMsgClose
