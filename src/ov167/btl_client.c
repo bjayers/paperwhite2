@@ -3354,6 +3354,14 @@ static BOOL CanMonUseHeldItem(BtlClient *client, BattleMon *mon) {
 static u32 CanMonSwitch(BtlClient *client, BattleMon *mon, u8 *trapMonId, u16 *trapAbility) {
     u32 result;
     if (CanMonUseHeldItem(client, mon) && GetBattleMonHeldItem(mon) == ITEM_SHED_SHELL) {
+        // BUG: Shed Shell's TRAP_NONE leaves trapMonId unset, and BattleClient_ActionSwitchPokemon compares it with
+        // the switching Pokémon's ID: a stale 0 there matches the first Pokémon's, so the party list says it "can't be
+        // switched out" though nothing traps it
+#if defined(BUGFIX) || defined(PAPERWHITE2)
+        // Paper White 2: fixed, so Shed Shell frees its holder from Fairy Lock (and any trap) as it should
+        *trapMonId = 31;
+        *trapAbility = 0;
+#endif
         return TRAP_NONE;
     }
     result = IsMonTrapped(client, mon, trapMonId, trapAbility);
