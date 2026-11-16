@@ -395,6 +395,12 @@ PokeParty *GameData_GetParty(GameData *gameData) {
 void PaperWhite2_GameData_SetParty(GameData *gameData, PokeParty *party) {
     gameData->party = party;
 }
+
+// Paper White 2: an Entralink run's bag as the game's, outside the save, which keeps the real bag
+// (paperwhite2/entralink_run_state.h)
+void PaperWhite2_GameData_SetBag(GameData *gameData, BagSave *bag) {
+    gameData->bag = bag;
+}
 #endif
 
 BoxSaveAccessor *GameData_GetBoxSaveAccessor(GameData *gameData) {

@@ -48,6 +48,7 @@
 
 #ifdef PAPERWHITE2
 #include "paperwhite2/dexnav_event.h"
+#include "paperwhite2/entralink_run_state.h"
 #include "paperwhite2/exp_share.h"
 #include "paperwhite2/version_key.h"
 #endif
@@ -148,6 +149,11 @@ static BOOL ItemMenu_ToggleItemRegistration(ItemMenuWork *work, s32 row);
 static u32 ItemMenu_GetPocketShortcut(s32 pocket);
 static void ItemMenu_TogglePocketRegistration(ItemMenuWork *work);
 static void ItemMenu_UpdatePocketRegistration(ItemMenuWork *work);
+#ifdef PAPERWHITE2
+static BOOL ItemMenu_IsPocketShown(ItemMenuWork *work, s32 pocket);
+static s32 ItemMenu_StepPocket(ItemMenuWork *work, s32 pocket, BOOL forward);
+static s32 PaperWhite2_GetButtonPocket(u32 button);
+#endif
 static void ItemMenu_SetUseAction(ItemMenuWork *work, ItemData *data, BagItem *slot, u8 *actions);
 static void ItemMenu_GetItemActions(ItemMenuWork *work, u8 *actions);
 static void ItemMenu_OpenItemMenu(ItemMenuWork *work);
@@ -971,6 +977,35 @@ static void ItemMenu_StateSelectItem(ItemMenuWork *work) {
 }
 
 // The list
+#ifdef PAPERWHITE2
+// Paper White 2: whether the bag shows a pocket: all of them, but an Entralink run's bag only its Items, Medicine and
+// Berries pockets (paperwhite2/entralink_run_state.h)
+static BOOL ItemMenu_IsPocketShown(ItemMenuWork *work, s32 pocket) {
+    if (!EntralinkRun_IsRunBag(work->bag)) {
+        return TRUE;
+    }
+    return pocket == BAG_POCKET_ITEMS || pocket == BAG_POCKET_MEDICINE || pocket == BAG_POCKET_BERRIES;
+}
+
+// Paper White 2: the pocket after or before one that the bag shows, round the six
+static s32 ItemMenu_StepPocket(ItemMenuWork *work, s32 pocket, BOOL forward) {
+    do {
+        pocket = forward ? (pocket + 1) % 6 : (pocket + 5) % 6;
+    } while (!ItemMenu_IsPocketShown(work, pocket));
+    return pocket;
+}
+
+// Paper White 2: the pocket of a pocket button of the touch screen, as ItemMenu_ButtonCallback has them
+static s32 PaperWhite2_GetButtonPocket(u32 button) {
+    static const s32 BUTTON_POCKETS[] = {
+        BAG_POCKET_MEDICINE,  BAG_POCKET_TMS_HMS,    BAG_POCKET_BERRIES,
+        BAG_POCKET_KEY_ITEMS, BAG_POCKET_FREE_SPACE, BAG_POCKET_ITEMS,
+    };
+
+    return BUTTON_POCKETS[button];
+}
+#endif
+
 static void ItemMenu_StateList(ItemMenuWork *work) {
     u32 keys;
     s32 pocket;
@@ -1092,16 +1127,28 @@ static void ItemMenu_StateList(ItemMenuWork *work) {
     }
     if (GCTX_HIDGetTypedKeys() & PAD_KEY_RIGHT) {
         pocket = work->pocket;
+#ifdef PAPERWHITE2
+        // Paper White 2: past the pockets an Entralink run's bag doesn't have
+        work->pocket = ItemMenu_StepPocket(work, pocket, TRUE);
+#else
+        pocket = work->pocket;
         if (++work->pocket >= 6) {
             work->pocket = 0;
         }
+#endif
         GCTX_HIDSetUsingTouch(FALSE);
         ItemMenu_PressPocketArrow(work, pocket, TRUE, ItemMenu_StatePocketArrowDone);
     } else if (GCTX_HIDGetTypedKeys() & PAD_KEY_LEFT) {
         pocket = work->pocket;
+#ifdef PAPERWHITE2
+        // Paper White 2: past the pockets an Entralink run's bag doesn't have
+        work->pocket = ItemMenu_StepPocket(work, pocket, FALSE);
+#else
+        pocket = work->pocket;
         if (--work->pocket < 0) {
             work->pocket = 5;
         }
+#endif
         GCTX_HIDSetUsingTouch(FALSE);
         ItemMenu_PressPocketArrow(work, pocket, FALSE, ItemMenu_StatePocketArrowDone);
     }
@@ -1956,6 +2003,12 @@ static void ItemMenu_GetItemActions(ItemMenuWork *work, u8 *actions) {
         } else {
             actions[3] = 9;
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: an Entralink run's bag has no Free Space to move items to (paperwhite2/entralink_run_state.h)
+        if (!ItemMenu_IsPocketShown(work, BAG_POCKET_FREE_SPACE)) {
+            actions[3] = 0xff;
+        }
+#endif
         actions[4] = 10;
         GFL_HeapFree(data);
     }
@@ -2021,6 +2074,12 @@ static void ItemMenu_ButtonCallback(u32 button, u32 event, void *data) {
         return;
     }
     if (button < 6) {
+#ifdef PAPERWHITE2
+        // Paper White 2: an Entralink run's bag has only the Items, Medicine and Berries pockets
+        if (!ItemMenu_IsPocketShown(work, PaperWhite2_GetButtonPocket(button))) {
+            return;
+        }
+#endif
         s32 pockets[] = {
             BAG_POCKET_MEDICINE,  BAG_POCKET_TMS_HMS,    BAG_POCKET_BERRIES,
             BAG_POCKET_KEY_ITEMS, BAG_POCKET_FREE_SPACE, BAG_POCKET_ITEMS,
@@ -2033,17 +2092,29 @@ static void ItemMenu_ButtonCallback(u32 button, u32 event, void *data) {
     } else if (button == 6) {
         ItemMenu_SetKeyMode(work, FALSE);
         pocket = work->pocket;
+#ifdef PAPERWHITE2
+        // Paper White 2: past the pockets an Entralink run's bag doesn't have
+        work->pocket = ItemMenu_StepPocket(work, pocket, FALSE);
+#else
+        pocket = work->pocket;
         if (--work->pocket < 0) {
             work->pocket = 5;
         }
+#endif
         ItemMenu_PressPocketArrow(work, pocket, FALSE, ItemMenu_StatePocketArrowDone);
         return;
     } else if (button == 7) {
         ItemMenu_SetKeyMode(work, FALSE);
         pocket = work->pocket;
+#ifdef PAPERWHITE2
+        // Paper White 2: past the pockets an Entralink run's bag doesn't have
+        work->pocket = ItemMenu_StepPocket(work, pocket, TRUE);
+#else
+        pocket = work->pocket;
         if (++work->pocket >= 6) {
             work->pocket = 0;
         }
+#endif
         ItemMenu_PressPocketArrow(work, pocket, TRUE, ItemMenu_StatePocketArrowDone);
         return;
     } else if (button == 8) {
@@ -2219,6 +2290,12 @@ static BOOL ItemMenuProc_Init(GameProc *proc, u32 *state, void *param, void *dat
     sortItemBlocks(work->bag);
     BagItemList_Init(&work->itemList, bag->bag, work->freeSpaceFilter, work->heapId);
     work->pocket = BagCursor_GetPocket(work->cursor);
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink run's bag opens on a pocket it has
+    if (!ItemMenu_IsPocketShown(work, work->pocket)) {
+        work->pocket = BAG_POCKET_ITEMS;
+    }
+#endif
     for (pocket = 0; pocket < 6; pocket++) {
         BagCursor_GetPocketPosition(work->cursor, pocket, &row, &scroll);
         count = BagItemList_CountShown(&work->itemList, pocket);

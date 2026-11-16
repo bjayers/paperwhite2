@@ -35,6 +35,8 @@
 #include "save/save_control.h"
 #include "system/game_data.h"
 #ifdef PAPERWHITE2
+#include "paperwhite2/entralink_run_party.h"
+#include "paperwhite2/entralink_run_state.h"
 #include "paperwhite2/species.h"
 #endif
 
@@ -205,6 +207,12 @@ static BOOL EventBattleReturn_Main(GameProc *proc, u32 *state, void *param, void
         EventBattleReturn_NaturalCure(party);
         if (prm->setup->result == BTL_RESULT_CAPTURE) {
             wk->pkm = PokeParty_GetPkm(prm->setup->party[1], prm->setup->unkAC);
+#ifdef PAPERWHITE2
+            // Paper White 2: an Entralink run's catch joins the real party, not the run's copies, and the run records
+            // which enemy it was (paperwhite2/entralink_run_party.h, paperwhite2/entralink_run_state.h)
+            party = EntralinkRun_GetCatchParty(prm->gameData);
+            EntralinkRun_SetCaught(PokeParty_GetParam(wk->pkm, PKM_PARAM_PID, NULL));
+#endif
             if (PokeParty_GetPkmCount(party) >= PokeParty_GetCapacity(party)) {
                 box = BoxSaveAccessor_GetLastOpenedBox(boxes);
                 slot = 0;
@@ -295,7 +303,12 @@ static BOOL EventBattleReturn_Main(GameProc *proc, u32 *state, void *param, void
         }
         break;
     case 3:
+#ifdef PAPERWHITE2
+        // Paper White 2: into the real party in an Entralink run (paperwhite2/entralink_run_party.h)
+        party = EntralinkRun_GetCatchParty(prm->gameData);
+#else
         party = GameData_GetParty(prm->gameData);
+#endif
         EventBattleReturn_HealBall(wk->pkm);
         if (wk->boxMessage == NULL) {
             PokeParty_AddPkm(party, wk->pkm);

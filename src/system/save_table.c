@@ -51,6 +51,7 @@
 #include "save/worldtrade_data.h"
 #include "system/pms_word.h"
 #ifdef PAPERWHITE2
+#include "paperwhite2/entralink_progress.h"
 #include "paperwhite2/pokedex_save.h"
 #endif
 
@@ -138,7 +139,13 @@ static const SaveBlockDef SAVEDATA_INIT[SAVE_BLOCK_MAX] = {
     { SAVE_BLOCK_BSUBWAY_SCORE, BSubwayScoreData_GetSize, (SaveBlockInit)BSubwayScoreData_Init },
     { SAVE_BLOCK_BSUBWAY_3A, BSubwayWifiData_GetSize, (SaveBlockInit)BSubwayWifiData_Init },
     { SAVE_BLOCK_RECORD, RecordSave_GetSize, (SaveBlockInit)RecordSave_Init },
+#ifdef PAPERWHITE2
+    // Paper White 2: the Entree Forest's block holds the Entralink roguelike's progress, at the same size
+    // (paperwhite2/entralink_progress.h)
+    { SAVE_BLOCK_SYMBOL, EntralinkProgress_GetSize, (SaveBlockInit)EntralinkProgress_Init },
+#else
     { SAVE_BLOCK_SYMBOL, getSizeofNpcData, (SaveBlockInit)initNpcData },
+#endif
     { SAVE_BLOCK_SURVEY, SurveySave_GetSize, (SaveBlockInit)SurveySave_Init },
     { SAVE_BLOCK_UNITY_TOWER_FLOOR, UnityTowerSave_GetBlockSize, (SaveBlockInit)UnityTowerSave_Init },
     { SAVE_BLOCK_TRIAL_HOUSE, TrialHouseSave_GetSize, (SaveBlockInit)TrialHouseSave_Init },

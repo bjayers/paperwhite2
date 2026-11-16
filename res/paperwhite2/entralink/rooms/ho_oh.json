@@ -6,6 +6,7 @@
     "battles": [
         {
             "id": "ho_oh",
+            "progress_id": 2,
             "format": "single",
             "enemies": [
                 {

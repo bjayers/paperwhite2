@@ -5,7 +5,6 @@
 #include "constants/directions.h"
 #include "constants/moves.h"
 #include "constants/pokemon.h"
-#include "constants/vars.h"
 #include "constants/zones.h"
 #include "field/entree_forest.h"
 #include "field/event_battle.h"
@@ -18,13 +17,15 @@
 #include "field/zone.h"
 #include "gfl/heap.h"
 #include "gfl/random.h"
+#include "paperwhite2/entralink_progress.h"
 #include "paperwhite2/entralink_run.h"
 #include "paperwhite2/entralink_run_actions.h"
 #include "paperwhite2/entralink_run_battle.h"
 #include "paperwhite2/entralink_run_config.h"
 #include "paperwhite2/entralink_run_party.h"
+#include "paperwhite2/entralink_run_state.h"
 #include "pml/poke_party.h"
-#include "save/event_work.h"
+#include "save/bag.h"
 #include "save/player_info.h"
 #include "system/game_data.h"
 #include "system/game_event.h"
@@ -32,80 +33,175 @@
 #include "system/tpoke_data.h"
 #include "system/vm.h"
 
-// Paper White 2: the Entralink roguelike's prototype, in overlay 12 beside the Entree Forest's script commands. See
+// Paper White 2: the Entralink roguelike, in overlay 12 beside the Entree Forest's script commands. See
 // include/paperwhite2/entralink_run.h and docs/paperwhite2/design/entralink-roguelike-prototype.md
 
-// The script that talking to a room's enemy runs: global_10490.s's Script_9
-#define SCRID_ENTRALINK_RUN_ENEMY 10498
+// The script that talking to a room's NPC runs: global_10490.s's Script_9
+#define SCRID_ENTRALINK_RUN_NPC 10498
 // The Entree Forest's entrance area (SymbolMap), which a run's warps keep in GameData's forest area
 #define ENTREE_FOREST_ENTRANCE_AREA 4
-// The bits of a room's challenge in EVENT_WORK_ENTRALINK_RUN_ORDER
-#define ORDER_BITS 4
-#define ORDER_MASK 0xf
 // The party slot of a raid's enemy, which a triple battle puts in the center
 #define RAID_CENTER_SLOT 1
+// No room is drawn
+#define ROOM_NONE 0xff
 
 // Where a room is entered: its bottom exit, as from the hub (entree_forest_first_warp.c), the one exit every room has
 static const VecFx32 sRoomArrivalPos = { FX32_CONST(248), 0, FX32_CONST(376) };
 // The hub's entrance, where the Entralink's warp in arrives (entralink_warp.c)
 static const VecFx32 sHubEntrancePos = { FX32_CONST(511), FX32_CONST(32), FX32_CONST(584) };
 
-static const EntralinkChallenge sChallenges[ENTRALINK_RUN_CHALLENGE_COUNT] = ENTRALINK_RUN_CHALLENGES;
+static const EntralinkRoom sRooms[ENTRALINK_RUN_ROOM_COUNT] = ENTRALINK_RUN_ROOMS;
+static const EntralinkBattle sBattles[ENTRALINK_RUN_BATTLE_COUNT] = ENTRALINK_RUN_BATTLES;
 static const EntralinkEnemy sEnemies[ENTRALINK_RUN_ENEMY_COUNT] = ENTRALINK_RUN_ENEMIES;
-static const u8 sPool[ENTRALINK_RUN_POOL_COUNT] = ENTRALINK_RUN_POOL;
+static const EntralinkNpc sNpcs[ENTRALINK_RUN_NPC_COUNT] = ENTRALINK_RUN_NPCS;
+static const u16 sRequirements[ENTRALINK_RUN_REQUIREMENT_COUNT] = ENTRALINK_RUN_REQUIREMENTS;
+static const EntralinkRound sRounds[ENTRALINK_RUN_ROUND_COUNT] = ENTRALINK_RUN_ROUNDS;
 static const u16 sRoomZones[ENTRALINK_RUN_ROOM_ZONE_COUNT] = ENTRALINK_RUN_ROOM_ZONES;
 
-static u16 *EntralinkRun_GetVar(GameData *gameData, u16 var) {
-    return EventWork_GetWkPtr(GameData_GetEventWork(gameData), var);
+static EntralinkProgress *EntralinkRun_GetProgress(GameData *gameData) {
+    return EntralinkProgress_Get(GameData_GetSaveControl(gameData));
 }
 
-// How many rooms a run has: the pool's draws, then the final challenge's
-static u32 EntralinkRun_GetRoomCount(void) {
-    return ENTRALINK_RUN_POOL_ROOMS + 1;
+// Whether all of a list of requirements hold: battles won ever, or a finished run
+static BOOL EntralinkRun_MeetsRequirements(GameData *gameData, u32 first, u32 count) {
+    EntralinkProgress *progress = EntralinkRun_GetProgress(gameData);
+    u32 i;
+
+    for (i = first; i < first + count; i++) {
+        if (sRequirements[i] == ENTRALINK_REQUIRE_RUN_COMPLETED) {
+            if (!EntralinkProgress_IsRunCompleted(progress)) {
+                return FALSE;
+            }
+        } else if (!EntralinkProgress_IsBattleWon(progress, sRequirements[i])) {
+            return FALSE;
+        }
+    }
+    return TRUE;
 }
 
-static BOOL EntralinkRun_IsFinalRoom(u32 room) {
-    return room == EntralinkRun_GetRoomCount();
+static BOOL EntralinkRun_IsFinalRoom(EntralinkRunState *state) {
+    return state->room == state->roomCount;
+}
+
+// The room the player is in, or NULL outside a run
+static const EntralinkRoom *EntralinkRun_GetRoom(void) {
+    EntralinkRunState *state = EntralinkRun_GetState();
+
+    if (state->room == 0) {
+        return NULL;
+    }
+    return &sRooms[state->order[state->room - 1]];
+}
+
+// A room of a role at random among those that can come up in a round (round 0: any) and aren't in the run yet, or
+// ROOM_NONE
+static u32 EntralinkRun_DrawRoom(EntralinkRunState *state, u32 role, u32 round) {
+    BOOL used[ENTRALINK_RUN_ROOM_COUNT];
+    u32 count = 0;
+    u32 pick;
+    u32 i;
+
+    for (i = 0; i < ENTRALINK_RUN_ROOM_COUNT; i++) {
+        used[i] = FALSE;
+    }
+    for (i = 0; i < state->roomCount; i++) {
+        used[state->order[i]] = TRUE;
+    }
+    for (i = 0; i < ENTRALINK_RUN_ROOM_COUNT; i++) {
+        if (!used[i] && sRooms[i].role == role &&
+            (round == 0 || sRooms[i].rounds == 0 || (sRooms[i].rounds & (1 << (round - 1))))) {
+            count++;
+        }
+    }
+    if (count == 0) {
+        return ROOM_NONE;
+    }
+    pick = GFL_RandomLC(count);
+    for (i = 0; i < ENTRALINK_RUN_ROOM_COUNT; i++) {
+        if (!used[i] && sRooms[i].role == role &&
+            (round == 0 || sRooms[i].rounds == 0 || (sRooms[i].rounds & (1 << (round - 1))))) {
+            if (pick == 0) {
+                break;
+            }
+            pick--;
+        }
+    }
+    return i;
+}
+
+static void EntralinkRun_AddRoom(EntralinkRunState *state, u32 role, u32 round) {
+    u32 room;
+
+    if (state->roomCount >= ENTRALINK_RUN_ROOMS_MAX) {
+        return;
+    }
+    room = EntralinkRun_DrawRoom(state, role, round);
+    if (room != ROOM_NONE) {
+        state->order[state->roomCount++] = room;
+    }
+}
+
+// As the player enters the room: which of its NPCs come up (their requirements and chance, rolled once), whether
+// its exits are open from the start (no battle NPC came up), and its field weather
+static void EntralinkRun_EnterRoom(GameData *gameData) {
+    EntralinkRunState *state = EntralinkRun_GetState();
+    const EntralinkRoom *room = EntralinkRun_GetRoom();
+    const EntralinkNpc *npc;
+    BOOL battles = FALSE;
+    u32 i;
+
+    state->npcsSpawned = 0;
+    state->npcsGone = 0;
+    for (i = 0; i < room->npcCount; i++) {
+        npc = &sNpcs[room->firstNpc + i];
+        if (!EntralinkRun_MeetsRequirements(gameData, npc->firstRequirement, npc->requirementCount)) {
+            continue;
+        }
+        if (GFL_RandomLC(100) >= npc->chance) {
+            continue;
+        }
+        state->npcsSpawned |= 1 << i;
+        if (npc->type == ENTRALINK_NPC_BATTLE) {
+            battles = TRUE;
+        }
+    }
+    // A room where no battle came up is free
+    state->cleared = !battles;
+    state->fieldWeather = room->fieldWeather;
 }
 
 void EntralinkRun_Start(GameData *gameData) {
-    u8 pool[ENTRALINK_RUN_POOL_COUNT];
-    u32 order = 0;
+    EntralinkRunState *state = EntralinkRun_GetState();
+    u32 round;
     u32 i;
-    u32 pick;
-    u8 swap;
 
-    // The pool's places shuffled with the game's random (Fisher-Yates), of which the run takes the first
-    for (i = 0; i < ENTRALINK_RUN_POOL_COUNT; i++) {
-        pool[i] = i;
+    MI_CpuFill8(state, 0, sizeof(EntralinkRunState));
+    // Each round's rooms and its boss, then the final room
+    for (round = 0; round < ENTRALINK_RUN_ROUND_COUNT; round++) {
+        for (i = 0; i < sRounds[round].rooms; i++) {
+            EntralinkRun_AddRoom(state, ENTRALINK_ROLE_ROOM, round + 1);
+        }
+        if (sRounds[round].boss) {
+            EntralinkRun_AddRoom(state, ENTRALINK_ROLE_BOSS, round + 1);
+        }
     }
-    for (i = ENTRALINK_RUN_POOL_COUNT - 1; i > 0; i--) {
-        pick = GFL_RandomLC(i + 1);
-        swap = pool[i];
-        pool[i] = pool[pick];
-        pool[pick] = swap;
-    }
-    for (i = 0; i < ENTRALINK_RUN_POOL_ROOMS; i++) {
-        order |= pool[i] << (i * ORDER_BITS);
-    }
-    *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_ORDER) = order;
-    *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_ROOM) = 1;
-    *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_CLEARED) = FALSE;
-    // The team: the party's copies at level 100 (paperwhite2/entralink_run_party.h)
+    EntralinkRun_AddRoom(state, ENTRALINK_ROLE_FINAL, 0);
+    state->room = 1;
+    EntralinkRun_EnterRoom(gameData);
+    // The team, the party's copies at level 100 (paperwhite2/entralink_run_party.h), and the run's own bag, empty
     EntralinkRun_KeepParty(gameData);
+    EntralinkRun_KeepBag(gameData);
 }
 
 BOOL EntralinkRun_IsActive(GameData *gameData) {
-    u32 room = *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_ROOM);
-
-    return room != 0 && room <= EntralinkRun_GetRoomCount();
+    return EntralinkRun_GetState()->room != 0;
 }
 
-// Ends the run, and puts the real party back with the prestige gained
+// Ends the run, and puts the real party back with the prestige gained, and the real bag
 static void EntralinkRun_End(GameData *gameData) {
-    *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_ROOM) = 0;
-    *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_CLEARED) = FALSE;
+    MI_CpuFill8(EntralinkRun_GetState(), 0, sizeof(EntralinkRunState));
     EntralinkRun_RestoreParty(gameData);
+    EntralinkRun_RestoreBag(gameData);
 }
 
 void EntralinkRun_OnFieldLoad(GameData *gameData, u16 zoneId) {
@@ -113,39 +209,20 @@ void EntralinkRun_OnFieldLoad(GameData *gameData, u16 zoneId) {
         return;
     }
     // A run is only ever in the forest, with its copies as the party: anywhere else (the debug menu's warps), or
-    // without them (a game loaded from a save made in a run), it is over
-    if (!GetZoneIsEntreeForest(zoneId) || !EntralinkRun_IsPartyKept()) {
+    // without them, it is over
+    if (!GetZoneIsEntreeForest(zoneId) || !EntralinkRun_IsActive(gameData) || !EntralinkRun_IsPartyKept()) {
         EntralinkRun_End(gameData);
     }
 }
 
-static BOOL EntralinkRun_IsRoomCleared(GameData *gameData) {
-    return *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_CLEARED);
-}
-
-// The challenge of the room the player is in, or NULL outside a run
-static const EntralinkChallenge *EntralinkRun_GetChallenge(GameData *gameData) {
-    u32 room = *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_ROOM);
-    u32 order;
-
-    if (!EntralinkRun_IsActive(gameData)) {
-        return NULL;
-    }
-    if (EntralinkRun_IsFinalRoom(room)) {
-        return &sChallenges[ENTRALINK_RUN_FINAL_CHALLENGE];
-    }
-    order = *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_ORDER);
-    return &sChallenges[sPool[(order >> ((room - 1) * ORDER_BITS)) & ORDER_MASK]];
-}
-
 u16 EntralinkRun_GetRoomZone(GameData *gameData) {
-    u32 room = *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_ROOM);
+    EntralinkRunState *state = EntralinkRun_GetState();
 
-    if (EntralinkRun_IsFinalRoom(room)) {
+    if (EntralinkRun_IsFinalRoom(state)) {
         return ENTRALINK_RUN_FINAL_ZONE;
     }
     // The room maps in turn, so that two rooms in a row are two maps when run.json lists two
-    return sRoomZones[(room - 1) % ENTRALINK_RUN_ROOM_ZONE_COUNT];
+    return sRoomZones[(state->room - 1) % ENTRALINK_RUN_ROOM_ZONE_COUNT];
 }
 
 static GameEvent *EntralinkRun_CreateHubWarp(GameSystem *gsys) {
@@ -155,68 +232,86 @@ static GameEvent *EntralinkRun_CreateHubWarp(GameSystem *gsys) {
 
 GameEvent *EntralinkRun_CreateExitEvent(GameSystem *gsys) {
     GameData *gameData = GSYS_GetGameData(gsys);
-    u16 *room = EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_ROOM);
+    EntralinkRunState *state = EntralinkRun_GetState();
 
-    if (EntralinkRun_IsFinalRoom(*room)) {
+    if (EntralinkRun_IsFinalRoom(state)) {
         return EntralinkRun_CreateHubWarp(gsys);
     }
-    (*room)++;
-    *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_CLEARED) = FALSE;
+    state->room++;
+    EntralinkRun_EnterRoom(gameData);
     return EventEntreeForestWarp_Create(gsys, TRUE, &sRoomArrivalPos, DIR_UP, ENTREE_FOREST_ENTRANCE_AREA);
 }
 
-// The actor of an enemy, which faces where the data says and runs the enemies' script when talked to
-static void EntralinkRun_SpawnEnemy(Field *field, TPokeData *pokemonData, const EntralinkEnemy *enemy, u16 uid) {
+// The actor of an NPC, which faces where the data says and runs the NPCs' script when talked to: its own sprite, or a
+// battle NPC's enemy's walking Pokémon
+static void EntralinkRun_SpawnNpc(Field *field, TPokeData *pokemonData, const EntralinkRoom *room,
+                                  const EntralinkNpc *npc, u16 uid) {
     static const u16 FACE_MOVE_CODES[] = { MOVE_CODE_FACE_UP, MOVE_CODE_FACE_DOWN, MOVE_CODE_FACE_LEFT,
                                            MOVE_CODE_FACE_RIGHT };
     MMSys *actorSystem = Field_GetActorSystem(field);
-    ZoneNPC npc;
+    const EntralinkEnemy *enemy;
+    ZoneNPC zoneNpc;
 
     if (FindFieldActor(actorSystem, uid) != NULL) {
         return;
     }
-    MI_CpuFill8(&npc, 0, sizeof(ZoneNPC));
-    npc.uid = uid;
-    npc.modelId =
-        GetPokemonFieldOBJCODE(pokemonData, enemy->species, enemy->gender == ENTRALINK_GENDER_FEMALE, enemy->form);
-    npc.moveCode = FACE_MOVE_CODES[enemy->direction];
-    npc.evType = ACTOR_EVENT_TYPE_NONE;
-    npc.scrId = SCRID_ENTRALINK_RUN_ENEMY;
-    npc.direction = enemy->direction;
-    npc.areaW = 0xffff;
-    npc.areaH = 0xffff;
-    npc.pos.grid.x = enemy->x;
-    npc.pos.grid.z = enemy->z;
-    npc.pos.grid.y = 0;
-    CreateNewActorByEntityNoWKOBJCODE(actorSystem, &npc, Field_GetPlayerStateZoneID(field));
+    MI_CpuFill8(&zoneNpc, 0, sizeof(ZoneNPC));
+    zoneNpc.uid = uid;
+    if (npc->sprite != 0) {
+        zoneNpc.modelId = npc->sprite;
+    } else {
+        enemy = &sEnemies[sBattles[room->firstBattle + npc->battle].firstEnemy + npc->enemy];
+        zoneNpc.modelId =
+            GetPokemonFieldOBJCODE(pokemonData, enemy->species, enemy->gender == ENTRALINK_GENDER_FEMALE, enemy->form);
+    }
+    zoneNpc.moveCode = FACE_MOVE_CODES[npc->direction];
+    zoneNpc.evType = ACTOR_EVENT_TYPE_NONE;
+    zoneNpc.scrId = SCRID_ENTRALINK_RUN_NPC;
+    zoneNpc.direction = npc->direction;
+    zoneNpc.areaW = 0xffff;
+    zoneNpc.areaH = 0xffff;
+    zoneNpc.pos.grid.x = npc->x;
+    zoneNpc.pos.grid.z = npc->z;
+    zoneNpc.pos.grid.y = 0;
+    CreateNewActorByEntityNoWKOBJCODE(actorSystem, &zoneNpc, Field_GetPlayerStateZoneID(field));
 }
 
 void EntralinkRun_SpawnRoom(GameSystem *gsys) {
-    GameData *gameData = GSYS_GetGameData(gsys);
+    EntralinkRunState *state = EntralinkRun_GetState();
     Field *field = GSYS_GetField(gsys);
-    const EntralinkChallenge *challenge = EntralinkRun_GetChallenge(gameData);
+    const EntralinkRoom *room = EntralinkRun_GetRoom();
     TPokeData *pokemonData;
     u32 i;
 
-    if (challenge == NULL || EntralinkRun_IsRoomCleared(gameData)) {
+    if (room == NULL) {
         return;
     }
     pokemonData = LoadTPokeData(Field_GetHeapID(field));
-    for (i = 0; i < challenge->enemyCount; i++) {
-        EntralinkRun_SpawnEnemy(field, pokemonData, &sEnemies[challenge->firstEnemy + i], i);
+    for (i = 0; i < room->npcCount; i++) {
+        if ((state->npcsSpawned & (1 << i)) && !(state->npcsGone & (1 << i))) {
+            EntralinkRun_SpawnNpc(field, pokemonData, room, &sNpcs[room->firstNpc + i], i);
+        }
     }
     FreeTPokeData(pokemonData);
 }
 
-static void EntralinkRun_RemoveEnemies(GameSystem *gsys, const EntralinkChallenge *challenge) {
-    MMSys *actorSystem = Field_GetActorSystem(GSYS_GetField(gsys));
-    FieldActor *actor;
+// Takes an NPC away for the rest of the room
+static void EntralinkRun_RemoveNpc(GameSystem *gsys, u32 index) {
+    FieldActor *actor = FindFieldActor(Field_GetActorSystem(GSYS_GetField(gsys)), index);
+
+    EntralinkRun_GetState()->npcsGone |= 1 << index;
+    if (actor != NULL) {
+        DeleteActor(actor);
+    }
+}
+
+// After a won battle, its NPCs and the other battles' go: the room has been fought
+static void EntralinkRun_ClearRoom(GameSystem *gsys, const EntralinkRoom *room) {
     u32 i;
 
-    for (i = 0; i < challenge->enemyCount; i++) {
-        actor = FindFieldActor(actorSystem, i);
-        if (actor != NULL) {
-            DeleteActor(actor);
+    for (i = 0; i < room->npcCount; i++) {
+        if (sNpcs[room->firstNpc + i].type == ENTRALINK_NPC_BATTLE) {
+            EntralinkRun_RemoveNpc(gsys, i);
         }
     }
 }
@@ -247,91 +342,208 @@ static PartyPkm *EntralinkRun_CreateEnemyPkm(GameData *gameData, const Entralink
     return pkm;
 }
 
-// The challenge's battle as a wild one (battle type 0, which a wild battle's script result commands read), with
-// balls refused (ENTRALINK_RUN_BTL_SETUP_FLAG). A raid is a triple battle whose two sides are fainted copies of its
-// enemy, so the enemy stands in the center and the battle plays as any triple with two foes down
-static GameEvent *EntralinkRun_CreateBattle(GameSystem *gsys, const EntralinkChallenge *challenge) {
+// Whether the Nightmare Ball catches an enemy now: it has a catch, whose requirements hold, and that isn't spent
+static BOOL EntralinkRun_CanCatch(GameData *gameData, const EntralinkEnemy *enemy) {
+    if (enemy->catchId == ENTRALINK_NONE) {
+        return FALSE;
+    }
+    if (enemy->catchOnce && EntralinkProgress_IsCaught(EntralinkRun_GetProgress(gameData), enemy->catchId)) {
+        return FALSE;
+    }
+    return EntralinkRun_MeetsRequirements(gameData, enemy->firstRequirement, enemy->requirementCount);
+}
+
+// Adds an enemy to the battle's party, and to the battle's catches if the Nightmare Ball catches it
+static void EntralinkRun_AddEnemy(GameData *gameData, PokeParty *party, const EntralinkEnemy *enemy, u32 slot,
+                                  BOOL fainted) {
+    EntralinkRunState *state = EntralinkRun_GetState();
+    PartyPkm *pkm = EntralinkRun_CreateEnemyPkm(gameData, enemy, HEAPID_GAMEEVENT);
+
+    if (fainted) {
+        PokeParty_SetParam(pkm, PKM_PARAM_HP, 0);
+    } else if (EntralinkRun_CanCatch(gameData, enemy)) {
+        state->catchPids[slot] = PokeParty_GetParam(pkm, PKM_PARAM_PID, NULL);
+        state->catchIds[slot] = enemy->catchId;
+    }
+    PokeParty_AddPkm(party, pkm);
+    GFL_HeapFree(pkm);
+}
+
+// The battle as a wild one (battle type 0, which a wild battle's script result commands read), with balls refused but
+// the Nightmare Ball on its catchable enemies (ENTRALINK_RUN_BTL_SETUP_FLAG). A raid is a triple battle whose two sides
+// are fainted copies of its enemy, so the enemy stands in the center and the battle plays as any triple with two foes
+// down
+static GameEvent *EntralinkRun_CreateBattle(GameSystem *gsys, const EntralinkRoom *room,
+                                            const EntralinkBattle *battle) {
     static const u8 FORMAT_STYLES[] = { BTL_STYLE_SINGLE, BTL_STYLE_DOUBLE, BTL_STYLE_TRIPLE, BTL_STYLE_TRIPLE };
+    EntralinkRunState *state = EntralinkRun_GetState();
     GameData *gameData = GSYS_GetGameData(gsys);
     Field *field = GSYS_GetField(gsys);
     BtlSetup *setup = BtlSetup_Create(HEAPID_GAMEEVENT);
     PokeParty *party = PokeParty_Create(HEAPID_GAMEEVENT);
     BtlFieldStatus status;
-    PartyPkm *pkm;
     u32 i;
 
-    if (challenge->format == ENTRALINK_FORMAT_RAID) {
+    for (i = 0; i < ENTRALINK_RUN_ENEMIES_MAX; i++) {
+        state->catchIds[i] = ENTRALINK_CATCH_NONE;
+    }
+    state->caught = FALSE;
+    if (battle->format == ENTRALINK_FORMAT_RAID) {
         for (i = 0; i < 3; i++) {
-            pkm = EntralinkRun_CreateEnemyPkm(gameData, &sEnemies[challenge->firstEnemy], HEAPID_GAMEEVENT);
-            if (i != RAID_CENTER_SLOT) {
-                PokeParty_SetParam(pkm, PKM_PARAM_HP, 0);
-            }
-            PokeParty_AddPkm(party, pkm);
-            GFL_HeapFree(pkm);
+            EntralinkRun_AddEnemy(gameData, party, &sEnemies[battle->firstEnemy], i, i != RAID_CENTER_SLOT);
         }
     } else {
-        for (i = 0; i < challenge->enemyCount; i++) {
-            pkm = EntralinkRun_CreateEnemyPkm(gameData, &sEnemies[challenge->firstEnemy + i], HEAPID_GAMEEVENT);
-            PokeParty_AddPkm(party, pkm);
-            GFL_HeapFree(pkm);
+        for (i = 0; i < battle->enemyCount; i++) {
+            EntralinkRun_AddEnemy(gameData, party, &sEnemies[battle->firstEnemy + i], i, FALSE);
         }
     }
     SaveBtlFieldStatus(&status, gameData, field);
-    if (challenge->weather != ENTRALINK_WEATHER_FIELD) {
-        status.weather = challenge->weather;
+    if (room->weather != ENTRALINK_WEATHER_FIELD) {
+        status.weather = room->weather;
     }
-    BtlSetup_SetWildNormal(setup, gameData, party, &status, FORMAT_STYLES[challenge->format], HEAPID_GAMEEVENT);
+    BtlSetup_SetWildNormal(setup, gameData, party, &status, FORMAT_STYLES[battle->format], HEAPID_GAMEEVENT);
     BtlSetup_SetFlag(setup, ENTRALINK_RUN_BTL_SETUP_FLAG);
     GFL_HeapFree(party);
     return EventWildBattleCall_Create(gsys, field, setup, TRUE, ENCOUNT_MODE_NORMAL);
 }
 
-// After the room's battle, what the script does next (ENTRALINK_RUN_RESULT_*)
-static u16 EntralinkRun_FinishBattle(GameSystem *gsys, const EntralinkChallenge *challenge) {
-    GameData *gameData = GSYS_GetGameData(gsys);
-    u32 room = *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_ROOM);
-    u32 result = GameData_GetLastBtlResult(gameData);
+// The battle's catch, if it caught one: its enemy's bit in the save's progress
+static void EntralinkRun_RecordCatch(GameData *gameData) {
+    EntralinkRunState *state = EntralinkRun_GetState();
+    u32 i;
 
-    if (result != BTL_RESULT_VICTORY) {
+    if (!state->caught) {
+        return;
+    }
+    for (i = 0; i < ENTRALINK_RUN_ENEMIES_MAX; i++) {
+        if (state->catchIds[i] != ENTRALINK_CATCH_NONE && state->catchPids[i] == state->caughtPid) {
+            EntralinkProgress_SetCaught(EntralinkRun_GetProgress(gameData), state->catchIds[i]);
+        }
+    }
+}
+
+// After the room's battle, what the script does next (ENTRALINK_RUN_RESULT_*)
+static u16 EntralinkRun_FinishBattle(GameSystem *gsys, const EntralinkBattle *battle) {
+    GameData *gameData = GSYS_GetGameData(gsys);
+    EntralinkRunState *state = EntralinkRun_GetState();
+    EntralinkProgress *progress = EntralinkRun_GetProgress(gameData);
+    u32 result = GameData_GetLastBtlResult(gameData);
+    u32 i;
+
+    if (result != BTL_RESULT_VICTORY && result != BTL_RESULT_CAPTURE) {
         // A loss or running away ends the run, with the real party back as it was
         EntralinkRun_End(gameData);
         return result == BTL_RESULT_FLEE ? ENTRALINK_RUN_RESULT_FORFEIT : ENTRALINK_RUN_RESULT_LOST;
     }
-    EntralinkRun_RemoveEnemies(gsys, challenge);
-    *EntralinkRun_GetVar(gameData, EVENT_WORK_ENTRALINK_RUN_CLEARED) = TRUE;
-    if (EntralinkRun_IsFinalRoom(room)) {
+    // A capture counts as a win
+    EntralinkProgress_SetBattleWon(progress, battle->progressId);
+    EntralinkRun_RecordCatch(gameData);
+    for (i = 0; i < ENTRALINK_RUN_ENEMIES_MAX; i++) {
+        state->catchIds[i] = ENTRALINK_CATCH_NONE;
+    }
+    state->caught = FALSE;
+    state->cleared = TRUE;
+    if (EntralinkRun_IsFinalRoom(state)) {
+        EntralinkProgress_AddRunCompleted(progress);
         return ENTRALINK_RUN_RESULT_RUN_WON;
     }
     return ENTRALINK_RUN_RESULT_CLEARED;
 }
 
+// What an exit does (ENTRALINK_RUN_EXIT_*)
+static u16 EntralinkRun_CheckExit(u32 exit) {
+    EntralinkRunState *state = EntralinkRun_GetState();
+
+    if (state->room == 0) {
+        return ENTRALINK_RUN_EXIT_OPEN;
+    }
+    if (exit == ENTRALINK_RUN_BACK_EXIT) {
+        return ENTRALINK_RUN_EXIT_BACK;
+    }
+    return state->cleared ? ENTRALINK_RUN_EXIT_OPEN : ENTRALINK_RUN_EXIT_BLOCKED;
+}
+
+// The talked-to NPC's message, if it has one
+static u16 EntralinkRun_GetDialogue(const EntralinkNpc *npc, u32 after) {
+    if (npc == NULL) {
+        return ENTRALINK_RUN_NO_MESSAGE;
+    }
+    return after ? npc->after : npc->before;
+}
+
+// Gives an item NPC's item into the run's bag, and takes the NPC away
+static BOOL EntralinkRun_GiveItem(GameSystem *gsys, const EntralinkNpc *npc, HeapID heapId) {
+    if (npc == NULL || !BagSave_AddItem(GameData_GetBag(GSYS_GetGameData(gsys)), npc->item, npc->count, heapId)) {
+        return FALSE;
+    }
+    EntralinkRun_RemoveNpc(gsys, EntralinkRun_GetState()->talkedNpc);
+    return TRUE;
+}
+
 BOOL Scrcmd_PaperWhite2_EntralinkRun(VM *vm, FieldScriptEnv *env) {
     u16 action = ScriptReadAny(vm, env);
+    u16 arg = ScriptReadAny(vm, env);
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
-    GameData *gameData = GSYS_GetGameData(gsys);
-    const EntralinkChallenge *challenge = EntralinkRun_GetChallenge(gameData);
+    EntralinkRunState *state = EntralinkRun_GetState();
+    const EntralinkRoom *room = EntralinkRun_GetRoom();
+    const EntralinkNpc *npc = NULL;
+    const EntralinkBattle *battle = NULL;
+    FieldActor *actor;
     u16 *result;
 
-    // The two arguments, which no action takes yet
-    ScriptReadAny(vm, env);
+    // The second argument, which no action takes yet
     ScriptReadAny(vm, env);
     result = ScriptReadVar(vm, env);
+    if (room != NULL && state->talkedNpc < room->npcCount) {
+        npc = &sNpcs[room->firstNpc + state->talkedNpc];
+        if (npc->type == ENTRALINK_NPC_BATTLE) {
+            battle = &sBattles[room->firstBattle + npc->battle];
+        }
+    }
 
     switch (action) {
     case ENTRALINK_RUN_ACTION_CAN_LEAVE:
-        *result = challenge == NULL || EntralinkRun_IsRoomCleared(gameData);
+        *result = EntralinkRun_CheckExit(arg);
+        return FALSE;
+    case ENTRALINK_RUN_ACTION_TALK:
+        actor = ScriptWork_GetParentActor(FieldScriptEnv_GetScriptWork(env));
+        *result = ENTRALINK_NPC_REST;
+        if (room != NULL && actor != NULL && GetActorUID(actor) < room->npcCount) {
+            state->talkedNpc = GetActorUID(actor);
+            *result = sNpcs[room->firstNpc + state->talkedNpc].type;
+        }
+        return FALSE;
+    case ENTRALINK_RUN_ACTION_GET_ACTOR:
+        *result = state->talkedNpc;
         return FALSE;
     case ENTRALINK_RUN_ACTION_GET_SPECIES:
-        *result = challenge != NULL ? sEnemies[challenge->firstEnemy].species : 0;
+        *result = battle != NULL ? sEnemies[battle->firstEnemy + npc->enemy].species : 0;
+        return FALSE;
+    case ENTRALINK_RUN_ACTION_DIALOGUE:
+        *result = EntralinkRun_GetDialogue(npc, arg);
         return FALSE;
     case ENTRALINK_RUN_ACTION_BATTLE:
-        if (challenge == NULL) {
+        if (battle == NULL) {
             return FALSE;
         }
-        ScriptWork_CallEvent(FieldScriptEnv_GetScriptWork(env), EntralinkRun_CreateBattle(gsys, challenge));
+        ScriptWork_CallEvent(FieldScriptEnv_GetScriptWork(env), EntralinkRun_CreateBattle(gsys, room, battle));
         return TRUE;
     case ENTRALINK_RUN_ACTION_BATTLE_RESULT:
-        *result = challenge != NULL ? EntralinkRun_FinishBattle(gsys, challenge) : ENTRALINK_RUN_RESULT_LOST;
+        *result = battle != NULL ? EntralinkRun_FinishBattle(gsys, battle) : ENTRALINK_RUN_RESULT_LOST;
+        return FALSE;
+    case ENTRALINK_RUN_ACTION_CLEAR_ROOM:
+        if (room != NULL) {
+            EntralinkRun_ClearRoom(gsys, room);
+        }
+        return FALSE;
+    case ENTRALINK_RUN_ACTION_GET_ITEM:
+        *result = npc != NULL ? npc->item : 0;
+        return FALSE;
+    case ENTRALINK_RUN_ACTION_GET_ITEM_COUNT:
+        *result = npc != NULL ? npc->count : 0;
+        return FALSE;
+    case ENTRALINK_RUN_ACTION_GIVE_ITEM:
+        *result = EntralinkRun_GiveItem(gsys, npc, FieldScriptEnv_GetHeapID(env));
         return FALSE;
     case ENTRALINK_RUN_ACTION_WARP_HUB:
         ScriptWork_CallEvent(FieldScriptEnv_GetScriptWork(env), EntralinkRun_CreateHubWarp(gsys));

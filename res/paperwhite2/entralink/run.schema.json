@@ -1,27 +1,42 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Entralink run",
-  "description": "How a run of the Entralink roguelike is laid out (docs/paperwhite2/design/entralink-roguelike-prototype.md): pool_rooms rooms drawn without repeats from the pool in a random order, then the final challenge. Challenges are named by their file in challenges/. tools/paperwhite2/entralink_run.py checks it and writes it into paperwhite2/entralink_run_config.h.",
+  "description": "How a run of the Entralink roguelike is laid out (docs/paperwhite2/design/entralink-roguelike-prototype.md): its rounds, each a number of rooms drawn at random from rooms/ (role room, kept to that round or to none) and, for the first two, an optional boss (role boss), then the final room (role final). No room comes up twice in a run. tools/paperwhite2/entralink_run.py checks it and writes it into paperwhite2/entralink_run_config.h.",
   "type": "object",
   "additionalProperties": false,
-  "required": [ "pool", "pool_rooms", "final", "room_maps", "final_map" ],
+  "required": [ "rounds", "room_maps", "final_map" ],
   "properties": {
     "$schema": { "type": "string" },
-    "pool": {
-      "type": "array", "minItems": 1, "maxItems": 15,
-      "items": { "type": "string", "pattern": "^[a-z0-9_]+$" },
-      "description": "The challenges the rooms before the last are drawn from"
+    "rounds": {
+      "type": "array", "minItems": 1, "maxItems": 3,
+      "items": { "$ref": "#/$defs/round" },
+      "description": "Rounds 1, 2 and 3 in order; the final room follows the last. At most 15 rooms in all, the final's included"
     },
-    "pool_rooms": {
-      "type": "integer", "minimum": 1, "maximum": 4,
-      "description": "How many rooms are drawn from the pool, at most its size (the run's order is kept in one variable, a nibble a room)"
-    },
-    "final": { "type": "string", "pattern": "^[a-z0-9_]+$", "description": "The last room's challenge" },
     "room_maps": {
       "type": "array", "minItems": 1, "maxItems": 8,
       "items": { "type": "string", "x-constant": "ZONE_ENTREE_FOREST" },
-      "description": "The zones of the drawn rooms, taken in turn; each needs a bottom exit, where a room is entered"
+      "description": "The zones of the rooms before the final one, taken in turn; each needs a bottom exit, where a room is entered"
     },
-    "final_map": { "type": "string", "x-constant": "ZONE_ENTREE_FOREST", "description": "The last room's zone" }
+    "final_map": { "type": "string", "x-constant": "ZONE_ENTREE_FOREST", "description": "The final room's zone" },
+    "field_weather": {
+      "description": "The forest's field weather (include/system/zone_weather.h) in the rooms with no weather of their own; the forest's own if left out",
+      "enum": [
+        "WEATHER_SUNNY", "WEATHER_FLAKE", "WEATHER_RAIN", "WEATHER_SANDSTORM", "WEATHER_BLIZZARD",
+        "WEATHER_FLUTTER", "WEATHER_THUNDERSTORM", "WEATHER_GUSTY_RAIN", "WEATHER_DIAMOND_DUST",
+        "WEATHER_TINT_9", "WEATHER_TINT_10", "WEATHER_TINT_11", "WEATHER_SANDSTORM_2", "WEATHER_TINT_13",
+        "WEATHER_TINT_14"
+      ]
+    }
+  },
+  "$defs": {
+    "round": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "rooms" ],
+      "properties": {
+        "rooms": { "type": "integer", "minimum": 0, "maximum": 8, "description": "How many rooms are drawn for it" },
+        "boss": { "type": "boolean", "description": "Rounds 1 and 2: whether a boss room ends it; false if left out" }
+      }
+    }
   }
 }

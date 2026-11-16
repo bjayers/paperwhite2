@@ -100,7 +100,7 @@ BOOL Scrcmd_EntreeForest_EntreeForestSpawnAllPkm(VM *vm, FieldScriptEnv *env) {
     SymbolMapList *list;
 
 #ifdef PAPERWHITE2
-    // Paper White 2: a run's room has its challenge's enemies instead of the forest's Pokémon
+    // Paper White 2: a run's room has its NPCs instead of the forest's Pokémon
     // (paperwhite2/entralink_run.h)
     if (EntralinkRun_IsActive(FieldScriptEnv_GetGameData(env))) {
         EntralinkRun_SpawnRoom(gsys);
@@ -199,7 +199,7 @@ BOOL Scrcmd_EntreeForest_MapChangeEntreeForest(VM *vm, FieldScriptEnv *env) {
     VecFx32 playerPos;
 
 #ifdef PAPERWHITE2
-    // Paper White 2: in a run every exit leads to the next room, or to the hub after the last
+    // Paper White 2: in a run an exit leads to the next room, or to the hub after the last
     // (paperwhite2/entralink_run.h); the exit's script has checked that the room is cleared
     if (EntralinkRun_IsActive(gameData)) {
         ScriptWork_CallEvent(work, EntralinkRun_CreateExitEvent(gsys));

@@ -675,3 +675,6 @@ SCRIPT_TEXT_WHITE_FOREST_2
 SCRIPT_TEXT_GLOBAL_10510
 SCRIPT_TEXT_GLOBAL_10100
 SCRIPT_TEXT_GLOBAL_10105
+# Paper White 2: the Entralink roguelike's NPCs' dialogue, from res/paperwhite2/entralink/rooms/
+# (tools/paperwhite2/entralink_run.py, src/paperwhite2/ov012/paperwhite2_entralink_run.c)
+SCRIPT_TEXT_ENTRALINK_DIALOGUE

@@ -547,8 +547,7 @@ the next unused one (`var_usage.py --check` says whether it is).
 | 0x4058 | `EVENT_WORK_SPAWN_PICK` | the key the zone's NPC spawns were picked for (NPC spawns) |
 | 0x4059 | `EVENT_WORK_REGI_CHAMBER` | the Underground Ruins' chamber (Version places) |
 | 0x405a | `EVENT_WORK_WONDER_TRADE_COUNT` | the Wonder Trades made, at most 65535, the special reward's pity count (Pokémon Center attendants) |
-| 0x405b-0x405d | `EVENT_WORK_ENTRALINK_RUN_ROOM`, `_ORDER`, `_CLEARED` | the Entralink roguelike's run (Entralink roguelike) |
-| 0x405e-0x406f | | free |
+| 0x405b-0x406f | | free (0x405b-0x405d held the Entralink roguelike's run until step 3, which keeps it in RAM) |
 
 ### Seasons
 
@@ -2687,12 +2686,18 @@ reads 17 as "no type" (Roost, STAB, Color Change, Conversion 2, the PWT's "any t
 
 ### Entralink roguelike (prototype)
 
-`docs/paperwhite2/design/entralink-roguelike-prototype.md`: a run of four Entree Forest rooms with a battle each,
-from a cleared hub. `src/paperwhite2/ov012/paperwhite2_entralink_run.c` (`include/paperwhite2/entralink_run.h`), the
-script command `EntralinkRun` (0x2f8, `entralink_run_actions.h`) and global script 10498, hooks in
-`entree_forest_first_warp.c`, `scrcmd_entree_forest.c`, `event_battle.c`, `btl_main.c`, `btl_server_flow_sub.c` and
-`btlv_scu.c`; data in `res/paperwhite2/entralink/` (`tools/paperwhite2/entralink_run.py`); state in variables
-0x405b-0x405d.
+`docs/paperwhite2/design/entralink-roguelike-prototype.md`: a run of Entree Forest rooms from
+`res/paperwhite2/entralink/rooms/` (battles, item, rest and buff NPCs, dialogue, weather), from a cleared hub.
+`src/paperwhite2/ov012/paperwhite2_entralink_run.c` (`include/paperwhite2/entralink_run.h`), the script command
+`EntralinkRun` (0x2f8, `entralink_run_actions.h`) and global script 10498, hooks in `entree_forest_first_warp.c`,
+`scrcmd_entree_forest.c`, `event_battle.c`, `btl_main.c`, `btl_server_flow_sub.c` and `btlv_scu.c`; data in
+`res/paperwhite2/entralink/` (`tools/paperwhite2/entralink_run.py`, which also feeds the script text bank
+`entralink_dialogue`). Step 3 (2026-11-15): the run's state and its own bag in ARM9 main
+(`paperwhite2_entralink_run_state.c`, `GameData`'s bag pointer swapped as the party's is; hooks in
+`myitem_savedata.c`, `itemmenu.c`, `b_bag_item.c`, `zone_weather.c`), the progress that persists in the Symbol save
+block (`paperwhite2_entralink_progress.c`; hooks in `save_table.c`, `symbol_save.c`), the Nightmare Ball (`items.md`;
+hooks in `btl_server_flow_sub.c`, `event_battle_return.c`, `pml_item.c`) and the back door's question. No event flags
+or variables.
 
 ## Adding global scripts
 

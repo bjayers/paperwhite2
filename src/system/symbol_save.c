@@ -3,6 +3,9 @@
 #include "gfl/heap.h"
 #include "gfl/std.h"
 #include "nitro/os.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/entralink_progress.h"
+#endif
 #include "save/save_control.h"
 #include "save/symbol_save.h"
 #include <stddef.h>
@@ -59,7 +62,13 @@ void initNpcData(AreaNPCSave *npcData) {
 }
 
 AreaNPCSave *getAreaNPCData(SaveControl *save) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the block is the Entralink roguelike's progress, so the forest's code gets an empty forest of its
+    // own in RAM (paperwhite2/entralink_progress.h)
+    return EntralinkProgress_GetOldForestBlock();
+#else
     return SaveControl_GetBlockPtr(save, SAVE_BLOCK_SYMBOL);
+#endif
 }
 
 static SymbolKind getKindOfSlot(u32 slot) {
@@ -168,6 +177,13 @@ void SymbolSave_UpdateDeepestArea(AreaNPCSave *npcData, u16 index) {
     }
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: the save's block is the Entralink roguelike's progress, which holds no forest Pokémon
+// (paperwhite2/entralink_progress.h)
+BOOL SymbolSave_HasPokemon(SaveControl *save, u32 *pokemon, HeapID heapId, BOOL check) {
+    return FALSE;
+}
+#else
 BOOL SymbolSave_HasPokemon(SaveControl *save, u32 *pokemon, HeapID heapId, BOOL check) {
     BOOL found = FALSE;
     AreaNPCSave *npcData = GFL_HeapAllocate(heapId, sizeof(AreaNPCSave), TRUE, "symbol_save.c", 428);
@@ -197,3 +213,4 @@ BOOL SymbolSave_HasPokemon(SaveControl *save, u32 *pokemon, HeapID heapId, BOOL 
     GFL_HeapFree(npcData);
     return found;
 }
+#endif

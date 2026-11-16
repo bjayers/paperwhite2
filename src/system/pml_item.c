@@ -298,7 +298,12 @@ static const u16 ITEM_GRAPHICS_CHARS_AND_PALETTES[][2] = {
 #else
     [ITEM_PIXIE_PLATE] = { ITEM_ICON_NONE, ITEM_ICON_PALETTE_NONE },
 #endif
-    [ITEM_UNUSED_126] = { ITEM_ICON_NONE, ITEM_ICON_PALETTE_NONE },
+#ifdef PAPERWHITE2
+    // Paper White 2: the Nightmare Ball, unused item 126, has its own icon (for now a copy of the Dream Ball's)
+    [ITEM_NIGHTMARE_BALL] = { ITEM_ICON_NIGHTMARE_BALL, ITEM_ICON_PALETTE_NIGHTMARE_BALL },
+#else
+    [ITEM_NIGHTMARE_BALL] = { ITEM_ICON_NONE, ITEM_ICON_PALETTE_NONE },
+#endif
     [ITEM_UNUSED_127] = { ITEM_ICON_NONE, ITEM_ICON_PALETTE_NONE },
     [ITEM_UNUSED_128] = { ITEM_ICON_NONE, ITEM_ICON_PALETTE_NONE },
     [ITEM_UNUSED_129] = { ITEM_ICON_NONE, ITEM_ICON_PALETTE_NONE },
@@ -1192,6 +1197,13 @@ static u16 PML_ItemMonsBallConvID(u16 id, u32 dir) {
 }
 
 u16 PML_ItemGetMonsBallID(u16 item) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the Nightmare Ball (unused item 126) looks like the Dream Ball, in battle and on the Pokémon it
+    // caught, until it has a ball of its own
+    if (item == ITEM_NIGHTMARE_BALL) {
+        item = ITEM_DREAM_BALL;
+    }
+#endif
     return PML_ItemMonsBallConvID(item, 0);
 }
 

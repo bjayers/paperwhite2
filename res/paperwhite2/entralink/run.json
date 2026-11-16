@@ -1,8 +1,10 @@
 {
     "$schema": "run.schema.json",
-    "pool": [ "dialga", "rayquaza_raid", "ho_oh" ],
-    "pool_rooms": 3,
-    "final": "darkrai",
+    "rounds": [
+        {
+            "rooms": 3
+        }
+    ],
     "room_maps": [ "ZONE_ENTREE_FOREST", "ZONE_ENTREE_FOREST_6" ],
     "final_map": "ZONE_ENTREE_FOREST_2"
 }

@@ -22,6 +22,7 @@ registrable item needs a larger save.
 | Roseli Berry | `ITEM_ROSELI_BERRY` (unused item 123) | Berries | no | none (a row in `item_handlers.c`) |
 | Fairy Gem | `ITEM_FAIRY_GEM` (unused item 124) | Items | no | none (a row in `item_handlers.c`) |
 | Pixie Plate | `ITEM_PIXIE_PLATE` (unused item 125) | Items | no | `pml/poke_party.h` (`PaperWhite2_GetArceusPlateForm`) |
+| Nightmare Ball | `ITEM_NIGHTMARE_BALL` (unused item 126) | Items | no | `paperwhite2/entralink_run_state.h` |
 
 ## Exp. Share
 
@@ -138,7 +139,8 @@ apple is used up; on anything else, "It won't have any effect."
 - **Obtained:** nowhere yet; the debug menu's Give item (120, 121, 122). Places they could go: a shop (Castelia's or
   the Shopping Mall Nine), hidden or visible items near where Applin will live (it lives in orchards and the like in
   Galar), or an NPC who hands one over with an Applin.
-- **Free unused IDs left:** 115, 126-133, 426, 427 and 622 (after the Roseli Berry, the Fairy Gem and the Pixie Plate).
+- **Free unused IDs left:** 115, 127-133, 426, 427 and 622 (after the Roseli Berry, the Fairy Gem, the Pixie Plate and
+  the Nightmare Ball).
 
 ## Roseli Berry, Fairy Gem
 
@@ -185,3 +187,27 @@ effect 147 and `sort_index` 90 (with the Pink Scarf).
   the plates' words.
 - **Obtained:** nowhere yet; the debug menu's Give item (125). The other plates are found in the Abyssal Ruins,
   Victory Road and the like; one could go there, or with an Arceus event.
+
+## Nightmare Ball
+
+The Entralink roguelike's ball (docs/paperwhite2/design/entralink-roguelike-prototype.md, Step 3): unused item 126
+renamed with `tools/data/rename_constant.py`, its `data.json` the Dream Ball's (Items pocket, the battle's Poké Balls
+pocket, kind 4, value 24) with its name, description and `sort_index` 17.
+
+- **Battle:** it catches as the Master Ball does, but only in a run's battle and only an enemy whose room data lets it
+  (`catch`: its `after` battles won, and not caught before if `once`); anywhere else, and every other ball in a run,
+  gets the trainer battle's refusal ("Don't be a thief!"). `PaperWhite2_ThrowBall_CanCatch` and `CheckBallCapture`
+  (`src/ov167/btl_server_flow_sub.c`). The caught Pokémon joins the real party, or a Box if it is full, at its own level
+  (`event_battle_return.c`), and the run records the catch in the save.
+- **Battle bag:** archive 228 (a/2/2/8, a byte per item of its battle pockets) is the original's, built from no source,
+  so `BBagItem_MakePocketLists` (`src/ov286/b_bag_item.c`) puts the Nightmare Ball in the balls pocket itself. A later
+  item with a battle pocket needs the same, or a packer for that archive from `battle_pocket`.
+- **Look:** the Dream Ball's ball in battle and on its Pokémon (`PML_ItemGetMonsBallID` gives it ball 25); no new ball
+  graphics.
+- **Icon:** placeholder, a copy of the Dream Ball's icon and palette (`res/items/nightmare_ball/icon.png`, `icon.pal`;
+  `ITEM_ICON_NIGHTMARE_BALL`, `ITEM_ICON_PALETTE_NIGHTMARE_BALL` at the end of `generated/item_icons.txt`, its row of
+  `ITEM_GRAPHICS_CHARS_AND_PALETTES` under `#ifdef PAPERWHITE2`), for the user to draw.
+- **Description:** "A Ball born of the Entralink's nightmare. It catches a nightmare's Pokémon without fail, and works
+  nowhere else.", for the user to rewrite.
+- **Obtained:** only in a run, from a room's item NPC (into the run's bag, emptied at the run's end); the debug menu's
+  Give item (126) puts one in the real bag, where it does nothing.

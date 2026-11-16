@@ -1,5 +1,6 @@
 #include "battle/b_bag_item.h"
 #include "battle/b_bag_main.h"
+#include "constants/bag.h"
 #include "constants/items.h"
 #include "gfl/arc.h"
 #include "gfl/heap.h"
@@ -59,6 +60,13 @@ void BBagItem_MakePocketLists(BBagWork *work) {
                 continue;
             }
             bits = pockets[slot->item];
+#ifdef PAPERWHITE2
+            // Paper White 2: archive 228 is the original's, built from no source, so the Nightmare Ball (unused item
+            // 126) has no pocket there; it is a ball, as its data says (docs/paperwhite2/items.md)
+            if (slot->item == ITEM_NIGHTMARE_BALL) {
+                bits = BATTLE_POCKET_BALLS;
+            }
+#endif
             for (k = 0; k < 4; k++) {
                 if (bits & (1 << k)) {
                     pocket = data_ov286_021f6e8b[k];

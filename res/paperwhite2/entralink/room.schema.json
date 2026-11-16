@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Entralink room",
-  "description": "One room of the Entralink roguelike (docs/paperwhite2/design/entralink-roguelike-prototype.md, The room format): the rounds it is kept to, its role, its weather, its battles and the NPCs standing in it. Its ID is the file's name. Edited in the editor's Entree page; it replaces challenges/ once the game reads it (the wiring step), until then the game reads challenges/.",
+  "description": "One room of the Entralink roguelike (docs/paperwhite2/design/entralink-roguelike-prototype.md, The room format): the rounds it is kept to, its role, its weather, its battles and the NPCs standing in it. Its ID is the file's name. Edited in the editor's Entree page; tools/paperwhite2/entralink_run.py checks it and packs it for the game.",
   "type": "object",
   "additionalProperties": false,
   "required": [ "name", "role", "battles", "npcs" ],
@@ -19,7 +19,7 @@
     },
     "weather": {
       "type": "string", "x-constant": "BTL_WEATHER_",
-      "description": "The weather of its battles from their start (constants/battle.h; BTL_WEATHER_NONE for clear); random if left out"
+      "description": "Its weather, on the field (the matching field weather shows in the room) and in its battles from their start (constants/battle.h; BTL_WEATHER_NONE for clear); left out, run.json's field_weather on the field and random in battle"
     },
     "battles": {
       "type": "array", "maxItems": 8, "items": { "$ref": "#/$defs/battle" },
@@ -34,9 +34,13 @@
     "battle": {
       "type": "object",
       "additionalProperties": false,
-      "required": [ "id", "format", "enemies" ],
+      "required": [ "id", "progress_id", "format", "enemies" ],
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z0-9_]+$", "description": "Its name in the room, which battle NPCs name it by" },
+        "progress_id": {
+          "type": "integer", "minimum": 0, "maximum": 1023,
+          "description": "Its won-ever bit in the save, unique over all rooms' battles and never changed or reused once given (the editor gives the next of progress_ids.json on save)"
+        },
         "format": {
           "enum": [ "single", "double", "triple", "raid" ],
           "description": "single: one enemy. double: one or two. triple: one to three. raid: exactly one, in the center of a triple battle against three of the player's Pokémon"
@@ -63,7 +67,23 @@
         },
         "item": { "type": "string", "x-constant": "ITEM_", "description": "Its held item; none if left out" },
         "gender": { "enum": [ "male", "female" ], "description": "As its species allows; random if left out" },
-        "shiny": { "type": "boolean", "description": "false if left out" }
+        "shiny": { "type": "boolean", "description": "false if left out" },
+        "catch": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Left out, it can't be caught. With it, it can, with the Nightmare Ball only (always caught when allowed); a capture counts as winning the battle",
+          "properties": {
+            "after": {
+              "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9_]+/[a-z0-9_]+$" },
+              "description": "The battles, as \"<room id>/<battle id>\", that must have been won at least once (in any run, or earlier in this one) before it can be caught; empty or left out, from the first encounter"
+            },
+            "once": { "type": "boolean", "description": "true (the default): once caught, it can never be caught again" }
+          }
+        },
+        "progress_id": {
+          "type": "integer", "minimum": 0, "maximum": 511,
+          "description": "A catchable enemy's caught-ever bit in the save, unique over all rooms' catches and never changed or reused once given (the editor gives the next of progress_ids.json on save)"
+        }
       }
     },
     "npc": {
@@ -86,14 +106,23 @@
           "type": "string", "x-constant": "OBJ_CODE_",
           "description": "Its overworld sprite. Without it a battle NPC shows its enemy's walking Pokémon and an item NPC the item ball (OBJ_CODE_110); rest and buff NPCs need one"
         },
-        "flag": {
-          "type": "string", "x-constant": "EVENT_FLAG_",
-          "description": "It spawns only while this flag is set; always if left out"
+        "requires": {
+          "type": "array", "items": { "type": "string", "pattern": "^([a-z0-9_]+/[a-z0-9_]+|run/completed)$" },
+          "description": "It spawns only after all of these: \"<room id>/<battle id>\", that battle won at least once in any run, and \"run/completed\", the final room beaten at least once; empty or left out, always"
         },
         "chance": { "type": "integer", "minimum": 1, "maximum": 100, "description": "Its chance to spawn, in percent; 100 if left out" },
         "x": { "type": "integer", "minimum": 0, "maximum": 31, "description": "Its tile, 0-31 from the room's left; every forest clearing has the same 32 by 32 grid and exits" },
         "z": { "type": "integer", "minimum": 0, "maximum": 31, "description": "Its tile, 0-31 from the room's top" },
-        "facing": { "enum": [ "DIR_UP", "DIR_DOWN", "DIR_LEFT", "DIR_RIGHT" ] }
+        "facing": { "enum": [ "DIR_UP", "DIR_DOWN", "DIR_LEFT", "DIR_RIGHT" ] },
+        "dialogue": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "What it says, in the text files' codes ({be01} a wait, {be00} a new page after one, ...); the build compiles every room's into a text bank. Missing or empty: nothing",
+          "properties": {
+            "before": { "type": "string", "x-message": "game", "description": "On talking to it; a battle NPC's before its battle starts" },
+            "after": { "type": "string", "x-message": "game", "description": "A battle NPC's, after its battle is won, before the room opens; other types ignore it" }
+          }
+        }
       }
     }
   }

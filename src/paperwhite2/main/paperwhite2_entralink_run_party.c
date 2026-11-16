@@ -99,3 +99,7 @@ BOOL EntralinkRun_CanGainPrestige(BoxPkm *pkm) {
     real = EntralinkRun_FindPkm(sRealParty, PML_PkmGetParam(pkm, PKM_PARAM_PID, NULL));
     return real != NULL && PokeParty_GetParam(real, PKM_PARAM_LEVEL, NULL) == RUN_LEVEL;
 }
+
+PokeParty *EntralinkRun_GetCatchParty(GameData *gameData) {
+    return sRealParty != NULL ? sRealParty : GameData_GetParty(gameData);
+}
