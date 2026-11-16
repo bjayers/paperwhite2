@@ -1049,3 +1049,6 @@ ITEM_ICON_PALETTE_FAIRY_GEM
 # Paper White 2: the Pixie Plate's palette (the plates share the Flame Plate's icon), for now a copy of the Mind
 # Plate's
 ITEM_ICON_PALETTE_PIXIE_PLATE
+# Paper White 2: the Nightmare Ball's icon and palette, for now copies of the Dream Ball's
+ITEM_ICON_NIGHTMARE_BALL
+ITEM_ICON_PALETTE_NIGHTMARE_BALL

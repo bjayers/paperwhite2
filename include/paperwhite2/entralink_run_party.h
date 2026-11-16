@@ -20,5 +20,8 @@ void EntralinkRun_RestoreParty(GameData *gameData);
 BOOL EntralinkRun_IsPartyKept(void);
 // Whether a level 100 Pokémon of a battle may gain prestige: always, unless it is a run's copy of one below level 100
 BOOL EntralinkRun_CanGainPrestige(BoxPkm *pkm);
+// The party a caught Pokémon joins: the real one in a run, which keeps it after the run at its own level, never the
+// copies (EventBattleReturn_Main)
+PokeParty *EntralinkRun_GetCatchParty(GameData *gameData);
 
 #endif // PAPERWHITE2_ENTRALINK_RUN_PARTY_H

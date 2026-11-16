@@ -30,7 +30,9 @@
 #include "system/rtc.h"
 
 #ifdef PAPERWHITE2
+#include "constants/pokemon.h"
 #include "paperwhite2/entralink_run_battle.h"
+#include "paperwhite2/entralink_run_state.h"
 #include "paperwhite2/exp_share.h"
 #include "paperwhite2/species.h"
 #endif
@@ -905,6 +907,21 @@ u8 UseBagItem(BtlServerFlow *flow, BattleMon *mon, u16 item, u8 param, u8 slot) 
     return FALSE;
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: whether a ball can catch: in a wild battle, any but the Nightmare Ball, and in an Entralink run's only
+// the Nightmare Ball, on an enemy the run lets it catch (paperwhite2/entralink_run_state.h)
+static BOOL PaperWhite2_ThrowBall_CanCatch(BtlServerFlow *flow, BattleMon *target, u8 targetPos, u16 item) {
+    if (BtlSetup_GetBattleType(flow->mainModule) != 0) {
+        return FALSE;
+    }
+    if (!BtlSetup_IsBattleType(flow->mainModule, ENTRALINK_RUN_BTL_SETUP_FLAG)) {
+        return item != ITEM_NIGHTMARE_BALL;
+    }
+    return item == ITEM_NIGHTMARE_BALL && targetPos != 6 &&
+           EntralinkRun_IsCatchable(PokeParty_GetParam(GetSrcData(target), PKM_PARAM_PID, NULL));
+}
+#endif
+
 // Throws a ball at the first foe standing; only a wild one can be caught
 static BOOL ThrowBall(BtlServerFlow *flow, BattleMon *mon, u16 item) {
     u8 positions[6];
@@ -929,10 +946,9 @@ static BOOL ThrowBall(BtlServerFlow *flow, BattleMon *mon, u16 item) {
         }
     }
 #ifdef PAPERWHITE2
-    // Paper White 2: an Entralink run's wild battles refuse balls as a trainer's do
-    // (paperwhite2/entralink_run_battle.h)
-    if (BtlSetup_GetBattleType(flow->mainModule) == 0 &&
-        !BtlSetup_IsBattleType(flow->mainModule, ENTRALINK_RUN_BTL_SETUP_FLAG)) {
+    // Paper White 2: an Entralink run's wild battles refuse balls as a trainer's do, but for the Nightmare Ball on an
+    // enemy the run lets it catch, which works nowhere else (paperwhite2/entralink_run_battle.h)
+    if (PaperWhite2_ThrowBall_CanCatch(flow, target, targetPos, item)) {
 #else
     if (BtlSetup_GetBattleType(flow->mainModule) == 0) {
 #endif
@@ -976,7 +992,12 @@ static BOOL CheckBallCapture(BtlServerFlow *flow, BattleMon *mon, BattleMon *tar
     u32 i;
 
     *critical = FALSE;
+#ifdef PAPERWHITE2
+    // Paper White 2: the Nightmare Ball catches as the Master Ball does, where ThrowBall lets it
+    if (item == ITEM_MASTER_BALL || item == ITEM_NIGHTMARE_BALL) {
+#else
     if (item == ITEM_MASTER_BALL) {
+#endif
         *shakes = 3;
         return TRUE;
     }

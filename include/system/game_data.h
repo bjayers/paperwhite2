@@ -91,6 +91,8 @@ PokeParty *GameData_GetParty(GameData *gameData);
 #ifdef PAPERWHITE2
 // Paper White 2: makes another party the game's, for an Entralink run's copies (paperwhite2/entralink_run_party.h)
 void PaperWhite2_GameData_SetParty(GameData *gameData, PokeParty *party);
+// Paper White 2: makes another bag the game's, for an Entralink run's own bag (paperwhite2/entralink_run_state.h)
+void PaperWhite2_GameData_SetBag(GameData *gameData, BagSave *bag);
 #endif
 PlayerState *GameData_GetPlayerState(GameData *gameData);
 TimeSigSave *getTimeSigSaveBlock(GameData *gameData);

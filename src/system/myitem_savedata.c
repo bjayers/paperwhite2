@@ -4,6 +4,9 @@
 #include "gfl/std.h"
 #include "pml/item.h"
 #include "save/bag.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/entralink_run_state.h"
+#endif
 
 // The bag's save block: the five pockets, the items the player moved to the Free Space, and the cursor memory of the
 // bag and the battle bag. The name is the ROM's string. The functions' names are swan's, except where the header
@@ -169,7 +172,7 @@ static const u8 sItemPockets[ITEM_LAST + 1] = {
 #endif
     BAG_POCKET_ITEMS, // ITEM_FAIRY_GEM
     BAG_POCKET_ITEMS, // ITEM_PIXIE_PLATE
-    BAG_POCKET_ITEMS, // ITEM_UNUSED_126
+    BAG_POCKET_ITEMS, // ITEM_NIGHTMARE_BALL
     BAG_POCKET_ITEMS, // ITEM_UNUSED_127
     BAG_POCKET_ITEMS, // ITEM_UNUSED_128
     BAG_POCKET_ITEMS, // ITEM_UNUSED_129
@@ -820,6 +823,13 @@ static BagItem *BagSave_GetItemHandleAddCheck(BagSave *bag, u32 item, int count)
     u32 max;
     u32 pocket = BagSave_GetPocketPtrByItem(bag, item, &items, &max);
 
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink run's bag has fewer slots, and none outside the Items, Medicine and Berries pockets
+    // (paperwhite2/entralink_run_state.h)
+    if (EntralinkRun_IsRunBag(bag)) {
+        max = EntralinkRun_GetRunBagPocketMax(pocket);
+    }
+#endif
     if (pocket == BAG_POCKET_TMS_HMS) {
         return BagSave_GetItemHandleAddCheckCore(items, max, item, count, BAG_TM_HM_COUNT_MAX);
     }

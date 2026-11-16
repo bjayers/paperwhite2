@@ -460,7 +460,7 @@ def script_imports(script: str) -> list[str]:
 # The data in JSON that the text takes messages from, with \from{...} lines (tools/text/text_sources.py)
 TEXT_DATA_DIRS = ["res/pokemon", "res/moves", "res/items", "res/trainers/data", "res/abilities", "res/types",
                   "res/field/trades", "res/trainers/facilities", "res/trainers/classes", "res/natures",
-                  "res/field/places", "res/paperwhite2/pokemon_center"]
+                  "res/field/places", "res/paperwhite2/pokemon_center", "res/paperwhite2/entralink"]
 
 # Text archives built from source, by tools/text/text_data.py: each maps its path under files/ to the directory of its
 # message files, one text file each, in archive order
@@ -1242,18 +1242,21 @@ def main():
                 implicit=["tools/paperwhite2/type_colors.py", *script_imports("tools/paperwhite2/type_colors.py"),
                           "res/paperwhite2/type_colors.schema.json", "tools/data/datajson.py", "generated/types.txt"])
         constant_headers.append(output)
-        # Paper White 2: the Entralink roguelike's run and challenges, from res/paperwhite2/entralink/
-        # (docs/paperwhite2/design/entralink-roguelike-prototype.md)
+        # Paper White 2: the Entralink roguelike's run and rooms, from res/paperwhite2/entralink/
+        # (docs/paperwhite2/design/entralink-roguelike-prototype.md); the rooms' dialogue is text (TEXT_DATA_DIRS)
         n.rule("entralink_run", "$python tools/paperwhite2/entralink_run.py $out", "Generating $out", restat="1")
         output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "entralink_run_config.h"
         n.build([output], "entralink_run",
                 ["res/paperwhite2/entralink/run.json", "res/paperwhite2/entralink/run.schema.json",
-                 "res/paperwhite2/entralink/challenge.schema.json",
-                 *sorted(str(path) for path in Path("res/paperwhite2/entralink/challenges").glob("*.json"))],
+                 "res/paperwhite2/entralink/room.schema.json", "res/paperwhite2/entralink/progress_ids.json",
+                 source_list(Path("build"), "entralink_rooms",
+                             sorted(str(path) for path in Path("res/paperwhite2/entralink/rooms").glob("*.json"))),
+                 *sorted(str(path) for path in Path("res/paperwhite2/entralink/rooms").glob("*.json"))],
                 implicit=["tools/paperwhite2/entralink_run.py", *script_imports("tools/paperwhite2/entralink_run.py"),
+                          "tools/paperwhite2/conditions.py", "include/system/zone_weather.h",
                           "tools/data/datajson.py", "generated/species.txt", "generated/moves.txt",
                           "generated/items.txt", "generated/abilities.txt", "generated/zones.txt",
-                          "include/constants/battle.h", "include/constants/directions.h"])
+                          "generated/obj_codes.txt", "include/constants/battle.h", "include/constants/directions.h"])
         constant_headers.append(output)
         # Paper White 2: the hack's forms' sprite groups, icon palettes and forms that never evolve, and the added
         # species' bases, from res/pokemon (include/paperwhite2/pokemon_forms.h, include/paperwhite2/species.h)

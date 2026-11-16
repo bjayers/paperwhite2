@@ -277,12 +277,19 @@ SOURCES = {
     "trainers.messages": trainer_messages,
     # Paper White 2: the Wonder Trade's trainers' names and nicknames (tools/paperwhite2/pokemon_center.py)
     "wonder_trade.names": lambda: wonder_trade_names(),
+    # Paper White 2: the Entralink roguelike's NPCs' dialogue, from its rooms (tools/paperwhite2/entralink_run.py)
+    "entralink.dialogue": lambda: entralink_dialogue(),
 }
 
 
 def wonder_trade_names() -> list[str]:
     from tools.paperwhite2.pokemon_center import name_lines
     return name_lines()
+
+
+def entralink_dialogue() -> list[str]:
+    from tools.paperwhite2.entralink_run import dialogue_lines
+    return dialogue_lines()
 
 
 def facility_lines(source: str) -> list[str] | None:

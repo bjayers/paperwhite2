@@ -1,6 +1,7 @@
 #include "asm/field_script.inc"
 #include "text/script/global_10490.h"
 #ifdef PAPERWHITE2
+#include "constants/script_text_banks.h"
 #include "paperwhite2/entralink_run_actions.h"
 #endif
 
@@ -218,11 +219,11 @@ Movement_025C:
 Script_6:
     ActorsPauseAll
 #ifdef PAPERWHITE2
-    // Paper White 2: in an Entralink run, the room's exits open once its battle is won
-    // (paperwhite2/entralink_run_actions.h)
-    EntralinkRun ENTRALINK_RUN_ACTION_CAN_LEAVE, 0, 0, 0x8000
-    WorkCmpConst 0x8000, 0
-    VMJumpIf CMP_EQ, L_RunExitBlocked1
+    // Paper White 2: in an Entralink run this is the exit the player came in by, which asks whether to go back to the
+    // hub, ending the run (paperwhite2/entralink_run_actions.h)
+    EntralinkRun ENTRALINK_RUN_ACTION_CAN_LEAVE, ENTRALINK_RUN_BACK_EXIT, 0, 0x8000
+    WorkCmpConst 0x8000, ENTRALINK_RUN_EXIT_BACK
+    VMJumpIf CMP_EQ, L_RunBackDoor
 #endif
     ActorCmdExec 255, Movement_027C
     ActorCmdWait
@@ -232,10 +233,24 @@ Script_6:
     VMHalt
 #ifdef PAPERWHITE2
 
-L_RunExitBlocked1:
+L_RunBackDoor:
+    // Paper White 2: Yes ends the run as a forfeit and warps to the hub; No steps the player back
+    SystemMsg Global10490_Text_RunReturnToEntralink, 2
+    YesNoWin 0x8000
+    SystemMsgClose
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_NE, L_RunBackDoorStay
+    EntralinkRun ENTRALINK_RUN_ACTION_WARP_HUB, 0, 0, 0x8000
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+L_RunBackDoorStay:
     ActorCmdExec 255, Movement_RunExitBack1
     ActorCmdWait
-    VMJump L_RunExitBlocked
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
     .balign 4, 0
 #endif
     .balign 4, 0
@@ -328,12 +343,66 @@ Movement_RunExitBack3:
     Move 10, 1
     MoveEnd
 
-// Paper White 2: talking to an Entralink run room's enemy (script 10498, paperwhite2_entralink_run.c): its cry and
-// the room's battle. A win opens the exits, or after the final room ends the run at the hub; a loss or a forfeit
-// (running) ends it there too, with the real party back
+// Paper White 2: talking to an Entralink run room's NPC (script 10498, paperwhite2_entralink_run.c). A battle NPC: its
+// dialogue, its cry and its battle; a win (or a capture) its after dialogue and the room open, or after the final room
+// the run's end at the hub; a loss or a forfeit (running) end the run there too, with the real party and bag back. An
+// item NPC: its dialogue and its item into the run's bag. A rest or buff NPC: its dialogue, or a placeholder for now
 Script_9:
     ActorsPauseAll
     ActorSetEyeToEye
+    EntralinkRun ENTRALINK_RUN_ACTION_TALK, 0, 0, 0x8000
+    WorkCmpConst 0x8000, ENTRALINK_RUN_NPC_BATTLE
+    VMJumpIf CMP_EQ, L_RunBattleNpc
+    WorkCmpConst 0x8000, ENTRALINK_RUN_NPC_ITEM
+    VMJumpIf CMP_EQ, L_RunItemNpc
+    WorkSetConst 0x8002, 0
+    VMCall L_RunDialogue
+    WorkCmpConst 0x8001, ENTRALINK_RUN_NO_MESSAGE
+    VMJumpIf CMP_NE, L_RunNpcDone
+    SystemMsg Global10490_Text_RunNotReady, 2
+    LastKeyWait
+    SystemMsgClose
+
+L_RunNpcDone:
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+L_RunItemNpc:
+    WorkSetConst 0x8002, 0
+    VMCall L_RunDialogue
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_ITEM, 0, 0, 0x8004
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_ITEM_COUNT, 0, 0, 0x8005
+    EntralinkRun ENTRALINK_RUN_ACTION_GIVE_ITEM, 0, 0, 0x8000
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_EQ, L_RunBagFull
+    WordSetPlayerName 0
+    WordSetItemName 1, 0x8004
+    WordSetNumber 2, 0x8005, 2
+    MEPlay SEQ_ME_ITEM
+    WorkCmpConst 0x8005, 1
+    VMJumpIf CMP_NE, L_RunFoundItems
+    SystemMsg Global10490_Text_RunFoundItem, 2
+    VMJump L_RunItemDone
+
+L_RunFoundItems:
+    SystemMsg Global10490_Text_RunFoundItems, 2
+
+L_RunItemDone:
+    MEWait
+    LastKeyWait
+    SystemMsgClose
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+L_RunBagFull:
+    SystemMsg Global10490_Text_RunBagFull, 2
+    VMJump L_RunItemDone
+
+L_RunBattleNpc:
+    WorkSetConst 0x8002, 0
+    VMCall L_RunDialogue
     EntralinkRun ENTRALINK_RUN_ACTION_GET_SPECIES, 0, 0, 0x8000
     PVPlay 0x8000, 0
     PVWait
@@ -354,6 +423,8 @@ L_RunForfeited:
     VMJump L_RunToHub
 
 L_RunWon:
+    WorkSetConst 0x8002, 1
+    VMCall L_RunDialogue
     SystemMsg Global10490_Text_DarkraiNightmareOver, 2
 
 L_RunToHub:
@@ -365,10 +436,28 @@ L_RunToHub:
     VMHalt
 
 L_RunRoomCleared:
+    WorkSetConst 0x8002, 1
+    VMCall L_RunDialogue
+    EntralinkRun ENTRALINK_RUN_ACTION_CLEAR_ROOM, 0, 0, 0x8000
     SystemMsg Global10490_Text_NightmareFaded, 2
     LastKeyWait
     SystemMsgClose
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+
+L_RunDialogue:
+    // Paper White 2: the NPC's before (0x8002 0) or after (1) message from the rooms' text bank, if it has one; its
+    // number is left in 0x8001
+    EntralinkRun ENTRALINK_RUN_ACTION_DIALOGUE, 0x8002, 0, 0x8001
+    WorkCmpConst 0x8001, ENTRALINK_RUN_NO_MESSAGE
+    VMJumpIf CMP_EQ, L_RunDialogueNone
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_ACTOR, 0, 0, 0x8003
+    WordSetPlayerName 0
+    ActorMsg SCRIPT_TEXT_ENTRALINK_DIALOGUE, 0x8001, 0x8003, 0, 0
+    LastKeyWait
+    ActorMsgClose
+
+L_RunDialogueNone:
+    VMReturn
 #endif
