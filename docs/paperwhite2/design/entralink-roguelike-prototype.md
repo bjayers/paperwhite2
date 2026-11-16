@@ -2,8 +2,8 @@
 
 Built 2026-11-15 on `entralink-roguelike.md`'s design and survey (sections 1 and 3), to answer "does it work": a run of
 four rooms in the Entree Forest, each with a legendary to battle, from a cleared Entralink hub. No buffs, no damage or
-HP numbers, no C-Gear screen, no run bag yet. Step 2 (same day) added the level-100 team and the forfeit; see "Step 2"
-below.
+HP numbers, no C-Gear screen. Step 2 (same day) added the level-100 team and the forfeit, step 3 the room format, the
+run's bag, catching and saved progress; see "Step 2" and "Step 3" below.
 
 ## What a run is
 
@@ -61,70 +61,75 @@ below.
     (`RanFromNightmare` is the forfeit's).
   - `res/field/events/entralink.json`: the hub's events cleared (above); `entralink.s` Script_10 is the remaining NPC's
     Yes/No warp out.
-- `generated/vars.txt`: `EVENT_WORK_ENTRALINK_RUN_ROOM` (0x405b), `_ORDER` (0x405c), `_CLEARED` (0x405d).
+- `generated/vars.txt`: the prototype's run state was variables 0x405b-0x405d until step 3, which keeps it in RAM.
 - Data: `res/paperwhite2/entralink/` (below); packer `tools/paperwhite2/entralink_run.py`, wired into `configure.py`
   (`--hack`), writing `build/include/generated/paperwhite2/entralink_run_config.h`; its test
   `tools/paperwhite2/test_entralink_run.py`.
 
 ## The data
 
-All names are the repo's constants. The packer checks both files against their schemas
-(`run.schema.json`, `challenge.schema.json`, beside them) and the rules below. **A new challenge file needs
-`python3 configure.py w2_us --hack` again** (the build's inputs are listed when configuring).
+All names are the repo's constants. The packer (`tools/paperwhite2/entralink_run.py`) checks `run.json` and every room
+against their schemas (beside them) and the rules below, and fails with a message naming the file. **A new room file
+needs `python3 configure.py w2_us --hack` again** (the build's inputs are listed when configuring). Until step 3 the
+game read `challenges/` (one challenge per file, an enemy's `actor` placing it); step 3 replaced it with `rooms/`.
 
 `res/paperwhite2/entralink/run.json`:
 
 | Field | What |
 | --- | --- |
-| `pool` | Challenge IDs (file names in `challenges/`) the rooms before the last are drawn from, at most 15, no repeats |
-| `pool_rooms` | How many rooms are drawn, without repeats; at most the pool's size and 4 (one variable, a nibble each) |
-| `final` | The last room's challenge |
-| `room_maps` | `ZONE_ENTREE_FOREST*` zones of the drawn rooms, taken in turn; each needs a bottom exit |
-| `final_map` | The last room's zone |
+| `rounds` | 1-3 rounds in order, each `rooms` (how many rooms of role `room` are drawn for it: kept to that round, or to none) and `boss` (rounds 1 and 2: a room of role `boss` ends it; false). The final room follows the last round. No room twice in a run; at most 15 rooms with the final |
+| `room_maps` | `ZONE_ENTREE_FOREST*` zones of the rooms before the final, taken in turn; each needs a bottom exit |
+| `final_map` | The final room's zone |
+| `field_weather` | Optional `WEATHER_*` (`include/system/zone_weather.h`): the field weather of the rooms without a `weather`; left out, the forest's own |
 
-`res/paperwhite2/entralink/challenges/<id>.json`, one challenge each; its ID is the file's name:
-
-| Field | What |
-| --- | --- |
-| `name` | For the editor (not shown in game yet) |
-| `tier` | 1-255, for the editor and later room picks |
-| `format` | `single` (1 enemy), `double` (1-2), `triple` (1-3), `raid` (exactly 1: a triple battle with it in the center) |
-| `weather` | Optional `BTL_WEATHER_*` from the battle's start; without it, the field's |
-| `enemies[]` | 1-3 of: `species` (`SPECIES_*`), `form` (0), `level` (70), `moves` (1-4 `MOVE_*`, replacing the level's), `ability` (`ABILITY_*` or `"hidden"`; without it one of the species' two), `item` (`ITEM_*`), `gender` (`male`/`female`; random), `shiny` (false), `actor`: `x`, `z` (tiles, 0-31) and `facing` (`DIR_*`) |
-
-Parenthesised values are the defaults. A room is 32 by 32 tiles: the exits are at x 15-16 z 9 (top), z 24 (bottom),
-and x 5 / x 26 at z 15-17 (left, right); the player arrives at x 15 z 23. Each enemy gets its own actor (IDs 0-2);
-talking to any of them starts the battle, and a win removes them all.
+The prototype's run: one round of 3 rooms (Dialga, Ho-Oh and the Rayquaza raid, the three rooms of role `room`), then
+Darkrai (role `final`). `progress_ids.json` (`progress_ids.schema.json`) holds the next progress ids the editor gives.
 
 ## The room format
 
 `res/paperwhite2/entralink/rooms/<id>.json`, one room each, with `room.schema.json` beside them; its ID is the file's
-name. Edited in the editor's **Entree** page (`editor/src/modules/entree/`). It **replaces `challenges/` at the wiring
-step**: until the game and the packer read it, the game still reads `run.json` and `challenges/` (the format above), and
-the four rooms here are the prototype's four challenges converted (Dialga, Ho-Oh and the Rayquaza raid generic rooms,
-Darkrai the final room). All names are the repo's constants.
+name. Edited in the editor's **Entree** page (`editor/src/modules/entree/`); the game reads it since step 3. The four
+rooms are the prototype's four challenges converted (Dialga, Ho-Oh and the Rayquaza raid generic rooms, Darkrai the
+final room). All names are the repo's constants.
 
 | Field | What |
 | --- | --- |
 | `name` | For the editor |
 | `rounds` | Optional: the rounds it is kept to, any of `1` (before the first boss), `2` (before the second), `3` (before the final room). Left out, a generic room that can come up in any round |
-| `role` | `room` (one of a round's rooms), `boss` (ends round 1 or 2; the bosses have their own pool) or `final` (the run's last room) |
-| `weather` | Optional `BTL_WEATHER_*` for its battles from their start (`BTL_WEATHER_NONE` for clear); left out, random (designed later) |
-| `battles[]` | Up to 8 of: `id` (lower case, the name NPCs use), `format` (`single` 1 enemy, `double` 1-2, `triple` 1-3, `raid` exactly 1 in the center), `enemies[]` (1-3, as a challenge's without `actor`: `species`, `form`, `level`, `moves`, `ability`, `item`, `gender`, `shiny`, same defaults) |
-| `npcs[]` | Up to 16 of the NPC record below. If none spawns, the room is free and the player goes on |
+| `role` | `room` (one of a round's rooms), `boss` (ends round 1 or 2; the bosses have their own pool) or `final` (the run's last room; one is drawn if there are several) |
+| `weather` | Optional `BTL_WEATHER_*`: its battles start in it, and the field shows the matching weather (none and sun: clear, the field has no harsh sun; rain: rain; hail: snow; sandstorm: sandstorm). Left out, the battles take the field's and the field `run.json`'s `field_weather` |
+| `battles[]` | Up to 8 of: `id` (lower case, the name NPCs use), `progress_id` (its won-ever bit, below), `format` (`single` 1 enemy, `double` 1-2, `triple` 1-3, `raid` exactly 1 in the center), `enemies[]` (1-3: `species`, `form` (0), `level` (70), `moves`, `ability` (`ABILITY_*` or `"hidden"`), `item`, `gender`, `shiny` (false), `catch`, `progress_id`) |
+| `npcs[]` | Up to 16 of the NPC record below. If no battle NPC spawns, the room is free: its exits are open at once |
+
+An enemy's `catch` (left out: it can't be caught): `after` (a list of `"<room id>/<battle id>"`, battles that must have
+been won at least once, in any run or earlier in this one; empty: from the first encounter) and `once` (true: never
+again once caught). With it the enemy needs its own `progress_id` (its caught-ever bit).
 
 An NPC:
 
 | Field | What |
 | --- | --- |
-| `type` | `battle` (talking starts the battle it names), `item` (gives an item), `rest` (opens the rest menu) or `buff` (the buff menu); the last two are built later |
-| `battle` | A battle NPC's battle, by `id`. Several NPCs may start one battle (Kyogre and Groudon side by side for one double battle); several battles, one NPC each, let the player choose |
+| `type` | `battle` (talking starts the battle it names), `item` (gives an item into the run's bag, then goes), `rest` or `buff` (for now their `before` dialogue, or "This nightmare isn't ready for you yet..."; their menus come later) |
+| `battle` | A battle NPC's battle, by `id`. Several NPCs may start one battle (Kyogre and Groudon side by side for one double battle); several battles, one NPC each, let the player choose: **winning one opens the room and every battle NPC goes**, the other battles too |
 | `enemy` | A battle NPC's enemy (0 the first, the default) whose overworld sprite it shows and whose cry it plays |
-| `item`, `count` | An item NPC's item (`ITEM_*`) and how many (1) |
-| `sprite` | Optional `OBJ_CODE_*`: its own overworld sprite, any Pokémon's or person's. Without it a battle NPC shows its enemy's walking Pokémon (`OBJ_CODE_POKEMON_<species>`), an item NPC the item ball (`OBJ_CODE_110`); rest and buff NPCs need one. A new Nightmare with no walking sprite needs one too (the editor warns) |
-| `flag` | Optional `EVENT_FLAG_*`: it spawns only while the flag is set (the Nightmare Ball after a finished run) |
-| `chance` | Its chance to spawn, 1-100 percent (100) |
+| `item`, `count` | An item NPC's item (`ITEM_*`) and how many (1); if the run's bag has no room, it says so and stays |
+| `sprite` | Optional `OBJ_CODE_*`: its own overworld sprite. Without it a battle NPC shows its enemy's walking Pokémon (`OBJ_CODE_POKEMON_<species>`), an item NPC the item ball (`OBJ_CODE_110`), rest and buff NPCs the Lady (`OBJ_CODE_LADY`). A new Nightmare with no walking sprite needs one (the editor warns) |
+| `requires` | Optional list: `"<room id>/<battle id>"` (that battle won at least once in any run) and `"run/completed"` (the final room beaten at least once); it spawns only if all hold |
+| `chance` | Its chance to spawn, 1-100 percent (100), rolled once as the player enters the room |
+| `dialogue` | Optional `before` (on talking; a battle NPC's before its battle) and `after` (a battle NPC's, after its battle is won or its enemy caught, before the room opens): a message in the text files' codes (below) |
 | `x`, `z`, `facing` | Its tile (0-31) and `DIR_*` |
+
+**Dialogue** is written as a line of `res/text/` with real line breaks (or `\n`): `{be01}` waits for a key and
+`{be00}` starts a new page after one, as the text files use them, and **`{0100:0}` is the player's name** (the script
+sets word 0 to it before every message; no other word is set yet). The build packs every room's NPCs' messages, room by
+room in ID order, into the script text bank `entralink_dialogue` (`res/text/script/entralink_dialogue.txt` is one line,
+`\from{entralink.dialogue}`; `SCRIPT_TEXT_ENTRALINK_DIALOGUE` in `generated/script_text_banks.txt`), and the header
+gives each NPC its messages' numbers. Nothing is kept by hand.
+
+**Progress ids** are the save's bits (Step 3's progress block): every battle has its own `progress_id` (0-1023) and
+every catchable enemy its own (0-511), unique over all rooms within their kind, never changed or reused once given. The
+editor gives them on save from `progress_ids.json`'s `next_battle` and `next_catch`; the packer refuses a missing or
+duplicated one, or one not below the next.
 
 **No map per room.** The game will pick the clearing by the door taken (the left door leads to a clearing with an
 entrance on its right), so a room is placed on the clearings' shared 32 by 32 grid: every clearing has its exits at the
@@ -151,10 +156,11 @@ battles or catches with one progress id, a room called `run`, an After message o
 
 ## How it works
 
-- **Run state:** three saved event variables (room 1-5, 0 outside a run; the pool places drawn, a nibble a room; the
-  room won). The Entralink's field menu has no Save, so a run can't be saved mid-way. Each map load
-  (`ZoneChange_OnFieldLoad`) ends a run the player is no longer in (any zone outside the forest, or a run without its
-  copies, as after loading a save made in one), so leaving it another way (the debug menu's warps) also ends it.
+- **Run state:** in RAM since step 3 (`EntralinkRunState`, ARM9 main: the room, the rooms drawn, the room's exits open,
+  its NPCs spawned and gone, its field weather, the talked-to NPC, the battle's catches); the prototype's three saved
+  variables (0x405b-0x405d) are free again. The Entralink's field menu has no Save, so a run can't be saved mid-way.
+  Each map load (`ZoneChange_OnFieldLoad`) ends a run the player is no longer in (any zone outside the forest, or a run
+  without its copies), so leaving it another way (the debug menu's warps) also ends it.
 - **Rooms:** `EventEntreeForestWarp` with the run's zone instead of `SymbolMap_GetZone`; the zone's init script
   (`EntreeForestSpawnAllPkm`, type 4, which runs on every load) spawns the enemies, skipping any already there and a
   won room's.
@@ -255,6 +261,148 @@ them), Teleport and Roar in a run battle, a run with a full party's held items u
 - **Time-based form changes** (Shaymin at night, the seasons' Deerling and Sawsbuck, `ShayminForm_*` and
   `TransformVsPokePartyBySeason` on `SaveControl_GetPokePartySave`) still apply to the real party during a run, as they
   would outside it; the copies keep the form they started with.
+
+## Step 3: rooms, the run's bag, catching and saved progress (2026-11-15)
+
+The game reads the room format (above) instead of `challenges/`, which is gone. The roguelike uses **no event flags or
+variables**: the run lives in RAM, what lasts in the save's freed Symbol block.
+
+### Files
+
+- `src/paperwhite2/ov012/paperwhite2_entralink_run.c`: the draw (each round's rooms and boss, then the final, at random
+  without repeats), entering a room (which NPCs spawn: `requires`, then `chance`; a room with no battle NPC is open at
+  once; its field weather), spawning, the battles, the catches' conditions, and the command's actions.
+- `src/paperwhite2/main/paperwhite2_entralink_run_state.c`, `include/paperwhite2/entralink_run_state.h`: the run's state
+  (`sRunState`) and its bag (`sRunBag`), in ARM9 main, which the battle, the battle's return, the bag and the zone's
+  weather reach and no overlay change frees.
+- `src/paperwhite2/main/paperwhite2_entralink_progress.c`, `include/paperwhite2/entralink_progress.h`: the progress block.
+- `include/paperwhite2/entralink_run_actions.h`: the command's actions (now 12) and results, for the scripts.
+- Hooks (`#ifdef PAPERWHITE2`, `// Paper White 2:`): `game_data.c` (`PaperWhite2_GameData_SetBag`),
+  `myitem_savedata.c` (`BagSave_GetItemHandleAddCheck`: the run bag's slots), `itemmenu.c` (the pockets shown, no To
+  Free Space), `b_bag_item.c` (the Nightmare Ball in the battle's balls pocket), `zone_weather.c` (`GetWeatherAll`: a
+  room's field weather), `btl_server_flow_sub.c` (`PaperWhite2_ThrowBall_CanCatch`, `CheckBallCapture`),
+  `event_battle_return.c` (the catch into the real party), `pml_item.c` (the ball's icon and look), `save_table.c` and
+  `symbol_save.c` (the block).
+- Scripts and text: `global_10490.s` Script_9 (any NPC: `TALK` gives its type; battle, item, rest/buff paths; the
+  dialogue subroutine `L_RunDialogue` shows a message of `SCRIPT_TEXT_ENTRALINK_DIALOGUE` over the NPC with
+  `ActorMsg`, after `WordSetPlayerName 0`), Script_6 (the back door); five lines at the end of `global_10490.txt`.
+
+### The run's bag
+
+- `EntralinkRun_Start` empties `sRunBag` (a whole `BagSave` in RAM, 0x9ec bytes) and points `GameData`'s bag at it, as
+  step 2 does the party; `EntralinkRun_End` (a win, a loss, a forfeit, the back door, a warp out) points it back and
+  empties it. Everything that reads `GameData_GetBag` sees it: the bag screen, the party screen's Give and Take, the
+  battle's bag (`BtlSetup`'s bag), item NPCs, so step 2's holes are closed: a copy's held item comes from and goes to
+  the run's bag, and the real bag's stones and Rare Candy are out of reach. The real bag stays in the save's block,
+  which any save writes.
+- It holds 32 items, 16 medicine and 16 berries (`ENTRALINK_RUN_BAG_*`), and nothing in the TMs and Key Items pockets
+  (`BagSave_GetItemHandleAddCheck`). The bag screen's arrows and pocket buttons go only to Items, Medicine and
+  Berries, it opens on Items if the cursor was elsewhere, and To Free Space is left out. **The other pockets' buttons
+  are still drawn** (touching them does nothing).
+- Items used up in a battle are taken from the run's bag as from the real one.
+
+### Catching
+
+- **The Nightmare Ball** (`ITEM_NIGHTMARE_BALL`, unused item 126; `docs/paperwhite2/items.md`). At a run battle's
+  start, each enemy whose `catch` holds (its `after` battles won, and not caught if `once`) is noted by its PID with its
+  catch id; `ThrowBall` lets the Nightmare Ball catch only those (always, as the Master Ball), and refuses every other
+  ball in a run and the Nightmare Ball anywhere else, with the trainer battle's "Don't be a thief!".
+- The caught Pokémon goes to the **real party** (`EntralinkRun_GetCatchParty`, the save's party block during a run), or
+  a Box if it is full, at its own level, with the Pokédex, nickname and Box messages as usual; it is never one of the
+  copies, and stays after the run. A capture counts as winning: the battle's won bit, the catch's caught bit, the room
+  open (and the after dialogue).
+
+### The progress block
+
+The Symbol block (`SAVE_BLOCK_SYMBOL`, 0x850 bytes at 0x22a00 and its copy at 0x48a00), reused in place (survey 3.3):
+
+| Offset | Size | What |
+| --- | --- | --- |
+| 0x00 | 4 | magic `0x45325750` ("PW2E") |
+| 0x04 | 2 | version, 1 |
+| 0x06 | 2 | runs completed (the final room beaten), at most 0xffff; **"run completed" is this above 0** (`requires`' `run/completed`) |
+| 0x08 | 0x80 | battles won at least once, a bit per battle `progress_id` (1024) |
+| 0x88 | 0x40 | enemies caught at least once, a bit per catch `progress_id` (512) |
+| 0xc8 | 0x788 | free, zero (for a mid-run save or unlocks later) |
+
+- No encryption or checksum of its own: the save's CRC of the block covers it. `EntralinkProgress_Get` clears a block
+  without the magic or with another version to an empty progress, so an old save's forest data is dropped the first
+  time a run reads it, and the next save writes the new layout; a new game's init writes it directly.
+- The forest's original code (`symbol_save.c`, `symbol_map.c`, the Game Sync's arrivals) gets an empty forest in RAM
+  from `getAreaNPCData` instead (`EntralinkProgress_GetOldForestBlock`, 0x850 bytes of BSS), and
+  `SymbolSave_HasPokemon`, which read the flash's copy, answers FALSE: nothing reads or writes the old layout.
+- Written: a battle's bit when it is won or its enemy caught; a catch's bit; the count when the final room is won. All
+  in RAM until the game is next saved (the Entralink has no Save: the player saves after going back to their world).
+
+### The back door and the exits
+
+The exit every room is entered by (the bottom one, `ENTRALINK_RUN_BACK_EXIT`, Script_6; in room 1 the one back toward
+the hub) asks "Return to the Entralink? Your run will end here." Yes ends the run as a forfeit does (the real party and
+bag back, the run bag emptied) and warps to the hub's entrance; No steps the player back. It asks in a cleared room too.
+The other exits are blocked until a battle is won (or open at once in a free room) and lead to the next room.
+
+### Weather
+
+A room's field weather is set as the player enters it (`fieldWeather`), and `GetWeatherAll` returns it in a forest
+zone during a run, after a forced weather and before the battle-weather and calendar rules; its battles start in the
+room's `weather`. `run.json`'s `field_weather` is the default for rooms without one (none set: the forest's own).
+
+### Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `roguelike3/`)
+
+With two temporary test rooms (deleted before the commit): `zz_pair` (rain; a double battle Kyogre and Groudon started
+by two NPCs with before and after dialogue, a single Pikachu battle with a before line, a Potion NPC requiring
+`zz_pair/solo`) and `zz_free` (no battles: a Nightmare Ball NPC ×3 with dialogue using `{0100:0}`, a Rare Candy NPC
+requiring `run/completed`, a Potion NPC at 1%, a rest NPC, an Oran Berry NPC ×5).
+
+- **The old save:** its Symbol block's forest data was cleared to the progress layout on the first read (magic, version
+  1, nothing set); after a save both copies in the file held the new layout.
+- **Spawning:** `zz_pair` spawned its three battle NPCs and not the Potion NPC (`zz_pair/solo` unwon); `zz_free` its
+  balls, rest and berry NPCs, not the Rare Candy one (no run completed) nor the 1% one; in a run after a completed run,
+  the Rare Candy NPC spawned.
+- **Weather:** `zz_pair`'s rain on the field (screenshot) and in its battles (the battle's weather icon).
+- **Two NPCs, one battle:** Kyogre's NPC showed "We are two." over it, the double battle started, after the win "You
+  beat us both!", "The nightmare faded away!", and all three battle NPCs went (the Pikachu battle's too): the won bit
+  10 set. In a later run the Pikachu battle won instead took the double battle's NPCs away (bit 11).
+- **A free room:** `zz_free`'s exits open at once.
+- **Item NPCs:** "A ball for the nightmare, Riku.", then "Riku found Nightmare Ball ×3!", the NPC gone, the run's bag
+  holding 3; the berries into the Berries pocket. The rest NPC: the placeholder line.
+- **The run's bag:** empty at each run's start; the bag screen showed Items, Medicine and Berries only (the arrows
+  cycled those three); Give put an Oran Berry on a copy (5 to 4 in the run's bag) and Take put it back (5); the battle's
+  bag showed the Nightmare Ball in its balls pocket. After a win, the back door's Yes and a forfeit-free run end, the
+  run's bag was empty and the real bag in the save block **byte for byte** as at the run's start.
+- **The Nightmare Ball:** refused on Dialga in the first run (its `after`, `dialga/dialga`, unwon; Dialga's room had a
+  catch for the test then), and on the test room's Pikachu (no `catch`); a Poké Ball put in the run's bag refused
+  ("Don't be a thief!"). In the next run, after Dialga's battle had been won and the game saved and reloaded, it
+  caught Dialga (3 shakes' worth, the Master Ball's path): the party was full, so Dialga went to a Box at level 70
+  (Exp. 428,750), in the Dream Ball's look (ball 25); the caught bit set, the room open. In a third run Dialga's
+  battle had no catchable enemy (`once`), so the ball was refused.
+- **Progress across a save:** after run 1 (runs 1, won 0, 1 and 10) the player went back to their world by the hub's
+  Lady and saved with the field menu; the exported save held the same in both copies, and the save booted again
+  carried it into the next run.
+- **The back door:** No in room 1 (before and after its battle was won) asked and stepped the player back; Yes in room
+  3 ended the run at the hub: the real party and bag back, the run's bag empty.
+- **The real data** (after the test rooms were removed): a run drew three rooms and Darkrai; the Rayquaza raid was won
+  (bit 3).
+- The packer's tests (`tools/paperwhite2/test_entralink_run.py`, run with a stand-in for `pytest.raises`), the editor's
+  tests (232 pass).
+
+Not tested: a loss in step 3 (it ends the run through the same `EntralinkRun_End` as the back door), a catch into a
+party with room (the test party was full), a raid or a double battle's catch, a boss round, real hardware.
+
+### Gaps and decisions for the user
+
+- **No catchable enemy in the real rooms:** Dialga had `catch: { after: ["dialga/dialga"] }` for the test; it was left
+  out of the commit because the editor's tests count the real data's catches. Which Nightmares can be caught, and where
+  the Nightmare Ball is found (an item NPC with `requires: ["run/completed"]`, as planned), is for the user.
+- **Messages:** "Riku found Nightmare Ball ×3!" uses the item's singular name; the rest/buff placeholder; the back door's
+  question. All in `global_10490.txt`.
+- **The run's bag's hidden pockets** still have their buttons drawn.
+- **Dialogue inserts:** only the player's name (`{0100:0}`) is set. Others (the NPC's enemy's species name, say) would
+  each need a word set before the message.
+- **Archive 228** (the battle bag's pockets) isn't built from `res/items`; the Nightmare Ball is added to the balls
+  pocket in code.
+- **Memory:** ARM9 main grew about 5 KB (the run's bag 2.5 KB, the old forest's RAM block 2.1 KB, code); the DS arena
+  has 58 KB left.
 
 ## The re-entry question
 

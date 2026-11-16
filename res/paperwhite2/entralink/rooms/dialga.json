@@ -12,11 +12,7 @@
                     "species": "SPECIES_DIALGA",
                     "level": 70,
                     "item": "ITEM_ADAMANT_ORB",
-                    "moves": [ "MOVE_ROAR_OF_TIME", "MOVE_DRAGON_PULSE", "MOVE_FLASH_CANNON", "MOVE_EARTHQUAKE" ],
-                    "catch": {
-                        "after": [ "dialga/dialga" ]
-                    },
-                    "progress_id": 0
+                    "moves": [ "MOVE_ROAR_OF_TIME", "MOVE_DRAGON_PULSE", "MOVE_FLASH_CANNON", "MOVE_EARTHQUAKE" ]
                 }
             ]
         }

@@ -2,6 +2,35 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-15: the Entralink roguelike's step 3, game side (ROM session, on a branch)
+
+`docs/paperwhite2/design/entralink-roguelike-prototype.md`, "Step 3" and "The room format", has the design, the proof
+and the gaps; merged with the editor's step 3 (below).
+
+- **Rooms:** the game reads `rooms/` (`challenges/` gone); `run.json` is now `rounds` (rooms per round, optional
+  bosses), the maps and `field_weather`. Several battles per room (one won: the room opens, every battle NPC goes),
+  item NPCs into the run's bag, rest/buff NPCs' dialogue or a placeholder, `requires` and `chance` rolled on entry, a
+  room with no battle NPC open at once, sprites, dialogue packed into the script text bank `entralink_dialogue`
+  (`{0100:0}` is the player's name). A room's `weather` shows on the field too.
+- **No event flags or variables:** the run's state is RAM only (0x405b-0x405d free again); "run completed" is the
+  progress block's run count, `requires: ["run/completed"]`.
+- **The run's bag:** `GameData`'s bag swapped for an empty RAM bag (32 items, 16 medicine, 16 berries), as the party is;
+  the bag screen shows only those pockets; Give/Take and the battle's bag use it; the real bag untouched.
+- **Progress in the save:** the Symbol block (0x850 B, same place and size) holds magic, version, runs completed and
+  the won/caught bits by progress id; an old save's forest data is cleared on first read; the forest's old code gets
+  an empty forest in RAM.
+- **The Nightmare Ball** (unused item 126, Dream Ball placeholder icon and look): catches as a Master Ball only an
+  enemy whose `catch` holds, into the real party or a Box at its own level; every other case refused.
+- **The back door** asks "Return to the Entralink?" (Yes ends the run as a forfeit, No steps back).
+- **Proof:** py-desmume with two temporary test rooms: spawning by requires/chance, rain on the field and in battle,
+  two NPCs for one battle with before/after dialogue, the other battle's NPC gone, a free room, item NPCs and the run's
+  bag (pockets, Give/Take, emptied, the real bag byte for byte), the ball refused (no catch, `after` unmet, `once`,
+  a Poké Ball) and catching Dialga into a Box at level 70, the progress through a save and a reload, the back door's
+  Yes and No. `--hack` builds without warnings, DSi intact, the plain build's modules match, the packer's and the
+  editor's tests pass (232). DS arena: 58 KB left (about 5 KB used).
+- **For the user:** which Nightmares can be caught (no real room has a `catch` yet) and where the Nightmare Ball is
+  found; the ball's icon to draw; the placeholder texts.
+
 ## 2026-11-15: the Entree Editor's dialogue, catching, progress ids and run weather (ROM session, on a branch)
 
 "The room format" (In the editor, step 3) has the details; the game side of the same spec is a separate branch.

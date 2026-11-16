@@ -80,8 +80,14 @@ def test_duplicate_progress_id(tmp_path):
 
 def test_catch_needs_its_own_id_below_the_next(tmp_path):
     directory = copy_data(tmp_path)
-    edit(directory / "progress_ids.json", lambda data: data.update(next_catch=0))
+    edit(room(directory, "dialga"), lambda data: data["battles"][0]["enemies"][0].update(
+        catch={"after": ["dialga/dialga"]}, progress_id=0))
     with pytest.raises(datajson.DataError, match="next_catch"):
+        entralink_run.tables(directory)
+    edit(directory / "progress_ids.json", lambda data: data.update(next_catch=1))
+    entralink_run.tables(directory)
+    edit(room(directory, "ho_oh"), lambda data: data["battles"][0]["enemies"][0].update(catch={}, progress_id=0))
+    with pytest.raises(datajson.DataError, match="as dialga/dialga's SPECIES_DIALGA has"):
         entralink_run.tables(directory)
 
 
