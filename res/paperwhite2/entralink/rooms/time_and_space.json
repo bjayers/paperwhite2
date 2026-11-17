@@ -1,0 +1,72 @@
+{
+    "$schema": "../room.schema.json",
+    "name": "Time and Space",
+    "rounds": [ 2 ],
+    "role": "boss",
+    "battles": [
+        {
+            "id": "battle",
+            "progress_id": 4,
+            "format": "triple",
+            "enemies": [
+                {
+                    "species": "SPECIES_DIALGA",
+                    "level": 70,
+                    "moves": [ "MOVE_ROAR_OF_TIME", "MOVE_THUNDER", "MOVE_IRON_HEAD", "MOVE_METAL_SOUND" ],
+                    "catch": {
+                        "after": [],
+                        "once": true
+                    },
+                    "progress_id": 0
+                },
+                {
+                    "species": "SPECIES_GIRATINA",
+                    "form": 1,
+                    "level": 70,
+                    "moves": [ "MOVE_SHADOW_FORCE", "MOVE_DRAGON_CLAW", "MOVE_DRAGON_DANCE", "MOVE_ANCIENT_POWER" ],
+                    "catch": {
+                        "after": [],
+                        "once": true
+                    },
+                    "progress_id": 1
+                },
+                {
+                    "species": "SPECIES_PALKIA",
+                    "level": 70,
+                    "moves": [ "MOVE_SPACIAL_REND", "MOVE_AQUA_RING", "MOVE_AURA_SPHERE", "MOVE_POWER_GEM" ],
+                    "catch": {
+                        "after": [],
+                        "once": true
+                    },
+                    "progress_id": 2
+                }
+            ]
+        }
+    ],
+    "npcs": [
+        {
+            "type": "battle",
+            "battle": "battle",
+            "x": 14,
+            "z": 14,
+            "facing": "DIR_DOWN"
+        },
+        {
+            "type": "battle",
+            "battle": "battle",
+            "enemy": 1,
+            "sprite": "OBJ_CODE_POKEMON_GIRATINA_FORM_1",
+            "x": 15,
+            "z": 14,
+            "facing": "DIR_DOWN"
+        },
+        {
+            "type": "battle",
+            "battle": "battle",
+            "enemy": 2,
+            "x": 16,
+            "z": 14,
+            "facing": "DIR_DOWN"
+        }
+    ]
+}

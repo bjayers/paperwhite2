@@ -28,6 +28,8 @@ FORMATS = {"single": 0, "double": 1, "triple": 2, "raid": 3}
 ENEMY_COUNTS = {"single": (1, 1), "double": (1, 2), "triple": (1, 3), "raid": (1, 1)}
 ROLES = {"room": 0, "boss": 1, "final": 2}
 NPC_TYPES = {"battle": 0, "item": 1, "rest": 2, "buff": 3}
+# A message's window (ENTRALINK_STYLE_*): talk is the default
+STYLES = {"talk": 0, "bubble": 1, "yell": 2, "event": 3}
 WEATHER_FIELD = 0xff
 FIELD_WEATHER_ZONE = 0xff
 ABILITY_SPECIES = 0
@@ -54,6 +56,10 @@ FIELD_WEATHERS = {"BTL_WEATHER_NONE": "WEATHER_SUNNY", "BTL_WEATHER_SUN": "WEATH
 
 def error(where: str, message: str):
     raise datajson.DataError(f"{where}: {message}")
+
+
+def load_run(directory: Path) -> dict:
+    return datajson.load(directory / "run.json", datajson.load_schema(directory / "run.schema.json"))
 
 
 def load_rooms(directory: Path) -> dict[str, dict]:
@@ -147,6 +153,62 @@ def dialogue_lines(directory: Path = SOURCE) -> list[str]:
     return lines
 
 
+def room_pool(rooms: dict[str, dict], number: int) -> list[str]:
+    """The rooms of role room that can come up in round number: those kept to it and the generic ones."""
+    return [n for n, r in rooms.items() if r["role"] == "room" and number in r.get("rounds", [number])]
+
+
+def boss_pool(rooms: dict[str, dict], number: int) -> list[str]:
+    """The boss rooms that can end round number: those kept to it, else the generic ones (kept to no round)."""
+    kept = [n for n, r in rooms.items() if r["role"] == "boss" and number in r.get("rounds", [])]
+    return kept or [n for n, r in rooms.items() if r["role"] == "boss" and "rounds" not in r]
+
+
+def draw_problems(run: dict, rooms: dict[str, dict]) -> list[tuple[str, str]]:
+    """What is wrong with the run's draw, as ("error", message) or ("warning", message), as the editor's Run section
+    says it (editor/src/modules/entree/model.ts, runProblems). The game draws each round's rooms from room_pool() and
+    its boss from boss_pool(), each time one of the least used so far other than the room just before (so none comes
+    up twice while some haven't), and the room just before again only when it is the only one. So too few rooms only
+    means repeats, a warning; a round with no room at all, or a boss round with no boss, can't be drawn."""
+    problems = []
+    if not any(room["role"] == "final" for room in rooms.values()):
+        problems.append(("error", "no room has the role final, which every run ends with"))
+    drawn, bosses, room_names, boss_names = 0, 0, set(), set()
+    for number, round_ in enumerate(run["rounds"], 1):
+        if round_.get("boss") and number == 3:
+            problems.append(("error", "round 3 can't end with a boss: the final room ends it"))
+        pool = room_pool(rooms, number)
+        if round_["rooms"] and not pool:
+            problems.append(("error", f"round {number} draws {round_['rooms']} rooms, but no room can come up in it "
+                             "(role room, rounds left out or naming it)"))
+        elif len(pool) == 1 and round_["rooms"] > 1:
+            problems.append(("warning", f"round {number} draws {round_['rooms']} rooms, but only {pool[0]} can come "
+                             "up in it, so it comes up each time, twice in a row"))
+        elif round_["rooms"] > len(pool):
+            problems.append(("warning", f"round {number} draws {round_['rooms']} rooms, but only {len(pool)} can come "
+                             "up in it, so some come up more than once (never twice in a row)"))
+        if round_["rooms"] and pool:
+            drawn += round_["rooms"]
+            room_names.update(pool)
+        if round_.get("boss") and number < 3:
+            pool = boss_pool(rooms, number)
+            if not pool:
+                problems.append(("error", f"round {number} ends with a boss, but no boss room can come up in it "
+                                 "(role boss, kept to it or to no round)"))
+            bosses += 1
+            boss_names.update(pool)
+    total = sum(r["rooms"] + bool(r.get("boss")) for r in run["rounds"]) + 1
+    if total > RUN_ROOMS_MAX:
+        problems.append(("error", f"the rounds have {total} rooms with the final one, more than {RUN_ROOMS_MAX}"))
+    if room_names and drawn > len(room_names):
+        problems.append(("warning", f"the rounds draw {drawn} rooms from {len(room_names)}, so rooms come up more "
+                         "than once in a run (the least used first, never twice in a row)"))
+    if boss_names and bosses > len(boss_names):
+        problems.append(("warning", f"the run has {bosses} bosses from {len(boss_names)} boss rooms, so a boss comes "
+                         "up twice"))
+    return problems
+
+
 def field_weathers() -> dict[str, int]:
     from tools.paperwhite2.conditions import weathers
     return weathers()
@@ -154,7 +216,7 @@ def field_weathers() -> dict[str, int]:
 
 def tables(directory: Path) -> dict:
     """The header's values, or a datajson.DataError that says what is wrong."""
-    run = datajson.load(directory / "run.json", datajson.load_schema(directory / "run.schema.json"))
+    run = load_run(directory)
     rooms = load_rooms(directory)
     check_progress(directory, rooms)
     constants = datajson.constants()
@@ -162,23 +224,9 @@ def tables(directory: Path) -> dict:
     default_weather = run.get("field_weather")
     if default_weather is not None and default_weather not in weathers:
         error("run.json", f"field_weather {default_weather!r} is not a WEATHER_* of include/system/zone_weather.h")
-    for i, round_ in enumerate(run["rounds"]):
-        if round_.get("boss") and i == 2:
-            error("run.json", "rounds[2] can't end with a boss: the final room ends round 3")
-    total = sum(r["rooms"] + bool(r.get("boss")) for r in run["rounds"]) + 1
-    if total > RUN_ROOMS_MAX:
-        error("run.json", f"the rounds have {total} rooms with the final one, more than {RUN_ROOMS_MAX}")
-    roles = [room["role"] for room in rooms.values()]
-    if "final" not in roles:
-        error("rooms/", "no room has the role final, which every run ends with")
-    for number, round_ in enumerate(run["rounds"], 1):
-        eligible = [n for n, r in rooms.items() if r["role"] == "room" and number in r.get("rounds", [number])]
-        if len(eligible) < round_["rooms"]:
-            error("run.json", f"round {number} draws {round_['rooms']} rooms, but only {len(eligible)} can come up in "
-                  "it (role room, rounds left out or naming it)")
-        bosses = [n for n, r in rooms.items() if r["role"] == "boss" and number in r.get("rounds", [number])]
-        if round_.get("boss") and not bosses:
-            error("run.json", f"round {number} ends with a boss, but no boss room can come up in it")
+    errors = [message for level, message in draw_problems(run, rooms) if level == "error"]
+    if errors:
+        error("run.json", errors[0])
 
     room_rows, battles, enemies, npcs, requirements = [], [], [], [], []
     message = 1
@@ -243,6 +291,8 @@ def tables(directory: Path) -> dict:
                 "firstRequirement": first_requirement,
                 "requirementCount": len(requirements) - first_requirement,
                 "before": messages[0], "after": messages[1],
+                "beforeStyle": STYLES[dialogue.get("before_style", "talk")],
+                "afterStyle": STYLES[dialogue.get("after_style", "talk")],
             })
         rounds = 0
         for number in room.get("rounds", []):
@@ -282,7 +332,8 @@ def header(directory: Path) -> str:
                f"{e['gender']}, {e['shiny']}, {e['catchOnce']}, {e['requirementCount']} }}" for e in data["enemies"]]
     npcs = [f"/* {n['name']} */ {{ {n['item']}, {n['sprite']}, {n['firstRequirement']}, "
             f"0x{n['before']:x}, 0x{n['after']:x}, {n['type']}, {n['battle']}, {n['enemy']}, {n['count']}, "
-            f"{n['chance']}, {n['x']}, {n['z']}, {n['direction']}, {n['requirementCount']} }}" for n in data["npcs"]]
+            f"{n['chance']}, {n['x']}, {n['z']}, {n['direction']}, {n['requirementCount']}, {n['beforeStyle']}, "
+            f"{n['afterStyle']} }}" for n in data["npcs"]]
     rounds = [f"{{ {rooms_}, {boss} }}" for rooms_, boss in data["rounds"]]
     zones = [f"{value} /* {name} */" for name, value in data["room_zones"]]
     requirements = [f"0x{value:x}" for value in data["requirements"]]
@@ -308,7 +359,7 @@ def header(directory: Path) -> str:
         "// catch once, requirement count",
         f"#define ENTRALINK_RUN_ENEMIES {initializer(enemies)}",
         "// EntralinkNpc: item, sprite, first requirement, before and after messages, type, battle, enemy, count,",
-        "// chance, x, z, direction, requirement count",
+        "// chance, x, z, direction, requirement count, before and after styles",
         f"#define ENTRALINK_RUN_NPCS {initializer(npcs)}",
         "// The NPCs' and catches' requirements: battles' progress ids, or ENTRALINK_REQUIRE_RUN_COMPLETED",
         f"#define ENTRALINK_RUN_REQUIREMENTS {{ {', '.join(requirements) or '0'} }}",
@@ -329,6 +380,10 @@ def main():
         if args.check:
             tables(args.source)
             print(f"{datajson.label(args.source)} is fine")
+        for level, message in draw_problems(load_run(args.source), load_rooms(args.source)):
+            if level == "warning":
+                print(f"warning: run.json: {message}", file=sys.stderr)
+        if args.check:
             return
         if args.output is None:
             parser.error("give the output header")

@@ -2333,6 +2333,14 @@ static BOOL ItemMenuProc_Init(GameProc *proc, u32 *state, void *param, void *dat
     ItemMenuDisp_CreateWindows(work);
     ItemMenuDisp_LoadListRes(work);
     ItemMenuDisp_CreatePocketTabs(work);
+#ifdef PAPERWHITE2
+    // Paper White 2: the tabs of the pockets an Entralink run's bag doesn't have are greyed out
+    for (pocket = 0; pocket < 6; pocket++) {
+        if (!ItemMenu_IsPocketShown(work, pocket)) {
+            ItemMenuDisp_GreyPocketTab(work, pocket);
+        }
+    }
+#endif
     ItemMenu_RedrawList(work);
     ItemMenuDisp_CreateListActors(work);
     work->buttonMan = GFL_BMN_Create(sButtonRects, ItemMenu_ButtonCallback, work, work->heapId);

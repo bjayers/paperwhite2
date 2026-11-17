@@ -25,6 +25,10 @@ void ItemMenuDisp_TouchScrollBar(ItemMenuWork *work);
 void ItemMenuDisp_UpdateScrollBar(ItemMenuWork *work);
 void ItemMenuDisp_CreatePocketTabs(ItemMenuWork *work);
 void ItemMenuDisp_SetPocketTab(ItemMenuWork *work, u32 pocket);
+#ifdef PAPERWHITE2
+// Paper White 2: greys out the tab of a pocket the bag doesn't show
+void ItemMenuDisp_GreyPocketTab(ItemMenuWork *work, u32 pocket);
+#endif
 void ItemMenuDisp_ClearMsgWindow(ItemMenuWork *work);
 void ItemMenuDisp_OpenItemMenu(ItemMenuWork *work, u32 *msgIds, s32 count);
 void ItemMenuDisp_OpenSortMenu(ItemMenuWork *work, u32 *msgIds, s32 count);

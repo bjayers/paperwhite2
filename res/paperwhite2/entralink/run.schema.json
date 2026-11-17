@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Entralink run",
-  "description": "How a run of the Entralink roguelike is laid out (docs/paperwhite2/design/entralink-roguelike-prototype.md): its rounds, each a number of rooms drawn at random from rooms/ (role room, kept to that round or to none) and, for the first two, an optional boss (role boss), then the final room (role final). No room comes up twice in a run. tools/paperwhite2/entralink_run.py checks it and writes it into paperwhite2/entralink_run_config.h.",
+  "description": "How a run of the Entralink roguelike is laid out (docs/paperwhite2/design/entralink-roguelike-prototype.md): its rounds, each a number of rooms drawn at random from rooms/ (role room, kept to that round or to none) and, for the first two, an optional boss (role boss), then the final room (role final). Rooms are drawn without repeats while unused ones fit; then the least used come up again, never one twice in a row. tools/paperwhite2/entralink_run.py checks it and writes it into paperwhite2/entralink_run_config.h.",
   "type": "object",
   "additionalProperties": false,
   "required": [ "rounds", "room_maps", "final_map" ],
@@ -34,8 +34,8 @@
       "additionalProperties": false,
       "required": [ "rooms" ],
       "properties": {
-        "rooms": { "type": "integer", "minimum": 0, "maximum": 8, "description": "How many rooms are drawn for it" },
-        "boss": { "type": "boolean", "description": "Rounds 1 and 2: whether a boss room ends it; false if left out" }
+        "rooms": { "type": "integer", "minimum": 0, "maximum": 8, "description": "How many rooms of role room are drawn for it, from those kept to it and the generic ones; when unused ones run out, rooms come up again" },
+        "boss": { "type": "boolean", "description": "Rounds 1 and 2: whether a boss room ends it, drawn from the boss rooms kept to it, else from the generic ones; false if left out" }
       }
     }
   }

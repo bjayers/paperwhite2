@@ -3,7 +3,8 @@
 Built 2026-11-15 on `entralink-roguelike.md`'s design and survey (sections 1 and 3), to answer "does it work": a run of
 four rooms in the Entree Forest, each with a legendary to battle, from a cleared Entralink hub. No buffs, no damage or
 HP numbers, no C-Gear screen. Step 2 (same day) added the level-100 team and the forfeit, step 3 the room format, the
-run's bag, catching and saved progress; see "Step 2" and "Step 3" below.
+run's bag, catching and saved progress, step 4 the run's rounds with repeats, the dialogue's window styles and the
+greyed pockets; see "Step 2", "Step 3" and "Step 4" below.
 
 ## What a run is
 
@@ -77,13 +78,14 @@ game read `challenges/` (one challenge per file, an enemy's `actor` placing it);
 
 | Field | What |
 | --- | --- |
-| `rounds` | 1-3 rounds in order, each `rooms` (how many rooms of role `room` are drawn for it: kept to that round, or to none) and `boss` (rounds 1 and 2: a room of role `boss` ends it; false). The final room follows the last round. No room twice in a run; at most 15 rooms with the final |
+| `rounds` | 1-3 rounds in order, each `rooms` (how many rooms of role `room` are drawn for it: kept to that round, or to none) and `boss` (rounds 1 and 2: a room of role `boss` ends it, from the bosses kept to that round, else the generic ones; false). The final room follows the last round. Rooms repeat only once every fitting room has come up (step 4, "The draw"); at most 15 rooms with the final |
 | `room_maps` | `ZONE_ENTREE_FOREST*` zones of the rooms before the final, taken in turn; each needs a bottom exit |
 | `final_map` | The final room's zone |
 | `field_weather` | Optional `WEATHER_*` (`include/system/zone_weather.h`): the field weather of the rooms without a `weather`; left out, the forest's own |
 
-The prototype's run: one round of 3 rooms (Dialga, Ho-Oh and the Rayquaza raid, the three rooms of role `room`), then
-Darkrai (role `final`). `progress_ids.json` (`progress_ids.schema.json`) holds the next progress ids the editor gives.
+The run (step 4): 3 rounds of 3 rooms, rounds 1 and 2 each ending in a boss, then the final room: 12 rooms. The
+generic rooms are Dialga, the Rayquaza raid and Prince or Princess (each comes up 3 times a run), the bosses Seaside
+Gales (`ho_oh.json`, kept to round 1) and Time and Space (kept to round 2), the final Darkrai. `progress_ids.json` (`progress_ids.schema.json`) holds the next progress ids the editor gives.
 
 ## The room format
 
@@ -116,7 +118,7 @@ An NPC:
 | `sprite` | Optional `OBJ_CODE_*`: its own overworld sprite. Without it a battle NPC shows its enemy's walking Pokémon (`OBJ_CODE_POKEMON_<species>`), an item NPC the item ball (`OBJ_CODE_110`), rest and buff NPCs the Lady (`OBJ_CODE_LADY`). A new Nightmare with no walking sprite needs one (the editor warns) |
 | `requires` | Optional list: `"<room id>/<battle id>"` (that battle won at least once in any run) and `"run/completed"` (the final room beaten at least once); it spawns only if all hold |
 | `chance` | Its chance to spawn, 1-100 percent (100), rolled once as the player enters the room |
-| `dialogue` | Optional `before` (on talking; a battle NPC's before its battle) and `after` (a battle NPC's, after its battle is won or its enemy caught, before the room opens): a message in the text files' codes (below) |
+| `dialogue` | Optional `before` (on talking; a battle NPC's before its battle) and `after` (a battle NPC's, after its battle is won or its enemy caught, before the room opens): a message in the text files' codes (below); `before_style` and `after_style`, each message's window (below; `talk` if left out) |
 | `x`, `z`, `facing` | Its tile (0-31) and `DIR_*` |
 
 **Dialogue** is written as a line of `res/text/` with real line breaks (or `\n`): `{be01}` waits for a key and
@@ -125,6 +127,13 @@ sets word 0 to it before every message; no other word is set yet). The build pac
 room in ID order, into the script text bank `entralink_dialogue` (`res/text/script/entralink_dialogue.txt` is one line,
 `\from{entralink.dialogue}`; `SCRIPT_TEXT_ENTRALINK_DIALOGUE` in `generated/script_text_banks.txt`), and the header
 gives each NPC its messages' numbers. Nothing is kept by hand.
+
+**Window styles** (step 4), each message's own: `talk`, the talk balloon with its tail at the NPC (`ActorMsg`, frame
+`TALKMSG_WIN_FRAME_NORMAL`); `bubble`, the tailless balloon across the bottom of the screen (`InfoMsg`, Frost's
+"BubbleMessage"); `yell`, the spiky balloon at the NPC, which shakes with a sound as it opens (`ActorMsg` with
+`TALKMSG_WIN_FRAME_SPIKY`, as Ghetsis's and the Grunts' shouts); `event`, the system window (`SystemMsg`), for
+narration. All four are 30 by 4 tiles with the text at 8, 0, so one width limit serves them all. (`ScreamMsg`, the
+legendaries' tailless spiky roars, is a fifth the format could add.)
 
 **Progress ids** are the save's bits (Step 3's progress block): every battle has its own `progress_id` (0-1023) and
 every catchable enemy its own (0-511), unique over all rooms within their kind, never changed or reused once given. The
@@ -270,7 +279,7 @@ variables**: the run lives in RAM, what lasts in the save's freed Symbol block.
 ### Files
 
 - `src/paperwhite2/ov012/paperwhite2_entralink_run.c`: the draw (each round's rooms and boss, then the final, at random
-  without repeats), entering a room (which NPCs spawn: `requires`, then `chance`; a room with no battle NPC is open at
+  without repeats; step 4 lets them repeat), entering a room (which NPCs spawn: `requires`, then `chance`; a room with no battle NPC is open at
   once; its field weather), spawning, the battles, the catches' conditions, and the command's actions.
 - `src/paperwhite2/main/paperwhite2_entralink_run_state.c`, `include/paperwhite2/entralink_run_state.h`: the run's state
   (`sRunState`) and its bag (`sRunBag`), in ARM9 main, which the battle, the battle's return, the bag and the zone's
@@ -298,7 +307,7 @@ variables**: the run lives in RAM, what lasts in the save's freed Symbol block.
 - It holds 32 items, 16 medicine and 16 berries (`ENTRALINK_RUN_BAG_*`), and nothing in the TMs and Key Items pockets
   (`BagSave_GetItemHandleAddCheck`). The bag screen's arrows and pocket buttons go only to Items, Medicine and
   Berries, it opens on Items if the cursor was elsewhere, and To Free Space is left out. **The other pockets' buttons
-  are still drawn** (touching them does nothing).
+  are still drawn** (touching them does nothing; step 4 greys them).
 - Items used up in a battle are taken from the run's bag as from the real one.
 
 ### Catching
@@ -396,13 +405,84 @@ party with room (the test party was full), a raid or a double battle's catch, a 
   the Nightmare Ball is found (an item NPC with `requires: ["run/completed"]`, as planned), is for the user.
 - **Messages:** "Riku found Nightmare Ball ×3!" uses the item's singular name; the rest/buff placeholder; the back door's
   question. All in `global_10490.txt`.
-- **The run's bag's hidden pockets** still have their buttons drawn.
+- **The run's bag's hidden pockets** still have their buttons drawn (greyed since step 4).
 - **Dialogue inserts:** only the player's name (`{0100:0}`) is set. Others (the NPC's enemy's species name, say) would
   each need a word set before the message.
 - **Archive 228** (the battle bag's pockets) isn't built from `res/items`; the Nightmare Ball is added to the balls
   pocket in code.
 - **Memory:** ARM9 main grew about 5 KB (the run's bag 2.5 KB, the old forest's RAM block 2.1 KB, code); the DS arena
   has 58 KB left.
+
+## Step 4: the run's rounds, window styles and greyed pockets (2026-11-16)
+
+### The draw
+
+`EntralinkRun_Start` draws each round's rooms, then its boss, then the final room. Every room is drawn from a pool:
+
+- a round's rooms: role `room`, kept to that round or generic (no `rounds`);
+- a round's boss: role `boss` kept to that round if any is, else the generic bosses;
+- the final: role `final`, any.
+
+From its pool the draw takes, at random, one of the rooms **other than the room just before** that have come up the
+**fewest times** in the run so far. So no room comes up twice while one that fits hasn't come up, a room never comes up
+twice in a row, and the repeats spread evenly (the least used first). Only when the room just before is the only one
+that fits does it come up again (a round with one room). A pool with no room skips that place.
+
+The packer (`tools/paperwhite2/entralink_run.py`, `draw_problems`) and the editor (`model.ts`, `runProblems`) check it
+alike: **errors** (the build stops) for no final room, a round asking for rooms with no room in its pool, a boss round
+with no boss, a boss on round 3, more than 15 rooms; **warnings** (the build prints them) when a round asks for more
+rooms than its pool has, the same room twice in a row (a pool of one), or the run drawing more rooms or bosses than
+it has (repeats). The real run warns: "the rounds draw 9 rooms from 3".
+
+### Window styles
+
+`ENTRALINK_RUN_ACTION_SHOW_DIALOGUE` (12) loads the talked-to NPC's message from `entralink_dialogue`, formats it with
+the script's words (the player's name) and shows it in its style's window: `CallFieldActorMessageDispStrBuf` (talk,
+yell), `loadMsgBox` (bubble, the bottom row) or `PaperWhite2_SystemMsgStrBuf` (event, a `#ifdef PAPERWHITE2` addition
+to `src/ov036/scrcmd_msg.c`: `SystemMsg`'s window with any message); the script (`L_RunDialogue`) waits for A and
+closes it with `MsgWinCloseAll`, which closes any of the four as its own close command does. The NPC table has
+`beforeStyle` and `afterStyle` (`ENTRALINK_STYLE_*`).
+
+In the editor each message box has a **Window** switch (Talk, Bubble, Yell, Event; talk is left out of the file) and
+its preview (`text/TextBox.tsx`'s `look`) draws that window: the normal frame with its tail, without, the spiky frame
+(`TalkMsgWin_DrawSpikyFrame`'s tiles) with its tail, or the system window (winframe 9, palette 3, font palette 7,
+light on dark). The default look of every other preview is unchanged.
+
+### The run's greyed pockets
+
+In a run the bag's pocket buttons of TMs, Key Items and Free Space (the pockets a run's bag doesn't show) are greyed:
+`ItemMenuDisp_GreyPocketTab` (`src/ov142/itemmenu_disp.c`) loads a grey copy of the tabs' palette (each colour's
+average at 3/4) into the lower screen's OBJ palette 15, which the bag leaves free (zero outside a run), and points the
+tab at it; the palette is added to the dimming behind a menu. Outside a run nothing changes.
+
+### Run's editor section
+
+The Entree page's **Run** section (above the rooms, closable with Hide; remembered in the browser): Field weather;
+**Rounds** with Add round and Remove last at its top, each round's rooms and (rounds 1-2) "then a boss", and under it
+the live summary ("Round 1: 3 rooms, then a boss (1 round-1 boss room) - 3 generic rooms + 0 round-1 rooms can be
+drawn"); **Maps** (`room_maps`, `final_map`, read only); and the draw's checks. The list column is 290 pixels wide.
+
+### Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `entree4/`)
+
+- **The draw:** ten runs from one hub savestate, each with a new seed: all ten orders different and all right: rooms
+  1-3, 5-7 and 9-11 generic, room 4 Seaside Gales, room 8 Time and Space, room 12 Darkrai, no room twice in a row,
+  each generic room 3 times.
+- **A full run** (order Prince or Princess, Rayquaza raid, Dialga, **Seaside Gales**, Rayquaza raid, Prince or
+  Princess, Dialga, **Time and Space**, Prince or Princess, Dialga, Rayquaza raid, **Darkrai**): rooms in
+  `entree_forest` and `entree_forest_6` in turn, Darkrai in `entree_forest_2`. The nine generic rooms' battles and
+  Darkrai's were won, each opening the room, the top exit leading to the next; the two boss rooms showed their NPCs
+  (Ho-Oh and Lugia; Dialga, Giratina-Origin and Palkia) and were opened by their state, since the test's way of
+  winning (the foes at 1 HP) doesn't find a double or triple battle's Pokémon (the boss battles themselves are step 3's
+  code). After Darkrai: the hub, the run over, runs completed 1, battles won 0, 1, 3 and 5.
+- **The styles:** Prince or Princess's Gardevoir NPC's before message in each style (its `beforeStyle` poked in the
+  table): talk (the balloon over it, tail down), bubble (the bottom balloon), yell (the spiky balloon, shaking), event
+  (the dark system window); after A each closed and the battle started.
+- **The bag:** in a run, the TMs, Key Items and Free Space buttons grey; at the hub (no run) all as before, palette 15
+  empty.
+- Packer tests (13), the editor's tests (all pass), `verify_dsi_rom.py`.
+
+Not tested: a style on an after message or an item NPC's (the same subroutine), the greyed tabs behind the bag's item
+menu (the run's bag was empty), real hardware.
 
 ## The re-entry question
 

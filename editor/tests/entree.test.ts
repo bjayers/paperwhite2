@@ -1,7 +1,7 @@
 // The Entree page's rooms (src/modules/entree/model.ts): each room file is written back as it was and passes the
 // schema in the editor's check and the build's; an edit saves and reads back; the checks find a battle NPC naming no
 // battle, a battle no NPC starts, too many enemies for a format, NPCs on exits, blocked tiles or the arrival tile, and,
-// over all the rooms, a missing final room or a round without rooms or a boss; the clearings all have the same exits.
+// over all the rooms, the run's draw (runProblems, as the build's check); the clearings all have the same exits.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
@@ -14,7 +14,7 @@ import { Python } from "../server/python.ts";
 import { removable } from "../server/weather.ts";
 import {
   EXIT_SCRIPTS, ROOMS_DIR, ROOM_SCHEMA, assignProgressIds, checkRoom, checkRooms, freeId, idFromName, newNpc, newRoomData, npcSprite, readRoom,
-  type Exit, type MapInfo,
+  readRun, roundSummary, runProblems, type Exit, type MapInfo, type Room,
 } from "../src/modules/entree/model.ts";
 
 const ROOT = resolve(import.meta.dirname, "../..");
@@ -36,8 +36,8 @@ function clearings(blocked: [number, number][] = []): MapInfo[] {
   });
 }
 
-test("the prototype's four challenges are rooms, written back as they are, and valid", () => {
-  assert.deepEqual(files.map((f) => f.replace(/^.*\//, "")), ["darkrai.json", "dialga.json", "ho_oh.json", "rayquaza_raid.json"]);
+test("the real rooms are written back as they are, and valid", () => {
+  assert.deepEqual(files.map((f) => f.replace(/^.*\//, "")), ["darkrai.json", "dialga.json", "ho_oh.json", "prince_or_princess.json", "rayquaza_raid.json", "time_and_space.json"]);
   for (const file of files) {
     const text = readFileSync(join(ROOT, file), "utf8");
     const data = parseJson(text);
@@ -48,10 +48,17 @@ test("the prototype's four challenges are rooms, written back as they are, and v
     assert.deepEqual(buildCheck(join(ROOT, file)), { ok: true }, file);
     assert.deepEqual(checkRoom(readRoom(data), constants, clearings()), [], file);
   }
-  const rooms = files.map((f) => ({ id: f, room: readRoom(parseJson(readFileSync(join(ROOT, f), "utf8"))) }));
+  const rooms = files.map((f) => ({ id: f.replace(/^.*\//, "").replace(/\.json$/, ""), room: readRoom(parseJson(readFileSync(join(ROOT, f), "utf8"))) }));
   assert.equal(rooms.filter((r) => r.room.role === "final").length, 1);
-  // The prototype has no bosses yet
-  assert.deepEqual(checkRooms(rooms), ["Round 1 has no boss to end it.", "Round 2 has no boss to end it."]);
+  assert.deepEqual(checkRooms(rooms), []);
+  // The run: 3 rounds of 3 rooms from 3 generic ones, so rooms repeat (a warning, as the build prints it)
+  const run = readRun(parseJson(readFileSync(join(ROOT, "res/paperwhite2/entralink/run.json"), "utf8")));
+  assert.deepEqual(runProblems(run, rooms), [{ severity: "warning",
+    message: "The rounds draw 9 rooms from 3, so rooms come up more than once in a run (the least used first, never twice in a row)." }]);
+  assert.equal(roundSummary(rooms, 1, run.rounds[0], false),
+    "Round 1: 3 rooms, then a boss (1 round-1 boss room) - 3 generic rooms + 0 round-1 rooms can be drawn");
+  assert.equal(roundSummary(rooms, 3, run.rounds[2], true),
+    "Round 3: 3 rooms, then the final room (1 final room) - 3 generic rooms + 0 round-3 rooms can be drawn");
 });
 
 test("a new room, edited, saves in the data tools' layout and passes the build's check", () => {
@@ -125,11 +132,29 @@ test("the checks", () => {
   const unsprited = { ...base, battles: [{ id: "battle", format: "single" as const, enemies: [{ species: "SPECIES_NONE" }] }], npcs: [npc] };
   assert.match(messages(unsprited)[0], /has no walking sprite/);
   assert.deepEqual(messages({ ...unsprited, npcs: [{ ...npc, sprite: "OBJ_CODE_LADY" }] }), []);
-  // Over all rooms
-  assert.deepEqual(checkRooms([{ id: "a", room: { ...base, rounds: [1] } }]), [
-    "No room is the final room: a run has no end.", "Round 1 has no boss to end it.", "Round 2 has no rooms.", "Round 2 has no boss to end it.", "Round 3 has no rooms.",
+  // Over all rooms: the run's draw, as the build checks it
+  const run = { rounds: [{ rooms: 2, boss: true }, { rooms: 1, boss: true }, { rooms: 1, boss: false }], roomMaps: [] };
+  const messagesOf = (rooms: { id: string; room: Room }[], r = run) => runProblems(r, rooms).map((p) => `${p.severity}: ${p.message}`);
+  assert.deepEqual(messagesOf([{ id: "a", room: { ...base, rounds: [1] } }]), [
+    "error: No room is the final room, which every run ends with.",
+    "warning: Round 1 draws 2 rooms, but only a can come up in it: it comes up each time, twice in a row.",
+    "error: Round 1 ends with a boss, but no boss room can come up in it (role boss, kept to it or to no round).",
+    "error: Round 2 draws 1 room, but no room can come up in it (role room, any round or round 2).",
+    "error: Round 2 ends with a boss, but no boss room can come up in it (role boss, kept to it or to no round).",
+    "error: Round 3 draws 1 room, but no room can come up in it (role room, any round or round 3).",
+    "warning: The rounds draw 2 rooms from 1, so rooms come up more than once in a run (the least used first, never twice in a row).",
   ]);
-  assert.deepEqual(checkRooms([{ id: "a", room: base }, { id: "b", room: { ...base, role: "boss" } }, { id: "c", room: { ...base, role: "final" } }]), []);
+  const full = [{ id: "a", room: base }, { id: "a2", room: base }, { id: "b", room: { ...base, role: "boss" as const } }, { id: "c", room: { ...base, role: "final" as const } }];
+  assert.deepEqual(messagesOf(full), [
+    "warning: The rounds draw 4 rooms from 2, so rooms come up more than once in a run (the least used first, never twice in a row).",
+    "warning: The run has 2 bosses from 1 boss room, so a boss comes up twice.",
+  ]);
+  // A boss kept to round 1 ends it; round 2 has none of its own, so it takes the generic one
+  const kept = [...full, { id: "k", room: { ...base, role: "boss" as const, rounds: [1 as const] } }];
+  assert.deepEqual(messagesOf(kept, { ...run, rounds: [{ rooms: 1, boss: true }, { rooms: 1, boss: true }] }), []);
+  assert.deepEqual(messagesOf(full, { ...run, rounds: [{ rooms: 1, boss: false }, { rooms: 1, boss: false }, { rooms: 0, boss: true }] }),
+    ["error: Round 3 can't end with a boss: the final room ends it."]);
+  assert.deepEqual(checkRooms(full), []);
 });
 
 test("new NPCs, IDs and the clearings' shared exits", () => {
@@ -143,4 +168,13 @@ test("new NPCs, IDs and the clearings' shared exits", () => {
     assert.ok(c.exits.length > 0, c.zone);
     for (const e of c.exits) assert.deepEqual([e.x, e.z], { up: [15, 9], down: [15, 24], left: [5, 15], right: [26, 15] }[e.side], c.zone);
   }
+});
+
+test("a message's window style is read, written in the schema's order and valid", () => {
+  let data = newRoomData("Styles");
+  data = setIn(data, ["npcs", 0, "dialogue"], fromPlain({ before: "Halt!", after: "Well fought.", before_style: "yell", after_style: "event" }));
+  assert.deepEqual(readRoom(data).npcs[0].dialogue, { before: "Halt!", after: "Well fought.", beforeStyle: "yell", afterStyle: "event" });
+  const real = (d: JsonValue) => errors(d).filter((e) => !e.endsWith("progress_id is missing"));
+  assert.deepEqual(real(data), []);
+  assert.equal(real(setIn(data, ["npcs", 0, "dialogue", "before_style"], "whisper")).length, 1);
 });

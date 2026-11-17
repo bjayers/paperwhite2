@@ -31,6 +31,10 @@
     }
   },
   "$defs": {
+    "message_style": {
+      "enum": [ "talk", "bubble", "yell", "event" ],
+      "description": "The window its message shows in: talk (the default), the talk balloon with its tail at the NPC (ActorMsg); bubble, the tailless balloon across the bottom of the screen (InfoMsg); yell, the spiky balloon at the NPC, which shakes (ActorMsg's spiky frame); event, the system window (SystemMsg)"
+    },
     "battle": {
       "type": "object",
       "additionalProperties": false,
@@ -120,7 +124,9 @@
           "description": "What it says, in the text files' codes ({be01} a wait, {be00} a new page after one, ...); the build compiles every room's into a text bank. Missing or empty: nothing",
           "properties": {
             "before": { "type": "string", "x-message": "game", "description": "On talking to it; a battle NPC's before its battle starts" },
-            "after": { "type": "string", "x-message": "game", "description": "A battle NPC's, after its battle is won, before the room opens; other types ignore it" }
+            "after": { "type": "string", "x-message": "game", "description": "A battle NPC's, after its battle is won, before the room opens; other types ignore it" },
+            "before_style": { "$ref": "#/$defs/message_style" },
+            "after_style": { "$ref": "#/$defs/message_style" }
           }
         }
       }

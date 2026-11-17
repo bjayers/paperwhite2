@@ -1,12 +1,13 @@
 // One message typed straight into a data file (an Entralink room's NPC dialogue; later the Overworld Editor's NPCs),
 // with no text bank to manage: the build compiles it. Its buttons at the top add a wait or a new page where the caret
 // is and fit the message to the window (message.ts, fitMessage); under the box, what the game would show wrongly (a
-// line too wide, a line that scrolls away unread) and the talk window's preview (TextBox.tsx). The message is in the
-// text files' codes, with real line breaks as the JSON files keep them. Reusable: <DialogueField value onChange />.
+// line too wide, a line that scrolls away unread) and the preview of its window (TextBox.tsx, look). The message is in the
+// text files' codes, with real line breaks as the JSON files keep them. Reusable: <DialogueField value onChange />;
+// actions puts a row of the page's own controls above the buttons (the Entree page's window style).
 
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, type ReactNode } from "react";
 import { checkMessage, fitMessage } from "./message.ts";
-import { TextBox, useMessageFont } from "./TextBox.tsx";
+import { TextBox, useMessageFont, type BoxLook } from "./TextBox.tsx";
 
 export interface DialogueInsert {
   label: string;
@@ -23,7 +24,7 @@ export const DIALOGUE_INSERTS: DialogueInsert[] = [
 
 const NO_WORDS: Record<number, string> = {};
 
-export function DialogueField({ value, onChange, placeholder, words = NO_WORDS, inserts = DIALOGUE_INSERTS }: {
+export function DialogueField({ value, onChange, placeholder, words = NO_WORDS, inserts = DIALOGUE_INSERTS, look, actions }: {
   /** The message; "" for none. */
   value: string;
   onChange(text: string): void;
@@ -31,6 +32,10 @@ export function DialogueField({ value, onChange, placeholder, words = NO_WORDS, 
   /** Sample words for the word set's buffers, for the preview and the widths. */
   words?: Record<number, string>;
   inserts?: DialogueInsert[];
+  /** The window the preview draws (TextBox's look). Every field window is 30 by 4 tiles, so the widths are the same. */
+  look?: BoxLook;
+  /** More controls at the end of the buttons' row (a style picker). */
+  actions?: ReactNode;
 }) {
   const box = useRef<HTMLTextAreaElement>(null);
   const font = useMessageFont();
@@ -51,6 +56,7 @@ export function DialogueField({ value, onChange, placeholder, words = NO_WORDS, 
 
   return (
     <div className="dialogue-field">
+      {actions && <div className="dialogue-actions">{actions}</div>}
       <div className="dialogue-actions">
         {inserts.map((i) => <button key={i.label} title={i.title} onClick={() => insert(i.code)}>+ {i.label}</button>)}
         <span className="spacer" />
@@ -66,7 +72,7 @@ export function DialogueField({ value, onChange, placeholder, words = NO_WORDS, 
           {problems.map((p, i) => <li key={i}>{p.message}</li>)}
         </ul>
       )}
-      {value && <TextBox text={value} words={words} />}
+      {value && <TextBox text={value} words={words} look={look} />}
     </div>
   );
 }

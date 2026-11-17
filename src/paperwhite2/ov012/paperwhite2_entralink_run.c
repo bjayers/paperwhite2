@@ -1,10 +1,12 @@
 #include "types.h"
 #include "battle/btl_result.h"
 #include "battle/btl_setup.h"
+#include "constants/arc.h"
 #include "constants/battle.h"
 #include "constants/directions.h"
 #include "constants/moves.h"
 #include "constants/pokemon.h"
+#include "constants/script_text_banks.h"
 #include "constants/zones.h"
 #include "field/entree_forest.h"
 #include "field/event_battle.h"
@@ -14,8 +16,11 @@
 #include "field/field_actor.h"
 #include "field/field_event.h"
 #include "field/field_script.h"
+#include "field/scrcmd_msg.h"
+#include "field/talkmsgwin.h"
 #include "field/zone.h"
 #include "gfl/heap.h"
+#include "gfl/msg.h"
 #include "gfl/random.h"
 #include "paperwhite2/entralink_progress.h"
 #include "paperwhite2/entralink_run.h"
@@ -32,6 +37,7 @@
 #include "system/game_system.h"
 #include "system/tpoke_data.h"
 #include "system/vm.h"
+#include "system/wordset.h"
 
 // Paper White 2: the Entralink roguelike, in overlay 12 beside the Entree Forest's script commands. See
 // include/paperwhite2/entralink_run.h and docs/paperwhite2/design/entralink-roguelike-prototype.md
@@ -44,6 +50,13 @@
 #define RAID_CENTER_SLOT 1
 // No room is drawn
 #define ROOM_NONE 0xff
+// More uses than any room has in a run
+#define USES_NONE 0xff
+// The rooms a room of a round is drawn from: those kept to the round or to none, only those kept to it, or only those
+// kept to none
+#define POOL_ANY 0
+#define POOL_KEPT 1
+#define POOL_GENERIC 2
 
 // Where a room is entered: its bottom exit, as from the hub (entree_forest_first_warp.c), the one exit every room has
 static const VecFx32 sRoomArrivalPos = { FX32_CONST(248), 0, FX32_CONST(376) };
@@ -93,33 +106,72 @@ static const EntralinkRoom *EntralinkRun_GetRoom(void) {
     return &sRooms[state->order[state->room - 1]];
 }
 
-// A room of a role at random among those that can come up in a round (round 0: any) and aren't in the run yet, or
-// ROOM_NONE
-static u32 EntralinkRun_DrawRoom(EntralinkRunState *state, u32 role, u32 round) {
-    BOOL used[ENTRALINK_RUN_ROOM_COUNT];
+// Whether a room is of a role and fits a round (round 0: any) as a pool takes them: kept to the round, kept to no
+// round (generic), or either
+static BOOL EntralinkRun_IsInPool(u32 index, u32 role, u32 round, u32 pool) {
+    const EntralinkRoom *room = &sRooms[index];
+    BOOL kept;
+
+    if (room->role != role) {
+        return FALSE;
+    }
+    if (round == 0) {
+        return TRUE;
+    }
+    kept = (room->rounds & (1 << (round - 1))) != 0;
+    switch (pool) {
+    case POOL_KEPT:
+        return kept;
+    case POOL_GENERIC:
+        return room->rounds == 0;
+    }
+    return kept || room->rounds == 0;
+}
+
+// Whether a room can be drawn next: in the pool, not the room just before, and among the least used so far
+static BOOL EntralinkRun_IsDrawable(u32 index, u32 role, u32 round, u32 pool, u32 previous, const u8 *uses,
+                                    u32 fewest) {
+    return index != previous && uses[index] == fewest && EntralinkRun_IsInPool(index, role, round, pool);
+}
+
+// A room of a role for a round from a pool, at random among those other than the room just before that have come up
+// the fewest times in the run so far: so no room comes up twice while one that fits hasn't come up, and none twice in
+// a row unless it is the only one that fits. ROOM_NONE if none fits
+static u32 EntralinkRun_DrawRoom(EntralinkRunState *state, u32 role, u32 round, u32 pool) {
+    u8 uses[ENTRALINK_RUN_ROOM_COUNT];
+    u32 previous = ROOM_NONE;
+    u32 fewest = USES_NONE;
     u32 count = 0;
     u32 pick;
     u32 i;
 
-    for (i = 0; i < ENTRALINK_RUN_ROOM_COUNT; i++) {
-        used[i] = FALSE;
-    }
+    MI_CpuFill8(uses, 0, sizeof(uses));
     for (i = 0; i < state->roomCount; i++) {
-        used[state->order[i]] = TRUE;
+        uses[state->order[i]]++;
+    }
+    if (state->roomCount != 0) {
+        previous = state->order[state->roomCount - 1];
     }
     for (i = 0; i < ENTRALINK_RUN_ROOM_COUNT; i++) {
-        if (!used[i] && sRooms[i].role == role &&
-            (round == 0 || sRooms[i].rounds == 0 || (sRooms[i].rounds & (1 << (round - 1))))) {
+        if (i != previous && uses[i] < fewest && EntralinkRun_IsInPool(i, role, round, pool)) {
+            fewest = uses[i];
+        }
+    }
+    if (fewest == USES_NONE) {
+        // Only the room just before fits, or none
+        if (previous != ROOM_NONE && EntralinkRun_IsInPool(previous, role, round, pool)) {
+            return previous;
+        }
+        return ROOM_NONE;
+    }
+    for (i = 0; i < ENTRALINK_RUN_ROOM_COUNT; i++) {
+        if (EntralinkRun_IsDrawable(i, role, round, pool, previous, uses, fewest)) {
             count++;
         }
     }
-    if (count == 0) {
-        return ROOM_NONE;
-    }
     pick = GFL_RandomLC(count);
     for (i = 0; i < ENTRALINK_RUN_ROOM_COUNT; i++) {
-        if (!used[i] && sRooms[i].role == role &&
-            (round == 0 || sRooms[i].rounds == 0 || (sRooms[i].rounds & (1 << (round - 1))))) {
+        if (EntralinkRun_IsDrawable(i, role, round, pool, previous, uses, fewest)) {
             if (pick == 0) {
                 break;
             }
@@ -129,13 +181,29 @@ static u32 EntralinkRun_DrawRoom(EntralinkRunState *state, u32 role, u32 round) 
     return i;
 }
 
+// The pool a round's room of a role is drawn from: a round's rooms from those kept to it and the generic ones, its boss
+// from the bosses kept to it if there are any, else the generic ones
+static u32 EntralinkRun_GetPool(u32 role, u32 round) {
+    u32 i;
+
+    if (role != ENTRALINK_ROLE_BOSS) {
+        return POOL_ANY;
+    }
+    for (i = 0; i < ENTRALINK_RUN_ROOM_COUNT; i++) {
+        if (EntralinkRun_IsInPool(i, role, round, POOL_KEPT)) {
+            return POOL_KEPT;
+        }
+    }
+    return POOL_GENERIC;
+}
+
 static void EntralinkRun_AddRoom(EntralinkRunState *state, u32 role, u32 round) {
     u32 room;
 
     if (state->roomCount >= ENTRALINK_RUN_ROOMS_MAX) {
         return;
     }
-    room = EntralinkRun_DrawRoom(state, role, round);
+    room = EntralinkRun_DrawRoom(state, role, round, EntralinkRun_GetPool(role, round));
     if (room != ROOM_NONE) {
         state->order[state->roomCount++] = room;
     }
@@ -471,6 +539,36 @@ static u16 EntralinkRun_GetDialogue(const EntralinkNpc *npc, u32 after) {
     return after ? npc->after : npc->before;
 }
 
+// Shows the talked-to NPC's message (after: its after one) in its style's window: over the NPC (talk, yell), across
+// the bottom of the screen (bubble), or the system window (event), with the script's words as it set them, and has the
+// script wait for it to print. FALSE (no wait) if it has none
+static BOOL EntralinkRun_ShowDialogue(VM *vm, FieldScriptEnv *env, const EntralinkNpc *npc, u32 after) {
+    ScriptWork *work = FieldScriptEnv_GetScriptWork(env);
+    StrBuf *message = ScriptWork_GetMainStrBuf(work);
+    StrBuf *text = ScriptWork_GetAltStrBuf(work);
+    u16 msgId = EntralinkRun_GetDialogue(npc, after);
+    u16 actorId = EntralinkRun_GetState()->talkedNpc;
+    MsgData *msgData;
+
+    if (msgId == ENTRALINK_RUN_NO_MESSAGE) {
+        return FALSE;
+    }
+    msgData =
+        GFL_MsgSysLoadData(FALSE, ARCID_SCRIPT_MESSAGE, SCRIPT_TEXT_ENTRALINK_DIALOGUE, FieldScriptEnv_GetHeapID(env));
+    GFL_MsgDataLoadStrbuf(msgData, msgId, text);
+    GFL_MsgDataFree(msgData);
+    GFL_WordSetFormatStrbuf(ScriptWork_GetWordSet(work), message, text);
+    switch (after ? npc->afterStyle : npc->beforeStyle) {
+    case ENTRALINK_STYLE_BUBBLE:
+        return loadMsgBox(vm, env, message, TALKMSG_WIN_FRAME_NORMAL, MSG_WIN_POS_BOTTOM);
+    case ENTRALINK_STYLE_YELL:
+        return CallFieldActorMessageDispStrBuf(vm, env, message, actorId, MSG_WIN_POS_AUTO, TALKMSG_WIN_FRAME_SPIKY);
+    case ENTRALINK_STYLE_EVENT:
+        return PaperWhite2_SystemMsgStrBuf(vm, env, message, MSG_WIN_POS_BOTTOM);
+    }
+    return CallFieldActorMessageDispStrBuf(vm, env, message, actorId, MSG_WIN_POS_AUTO, TALKMSG_WIN_FRAME_NORMAL);
+}
+
 // Gives an item NPC's item into the run's bag, and takes the NPC away
 static BOOL EntralinkRun_GiveItem(GameSystem *gsys, const EntralinkNpc *npc, HeapID heapId) {
     if (npc == NULL || !BagSave_AddItem(GameData_GetBag(GSYS_GetGameData(gsys)), npc->item, npc->count, heapId)) {
@@ -522,6 +620,9 @@ BOOL Scrcmd_PaperWhite2_EntralinkRun(VM *vm, FieldScriptEnv *env) {
     case ENTRALINK_RUN_ACTION_DIALOGUE:
         *result = EntralinkRun_GetDialogue(npc, arg);
         return FALSE;
+    case ENTRALINK_RUN_ACTION_SHOW_DIALOGUE:
+        *result = EntralinkRun_GetDialogue(npc, arg);
+        return EntralinkRun_ShowDialogue(vm, env, npc, arg);
     case ENTRALINK_RUN_ACTION_BATTLE:
         if (battle == NULL) {
             return FALSE;

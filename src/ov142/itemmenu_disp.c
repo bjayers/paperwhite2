@@ -53,7 +53,15 @@
 // Paper White 2: the type labels are by slot, the Fairy type's in slot 17 (paperwhite2/type_chart.h)
 #define ITEMMENU_TYPE_SLOT(type) PaperWhite2_TypeSlot(type)
 #define ITEMMENU_SLOT_TYPE(slot) PaperWhite2_SlotType(slot)
+// Paper White 2: the lower screen's OBJ palette of the greyed pocket tabs (ItemMenuDisp_GreyPocketTab), which the bag
+// leaves free, and the OBJ palettes dimmed behind a menu, that one too
+#define ITEMMENU_GREY_TAB_PLTT 15
+// Paper White 2: the OBJ palette of the pocket tabs' first (ItemMenuDisp_LoadPocketTabRes loads them at 0xc0), which
+// the renderer adds to an actor's palette
+#define ITEMMENU_POCKET_TAB_PLTT 6
+#define ITEMMENU_DIMMED_OBJ_PLTTS (0x47cf | (1 << ITEMMENU_GREY_TAB_PLTT))
 #else
+#define ITEMMENU_DIMMED_OBJ_PLTTS 0x47cf
 #define ITEMMENU_TYPE_SLOT(type) (type)
 #define ITEMMENU_SLOT_TYPE(slot) (slot)
 #endif
@@ -1026,6 +1034,31 @@ void ItemMenuDisp_SetPocketTab(ItemMenuWork *work, u32 pocket) {
     }
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: greys out a pocket's tab, for a pocket the bag doesn't show (an Entralink run's TMs and Key Items):
+// the tab takes a grey copy of the tabs' first palette (the one of the tabs not picked; ItemMenuDisp_LoadPocketTabRes's
+// file for the player's gender) in an OBJ palette the bag leaves free, as the GTS dims the icons that can't be picked
+// (worldtrade.c). The tab is never picked, since the bag never goes to its pocket
+void ItemMenuDisp_GreyPocketTab(ItemMenuWork *work, u32 pocket) {
+    NNSG2dPaletteData *palette;
+    void *file =
+        GFL_G2DIOReadNCLR(ARCID_ITEMMENU, getTrainerGender(work->playerInfo) == 0 ? 16 : 12, &palette, work->heapId);
+    u16 *colors = palette->pRawData;
+    u32 grey;
+    u32 i;
+
+    for (i = 0; i < 16; i++) {
+        grey = (((colors[i] >> 10) & 0x1f) + ((colors[i] >> 5) & 0x1f) + (colors[i] & 0x1f)) / 3;
+        grey = grey * 3 / 4;
+        colors[i] = (grey << 10) | (grey << 5) | grey;
+    }
+    DC_FlushRange(colors, 0x20);
+    GX_LoadOBJPltt(colors, ITEMMENU_GREY_TAB_PLTT * 0x20, 0x20);
+    GFL_HeapFree(file);
+    ClActor_SetPalette(work->pocketTabs[pocket], ITEMMENU_GREY_TAB_PLTT - ITEMMENU_POCKET_TAB_PLTT, 1);
+}
+#endif
+
 void ItemMenuDisp_ClearMsgWindow(ItemMenuWork *work) {
     BmpWin_ClearFrame(work->msgWindow.window, WINFRAME_TRANSFER_VBLANK);
 }
@@ -1414,7 +1447,7 @@ void ItemMenuDisp_SetButtonsActive(ItemMenuWork *work, BOOL active) {
     work->buttonsActive = active;
     registered = GameData_IsShortcutRegistered(work->gameData, ItemMenuDisp_GetPocketShortcut(work->pocket));
     if (active == TRUE) {
-        PaletteFade_StartFade(work->paletteFade, 4, 0x47cf, 0, 0, 0, 0, GFL_VBlankGetTCBMgr());
+        PaletteFade_StartFade(work->paletteFade, 4, ITEMMENU_DIMMED_OBJ_PLTTS, 0, 0, 0, 0, GFL_VBlankGetTCBMgr());
         PaletteFade_StartFade(work->paletteFade, 1, 1, 0, 0, 0, 0, GFL_VBlankGetTCBMgr());
         G2x_SetBlendBrightness_(REG_BLDCNT_ADDR, 6, 0);
         ItemMenuDisp_UpdateSortButton(work);
@@ -1429,7 +1462,7 @@ void ItemMenuDisp_SetButtonsActive(ItemMenuWork *work, BOOL active) {
         ItemMenuDisp_SetBackButtonActive(work, TRUE);
     } else {
         PaletteFade_LoadFromVRAM(work->paletteFade, 2, 0, 0x200);
-        PaletteFade_StartFade(work->paletteFade, 4, 0x47cf, 0, 8, 8, 0, GFL_VBlankGetTCBMgr());
+        PaletteFade_StartFade(work->paletteFade, 4, ITEMMENU_DIMMED_OBJ_PLTTS, 0, 8, 8, 0, GFL_VBlankGetTCBMgr());
         PaletteFade_StartFade(work->paletteFade, 1, 1, 0, 8, 8, 0, GFL_VBlankGetTCBMgr());
         if (work->mode == 4 && ClActor_IsVisible(work->buttons[0]) == FALSE) {
             G2x_SetBlendBrightness_(REG_BLDCNT_ADDR, 2, -8);

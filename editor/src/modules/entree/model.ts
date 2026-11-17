@@ -93,7 +93,18 @@ export interface Enemy {
 export interface Battle { id: string; progressId?: number; format: Format; enemies: Enemy[] }
 
 /** What an NPC says: before (on talking; a battle NPC's before its battle) and after (a battle NPC's, once won). */
-export interface Dialogue { before?: string; after?: string }
+export interface Dialogue { before?: string; after?: string; beforeStyle?: MessageStyle; afterStyle?: MessageStyle }
+
+/** The window a message shows in (room.schema.json's message_style; talk when left out). */
+export const MESSAGE_STYLES = ["talk", "bubble", "yell", "event"] as const;
+export type MessageStyle = (typeof MESSAGE_STYLES)[number];
+export const MESSAGE_STYLE_NOTES: Record<MessageStyle, string> = {
+  talk: "The talk balloon, its tail at the NPC (ActorMsg)",
+  bubble: "The balloon across the bottom of the screen, with no tail (InfoMsg)",
+  yell: "The spiky balloon at the NPC, which shakes as it opens (ActorMsg's spiky frame)",
+  event: "The system window, for narration (SystemMsg)",
+};
+const messageStyle = (v: JsonValue | undefined): MessageStyle | undefined => (MESSAGE_STYLES.includes(v as MessageStyle) ? v as MessageStyle : undefined);
 
 export interface Npc {
   type: NpcType;
@@ -163,7 +174,11 @@ export function readRoom(data: JsonValue | null | undefined): Room {
         battle: str(nm.get("battle")), enemy: num(nm.get("enemy")), item: str(nm.get("item")), count: num(nm.get("count")),
         sprite: str(nm.get("sprite")), requires: asList(nm.get("requires")).map(String), chance: num(nm.get("chance")),
         x: num(nm.get("x")) ?? 0, z: num(nm.get("z")) ?? 0, facing: str(nm.get("facing")) ?? "DIR_DOWN",
-        dialogue: d instanceof Map ? { before: str(d.get("before")), after: str(d.get("after")) } : undefined,
+        dialogue: d instanceof Map ? {
+          before: str(d.get("before")), after: str(d.get("after")),
+          ...(messageStyle(d.get("before_style")) && { beforeStyle: messageStyle(d.get("before_style")) }),
+          ...(messageStyle(d.get("after_style")) && { afterStyle: messageStyle(d.get("after_style")) }),
+        } : undefined,
       };
     }),
   };
@@ -304,14 +319,85 @@ export const clearingName = (zone: string) => zone.replace(/^ZONE_/, "").toLower
 /** Whether a room can come up in a round: kept to none (any round) or to that one. */
 export const inRound = (room: Room, round: Round) => !room.rounds.length || room.rounds.includes(round);
 
-/** The checks over all the rooms: a run needs a final room, each round rooms, and rounds 1 and 2 a boss to end them. */
+// ---- The run: run.json's rounds and how the game draws their rooms --------------------------------------------------
+
+/** The rooms of a run, the final's included (the game's ENTRALINK_RUN_ROOMS_MAX). */
+export const RUN_ROOMS_MAX = 15;
+
+export interface RunRound { rooms: number; boss: boolean }
+export interface RunLayout { rounds: RunRound[]; roomMaps: string[]; finalMap?: string }
+
+/** run.json's data as plain records. */
+export function readRun(data: JsonValue | null | undefined): RunLayout {
+  const m = asMap(data ?? undefined);
+  return {
+    rounds: asList(m.get("rounds")).map((r) => { const rm = asMap(r); return { rooms: num(rm.get("rooms")) ?? 0, boss: rm.get("boss") === true }; }),
+    roomMaps: asList(m.get("room_maps")).map(String),
+    finalMap: str(m.get("final_map")),
+  };
+}
+
+/** The rooms (role room) a round draws from: the generic ones (any round) and those kept to it. */
+export function roomPool(rooms: { id: string; room: Room }[], round: Round): { generic: string[]; kept: string[] } {
+  const fit = rooms.filter((r) => r.room.role === "room" && inRound(r.room, round));
+  return { generic: fit.filter((r) => !r.room.rounds.length).map((r) => r.id), kept: fit.filter((r) => r.room.rounds.length).map((r) => r.id) };
+}
+
+/** The boss rooms a round's boss is drawn from: those kept to it, else the generic ones. */
+export function bossPool(rooms: { id: string; room: Room }[], round: Round): { ids: string[]; kept: boolean } {
+  const kept = rooms.filter((r) => r.room.role === "boss" && r.room.rounds.includes(round)).map((r) => r.id);
+  if (kept.length) return { ids: kept, kept: true };
+  return { ids: rooms.filter((r) => r.room.role === "boss" && !r.room.rounds.length).map((r) => r.id), kept: false };
+}
+
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+/** A round's line for the Run section, e.g. "Round 1: 3 rooms, then a boss (1 round-1 boss room) - 3 generic rooms +
+ * 0 round-1 rooms can be drawn". last: the run's last round, which the final room ends. */
+export function roundSummary(rooms: { id: string; room: Room }[], round: Round, r: RunRound, last: boolean): string {
+  const pool = roomPool(rooms, round);
+  const finals = rooms.filter((x) => x.room.role === "final").length;
+  const bosses = bossPool(rooms, round);
+  const end = (r.boss && round < 3 ? `, then a boss (${plural(bosses.ids.length, bosses.kept ? `round-${round} boss room` : "generic boss room")})` : "")
+    + (last ? `, then the final room (${plural(finals, "final room")})` : "");
+  return `Round ${round}: ${plural(r.rooms, "room")}${end} - ${plural(pool.generic.length, "generic room")} + ${plural(pool.kept.length, `round-${round} room`)} can be drawn`;
+}
+
+/** The checks of the run's draw, as tools/paperwhite2/entralink_run.py's draw_problems makes them (the build fails on
+ * the errors and prints the warnings). The game draws each room from its round's pool, one of the least used so far
+ * other than the room just before, so too few rooms only means repeats: a warning. */
+export function runProblems(run: RunLayout, rooms: { id: string; room: Room }[]): { severity: Severity; message: string }[] {
+  const out: { severity: Severity; message: string }[] = [];
+  const add = (severity: Severity, message: string) => out.push({ severity, message });
+  if (!rooms.some((r) => r.room.role === "final")) add("error", "No room is the final room, which every run ends with.");
+  let drawn = 0, bosses = 0;
+  const roomNames = new Set<string>(), bossNames = new Set<string>();
+  run.rounds.forEach((r, i) => {
+    const round = (i + 1) as Round;
+    if (r.boss && round === 3) add("error", "Round 3 can't end with a boss: the final room ends it.");
+    const pool = roomPool(rooms, round);
+    const ids = [...pool.generic, ...pool.kept];
+    if (r.rooms && !ids.length) add("error", `Round ${round} draws ${plural(r.rooms, "room")}, but no room can come up in it (role room, any round or round ${round}).`);
+    else if (ids.length === 1 && r.rooms > 1) add("warning", `Round ${round} draws ${r.rooms} rooms, but only ${ids[0]} can come up in it: it comes up each time, twice in a row.`);
+    else if (r.rooms > ids.length) add("warning", `Round ${round} draws ${r.rooms} rooms, but only ${ids.length} can come up in it: some come up more than once (never twice in a row).`);
+    if (r.rooms && ids.length) { drawn += r.rooms; ids.forEach((id) => roomNames.add(id)); }
+    if (r.boss && round < 3) {
+      const b = bossPool(rooms, round);
+      if (!b.ids.length) add("error", `Round ${round} ends with a boss, but no boss room can come up in it (role boss, kept to it or to no round).`);
+      bosses++;
+      b.ids.forEach((id) => bossNames.add(id));
+    }
+  });
+  const total = run.rounds.reduce((n, r) => n + r.rooms + (r.boss ? 1 : 0), 0) + 1;
+  if (total > RUN_ROOMS_MAX) add("error", `The rounds have ${total} rooms with the final one, more than ${RUN_ROOMS_MAX}.`);
+  if (roomNames.size && drawn > roomNames.size) add("warning", `The rounds draw ${drawn} rooms from ${roomNames.size}, so rooms come up more than once in a run (the least used first, never twice in a row).`);
+  if (bossNames.size && bosses > bossNames.size) add("warning", `The run has ${bosses} bosses from ${plural(bossNames.size, "boss room")}, so a boss comes up twice.`);
+  return out;
+}
+
+/** The checks over all the rooms beyond the run's (runProblems): a room called "run", and progress ids shared. */
 export function checkRooms(rooms: { id: string; room: Room }[]): string[] {
   const out: string[] = [];
-  if (!rooms.some((r) => r.room.role === "final")) out.push("No room is the final room: a run has no end.");
-  for (const round of ROUNDS) {
-    if (!rooms.some((r) => r.room.role === "room" && inRound(r.room, round))) out.push(`Round ${round} has no rooms.`);
-    if (round < 3 && !rooms.some((r) => r.room.role === "boss" && inRound(r.room, round))) out.push(`Round ${round} has no boss to end it.`);
-  }
   if (rooms.some((r) => r.id === RUN_COMPLETED.split("/")[0])) out.push(`A room is called "run", which "${RUN_COMPLETED}" (a finished run) would mistake for it: rename it.`);
   // The save's bits: two battles or two catches with one number would share their progress
   const seen = new Map<string, string>();

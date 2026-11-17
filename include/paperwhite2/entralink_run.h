@@ -34,6 +34,14 @@
 #define ENTRALINK_NPC_REST 2
 #define ENTRALINK_NPC_BUFF 3
 
+// The window an NPC's message shows in: the talk balloon with its tail at the NPC (ActorMsg), the tailless balloon
+// across the bottom of the screen (InfoMsg), the spiky balloon at the NPC (ActorMsg's spiky frame), or the system
+// window (SystemMsg)
+#define ENTRALINK_STYLE_TALK 0
+#define ENTRALINK_STYLE_BUBBLE 1
+#define ENTRALINK_STYLE_YELL 2
+#define ENTRALINK_STYLE_EVENT 3
+
 // A room's weather when its battles keep the field's
 #define ENTRALINK_WEATHER_FIELD 0xff
 // An enemy's ability when it keeps one of its species' two by its PID, and when it has its hidden one
@@ -101,6 +109,9 @@ typedef struct {
     u8 z;
     u8 direction;
     u8 requirementCount;
+    // Its messages' windows, ENTRALINK_STYLE_*
+    u8 beforeStyle;
+    u8 afterStyle;
 } EntralinkNpc;
 
 typedef struct {

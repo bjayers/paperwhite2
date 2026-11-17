@@ -2,6 +2,31 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-16: the Entralink roguelike's step 4, game and editor (ROM session, on a branch)
+
+`docs/paperwhite2/design/entralink-roguelike-prototype.md`, "Step 4", has the design and the proof.
+
+- **The run:** `run.json` is 3 rounds of 3 rooms, rounds 1 and 2 ending in a boss, then the final (12 rooms). The
+  user's rooms are in: Prince or Princess (generic), Seaside Gales (`ho_oh.json`, round-1 boss), Time and Space
+  (round-2 boss). **The draw** now repeats rooms when it must: each place takes, at random, one of the least used
+  fitting rooms other than the room just before (so no repeat while an unused room fits, never twice in a row unless a
+  round has one room); a round's boss comes from the bosses kept to it, else the generic ones. The packer and the
+  editor agree: errors only for a round with no room, a boss round with no boss, no final; warnings for repeats.
+- **Window styles** for room dialogue, per message (`before_style`, `after_style`): talk (`ActorMsg`), bubble
+  (`InfoMsg`), yell (`ActorMsg`'s spiky frame), event (`SystemMsg`, through a new `PaperWhite2_SystemMsgStrBuf` in
+  `scrcmd_msg.c`); one generic script path (`ENTRALINK_RUN_ACTION_SHOW_DIALOGUE`, then `MsgWinCloseAll`).
+- **The bag:** in a run the TMs, Key Items and Free Space pocket buttons are greyed (a grey palette in the lower
+  screen's free OBJ palette 15).
+- **Editor:** the Entree page's Run section has Rounds (add/remove, rooms, boss, the live pool summary), the maps read
+  only, the draw's checks, and Hide; each dialogue box a Window switch, its preview drawn in that window
+  (`TextBox`'s new `look`: talk and yell with their tail, the spiky frame, the dark system window).
+- **Tested** (py-desmume): ten seeded draws all right and all different; a full run (below); each style on screen;
+  the greyed buttons. Packer tests, editor tests (233), DSi check. The full run went through all 12 rooms in order to
+  the hub (the two boss rooms opened by poking, the harness can't win double or triple battles).
+- **For the user:** the room data came from your uncommitted edits in the main checkout (`ho_oh.json` as Seaside Gales,
+  `prince_or_princess.json`, `time_and_space.json`, `progress_ids.json`); Prince or Princess is a generic room there,
+  not a boss. No room uses a style yet: pick them in the editor.
+
 ## 2026-11-15: the debug menu's Weather lists every field weather (ROM session, on a branch)
 
 World > Weather: now has all 15 (it stopped at Diamond dust): the 9 before, then White mist (`WEATHER_TINT_9`), Tint

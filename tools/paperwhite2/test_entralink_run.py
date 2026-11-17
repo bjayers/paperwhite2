@@ -50,10 +50,30 @@ def test_npc_names_a_missing_battle(tmp_path):
         entralink_run.tables(directory)
 
 
-def test_too_many_rooms_for_a_round(tmp_path):
+def test_draw_problems(tmp_path):
     directory = copy_data(tmp_path)
+    run, rooms = entralink_run.load_run(directory), entralink_run.load_rooms(directory)
+    # The real run: 9 rooms from 3 generic ones repeat, a warning only
+    assert entralink_run.draw_problems(run, rooms) == [("warning", "the rounds draw 9 rooms from 3, so rooms come up "
+                                                        "more than once in a run (the least used first, never twice in a row)")]
+    assert entralink_run.boss_pool(rooms, 1) == ["ho_oh"] and entralink_run.boss_pool(rooms, 2) == ["time_and_space"]
+    # More rooms in a round than can come up in it still packs
     edit(directory / "run.json", lambda data: data["rounds"][0].update(rooms=4))
-    with pytest.raises(datajson.DataError, match="round 1"):
+    entralink_run.tables(directory)
+    # A round with no room at all can't
+    for name in ("dialga", "prince_or_princess", "rayquaza_raid"):
+        edit(room(directory, name), lambda data: data.update(rounds=[2, 3]))
+    with pytest.raises(datajson.DataError, match="round 1 draws 4 rooms, but no room"):
+        entralink_run.tables(directory)
+
+
+def test_boss_pool_falls_back_to_generic_bosses(tmp_path):
+    directory = copy_data(tmp_path)
+    edit(room(directory, "time_and_space"), lambda data: data.pop("rounds"))
+    rooms = entralink_run.load_rooms(directory)
+    assert entralink_run.boss_pool(rooms, 1) == ["ho_oh"] and entralink_run.boss_pool(rooms, 2) == ["time_and_space"]
+    edit(room(directory, "time_and_space"), lambda data: data.update(role="room"))
+    with pytest.raises(datajson.DataError, match="round 2 ends with a boss"):
         entralink_run.tables(directory)
 
 
@@ -80,13 +100,14 @@ def test_duplicate_progress_id(tmp_path):
 
 def test_catch_needs_its_own_id_below_the_next(tmp_path):
     directory = copy_data(tmp_path)
+    next_catch = json.loads((directory / "progress_ids.json").read_text())["next_catch"]
     edit(room(directory, "dialga"), lambda data: data["battles"][0]["enemies"][0].update(
-        catch={"after": ["dialga/dialga"]}, progress_id=0))
+        catch={"after": ["dialga/dialga"]}, progress_id=next_catch))
     with pytest.raises(datajson.DataError, match="next_catch"):
         entralink_run.tables(directory)
-    edit(directory / "progress_ids.json", lambda data: data.update(next_catch=1))
+    edit(directory / "progress_ids.json", lambda data: data.update(next_catch=next_catch + 1))
     entralink_run.tables(directory)
-    edit(room(directory, "ho_oh"), lambda data: data["battles"][0]["enemies"][0].update(catch={}, progress_id=0))
+    edit(room(directory, "ho_oh"), lambda data: data["battles"][0]["enemies"][0].update(catch={}, progress_id=next_catch))
     with pytest.raises(datajson.DataError, match="as dialga/dialga's SPECIES_DIALGA has"):
         entralink_run.tables(directory)
 
@@ -104,11 +125,14 @@ def test_dialogue_and_requirements_pack(tmp_path):
         {"type": "item", "item": "ITEM_POTION", "count": 2, "requires": ["run/completed", "dialga/dialga"],
          "chance": 50, "dialogue": {"before": "Take this,\n{0100:0}.", "after": "ignored"},
          "x": 12, "z": 18, "facing": "DIR_DOWN"}))
-    edit(room(directory, "ho_oh"), lambda data: data["npcs"][0].update(dialogue={"after": "Burn{be01}"}))
+    edit(room(directory, "ho_oh"), lambda data: data["npcs"][0].update(
+        dialogue={"after": "Burn{be01}", "after_style": "yell"}))
     data = entralink_run.tables(directory)
-    ho_oh = data["npcs"][data["rooms"][data["ids"].index("ho_oh")]["firstNpc"]:][:2]
+    row = data["rooms"][data["ids"].index("ho_oh")]
+    ho_oh = [data["npcs"][row["firstNpc"]], data["npcs"][row["firstNpc"] + row["npcCount"] - 1]]
     lines = entralink_run.dialogue_lines(directory)
     assert lines[ho_oh[0]["after"]] == "Burn{be01}" and ho_oh[0]["before"] == entralink_run.NONE16
+    assert ho_oh[0]["afterStyle"] == entralink_run.STYLES["yell"] and ho_oh[0]["beforeStyle"] == entralink_run.STYLES["talk"]
     assert lines[ho_oh[1]["before"]] == "Take this,\\n{0100:0}." and ho_oh[1]["after"] == entralink_run.NONE16
     requirements = data["requirements"][ho_oh[1]["firstRequirement"]:][:ho_oh[1]["requirementCount"]]
     assert requirements == [entralink_run.REQUIRE_RUN_COMPLETED, 1]

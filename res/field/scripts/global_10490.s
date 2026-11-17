@@ -447,16 +447,16 @@ L_RunRoomCleared:
     VMHalt
 
 L_RunDialogue:
-    // Paper White 2: the NPC's before (0x8002 0) or after (1) message from the rooms' text bank, if it has one; its
-    // number is left in 0x8001
+    // Paper White 2: the NPC's before (0x8002 0) or after (1) message from the rooms' text bank, if it has one, in its
+    // style's window (talk, bubble, yell or event), which MsgWinCloseAll closes whichever it is; the message's number
+    // is left in 0x8001
     EntralinkRun ENTRALINK_RUN_ACTION_DIALOGUE, 0x8002, 0, 0x8001
     WorkCmpConst 0x8001, ENTRALINK_RUN_NO_MESSAGE
     VMJumpIf CMP_EQ, L_RunDialogueNone
-    EntralinkRun ENTRALINK_RUN_ACTION_GET_ACTOR, 0, 0, 0x8003
     WordSetPlayerName 0
-    ActorMsg SCRIPT_TEXT_ENTRALINK_DIALOGUE, 0x8001, 0x8003, 0, 0
+    EntralinkRun ENTRALINK_RUN_ACTION_SHOW_DIALOGUE, 0x8002, 0, 0x8001
     LastKeyWait
-    ActorMsgClose
+    MsgWinCloseAll
 
 L_RunDialogueNone:
     VMReturn

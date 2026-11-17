@@ -6,7 +6,7 @@
 .en-header h2 { margin: 0; font-size: 16px; }
 .en-lead { font-size: 13px; }
 .en-header .spacer, .en-map-bar .spacer, .en-battle-head .spacer, .en-enemy-head .spacer { flex: 1; }
-.en-body { display: grid; grid-template-columns: 250px 1fr 470px; flex: 1; min-height: 0; }
+.en-body { display: grid; grid-template-columns: 290px 1fr 470px; flex: 1; min-height: 0; }
 .en-pad { padding: 12px; }
 
 /* The rooms */
@@ -78,3 +78,14 @@
 .en-run { display: grid; grid-template-columns: 92px 1fr; gap: 6px; align-items: center; }
 .en-run select { min-width: 0; }
 .en-dialogue .ow-condition-label { align-self: start; padding-top: 4px; }
+
+/* The Run section above the rooms: its rounds, each a row (label, rooms, boss) with its pool under it */
+.en-run-section h5 .spacer { flex: 1; }
+.en-run-section h5 button.link { padding: 0; font-weight: normal; }
+.en-run-section .en-sub { margin: 6px 0 0; }
+.en-run-section .en-run { grid-template-columns: 84px 1fr; }
+.en-run-round { display: flex; flex-direction: column; gap: 4px; }
+.en-run-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.en-run-summary { line-height: 1.35; padding: 2px 0 4px 8px; border-left: 2px solid var(--border); }
+.en-run-problems { padding-left: 16px; font-size: 12px; }
+.en-dialogue .dialogue-actions .view-switch button { padding: 1px 6px; }
