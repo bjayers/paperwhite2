@@ -1,0 +1,52 @@
+{
+    "$schema": "../room.schema.json",
+    "name": "Prince or Princess",
+    "role": "room",
+    "weather": "BTL_WEATHER_NONE",
+    "battles": [
+        {
+            "id": "gardevoir_battle",
+            "progress_id": 5,
+            "format": "single",
+            "enemies": [
+                {
+                    "species": "SPECIES_GARDEVOIR",
+                    "level": 70,
+                    "moves": [ "MOVE_HYPNOSIS", "MOVE_MOONBLAST", "MOVE_PSYCHIC", "MOVE_DRAINING_KISS" ],
+                    "ability": "ABILITY_TRACE",
+                    "gender": "female"
+                }
+            ]
+        },
+        {
+            "id": "gallade_battle",
+            "progress_id": 6,
+            "format": "single",
+            "enemies": [
+                {
+                    "species": "SPECIES_GALLADE",
+                    "level": 70,
+                    "moves": [ "MOVE_DOUBLE_TEAM", "MOVE_PSYCHO_CUT", "MOVE_SWORDS_DANCE", "MOVE_PROTECT" ],
+                    "ability": "ABILITY_STEADFAST",
+                    "gender": "male"
+                }
+            ]
+        }
+    ],
+    "npcs": [
+        {
+            "type": "battle",
+            "battle": "gardevoir_battle",
+            "x": 14,
+            "z": 14,
+            "facing": "DIR_DOWN"
+        },
+        {
+            "type": "battle",
+            "battle": "gallade_battle",
+            "x": 17,
+            "z": 14,
+            "facing": "DIR_DOWN"
+        }
+    ]
+}

@@ -80,8 +80,135 @@
         { "bone": 11, "keys": [ { "frame": 18, "rotation": -16.4 }, { "frame": 54, "rotation": 15.1 } ] },
         { "bone": 12, "keys": [ { "frame": 18, "rotation": -26.7 }, { "frame": 54, "rotation": 39.6 } ] }
       ]
+    },
+    {
+      "name": "Head",
+      "frames": 180,
+      "root": {
+        "keys": [
+          { "frame": 36, "scale": [ 1, 0.89599609375 ] },
+          { "frame": 72 },
+          { "frame": 90 },
+          { "frame": 144, "scale": [ 1, 0.89599609375 ] }
+        ]
+      },
+      "parts": [
+        { "bone": 0, "keys": [ { "frame": 36 }, { "frame": 72 }, { "frame": 90 }, { "frame": 144 } ] },
+        {
+          "bone": 1,
+          "keys": [
+            { "frame": 36, "move": [ 0, 1 ] },
+            { "frame": 72 },
+            { "frame": 90, "rotation": 4.3 },
+            { "frame": 144, "move": [ 0, 1 ] }
+          ]
+        },
+        { "bone": 2, "keys": [ { "frame": 36 }, { "frame": 72 }, { "frame": 90 }, { "frame": 144 } ] },
+        {
+          "bone": 3,
+          "keys": [
+            { "frame": 36, "rotation": -3.4 },
+            { "frame": 72 },
+            { "frame": 84, "rotation": -8.4 },
+            { "frame": 108, "rotation": -8.4 },
+            { "frame": 144, "rotation": -3.4 }
+          ]
+        },
+        {
+          "bone": 4,
+          "keys": [
+            { "frame": 36 },
+            { "frame": 72 },
+            { "frame": 84, "rotation": -3.7 },
+            { "frame": 108, "rotation": -3.7 },
+            { "frame": 144 }
+          ]
+        },
+        {
+          "bone": 5,
+          "keys": [
+            { "frame": 36 },
+            { "frame": 54, "move": [ 0, -5.5 ], "scale": [ 0.629638671875, 1 ] },
+            { "frame": 78, "move": [ 0, -11 ] },
+            { "frame": 90, "move": [ 1, -11 ] },
+            { "frame": 108, "move": [ 1, -11 ] },
+            { "frame": 144 }
+          ]
+        },
+        {
+          "bone": 6,
+          "keys": [
+            { "frame": 36 },
+            { "frame": 72 },
+            { "frame": 84, "rotation": 13 },
+            { "frame": 108, "rotation": 13 },
+            { "frame": 144 }
+          ]
+        },
+        {
+          "bone": 7,
+          "keys": [
+            { "frame": 36, "rotation": -4 },
+            { "frame": 72 },
+            { "frame": 90, "rotation": -6.5 },
+            { "frame": 144, "rotation": -4 }
+          ]
+        },
+        {
+          "bone": 8,
+          "keys": [
+            { "frame": 36, "rotation": 6.6 },
+            { "frame": 72 },
+            { "frame": 90, "rotation": 9.8 },
+            { "frame": 144, "rotation": 6.6 }
+          ]
+        },
+        {
+          "bone": 9,
+          "keys": [
+            { "frame": 18, "rotation": 14.1 },
+            { "frame": 36, "rotation": 10.9 },
+            { "frame": 72, "rotation": 14.1 },
+            { "frame": 90, "rotation": 10.7, "scale": [ 1.39599609375, 1 ] },
+            { "frame": 144, "rotation": -6.65 }
+          ]
+        },
+        {
+          "bone": 10,
+          "keys": [
+            { "frame": 18, "rotation": 25 },
+            { "frame": 36, "rotation": 31.9 },
+            { "frame": 72, "rotation": 25 },
+            { "frame": 90, "rotation": -39.9 },
+            { "frame": 144, "rotation": 2.95 }
+          ]
+        },
+        {
+          "bone": 11,
+          "keys": [
+            { "frame": 18, "rotation": -16.4 },
+            { "frame": 36 },
+            { "frame": 72, "rotation": -16.4 },
+            { "frame": 90, "rotation": 2 },
+            { "frame": 144, "rotation": -0.65 }
+          ]
+        },
+        {
+          "bone": 12,
+          "keys": [
+            { "frame": 18, "rotation": -26.7 },
+            { "frame": 36 },
+            { "frame": 72, "rotation": -26.7 },
+            { "frame": 90, "rotation": 51.6 },
+            { "frame": 144, "rotation": 6.45 }
+          ]
+        }
+      ]
     }
   ],
   "loop_clips": [],
-  "timeline": { "name": "stay", "blocks": [ { "sequence": 0 }, { "sequence": 0 }, { "sequence": 0 }, { "sequence": 0 } ] }
+  "timeline": {
+    "name": "stay",
+    "blocks": [ { "sequence": 0 }, { "sequence": 0 }, { "sequence": 0 }, { "sequence": 0 }, { "sequence": 1 } ]
+  }
 }
