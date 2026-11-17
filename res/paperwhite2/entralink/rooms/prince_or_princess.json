@@ -39,14 +39,20 @@
             "battle": "gardevoir_battle",
             "x": 14,
             "z": 14,
-            "facing": "DIR_DOWN"
+            "facing": "DIR_DOWN",
+            "dialogue": {
+                "before": "The Fairy Princess attacks!"
+            }
         },
         {
             "type": "battle",
             "battle": "gallade_battle",
             "x": 17,
             "z": 14,
-            "facing": "DIR_DOWN"
+            "facing": "DIR_DOWN",
+            "dialogue": {
+                "before": "The Armored Prince attacks!"
+            }
         }
     ]
 }
