@@ -36,6 +36,10 @@
 #define ENTRALINK_RUN_ACTION_GET_ACTOR 10
 // An item NPC: returns how many of its item it gives
 #define ENTRALINK_RUN_ACTION_GET_ITEM_COUNT 11
+// arg1 0 for its before message, 1 for its after one: shows the talked-to NPC's message in its window (its style:
+// talk, bubble, yell or event), with the player's name in word 0 as the script set it, and the script waits for it to
+// print; returns the message as ENTRALINK_RUN_ACTION_DIALOGUE does. MsgWinCloseAll closes any of the windows
+#define ENTRALINK_RUN_ACTION_SHOW_DIALOGUE 12
 
 #define ENTRALINK_RUN_RESULT_LOST 0
 #define ENTRALINK_RUN_RESULT_CLEARED 1

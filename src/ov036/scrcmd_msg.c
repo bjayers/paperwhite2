@@ -156,6 +156,17 @@ BOOL Scrcmd_Msg_SystemMsg(VM *vm, FieldScriptEnv *env) {
     return TRUE;
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: SystemMsg's window with a message of any text bank, for the Entralink run's dialogue
+// (paperwhite2_entralink_run.c), as CallFieldActorMessageDispStrBuf and loadMsgBox are for the other windows
+BOOL PaperWhite2_SystemMsgStrBuf(VM *vm, FieldScriptEnv *env, StrBuf *message, u8 pos) {
+    SystemMsgWin_Open(env, pos);
+    MsgBGPrinter_InfoSysWinPrintStr(getMapDisplayInfoPtr(env), 0, 0, message);
+    VM_SetNativeCallback(vm, ScriptNative_SystemMsgWinWait);
+    return TRUE;
+}
+#endif
+
 BOOL Scrcmd_Msg_SystemMsgAsync(VM *vm, FieldScriptEnv *env) {
     StrBuf *strbuf = ScriptWork_GetMainStrBuf(FieldScriptEnv_GetScriptWork(env));
     u16 msgId = ScriptReadAny(vm, env);

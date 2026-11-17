@@ -2,6 +2,14 @@
     "$schema": "run.schema.json",
     "rounds": [
         {
+            "rooms": 3,
+            "boss": true
+        },
+        {
+            "rooms": 3,
+            "boss": true
+        },
+        {
             "rooms": 3
         }
     ],

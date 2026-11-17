@@ -29,12 +29,15 @@ import {
   ITEM_BALL_SPRITE, NPC_TYPES, ROLES, ROOMS_DIR, ROOM_SCHEMA, checkRoom, checkRooms, freeId, idFromName, newNpc,
   newRoomData, npcSprite, readRoom, roomId, roomPath, shownEnemy, walkingSprite,
   DEFAULT_ONCE, PROGRESS_IDS, PROGRESS_IDS_SCHEMA, RUN_COMPLETED, assignProgressIds, battleKey, battleKeys, renameKeys, withoutProgressIds,
+  MESSAGE_STYLES, MESSAGE_STYLE_NOTES, readRun, roundSummary, runProblems, type MessageStyle,
   type Round, type Exit, type MapInfo, type NpcType, type Problem, type ProgressCounters, type Role, type Room,
 } from "./model.ts";
 
 // The run's dialogue: its script puts the player's name in word 0 before every message (global_10490.s)
 const ROOM_INSERTS: DialogueInsert[] = [...DIALOGUE_INSERTS, { label: "Player's name", code: "{0100:0}", title: "The player's name ({0100:0})" }];
 const ROOM_WORDS: Record<number, string> = { 0: "Player" };
+/** An NPC's dialogue's keys, in room.schema.json's order. */
+const DIALOGUE_KEYS = ["before", "after", "before_style", "after_style"];
 
 const ARROWS: Record<string, string> = { DIR_UP: "↑", DIR_DOWN: "↓", DIR_LEFT: "←", DIR_RIGHT: "→" };
 const FACING_NAMES: Record<string, string> = { DIR_UP: "Up", DIR_DOWN: "Down", DIR_LEFT: "Left", DIR_RIGHT: "Right" };
@@ -372,7 +375,7 @@ export function EntreeEditor({ constants }: ToolProps) {
       {unsaved.filter((p) => docs.get(p)?.saveError).map((p) => <p key={p} className="ow-error ow-bar">{p}: {docs.get(p)?.saveError}</p>)}
       <div className="en-body">
         <aside className="en-list">
-          <RunSection />
+          <RunSection rooms={rooms} />
           <div className="en-list-section">
             <h5>Rooms <span className="muted">{listed.length === rooms.length ? rooms.length : `${listed.length} of ${rooms.length}`}</span></h5>
             <div className="en-list-actions">
@@ -500,29 +503,103 @@ function KeysPicker({ value, options, onChange, empty }: { value: string[]; opti
 
 // ---- Run -------------------------------------------------------------------------------------------------------------
 
-/** run.json's settings for every room: the forest's field weather. */
-function RunSection() {
+/** The Run section's open or closed state, remembered in this browser. */
+const RUN_OPEN_KEY = "entree.runOpen";
+function readRunOpen(): boolean {
+  try { return localStorage.getItem(RUN_OPEN_KEY) !== "0"; } catch { return true; }
+}
+
+/** run.json: the forest's field weather, the rounds (how many rooms each draws and whether a boss ends rounds 1 and
+ * 2; the final room ends the last), with each round's pool and the draw's checks (model.ts, runProblems, as the build
+ * makes them), and the maps the rooms are in, read only. */
+function RunSection({ rooms }: { rooms: { id: string; room: Room }[] }) {
   const { docs } = useDocuments();
   const [schema, setSchema] = useState<Schema | null>(null);
+  const [open, setOpen] = useState(readRunOpen);
   useEffect(() => { documents.hold(RUN).catch(() => undefined); api.schema(RUN_SCHEMA).then(setSchema, () => undefined); }, []);
   const doc = docs.get(RUN);
   const data = doc?.data instanceof Map ? doc.data : null;
+  const run = useMemo(() => readRun(data), [data]);
+  const problems = useMemo(() => runProblems(run, rooms), [run, rooms]);
   const weather = typeof data?.get("field_weather") === "string" ? String(data.get("field_weather")) : "";
   const choices = (schema?.properties?.field_weather?.enum ?? []).map(String);
   const order = Object.keys(schema?.properties ?? {});
-  const setWeather = (v: string) => { if (data) documents.replace(RUN, put(data, "field_weather", v || undefined, order)); };
+  const roundSchema = schema?.$defs?.round;
+  const roundOrder = Object.keys(roundSchema?.properties ?? { rooms: 0, boss: 0 });
+  const maxRounds = schema?.properties?.rounds?.maxItems ?? 3;
+  const maxRooms = roundSchema?.properties?.rooms?.maximum ?? 8;
   if (!data || !choices.length) return null;
+
+  const toggle = () => {
+    setOpen(!open);
+    try { localStorage.setItem(RUN_OPEN_KEY, open ? "0" : "1"); } catch { /* a viewer without storage keeps it open */ }
+  };
+  const setKey = (key: string, v: JsonValue | undefined) => documents.replace(RUN, put(data, key, v, order));
+  const rounds = asList(data.get("rounds"));
+  const setRound = (i: number, key: "rooms" | "boss", v: JsonValue | undefined) =>
+    setKey("rounds", rounds.map((r, k) => (k === i ? put(asMap(r), key, v, roundOrder) : r)));
+  const total = run.rounds.reduce((n, r, i) => n + r.rooms + (r.boss && i < 2 ? 1 : 0), 0) + 1;
+  const errors = problems.filter((p) => p.severity === "error").length;
+  const warnings = problems.length - errors;
+  const state = [errors && `${errors} error${errors > 1 ? "s" : ""}`, warnings && `${warnings} warning${warnings > 1 ? "s" : ""}`].filter(Boolean).join(", ");
   return (
-    <div className="en-list-section">
-      <h5>Run <span className="muted">every room{doc?.dirty ? " •" : ""}</span></h5>
-      <div className="en-run">
-        <span className="muted small">Field weather</span>
-        <select value={weather} onChange={(e) => setWeather(e.target.value)} title={weather ? weatherNote(weather) : "No field weather"}>
-          <option value="">None</option>
-          {choices.map((w) => <option key={w} value={w}>{weatherLabel(w)}</option>)}
-        </select>
-      </div>
-      <span className="muted small">On the field in the rooms with no weather of their own</span>
+    <div className="en-list-section en-run-section">
+      <h5>
+        Run <span className="muted">{run.rounds.length} round{run.rounds.length === 1 ? "" : "s"}, {total} rooms{doc?.dirty ? " •" : ""}</span>
+        {!open && state && <span className={errors ? "en-error small" : "en-warn small"}>{state}</span>}
+        <span className="spacer" />
+        <button className="link small" onClick={toggle} title={open ? "Hide the run's settings" : "Show the run's settings"}>{open ? "Hide" : "Show"}</button>
+      </h5>
+      {open && <>
+        <div className="en-run">
+          <span className="muted small">Field weather</span>
+          <select value={weather} onChange={(e) => setKey("field_weather", e.target.value || undefined)} title={weather ? weatherNote(weather) : "No field weather"}>
+            <option value="">None</option>
+            {choices.map((w) => <option key={w} value={w}>{weatherLabel(w)}</option>)}
+          </select>
+        </div>
+        <span className="muted small">On the field in the rooms with no weather of their own</span>
+
+        <h6 className="en-sub en-run-head">Rounds <span className="muted">then the final room</span></h6>
+        <div className="en-list-actions">
+          <button onClick={() => setKey("rounds", [...rounds, new Map<string, JsonValue>([["rooms", 3]])])} disabled={rounds.length >= maxRounds}
+                  title={`A round of 3 rooms at the end (at most ${maxRounds})`}>Add round</button>
+          <button onClick={() => setKey("rounds", rounds.slice(0, -1))} disabled={rounds.length <= 1} title="Removes the last round">Remove last</button>
+        </div>
+        {run.rounds.map((r, i) => {
+          const round = (i + 1) as Round;
+          const last = i === run.rounds.length - 1;
+          return (
+            <div key={i} className="en-run-round">
+              <div className="en-run">
+                <span className="muted small">Round {round}</span>
+                <span className="en-run-controls">
+                  <NumberBox value={r.rooms} min={0} max={maxRooms} width={52} onChange={(n) => setRound(i, "rooms", n)} />
+                  <span className="small">rooms</span>
+                  {round < 3
+                    ? <label className="ow-check small" title="A room of role boss ends the round"><input type="checkbox" checked={r.boss} onChange={(e) => setRound(i, "boss", e.target.checked || undefined)} /> then a boss</label>
+                    : <span className="muted small">then the final</span>}
+                </span>
+              </div>
+              <span className="muted small en-run-summary">{roundSummary(rooms, round, r, last)}</span>
+            </div>
+          );
+        })}
+
+        <h6 className="en-sub en-run-head">Maps <span className="muted">read only, run.json</span></h6>
+        <div className="en-run">
+          <span className="muted small">Rooms</span>
+          <span className="small" title="The rooms before the final take these in turn">{run.roomMaps.map(clearingName).join(", ") || "none"}</span>
+          <span className="muted small">Final</span>
+          <span className="small">{run.finalMap ? clearingName(run.finalMap) : "none"}</span>
+        </div>
+
+        {problems.length > 0 && (
+          <ul className="en-problems en-run-problems">
+            {problems.map((p) => <li key={p.message} className={p.severity === "error" ? "en-error" : "en-warn"}>{p.message}</li>)}
+          </ul>
+        )}
+      </>}
     </div>
   );
 }
@@ -755,11 +832,20 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
   };
   const battle = npc?.type === "battle" ? room.battles.find((b) => b.id === npc.battle) : undefined;
   /** One of its messages: an empty one is left out, and so is the dialogue with none. */
-  const setDialogue = (key: "before" | "after", text: string) => {
-    const old = asMap(get([...at, "dialogue"]));
-    const next = put(old, key, text || undefined, ["before", "after"]);
+  const setDialogue = (key: "before" | "after" | "before_style" | "after_style", value: string | undefined) => {
+    let next = put(asMap(get([...at, "dialogue"])), key, value || undefined, DIALOGUE_KEYS);
+    // A message's style goes with it
+    if ((key === "before" || key === "after") && !value) next = put(next, `${key}_style`, undefined, DIALOGUE_KEYS);
     f("dialogue", next.size ? next : undefined);
   };
+  /** A message's window picker, beside its box: talk, the default, is left out of the file. */
+  const stylePicker = (key: "before" | "after", value: MessageStyle) => (
+    <>
+      <span className="muted small">Window</span>
+      <Switch<MessageStyle> value={value} options={MESSAGE_STYLES} titles={MESSAGE_STYLE_NOTES}
+                            onChange={(v) => setDialogue(`${key}_style`, v === "talk" ? undefined : v)} />
+    </>
+  );
   const defaultSprite = npc ? npcSprite({ ...npc, sprite: undefined }, room, constants) : null;
   const sprite = npc ? npcSprite(npc, room, constants) : null;
   return (
@@ -847,11 +933,14 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
           <div className="ow-condition en-dialogue">
             <Row label={npc.type === "battle" ? "Before" : "On talking"}>
               <DialogueField value={npc.dialogue?.before ?? ""} onChange={(v) => setDialogue("before", v)} inserts={ROOM_INSERTS} words={ROOM_WORDS}
+                             look={npc.dialogue?.beforeStyle ?? "talk"} actions={stylePicker("before", npc.dialogue?.beforeStyle ?? "talk")}
                              placeholder={npc.type === "battle" ? "What it says before the battle starts" : (npc.type === "item" ? "What it says as it gives its item" : "What it says (its menu comes later)")} />
             </Row>
             {npc.type === "battle" && (
               <Row label="After the battle">
-                <DialogueField value={npc.dialogue?.after ?? ""} onChange={(v) => setDialogue("after", v)} inserts={ROOM_INSERTS} words={ROOM_WORDS} placeholder="What it says once the battle is won, before the room opens" />
+                <DialogueField value={npc.dialogue?.after ?? ""} onChange={(v) => setDialogue("after", v)} inserts={ROOM_INSERTS} words={ROOM_WORDS}
+                               look={npc.dialogue?.afterStyle ?? "talk"} actions={stylePicker("after", npc.dialogue?.afterStyle ?? "talk")}
+                               placeholder="What it says once the battle is won, before the room opens" />
               </Row>
             )}
           </div>

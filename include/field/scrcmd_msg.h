@@ -35,6 +35,10 @@ u8 ActorMsgWin_CalcWinPosAuto(FieldActor *player, const VecFx32 *pos);
 // Show a message, and have the script wait for it
 BOOL CallFieldActorMessageDispStrBuf(VM *vm, FieldScriptEnv *env, StrBuf *message, u16 actorId, u16 pos, u32 frameType);
 BOOL loadMsgBox(VM *vm, FieldScriptEnv *env, StrBuf *message, u32 frameType, u8 pos);
+#ifdef PAPERWHITE2
+// Paper White 2: shows message in SystemMsg's window at pos, and has the script wait for it
+BOOL PaperWhite2_SystemMsgStrBuf(VM *vm, FieldScriptEnv *env, StrBuf *message, u8 pos);
+#endif
 
 BOOL Scrcmd_Msg_SystemMsg(VM *vm, FieldScriptEnv *env);
 BOOL Scrcmd_Msg_SystemMsgAsync(VM *vm, FieldScriptEnv *env);

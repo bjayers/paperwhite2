@@ -109,7 +109,7 @@ test("progress ids: new battles and catches get the next numbers, old ones never
   assert.deepEqual(again.counters, given.counters);
 
   // Without progress_ids.json, or with one behind the rooms: above every number in use
-  assert.deepEqual(assignProgressIds(rooms, null, orders).counters, { next_battle: counters.next_battle + 1, next_catch: 1 });
+  assert.deepEqual(assignProgressIds(rooms, null, orders).counters, { next_battle: counters.next_battle + 1, next_catch: counters.next_catch + 1 });
   assert.equal(getIn(assignProgressIds(rooms, { next_battle: 0, next_catch: 0 }, orders).changed.get(`${ROOMS_DIR}/zz_new.json`)!, ["battles", 0, "progress_id"]), counters.next_battle);
 
   // A copy of a room gets new numbers; a copy with its old ones would share them
