@@ -4,7 +4,7 @@
 // commit.
 
 import { useEffect, useMemo, useState } from "react";
-import { neverPushed, pushMessage, type GitState, type PushResult } from "../../shared/api.ts";
+import { isGameData, neverPushed, pushMessage, type GitState, type PushResult } from "../../shared/api.ts";
 import { api } from "../api.ts";
 
 const STATUS: Record<string, string> = { M: "changed", A: "added", D: "deleted", R: "renamed", "?": "new", U: "conflict" };
@@ -31,7 +31,7 @@ export function GitPanel({ state, commitEnabled, onOpen, onClose, onRefresh }: {
   const [pushing, setPushing] = useState(false);
   const [pushed, setPushed] = useState<PushResult | null>(null);
 
-  const changes = useMemo(() => (state?.changes ?? []).filter((c) => !onlyRes || c.path.startsWith("res/")), [state, onlyRes]);
+  const changes = useMemo(() => (state?.changes ?? []).filter((c) => !onlyRes || isGameData(c.path)), [state, onlyRes]);
 
   useEffect(() => {
     if (!selected) return setDiff("");
@@ -98,7 +98,7 @@ export function GitPanel({ state, commitEnabled, onOpen, onClose, onRefresh }: {
       </header>
       {state && <p className="muted small pad">Last commit: {state.head}</p>}
       <label className="checkbox pad small">
-        <input type="checkbox" checked={onlyRes} onChange={(e) => setOnlyRes(e.target.checked)} /> Only game data (res/)
+        <input type="checkbox" checked={onlyRes} onChange={(e) => setOnlyRes(e.target.checked)} /> Only game data (res/, generated/)
       </label>
       <label className="checkbox pad small">
         <input type="checkbox" disabled={!commitEnabled || !changes.length} checked={allChosen}

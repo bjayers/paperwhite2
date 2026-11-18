@@ -1,7 +1,7 @@
 // The editor's frame: the kinds of data, their files, open tabs, the build and the changes. Modules fill the tabs.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { BuildState, GitState, ProjectInfo, ServerEvent } from "../shared/api.ts";
+import { isGameData, type BuildState, type GitState, type ProjectInfo, type ServerEvent } from "../shared/api.ts";
 import type { Constants } from "../shared/schema.ts";
 import { api, listen } from "./api.ts";
 import { documents, useDocuments } from "./documents.ts";
@@ -236,7 +236,7 @@ export function App() {
     setBack(null);
     setSelection(backShown?.to ?? null);
   };
-  const changes = git?.changes.filter((c) => c.path.startsWith("res/")).length ?? 0;
+  const changes = git?.changes.filter((c) => isGameData(c.path)).length ?? 0;
 
   if (loadError) return <div className="fatal">The editor's server didn't answer: {loadError}. Is <code>npm start</code> running?</div>;
 

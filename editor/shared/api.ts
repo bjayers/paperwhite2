@@ -95,6 +95,10 @@ export interface GitState {
   changes: GitChange[];
 }
 
+/** Whether a changed file is game data the editor writes: res/, and the constant lists in generated/ that its tools
+ * extend (a new species, form, sprite, map or zone adds rows there). */
+export const isGameData = (path: string) => path.startsWith("res/") || path.startsWith("generated/");
+
 /** What Push to GitHub did (POST /api/git/push): its commit (none when there was nothing to commit and the branch was
  * only ahead), whether origin/main merged in and the push went through, and why not. */
 export interface PushResult {
