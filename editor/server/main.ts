@@ -274,27 +274,37 @@ const routes: Record<string, Handler> = {
     json(res, { pictures: current.filter((n) => n !== name) });
   },
   // The sprite sheets that build tools pack whole (SPRITE_SHEETS below), such as the Pokédex Area page's icons
-  "GET /api/sprite-sheets": (_req, res) => json(res, SPRITE_SHEETS),
-  // A sheet checked by its tool ({ name, data?: base64 PNG, write? }; without data, the sheet in res/): the tool's
-  // message, whether it packs, and its preview; with write and a sheet that packs, the PNG replaces the sheet's file
+  "GET /api/sprite-sheets": async (_req, res) => json(res, await spriteSheets()),
+  // A sheet checked by its tool ({ name, data?: base64 PNG, palette?: ["#rrggbb" x 16], write? }; without data, the
+  // sheet in res/): the tool's message, whether it packs, its preview and, for a sheet with a palette, its colors;
+  // with write and a sheet that packs, the PNG (as the tool makes it, for a sheet whose tool does) replaces the
+  // sheet's file
   "POST /api/sprite-sheets/check": async (req, res) => {
-    const body = (await readJson(req)) as { name: string; data?: string; write?: boolean };
-    const sheet = SPRITE_SHEETS.find((s) => s.name === body.name);
+    const body = (await readJson(req)) as { name: string; data?: string; palette?: string[]; write?: boolean };
+    const sheet = (await spriteSheets()).find((s) => s.name === body.name);
     if (!sheet) return error(res, 404, "No such sprite sheet");
     const dir = mkdtempSync(join(tmpdir(), "paperwhite-sheet-"));
     try {
       const path = body.data === undefined ? project.abs(sheet.path) : join(dir, "sheet.png");
       if (body.data !== undefined) writeFileSync(path, Buffer.from(body.data, "base64"));
       const preview = join(dir, "preview.png");
-      const run = await python.tool(sheet.tool, ["check", path, "--preview", preview]);
+      const output = join(dir, "output.png");
+      const info = join(dir, "info.json");
+      const args = ["check", path, ...(sheet.toolArgs ?? []), "--preview", preview];
+      if (sheet.palette) {
+        args.push("--output", output, "--info", info);
+        if (body.palette) args.push("--palette", body.palette.join(","));
+      }
+      const run = await python.tool(sheet.tool, args);
       const ok = run.code === 0;
       const message = (ok ? run.stdout : run.stderr).trim().split("\n").pop()?.replace(/^[a-z_]+\.py: /, "") ?? "";
       let written = false;
-      if (ok && body.write && body.data !== undefined) {
-        await project.writeAtomic(sheet.path, readFileSync(path));
+      if (ok && body.write && (body.data !== undefined || body.palette)) {
+        await project.writeAtomic(sheet.path, readFileSync(sheet.palette ? output : path));
         written = true;
       }
-      json(res, { ok, message, written, preview: existsSync(preview) ? readFileSync(preview).toString("base64") : null });
+      const colors = ok && existsSync(info) ? (JSON.parse(readFileSync(info, "utf8")) as { colors: string[] }).colors : undefined;
+      json(res, { ok, message, written, preview: existsSync(preview) ? readFileSync(preview).toString("base64") : null, colors });
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
@@ -1045,6 +1055,19 @@ const SPRITE_SHEETS: SpriteSheet[] = [
       "List's methods not chosen); the build packs them from this PNG.",
   },
 ];
+
+/** Tools that list sheets of their own data (`TOOL list` prints a JSON list of SpriteSheet), so that art that comes and
+ * goes with res/ (the Entralink run's markers) needs no entry here. */
+const SPRITE_SHEET_LISTERS = ["tools/paperwhite2/entralink_marker_art.py"];
+
+async function spriteSheets(): Promise<SpriteSheet[]> {
+  const listed: SpriteSheet[] = [];
+  for (const tool of SPRITE_SHEET_LISTERS) {
+    const run = await python.tool(tool, ["list"]);
+    if (run.code === 0) listed.push(...(JSON.parse(run.stdout) as SpriteSheet[]));
+  }
+  return [...SPRITE_SHEETS, ...listed];
+}
 
 const CGEAR_PICTURES_TOOL = "tools/paperwhite2/cgear_pictures.py";
 const CGEAR_PICTURES_DIR = "res/paperwhite2/cgear_pictures";

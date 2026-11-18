@@ -429,8 +429,8 @@ export const api = {
   /** The sprite sheets that build tools pack whole. */
   spriteSheets: () => request<SpriteSheet[]>("GET", "/api/sprite-sheets"),
   /** Checks a sheet by its tool: the PNG given (base64), or the one in res/ without data; with write, saves it. */
-  spriteSheetCheck: (name: string, data?: string, write = false) =>
-    request<SpriteSheetCheck>("POST", "/api/sprite-sheets/check", { name, data, write }),
+  spriteSheetCheck: (name: string, data?: string, write = false, palette?: string[]) =>
+    request<SpriteSheetCheck>("POST", "/api/sprite-sheets/check", { name, data, write, palette }),
   /** Every item's icon files and preview, the hack's items first. */
   itemIcons: () => request<ItemIcons>("GET", "/api/item-icons"),
   /** Checks a PNG (base64) as an item's icon; with write, saves its icon and palette over the item's files. */

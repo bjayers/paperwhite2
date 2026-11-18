@@ -2,6 +2,17 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-18: Entralink markers upright; the marker art in Graphics & Palettes (ROM session, on a branch)
+
+- **Flip:** the ground markers drew with a vertical flip (the game's flat billboards put a texture's top on the south
+  side; seen in py-desmume with an asymmetric "F"). Fixed in the packer (`entralink_run.marker_texture(flat=True)`
+  reverses the rows), so a PNG's top is the north. NPC markers were already upright. Test:
+  `test_ground_markers_are_packed_upside_down`.
+- **Editor:** the ten room markers and the NPC markers are on Graphics & Palettes > Sprite sheets
+  (`tools/paperwhite2/entralink_marker_art.py` lists them and checks an import; the page got a palette editor for
+  sheets that say `palette: true`). New `editor/tests/marker-art.test.ts`; typecheck and 239 editor tests pass.
+- **For the user:** the placeholder art is unchanged; draw yours with its top toward the north. Not yet pushed.
+
 ## 2026-11-17: the Entralink roguelike's step 5: doors, markers, round fogs (ROM session, on a branch)
 
 `docs/paperwhite2/design/entralink-roguelike-prototype.md`, "Step 5", has the design and the proof.

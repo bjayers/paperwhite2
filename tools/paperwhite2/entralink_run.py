@@ -131,8 +131,10 @@ def npc_marker_names(directory: Path = SOURCE) -> list[str]:
     return sorted(path.stem for path in (directory / "npc_markers").glob("*.png"))
 
 
-def marker_texture(path: Path, size: int) -> bytes:
-    """A marker's BTX0: its PNG as one GX_TEXFMT_PLTT16 texture, named after the file, and its 16-color palette."""
+def marker_texture(path: Path, size: int, flat: bool = False) -> bytes:
+    """A marker's BTX0: its PNG as one GX_TEXFMT_PLTT16 texture, named after the file, and its 16-color palette.
+    flat is a ground marker: the game's flat billboards (BILLBOARD_ACTOR_TYPE_FACE_CAMERA_Y_FLAT) put the texture's
+    top edge on the south side of the quad, so its rows go in reversed and the PNG's top is toward the north."""
     # nitro_btx imports its neighbour as a script does
     sys.path.insert(0, str(ROOT / "tools" / "data"))
     from tools.data.nitro_btx import texture_set
@@ -147,6 +149,8 @@ def marker_texture(path: Path, size: int) -> bytes:
     if pixels and max(pixels) >= MARKER_COLORS:
         raise datajson.DataError(f"{datajson.label(path)}: uses palette index {max(pixels)}, past "
                                  f"{MARKER_COLORS - 1}")
+    if flat:
+        pixels = b"".join(bytes(pixels[row * size:(row + 1) * size]) for row in reversed(range(size)))
     colors = (list(colors) + [(0, 0, 0)] * MARKER_COLORS)[:MARKER_COLORS]
     palette = b"".join(struct.pack("<H", r | g << 5 | b << 10) for r, g, b in map(color5, colors))
     name = path.stem[:12]
@@ -161,7 +165,7 @@ def marker_members(directory: Path = SOURCE) -> list[bytes]:
     if len(names) > NPC_MARKERS_MAX:
         raise datajson.DataError(f"{datajson.label(directory / 'npc_markers')}: {len(names)} markers, more than "
                                  f"{NPC_MARKERS_MAX}")
-    return ([marker_texture(directory / "markers" / f"{kind}.png", MARKER_SIZE) for kind in MARKER_TYPES]
+    return ([marker_texture(directory / "markers" / f"{kind}.png", MARKER_SIZE, flat=True) for kind in MARKER_TYPES]
             + [marker_texture(directory / "npc_markers" / f"{name}.png", NPC_MARKER_SIZE) for name in names])
 
 
