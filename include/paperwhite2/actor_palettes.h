@@ -18,10 +18,11 @@
 // The individual a slot shows: its sprite's object code, species and PID. Called before its sprite's load is asked
 // for, so that the load keeps the sprite's colours (PaperWhite2_ActorPalettes_Capture); objCode 0 for none
 void PaperWhite2_ActorPalettes_Set(u32 slot, u16 objCode, u32 species, u32 personality);
-// Gives the slot's billboard (a handle of sys) its own palette, made the first time and again when the billboard, its
-// material or the individual changes; called every frame its billboard is out. Where there's no room (a material slot
-// or palette VRAM) or the sprite's colours weren't kept, the billboard keeps its shared material
-void PaperWhite2_ActorPalettes_Bind(u32 slot, BillboardActorSys *sys, u16 billboard);
+// Gives the slot's billboard (a handle of the field actors' billboard system) its own palette, made the first time and
+// again when the billboard, its material or the individual changes; called every frame its billboard is out. Where the
+// sprite's colours weren't kept as it loaded, they're read from its file in the archive, once. Where there's no room (a
+// material slot or palette VRAM) or the file has no palette, the billboard keeps its shared material
+void PaperWhite2_ActorPalettes_Bind(u32 slot, MMSys *actorSystem, u16 billboard);
 // The slot's palette freed, its billboard (if still out) back on its shared material, and the slot emptied
 void PaperWhite2_ActorPalettes_Release(u32 slot);
 // Every slot of sys freed, as the field's billboards go (FldBillboardActor_Exit)

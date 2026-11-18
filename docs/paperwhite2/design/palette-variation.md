@@ -60,8 +60,14 @@ colours varied by its PID; the shared material stays unvaried for everything els
 - **The base colours:** a trimmed sheet keeps no palette in main memory and palette VRAM can't be read back, so
   `_Capture` in `FldBillboardActor_LoadMaterial` keeps the colours of every follower sprite (object code from
   `FOLLOWING_CODE_BASE`) and of any sprite a slot waits for, 8 at a time (the oldest no slot shows replaced first).
-  A slot whose sprite was loaded before it was wanted, below `FOLLOWING_CODE_BASE` (a stock sprite an NPC loaded),
-  finds none and keeps the shared, unvaried material.
+  A slot that finds none (its sprite still loaded but its colours replaced: the lead's preloaded sprite after more
+  than 8 others loaded while another member followed; or a sprite loaded before it was wanted) reads them from the
+  sheet's file instead (`ActorPalettes_ReadFromArchive`): the object code's file (`res1` of its config) in the field
+  actors' archive (`GetMMSysDataArcHandle`), by ranges: the file's header (16 bytes), the texture block's offset (4),
+  the block's header (`NNSG3dResTex`, 72) and the palette (32), 124 bytes in all, never the sheet, kept as a capture.
+  It happens once as the slot's copy is made without kept colours, not per frame; a file without a palette marks the
+  slot unreadable until its sprite changes, and only then does it keep the shared material. Slots' object codes are
+  all follower codes (from `FOLLOWING_CODE_BASE`), so in practice the read covers the eviction.
 - **Cost:** 32 bytes of texture palette VRAM a slot, 128 bytes at most (4 slots) of the field's 16 KB; no texture
   VRAM; one of the 96 billboard materials a slot; 0x224 bytes of overlay 36's BSS (slots and captures).
 - **Wanderers' PIDs:** a wanderer's whole PID is rolled as it spawns (`EventWildBattleCall_PickWanderer` calls
@@ -109,3 +115,9 @@ settings.
   memory too. With Always shiny each spawn rolled until shiny (1118 and 2749 rolls) and showed the shiny sprite;
   without, one roll each. L/R from the lead Pignite to a second Pignite (another key): the slot's PID changed at the
   press, and the new billboard was on its own palette with the new colours as it came out (read every 10 frames).
+- **The archive read** (py-desmume, scratchpad `palvar3/`, `t_evict.py`, 2026-11-18): on Route 20, R through the
+  party twice with members 1-5 given ten other species, so ten follower sprites loaded while the lead Pignite
+  (0x37b0, preloaded and still loaded) wasn't followed. Before: its capture was replaced, and back on the lead the
+  slot stayed unbound, the billboard on the shared material. After: one read from the archive (an exec hook on
+  `ActorPalettes_ReadFromArchive`: object code 0x37b0 only, in the whole run), the slot bound with its own material on
+  the billboard, its colours equal to the reference and to those of the field's start (the load's capture).

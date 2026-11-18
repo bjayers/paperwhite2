@@ -825,7 +825,7 @@ static void Wanderers_Draw(Field *field, BillboardActorSys *sys, Wanderer *wande
         pos.y -= WANDERER_DEEP_SAND_SINK;
     }
     pos.y += Field_GetActorYOffset(field);
-    PaperWhite2_ActorPalettes_Bind((u32)(wanderer - sWanderers.list), sys, wanderer->billboard[1]);
+    PaperWhite2_ActorPalettes_Bind((u32)(wanderer - sWanderers.list), field->actorSystem, wanderer->billboard[1]);
     BillboardActorScene_SetActorPos(BillboardActorSys_GetScene(sys), wanderer->billboard[1], &pos);
     // A walking Pokémon's animation: one a direction, always playing (as an ambient's)
     anim = wanderer->byDirection ? wanderer->facing : wanderer->facing + 2 * 4;

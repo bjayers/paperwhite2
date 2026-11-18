@@ -2,6 +2,21 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-18: field palettes read from the archive where no capture is kept (ROM session, on a branch)
+
+- **The gap:** a slot (wanderer or follower) whose sprite was still loaded but whose colours the capture store (8)
+  had replaced drew the shared, unvaried material. Reproduced in py-desmume (scratchpad `palvar3/t_evict.py`): R
+  through the party twice with ten other species, back on the lead Pignite: its capture gone, the slot unbound,
+  plain. The "stock sprite an NPC loaded" case of the design note can't reach a slot: slots' codes are all follower
+  codes (from `FOLLOWING_CODE_BASE`), which are always captured; the eviction is the real case.
+- **The fix:** `ActorPalettes_ReadFromArchive` (`paperwhite2_actor_palettes.c`) reads the palette from the sprite's
+  file in the field actors' archive by ranges (header, block offset, `NNSG3dResTex`, palette: 124 bytes), once as the
+  slot's copy is made without kept colours, and keeps it as a capture. `PaperWhite2_ActorPalettes_Bind` takes the
+  `MMSys` now (for the archive), not the billboard system. Same run after the fix: one read (0x37b0), the slot on its
+  own material, colours equal to the reference and to the field start's. `npm test` 243 passed, DSi check intact.
+- `generated/obj_codes.txt` gets the three Primal Dialga lines the main checkout had uncommitted (the build failed
+  without them: `OBJ_CODE_POKEMON_DIALGA_FORM_1` unknown).
+
 ## 2026-11-18: the battle freeze after Primal Dialga, and the debug menu's forms (ROM session, on a branch)
 
 - **The freeze:** every battle started to a white top screen, with the C-Gear still on the lower one, once the palette

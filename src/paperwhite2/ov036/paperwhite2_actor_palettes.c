@@ -1,4 +1,6 @@
 #include "types.h"
+#include "field/field_actor.h"
+#include "gfl/arc.h"
 #include "gfl/billboard_actor.h"
 #include "gfl/g3d.h"
 #include "nitro/gx.h"
@@ -13,12 +15,16 @@
 // palette: every wanderer of a species, and the follower, looked alike. A slot's billboard draws a copy of its material
 // instead, the same texture VRAM with a 16-colour palette of its own, its sprite's colours varied by its PID. The
 // sprite's colours are kept as its sheet loads (a trimmed sheet keeps no palette in main memory, and palette VRAM
-// can't be read back): those of every follower sprite, and of the sprites the slots wait for
+// can't be read back): those of every follower sprite, and of the sprites the slots wait for. A slot whose sprite's
+// colours aren't kept (loaded before it was wanted, its colours since replaced by others') reads them from the sheet's
+// file in the archive, its palette only
 
 // The colours of a sprite's palette (a 16-colour texture's)
 #define ACTOR_PALETTE_COLORS 16
 // How many sprites' colours are kept, the oldest replaced first unless a slot shows it
 #define ACTOR_PALETTE_CAPTURES 8
+// The kind of a G3D file's texture block, "TEX0"
+#define ACTOR_PALETTE_TEX_BLOCK 0x30584554
 
 typedef struct {
     u16 objCode;
@@ -37,6 +43,9 @@ typedef struct {
     u16 billboard;
     u16 source;
     u16 material;
+    // Whether its sprite's colours were neither kept nor could be read from its file: it stays on the shared material
+    // and isn't read again until its sprite changes
+    u8 unreadable;
     u32 species;
     u32 personality;
     // Its colours, which the VBlank's transfer reads (in main memory, not the stack)
@@ -72,6 +81,84 @@ static BOOL ActorPalettes_IsWanted(u16 objCode) {
 // Whether a handle of sys is a billboard that's out
 static BOOL ActorPalettes_IsOut(BillboardActorSys *sys, u16 billboard) {
     return billboard < sys->handleCount && sys->handles[billboard].actor != BILLBOARD_ACTOR_NONE;
+}
+
+// Keeps a sprite's colours, in its entry or a free one, or else the oldest that no slot shows
+static void ActorPalettes_Keep(u16 objCode, const u16 *colors, u32 count) {
+    CapturedPalette *entry = ActorPalettes_FindCaptured(objCode);
+    u32 i;
+
+    if (entry == NULL) {
+        for (i = 0; i < ACTOR_PALETTE_CAPTURES; i++) {
+            if (sCaptured[i].count == 0) {
+                entry = &sCaptured[i];
+                break;
+            }
+            if (!ActorPalettes_IsWanted(sCaptured[i].objCode) && (entry == NULL || sCaptured[i].age < entry->age)) {
+                entry = &sCaptured[i];
+            }
+        }
+        if (entry == NULL) {
+            return;
+        }
+    }
+    entry->objCode = objCode;
+    entry->count = (u16)count;
+    entry->age = ++sAge;
+    MI_CpuCopy16(colors, entry->colors, count * sizeof(u16));
+}
+
+// The colours of a sprite whose load wasn't seen, read from its sheet's file in the field actors' archive and kept as a
+// capture's: the file's header, its texture block's offset and header, then the palette, 124 bytes of reads in all and
+// never the sheet. FALSE where the file isn't a texture with a palette
+static BOOL ActorPalettes_ReadFromArchive(MMSys *actorSystem, u16 objCode) {
+    ArcTool *arc = GetMMSysDataArcHandle(actorSystem);
+    FieldActorConfig config;
+    NNSG3dResFileHeader header;
+    NNSG3dResTex tex;
+    u16 colors[ACTOR_PALETTE_COLORS];
+    u32 fileId;
+    u32 length;
+    u32 offset;
+    u32 blockOfs;
+    u32 count;
+
+    GetNPCMdlInfoForOBJCODE(actorSystem, objCode, &config);
+    fileId = GetNPCMdlInfoG2DRscGroup(&config)->res1;
+    if (config.uid != objCode || fileId >= GFL_ArcToolGetDataMax(arc)) {
+        return FALSE;
+    }
+    length = GFL_ArcToolGetDataLength(arc, fileId);
+    if (length < sizeof(header)) {
+        return FALSE;
+    }
+    GFL_ArcToolReadRange(arc, fileId, 0, sizeof(header), &header);
+    // The texture block is a texture file's only one, and a model file's second (as NNS_G3dGetTex finds it); the
+    // blocks' offsets follow the header
+    if (header.dataBlocks == 0 || (header.dataBlocks == 1 && header.signature != NNS_G3D_SIGNATURE_BTX0)) {
+        return FALSE;
+    }
+    offset = header.headerSize + (header.dataBlocks == 1 ? 0 : sizeof(u32));
+    if (offset + sizeof(blockOfs) > length) {
+        return FALSE;
+    }
+    GFL_ArcToolReadRange(arc, fileId, offset, sizeof(blockOfs), &blockOfs);
+    if (blockOfs >= length || length - blockOfs < sizeof(tex)) {
+        return FALSE;
+    }
+    GFL_ArcToolReadRange(arc, fileId, blockOfs, sizeof(tex), &tex);
+    // The palette's size is in units of 8 bytes, 4 colours
+    count = tex.plttInfo.sizePltt * 4;
+    if (count > ACTOR_PALETTE_COLORS) {
+        count = ACTOR_PALETTE_COLORS;
+    }
+    if (tex.header.kind != ACTOR_PALETTE_TEX_BLOCK || count == 0 || tex.plttInfo.ofsPlttData >= length - blockOfs ||
+        length - blockOfs - tex.plttInfo.ofsPlttData < count * sizeof(u16)) {
+        return FALSE;
+    }
+    GFL_ArcToolReadRange(arc, fileId, blockOfs + tex.plttInfo.ofsPlttData, count * sizeof(u16), colors);
+    ActorPalettes_Keep(objCode, colors, count);
+    return TRUE;
 }
 
 // The slot's colours made from its sprite's and sent to its palette; FALSE where its sprite's weren't kept
@@ -115,13 +202,19 @@ static void ActorPalettes_Unbind(ActorPalette *slot) {
 }
 
 // The slot's copy of the billboard's material, with its palette
-static BOOL ActorPalettes_MakeCopy(ActorPalette *slot, BillboardActorSys *sys, u16 billboard, u16 source) {
+static BOOL ActorPalettes_MakeCopy(ActorPalette *slot, MMSys *actorSystem, BillboardActorSys *sys, u16 billboard,
+                                   u16 source) {
     BillboardActorScene *scene = sys->scene;
     NNSGfdPlttKey key;
     u32 material;
 
-    if (source >= scene->setup.materialCount || scene->materials[source].texFormat != GX_TEXFMT_PLTT16 ||
-        ActorPalettes_FindCaptured(slot->objCode) == NULL) {
+    if (source >= scene->setup.materialCount || scene->materials[source].texFormat != GX_TEXFMT_PLTT16) {
+        return FALSE;
+    }
+    // Its sprite's colours read from the archive where they weren't kept, once a sprite
+    if (ActorPalettes_FindCaptured(slot->objCode) == NULL &&
+        (slot->unreadable || !ActorPalettes_ReadFromArchive(actorSystem, slot->objCode))) {
+        slot->unreadable = TRUE;
         return FALSE;
     }
     key = NNS_GfdAllocPlttVram(sizeof(slot->colors), FALSE, 0);
@@ -150,6 +243,7 @@ void PaperWhite2_ActorPalettes_Set(u32 slot, u16 objCode, u32 species, u32 perso
     // Another sprite is another material: the copy is made again on it
     if (palette->objCode != objCode) {
         ActorPalettes_Unbind(palette);
+        palette->unreadable = FALSE;
     }
     palette->objCode = objCode;
     palette->species = species;
@@ -157,8 +251,9 @@ void PaperWhite2_ActorPalettes_Set(u32 slot, u16 objCode, u32 species, u32 perso
     palette->changed = TRUE;
 }
 
-void PaperWhite2_ActorPalettes_Bind(u32 slot, BillboardActorSys *sys, u16 billboard) {
+void PaperWhite2_ActorPalettes_Bind(u32 slot, MMSys *actorSystem, u16 billboard) {
     ActorPalette *palette = &sSlots[slot];
+    BillboardActorSys *sys = FieldBillboardActor_GetBillboardActorSys(FldActSys_GetFieldBillboardActor(actorSystem));
     u16 source;
     u32 actor;
     u16 material;
@@ -176,7 +271,7 @@ void PaperWhite2_ActorPalettes_Bind(u32 slot, BillboardActorSys *sys, u16 billbo
         ActorPalettes_Unbind(palette);
     }
     if (!palette->bound) {
-        if (!ActorPalettes_MakeCopy(palette, sys, billboard, source)) {
+        if (!ActorPalettes_MakeCopy(palette, actorSystem, sys, billboard, source)) {
             ActorPalettes_Unbind(palette);
             return;
         }
@@ -198,6 +293,7 @@ void PaperWhite2_ActorPalettes_Release(u32 slot) {
     ActorPalettes_Unbind(palette);
     palette->objCode = 0;
     palette->changed = FALSE;
+    palette->unreadable = FALSE;
 }
 
 void PaperWhite2_ActorPalettes_ReleaseAll(BillboardActorSys *sys) {
@@ -211,10 +307,8 @@ void PaperWhite2_ActorPalettes_ReleaseAll(BillboardActorSys *sys) {
 }
 
 void PaperWhite2_ActorPalettes_Capture(u16 objCode, G3DResource *resource) {
-    CapturedPalette *entry;
     NNSG3dResTex *tex;
     u32 count;
-    u32 i;
 
     if (objCode == 0 || (objCode < FOLLOWING_CODE_BASE && !ActorPalettes_IsWanted(objCode))) {
         return;
@@ -225,27 +319,7 @@ void PaperWhite2_ActorPalettes_Capture(u16 objCode, G3DResource *resource) {
     if (count > ACTOR_PALETTE_COLORS) {
         count = ACTOR_PALETTE_COLORS;
     }
-    if (count == 0) {
-        return;
+    if (count != 0) {
+        ActorPalettes_Keep(objCode, GFL_G3DResGetTexPaletteData(resource), count);
     }
-    entry = ActorPalettes_FindCaptured(objCode);
-    if (entry == NULL) {
-        // A free one, or the oldest that no slot shows
-        for (i = 0; i < ACTOR_PALETTE_CAPTURES; i++) {
-            if (sCaptured[i].count == 0) {
-                entry = &sCaptured[i];
-                break;
-            }
-            if (!ActorPalettes_IsWanted(sCaptured[i].objCode) && (entry == NULL || sCaptured[i].age < entry->age)) {
-                entry = &sCaptured[i];
-            }
-        }
-        if (entry == NULL) {
-            return;
-        }
-    }
-    entry->objCode = objCode;
-    entry->count = (u16)count;
-    entry->age = ++sAge;
-    MI_CpuCopy16(GFL_G3DResGetTexPaletteData(resource), entry->colors, count * sizeof(u16));
 }

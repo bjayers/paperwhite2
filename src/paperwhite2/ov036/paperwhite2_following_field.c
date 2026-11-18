@@ -2602,9 +2602,7 @@ void PaperWhite2_FollowingUpdate(MMSys *system) {
         // Its own palette, varied by its PID, on its billboard (whose handle starts the actor's billboard work) once
         // that's out, and on the new one after a switch
         billboard = FldAct_GetBillboardActorWorkPtr(actor);
-        PaperWhite2_ActorPalettes_Bind(
-            ACTOR_PALETTE_FOLLOWER, FieldBillboardActor_GetBillboardActorSys(FldActSys_GetFieldBillboardActor(system)),
-            *billboard);
+        PaperWhite2_ActorPalettes_Bind(ACTOR_PALETTE_FOLLOWER, system, *billboard);
     }
     // Its steps count while it walks behind the player or waits as its resting ball, and its ambient emotes show while
     // it is out
