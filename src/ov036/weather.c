@@ -16,6 +16,9 @@
 #include "gfl/overlay.h"
 #include "gfl/tcb.h"
 #include "system/zone_weather.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/field_tint.h"
+#endif
 
 struct FieldWeather {
     Field3DBg *layers[2];
@@ -72,14 +75,37 @@ static const Field3DBgInit WEATHER_BG_SETUPS[2] = {
 static const ClActSurfaceSetup WEATHER_SURFACE_SETUP = { 0, 0, 0x100, 0xc0, 0, 1 };
 
 static const WeatherOverlay WEATHER_OVERLAYS[WEATHER_MAX] = {
-    { &SUNNY_WEATHER, OVERLAY_ID(74) },        { &FLAKE_WEATHER, OVERLAY_ID(75) },
-    { &RAIN_WEATHER, OVERLAY_ID(76) },         { &SANDSTORM_WEATHER, OVERLAY_ID(77) },
-    { &BLIZZARD_WEATHER, OVERLAY_ID(75) },     { &FLUTTER_WEATHER, OVERLAY_ID(75) },
-    { &THUNDERSTORM_WEATHER, OVERLAY_ID(76) }, { &GUSTY_RAIN_WEATHER, OVERLAY_ID(76) },
-    { &SPECK_WEATHER, OVERLAY_ID(75) },        { &TINT_WEATHER_9, OVERLAY_ID(78) },
-    { &TINT_WEATHER_10, OVERLAY_ID(78) },      { &TINT_WEATHER_11, OVERLAY_ID(78) },
-    { &SANDSTORM_WEATHER_2, OVERLAY_ID(77) },  { &TINT_WEATHER_13, OVERLAY_ID(78) },
+    { &SUNNY_WEATHER, OVERLAY_ID(74) },
+    { &FLAKE_WEATHER, OVERLAY_ID(75) },
+    { &RAIN_WEATHER, OVERLAY_ID(76) },
+    { &SANDSTORM_WEATHER, OVERLAY_ID(77) },
+    { &BLIZZARD_WEATHER, OVERLAY_ID(75) },
+    { &FLUTTER_WEATHER, OVERLAY_ID(75) },
+    { &THUNDERSTORM_WEATHER, OVERLAY_ID(76) },
+    { &GUSTY_RAIN_WEATHER, OVERLAY_ID(76) },
+    { &SPECK_WEATHER, OVERLAY_ID(75) },
+    { &TINT_WEATHER_9, OVERLAY_ID(78) },
+    { &TINT_WEATHER_10, OVERLAY_ID(78) },
+    { &TINT_WEATHER_11, OVERLAY_ID(78) },
+    { &SANDSTORM_WEATHER_2, OVERLAY_ID(77) },
+    { &TINT_WEATHER_13, OVERLAY_ID(78) },
     { &TINT_WEATHER_14, OVERLAY_ID(78) },
+#ifdef PAPERWHITE2
+    // Paper White 2: after the original's, the hack's tints, whose functions are in overlay 36
+    // (paperwhite2/field_tint.h); overlay 78, the original's tints', is named only because each weather names one
+    { &PAPERWHITE2_CUSTOM_TINT_WEATHERS[0], OVERLAY_ID(78) },
+    { &PAPERWHITE2_CUSTOM_TINT_WEATHERS[1], OVERLAY_ID(78) },
+    { &PAPERWHITE2_CUSTOM_TINT_WEATHERS[2], OVERLAY_ID(78) },
+    { &PAPERWHITE2_CUSTOM_TINT_WEATHERS[3], OVERLAY_ID(78) },
+    { &PAPERWHITE2_CUSTOM_TINT_WEATHERS[4], OVERLAY_ID(78) },
+    { &PAPERWHITE2_CUSTOM_TINT_WEATHERS[5], OVERLAY_ID(78) },
+    { &PAPERWHITE2_CUSTOM_TINT_WEATHERS[6], OVERLAY_ID(78) },
+    { &PAPERWHITE2_CUSTOM_TINT_WEATHERS[7], OVERLAY_ID(78) },
+    { &PAPERWHITE2_CUSTOM_TINT_WEATHERS[8], OVERLAY_ID(78) },
+    { &PAPERWHITE2_CUSTOM_TINT_WEATHERS[9], OVERLAY_ID(78) },
+    { &PAPERWHITE2_CUSTOM_TINT_WEATHERS[10], OVERLAY_ID(78) },
+    { &PAPERWHITE2_CUSTOM_TINT_WEATHERS[11], OVERLAY_ID(78) },
+#endif
 };
 
 static WeatherTransitionFunc WEATHER_TRANSITION_FUNCS[2] = {

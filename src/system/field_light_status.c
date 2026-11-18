@@ -8,6 +8,9 @@
 #include "nitro/fx.h"
 #include "system/area_data.h"
 #include "system/rtc.h"
+#ifdef PAPERWHITE2
+#include "system/zone_weather.h"
+#endif
 
 // The field's light colors at a time of day, read from the light files without a field, which the battle uses to
 // light its stage. The name is a guess, since the ROM has no string of this file.
@@ -42,7 +45,13 @@ void FieldLightStatus_Get(u32 zoneId, u32 hour, u32 minute, u32 weather, u32 sea
     u32 count;
     int seconds = minute * 60 + hour * 3600;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the hack's tints have no battle light of their own, so a battle in one is lit as in the clear
+    // (paperwhite2/field_tint.h)
+    if (weather != 0 && weather < WEATHER_CUSTOM_TINT_1) {
+#else
     if (weather != 0) {
+#endif
         data = FieldLightStatus_LoadData(ARCID_LIGHTS_BATTLE, FieldLightStatus_GetWeatherLight(weather), &count,
                                          HEAPID_TAIL(heapId));
     }

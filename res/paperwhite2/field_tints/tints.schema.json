@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Custom tints",
+  "description": "Paper White 2's own field tints (docs/paperwhite2/plugins.md, Custom tints): field weathers WEATHER_CUSTOM_TINT_1 to WEATHER_CUSTOM_TINT_12 (include/system/zone_weather.h), the list's first tint the first slot. A tint is the DS's fog in its own colour: flat covers every depth alike, a screen fade; fog thickens with distance. tools/paperwhite2/field_tints.py checks the file and writes it into paperwhite2/field_tints_config.h for src/paperwhite2/ov036/paperwhite2_field_tint.c; a slot past the list's end is clear.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [ "tints" ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "tints": {
+      "type": "array", "minItems": 1, "maxItems": 12,
+      "description": "The tints, slot 1 first: the order is the weathers', so moving one changes every run, room and calendar that names its weather",
+      "items": { "$ref": "#/$defs/tint" }
+    }
+  },
+  "$defs": {
+    "tint": {
+      "type": "object", "additionalProperties": false, "required": [ "name", "color", "strength", "style" ],
+      "properties": {
+        "name": { "type": "string", "description": "What the tint is, for people: the debug menu shows only its slot (Custom tint 1 to 12)" },
+        "color": {
+          "type": "array", "minItems": 3, "maxItems": 3,
+          "items": { "type": "integer", "minimum": 0, "maximum": 255 },
+          "description": "Red, green and blue from 0 to 255; the DS shows 5 bits an axis, so the game rounds each to the nearest of 32 levels"
+        },
+        "strength": {
+          "type": "integer", "minimum": 0, "maximum": 100,
+          "description": "How much of the colour covers the map at its thickest, in percent: flat, everywhere; fog, far off, with about half of that at the player (at the default fog_shift and fog_offset)"
+        },
+        "style": {
+          "enum": [ "flat", "fog" ],
+          "description": "flat: every depth the same, so the whole map and the sky gaps fade alike; fog: thickens with distance from the camera, like the rain's fog, mapped to each map's camera"
+        },
+        "fog_shift": {
+          "type": "integer", "minimum": 0, "maximum": 10,
+          "description": "fog only: the fog's slope (the hardware's shift, on a normal town's camera); one more halves the distance it takes to thicken. 8 when left out, the rain's"
+        },
+        "fog_offset": {
+          "type": "integer", "minimum": 0, "maximum": 32767,
+          "description": "fog only: the depth where the fog starts, on a normal town's camera, whose player is at depth 32661: lower starts it nearer. 32597 when left out, which puts the player about half way into it"
+        }
+      }
+    }
+  }
+}

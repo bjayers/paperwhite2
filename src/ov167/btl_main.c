@@ -2401,7 +2401,14 @@ u32 CalcLossMoney(BtlMainModule *mainModule) {
     u32 cash;
 
     if (!mainModule->unk473_4) {
+#ifdef PAPERWHITE2
+        // Paper White 2: an Entralink run's loss costs no money, since the run doesn't touch the game outside it: the
+        // loss stays 0, so the exit shows no "dropped" or "paid out" message and the field takes nothing
+        // (paperwhite2/entralink_run_battle.h)
+        if (mainModule->setup->battleType <= 1 && !BtlSetup_IsBattleType(mainModule, ENTRALINK_RUN_BTL_SETUP_FLAG)) {
+#else
         if (mainModule->setup->battleType <= 1) {
+#endif
             cash = getCash(getTrainerCardDataBlkAddress(mainModule->setup->gameData));
             loss = BtlCalc_GetLostMoney(mainModule->setup->unk98,
                                         GetClientParty(&mainModule->pokeCons[1], mainModule->playerClientId));

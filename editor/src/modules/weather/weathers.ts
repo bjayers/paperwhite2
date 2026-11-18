@@ -7,6 +7,12 @@ import { WEATHERS as ENCOUNTER_WEATHERS } from "../encounters/model.ts";
 
 interface WeatherLook { label?: string; color: string; note: string; special?: boolean }
 
+// Paper White 2's own tints: slot n is the nth tint of res/paperwhite2/field_tints/tints.json, whose name says its colour
+const customTint = (slot: number): WeatherLook => ({
+  label: `Custom tint ${slot}`, color: "#5a3a6e", special: true,
+  note: `Paper White 2's tint ${slot} of res/paperwhite2/field_tints/tints.json: a fog in its own colour (empty slots are clear). No battle weather.`,
+});
+
 const LOOKS: Record<string, WeatherLook> = {
   WEATHER_SUNNY: { color: "#f3d36b", note: "Clear sky with the zone's own light and fog. No battle weather." },
   WEATHER_FLAKE: { color: "#cfe3f7", note: "Snowflakes that sway down. No battle weather." },
@@ -23,6 +29,18 @@ const LOOKS: Record<string, WeatherLook> = {
   WEATHER_SANDSTORM_2: { label: "Desert sandstorm", color: "#a8743a", note: "Desert Resort's inner sandstorm. Sandstorm in battle." },
   WEATHER_TINT_13: { label: "Entralink tint 13", color: "#b7a6d6", note: "One of the Entralink's tints, by the camera's defaults: meant for the Entralink.", special: true },
   WEATHER_TINT_14: { label: "Entralink tint 14", color: "#d6a6c4", note: "One of the Entralink's tints, by the camera's defaults: meant for the Entralink.", special: true },
+  WEATHER_CUSTOM_TINT_1: customTint(1),
+  WEATHER_CUSTOM_TINT_2: customTint(2),
+  WEATHER_CUSTOM_TINT_3: customTint(3),
+  WEATHER_CUSTOM_TINT_4: customTint(4),
+  WEATHER_CUSTOM_TINT_5: customTint(5),
+  WEATHER_CUSTOM_TINT_6: customTint(6),
+  WEATHER_CUSTOM_TINT_7: customTint(7),
+  WEATHER_CUSTOM_TINT_8: customTint(8),
+  WEATHER_CUSTOM_TINT_9: customTint(9),
+  WEATHER_CUSTOM_TINT_10: customTint(10),
+  WEATHER_CUSTOM_TINT_11: customTint(11),
+  WEATHER_CUSTOM_TINT_12: customTint(12),
 };
 
 const plain = (name: string) => {
@@ -36,5 +54,5 @@ export function weatherLabel(name: string): string {
 
 export const weatherColor = (name: string) => LOOKS[name]?.color ?? "#888888";
 export const weatherNote = (name: string) => LOOKS[name]?.note ?? "";
-/** The Entralink's tints, listed apart in the palette. */
+/** The Entralink's tints and Paper White 2's own, listed apart in the palette. */
 export const isSpecialWeather = (name: string) => LOOKS[name]?.special === true;

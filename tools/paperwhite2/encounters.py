@@ -220,8 +220,9 @@ def candidates(data: Data) -> dict[str, list[tuple[tuple, dict | None]]]:
             for seasons, slot in slots:
                 if slot["rarity"] not in data.tiers:
                     raise DataError(f"{at}: no tier {slot['rarity']!r}")
-                # A weather stands for its group (conditions.weather_mask)
-                weather = conditions.weather_mask(slot.get("weather", []), f"{at}: weather")
+                # A weather stands for its group (conditions.weather_mask); the 16 bits hold every weather but the
+                # hack's tints, which the game counts as clear (paperwhite2_conditions_context.c)
+                weather = conditions.weather_mask(slot.get("weather", []), f"{at}: weather") & 0xFFFF
                 fields = (number, family, weather, habitat.get("form", 0), data.tiers.index(slot["rarity"]),
                           bits(slot["methods"], METHODS, at), bits(seasons, SEASONS, at), bits(slot["times"], TIMES, at),
                           levels["min"], levels["max"], hidden, *styles)

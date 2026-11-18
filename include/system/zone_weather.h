@@ -28,6 +28,22 @@ enum {
     WEATHER_SANDSTORM_2,
     WEATHER_TINT_13,
     WEATHER_TINT_14,
+#ifdef PAPERWHITE2
+    // Paper White 2: the hack's own tints, slots of res/paperwhite2/field_tints/tints.json in order
+    // (paperwhite2/field_tint.h); a slot the file doesn't fill is clear
+    WEATHER_CUSTOM_TINT_1,
+    WEATHER_CUSTOM_TINT_2,
+    WEATHER_CUSTOM_TINT_3,
+    WEATHER_CUSTOM_TINT_4,
+    WEATHER_CUSTOM_TINT_5,
+    WEATHER_CUSTOM_TINT_6,
+    WEATHER_CUSTOM_TINT_7,
+    WEATHER_CUSTOM_TINT_8,
+    WEATHER_CUSTOM_TINT_9,
+    WEATHER_CUSTOM_TINT_10,
+    WEATHER_CUSTOM_TINT_11,
+    WEATHER_CUSTOM_TINT_12,
+#endif
     WEATHER_MAX,
 };
 

@@ -30,6 +30,9 @@
 #include "system/version.h"
 #include "system/wordset.h"
 #include "text/system/gym_insect.h"
+#ifdef PAPERWHITE2
+#include "system/zone_weather.h"
+#endif
 
 struct GimmickGateMessageList {
     u8 count;
@@ -664,6 +667,12 @@ void GimmickGate_AddWeatherMessage(GimmickGateWork *work) {
             continue;
         }
         weather = list.weather[i];
+#ifdef PAPERWHITE2
+        // Paper White 2: the hack's tints show as the original's tints do (paperwhite2/field_tint.h)
+        if (weather >= WEATHER_CUSTOM_TINT_1) {
+            weather = WEATHER_TINT_10;
+        }
+#endif
         placeName = GFL_MsgDataLoadStrbufNew(placeMessages, ZoneData_GetPlaceNameID(list.zones[i]));
         weatherName = GFL_MsgDataLoadStrbufNew(weatherMessages, sWeatherMessages[weather]);
         formatSet = GFL_WordSetSystemCreate(2, 0x100, work->heapId);

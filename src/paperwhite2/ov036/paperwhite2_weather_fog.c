@@ -11,6 +11,7 @@
 #include "nitro/gx.h"
 #include "nitro/os.h"
 #include "nnsys/g3d.h"
+#include "paperwhite2/field_tint.h"
 #include "paperwhite2/weather_fog.h"
 
 // Paper White 2: weather fog that follows the player (paperwhite2/weather_fog.h, docs/paperwhite2/plugins.md's
@@ -329,7 +330,7 @@ static const u16 sRearPlaneFogZones[] = {
 BOOL PaperWhite2_WeatherFog_FollowsPlayer(const WeatherData *data) {
     return data == &RAIN_WEATHER || data == &THUNDERSTORM_WEATHER || data == &GUSTY_RAIN_WEATHER ||
            data == &FLAKE_WEATHER || data == &BLIZZARD_WEATHER || data == &FLUTTER_WEATHER || data == &SPECK_WEATHER ||
-           data == &SANDSTORM_WEATHER;
+           data == &SANDSTORM_WEATHER || PaperWhite2_FieldTint_FollowsPlayer(data);
 }
 
 // 0x7fff times how far the Z-buffer's depth runs from 0 at the near plane to 1 at the far plane, in 16.16

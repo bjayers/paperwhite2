@@ -49,7 +49,10 @@ export const WEATHERS: { id: string; label: string }[] = [
 /** The weather groups (include/paperwhite2/weather_groups.h, which tests/weather-groups.test.ts checks this against): a
  * habitat's weather matches any weather of its weathers' groups, as the game's conditions compile it. */
 export const WEATHER_GROUPS: Record<string, string[]> = {
-  clear: ["WEATHER_SUNNY", "WEATHER_TINT_9", "WEATHER_TINT_10", "WEATHER_TINT_11", "WEATHER_TINT_13", "WEATHER_TINT_14"],
+  clear: ["WEATHER_SUNNY", "WEATHER_TINT_9", "WEATHER_TINT_10", "WEATHER_TINT_11", "WEATHER_TINT_13", "WEATHER_TINT_14",
+    "WEATHER_CUSTOM_TINT_1", "WEATHER_CUSTOM_TINT_2", "WEATHER_CUSTOM_TINT_3", "WEATHER_CUSTOM_TINT_4",
+    "WEATHER_CUSTOM_TINT_5", "WEATHER_CUSTOM_TINT_6", "WEATHER_CUSTOM_TINT_7", "WEATHER_CUSTOM_TINT_8",
+    "WEATHER_CUSTOM_TINT_9", "WEATHER_CUSTOM_TINT_10", "WEATHER_CUSTOM_TINT_11", "WEATHER_CUSTOM_TINT_12"],
   rain: ["WEATHER_RAIN", "WEATHER_GUSTY_RAIN"],
   thunderstorm: ["WEATHER_THUNDERSTORM"],
   snow: ["WEATHER_FLAKE", "WEATHER_BLIZZARD", "WEATHER_FLUTTER", "WEATHER_DIAMOND_DUST"],

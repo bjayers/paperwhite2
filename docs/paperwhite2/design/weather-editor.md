@@ -86,6 +86,11 @@ zone** (the debug menu's Force weather shows each anywhere, plugins.md). The bat
 | 9 | `WEATHER_TINT_9` | 78 | a white mist (fog and light), Giant Chasm, Routes 14 and 15 | none |
 | 10, 11, 13, 14 | `WEATHER_TINT_*` | 78 | the Entralink's tints, by the camera's defaults index (inferred: meant for the Entralink only) | none |
 | 12 | `WEATHER_SANDSTORM_2` | 77 | Desert Resort's inner sandstorm | sandstorm |
+| 15-26 | `WEATHER_CUSTOM_TINT_1`-`_12` | 36 | Paper White 2's tints: a fog in a colour of `res/paperwhite2/field_tints/tints.json` (plugins.md, Custom tints) | none |
+
+The original's tints are depth fog in the colour of their light file, not a flat fade: `weather_tint.c`'s two tables
+by camera are the fog's shift and offset (8 and `0x7f5f`, the rain's, on most cameras; 1 and 0, everything fogged,
+on index 10), not a level and a colour. The custom tints are flat (every depth alike) or fog (by distance).
 
 - **No harsh sun.** Weather 0 is the only sunny one: clear sky with the zone's light. A sunny weather would be a new
   `WeatherData` (a warm tint through overlay 78's functions and a light file, like `TINT_9`), and new battle mapping.

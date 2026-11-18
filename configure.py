@@ -1242,6 +1242,15 @@ def main():
                 implicit=["tools/paperwhite2/type_colors.py", *script_imports("tools/paperwhite2/type_colors.py"),
                           "res/paperwhite2/type_colors.schema.json", "tools/data/datajson.py", "generated/types.txt"])
         constant_headers.append(output)
+        # Paper White 2: the custom field tints, from res/paperwhite2/field_tints/tints.json
+        # (docs/paperwhite2/plugins.md, Custom tints)
+        n.rule("field_tints", "$python tools/paperwhite2/field_tints.py $in $out", "Generating $out", restat="1")
+        output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "field_tints_config.h"
+        n.build([output], "field_tints", ["res/paperwhite2/field_tints/tints.json"],
+                implicit=["tools/paperwhite2/field_tints.py", *script_imports("tools/paperwhite2/field_tints.py"),
+                          "res/paperwhite2/field_tints/tints.schema.json", "include/system/zone_weather.h",
+                          "tools/data/datajson.py"])
+        constant_headers.append(output)
         # Paper White 2: the Entralink roguelike's run and rooms, from res/paperwhite2/entralink/
         # (docs/paperwhite2/design/entralink-roguelike-prototype.md); the rooms' dialogue is text (TEXT_DATA_DIRS)
         n.rule("entralink_run", "$python tools/paperwhite2/entralink_run.py $out", "Generating $out", restat="1")

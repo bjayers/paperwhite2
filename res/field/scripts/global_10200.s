@@ -479,7 +479,8 @@ L_DebugSeason:
     SEPlay SEQ_SE_SELECT1
     VMJump L_DebugWorld
 
-// Weather: Off, or a WEATHER_* + 1, WEATHER_SUNNY to WEATHER_TINT_14, the tints and the second sandstorm included
+// Weather: Off, or a WEATHER_* + 1, WEATHER_SUNNY to WEATHER_CUSTOM_TINT_12, the tints, the second sandstorm and the
+// hack's tints (res/paperwhite2/field_tints/tints.json, by slot) included
 L_DebugWeather:
     SystemMsg Global10200_Text_DebugWeatherTitle, 2
     ListMenuAnchorTopRight 31, 1, 0, 1, 0x8020
@@ -499,9 +500,21 @@ L_DebugWeather:
     ListMenuAdd Global10200_Text_DebugWeatherSandstorm2, 65535, 13
     ListMenuAdd Global10200_Text_DebugWeatherTint13, 65535, 14
     ListMenuAdd Global10200_Text_DebugWeatherTint14, 65535, 15
+    ListMenuAdd Global10200_Text_DebugWeatherCustomTint1, 65535, 16
+    ListMenuAdd Global10200_Text_DebugWeatherCustomTint2, 65535, 17
+    ListMenuAdd Global10200_Text_DebugWeatherCustomTint3, 65535, 18
+    ListMenuAdd Global10200_Text_DebugWeatherCustomTint4, 65535, 19
+    ListMenuAdd Global10200_Text_DebugWeatherCustomTint5, 65535, 20
+    ListMenuAdd Global10200_Text_DebugWeatherCustomTint6, 65535, 21
+    ListMenuAdd Global10200_Text_DebugWeatherCustomTint7, 65535, 22
+    ListMenuAdd Global10200_Text_DebugWeatherCustomTint8, 65535, 23
+    ListMenuAdd Global10200_Text_DebugWeatherCustomTint9, 65535, 24
+    ListMenuAdd Global10200_Text_DebugWeatherCustomTint10, 65535, 25
+    ListMenuAdd Global10200_Text_DebugWeatherCustomTint11, 65535, 26
+    ListMenuAdd Global10200_Text_DebugWeatherCustomTint12, 65535, 27
     ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
     ListMenuShow
-    WorkCmpConst 0x8020, 15
+    WorkCmpConst 0x8020, 27
     VMJumpIf CMP_GT, L_DebugWorld
     Debug DEBUG_ACTION_SET_WEATHER, 0x8020, 0, 0x8025
     SEPlay SEQ_SE_SELECT1

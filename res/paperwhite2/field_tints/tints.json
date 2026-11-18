@@ -1,0 +1,14 @@
+{
+    "$schema": "tints.schema.json",
+    "tints": [
+        { "name": "Black, light", "color": [ 0, 0, 0 ], "strength": 30, "style": "flat" },
+        { "name": "Black, heavy", "color": [ 0, 0, 0 ], "strength": 55, "style": "flat" },
+        { "name": "Dark purple, light", "color": [ 64, 16, 96 ], "strength": 35, "style": "flat" },
+        { "name": "Dark purple, heavy", "color": [ 64, 16, 96 ], "strength": 60, "style": "flat" },
+        { "name": "Pink, light", "color": [ 216, 56, 144 ], "strength": 25, "style": "flat" },
+        { "name": "Pink, heavy", "color": [ 216, 56, 144 ], "strength": 45, "style": "flat" },
+        { "name": "Black fog", "color": [ 0, 0, 0 ], "strength": 100, "style": "fog" },
+        { "name": "Dark purple fog", "color": [ 64, 16, 96 ], "strength": 100, "style": "fog" },
+        { "name": "Pink fog", "color": [ 216, 56, 144 ], "strength": 90, "style": "fog" }
+    ]
+}

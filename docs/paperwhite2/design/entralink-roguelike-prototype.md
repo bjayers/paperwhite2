@@ -484,6 +484,21 @@ drawn"); **Maps** (`room_maps`, `final_map`, read only); and the draw's checks. 
 Not tested: a style on an after message or an item NPC's (the same subroutine), the greyed tabs behind the bag's item
 menu (the run's bag was empty), real hardware.
 
+## Money (2026-11-17)
+
+A run's loss no longer costs money: `CalcLossMoney` (`btl_main.c`) leaves the loss at 0 for a battle with
+`ENTRALINK_RUN_BTL_SETUP_FLAG`, so the wild loss's "dropped $X in panic" (and a trainer battle's "paid out") is never
+shown and the setup's money change (`unkA4`, which `event_battle_return.c` adds or takes) is 0. A forfeit
+(`BTL_RESULT_FLEE`) never reached the loss money. A win keeps the original's: a wild battle has no prize money, so only
+Pay Day's (or a Pass Power's) bonus could add any, which is left as it is. Nothing else of the game outside the run
+changes on a loss or a win: the copies take the friendship, Exp. and Pickup items and are thrown away, the real party
+and bag are untouched; the Pokédex's seen entries and the battle records count as in any battle.
+
+Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `tints/`): the money set to 50000, the
+copies made to faint in room 1's battle: "out of usable Pokémon", "blacked out", no money message, the hub, money still
+50000. The same battle with the run's flag cleared as it was created (a plain wild battle): "Riku dropped $3600 in
+panic...", money 46400, as the original.
+
 ## The re-entry question
 
 **Re-entering the same map works as a fresh room.** Tested by poking the room-maps table in RAM to `entree_forest`

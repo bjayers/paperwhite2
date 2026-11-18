@@ -13,6 +13,7 @@
 #include "system/palanm.h"
 #include "system/rtc.h"
 #ifdef PAPERWHITE2
+#include "paperwhite2/field_tint.h"
 #include "paperwhite2/weather_fog.h"
 #endif
 
@@ -242,11 +243,14 @@ static void FieldLight_FlushCore(const FieldLight *light, FieldFog *fog, G3DLigh
         }
         NNS_G3dGlbMaterialColorDiffAmb(light->current.materials[0], light->current.materials[1], TRUE);
         NNS_G3dGlbMaterialColorSpecEmi(light->current.materials[2], light->current.materials[3], FALSE);
-        FieldFog_SetColor(fog, light->current.materials[4]);
 #ifdef PAPERWHITE2
-        // Paper White 2: in Castelia, the sky gaps take a weather's fog (paperwhite2/weather_fog.h)
-        G3X_SetClearColor(light->current.materials[5], 31, 0x7fff, 0, PaperWhite2_WeatherFog_IsRearPlaneFog());
+        // Paper White 2: one of the hack's tints fogs in its own colour, and the sky gaps take it, as do Castelia's in
+        // a weather (paperwhite2/field_tint.h, paperwhite2/weather_fog.h)
+        FieldFog_SetColor(fog, PaperWhite2_FieldTint_GetFogColor(light->current.materials[4]));
+        G3X_SetClearColor(light->current.materials[5], 31, 0x7fff, 0,
+                          PaperWhite2_WeatherFog_IsRearPlaneFog() || PaperWhite2_FieldTint_IsActive());
 #else
+        FieldFog_SetColor(fog, light->current.materials[4]);
         G3X_SetClearColor(light->current.materials[5], 31, 0x7fff, 0, FALSE);
 #endif
     }

@@ -830,6 +830,44 @@ meant was the waterfront's green one to Skyarrow Bridge.
 keep their own colours again; the waterfront's tint moved from the signboard `polygon11` to the gate itself in
 `polygon3`, its frame and panel only (above).
 
+### Custom tints
+
+The hack's own field weathers that tint the map, made for a darker Entree Forest (2026-11-17):
+`WEATHER_CUSTOM_TINT_1` to `_12` (`include/system/zone_weather.h`, after the original's 15, under `PAPERWHITE2`),
+each the slot of the same number in **`res/paperwhite2/field_tints/tints.json`** (`tints.schema.json`). A tint has a
+`name` (for people), an 8-bit RGB `color`, a `strength` in percent and a `style`; a slot past the list's end is clear.
+`tools/paperwhite2/field_tints.py` checks the file and writes `paperwhite2/field_tints_config.h` (as the type colours
+are packed); edit the file and rebuild, no code. Slots 1-9 hold black, dark purple and pink, each flat light, flat
+heavy and fog.
+
+**What a tint is.** The original's tints (9-14, `src/ov078/weather_tint.c`) are the hardware's **depth fog**, not a
+flat fade: the game's ramp table (`FieldFog_SetDefaultTable`), a shift and offset by the camera's defaults index, and
+the fog's colour from the weather's own light file (material 4), which also relights the map. The custom ones
+(`src/paperwhite2/ov036/paperwhite2_field_tint.c`) keep the zone's lights and fog in their own colour:
+
+- **flat**: every entry of the fog table is the strength's density (0-127), at shift and offset 0, so every depth takes
+  the same share of the colour: a screen fade over the map, its actors and the sky gaps.
+- **fog**: the game's ramp scaled to the strength, at `fog_shift`/`fog_offset` (8 and `0x7f55` by default, on a normal
+  town's camera: the player half way into it, all of it about 420 units off), mapped to each map's camera as the rain's
+  fog is (`PaperWhite2_WeatherFog_FollowsPlayer`, Weather above), so distant ground fades more than the trees by the
+  camera.
+
+Both fade in over 90 frames and out over 60 by scaling the table. `field_light.c`'s flush gives the fog the tint's
+colour while one is on (`PaperWhite2_FieldTint_GetFogColor`) and turns on the sky gaps' fog; `WeatherTask_GetData`,
+`WeatherTask_GetFog` and `WeatherTask_FlushLight` (`weather_task.c`) are the tint's way in. The tint's exit, also run
+when the field closes, clears its state, so a battle or the next map never takes its colour; the field's next weather
+starts it again. Other places that take the new weathers: the weather groups (clear; conditions and encounters count a
+custom tint as `WEATHER_SUNNY`, which keeps the encounter tables' 16-bit masks), a battle's light
+(`FieldLightStatus_Get`: as in the clear), Castelia gates' forecast (shown as a tint), the debug menu's World > Weather
+("Custom tint 1" to 12), the weather calendar's and `run.json`'s `field_weather` enums, and the editor's weather lists.
+
+**Cost.** Overlay 36 about 1.5 KB (12 `WeatherData`, the table and the code); no heap.
+
+**Tested (py-desmume, the user's save copy, 2026-11-17):** each of the nine in the Entree Forest's first run room and
+four in Castelia (screenshots in the session's scratchpad `tints/shots/`, `m_forest.png`, `m_town.png`); a tint, then
+Off, back to the forest's own look; a tint kept through a run battle's loss and the warp to the hub. Not tested: real
+hardware (DeSmuME's fog is close for a Z-buffered camera), a W-buffered camera.
+
 ### Season app
 
 The Pokémon Centers' globe opens a touch-screen app that sets the season setting, in Geonet's place: hack builds have

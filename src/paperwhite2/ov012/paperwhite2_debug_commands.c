@@ -182,7 +182,13 @@ static const u16 sDebugWeatherNames[WEATHER_MAX] = {
     Global10200_Text_DebugWeatherDiamondDust,  Global10200_Text_DebugWeatherTint9,
     Global10200_Text_DebugWeatherTint10,       Global10200_Text_DebugWeatherTint11,
     Global10200_Text_DebugWeatherSandstorm2,   Global10200_Text_DebugWeatherTint13,
-    Global10200_Text_DebugWeatherTint14,
+    Global10200_Text_DebugWeatherTint14,       Global10200_Text_DebugWeatherCustomTint1,
+    Global10200_Text_DebugWeatherCustomTint2,  Global10200_Text_DebugWeatherCustomTint3,
+    Global10200_Text_DebugWeatherCustomTint4,  Global10200_Text_DebugWeatherCustomTint5,
+    Global10200_Text_DebugWeatherCustomTint6,  Global10200_Text_DebugWeatherCustomTint7,
+    Global10200_Text_DebugWeatherCustomTint8,  Global10200_Text_DebugWeatherCustomTint9,
+    Global10200_Text_DebugWeatherCustomTint10, Global10200_Text_DebugWeatherCustomTint11,
+    Global10200_Text_DebugWeatherCustomTint12,
 };
 
 // The key items that Give key items adds: the tools and the forme items, which no story event checks for. The rest of

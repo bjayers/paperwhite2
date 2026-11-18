@@ -95,6 +95,13 @@ void WeatherTask_SetLight(WeatherTask *task, u32 arcId, u32 fileId);
 void WeatherTask_ResetLight(WeatherTask *task, u32 mode);
 void WeatherTask_InitFog(WeatherTask *task, u32 depthShift, u32 offset, u32 mode);
 void WeatherTask_DisableFog(WeatherTask *task, u32 mode);
+#ifdef PAPERWHITE2
+// Paper White 2: the weather that the task plays, and the field's fog (paperwhite2/field_tint.h)
+const WeatherData *WeatherTask_GetData(WeatherTask *task);
+FieldFog *WeatherTask_GetFog(WeatherTask *task);
+// Applies the light's colours and the fog's colour at once
+void WeatherTask_FlushLight(WeatherTask *task);
+#endif
 void WeatherTask_ChangeFog(WeatherTask *task, u32 depthShift, u32 color, int duration, u32 mode);
 void WeatherTask_ChangeFogOffset(WeatherTask *task, u32 color, u32 duration, u32 mode);
 BOOL WeatherTask_IsFogIdle(WeatherTask *task);

@@ -15,6 +15,7 @@
 #include "save/save_control.h"
 #include "system/game_data.h"
 #include "system/rtc.h"
+#include "system/zone_weather.h"
 
 // Paper White 2: the conditions' context, filled from the game by main's own functions, so an app overlay can fill it
 // as the field does, and the zone-load counter and the tables' loading. See include/paperwhite2/conditions.h
@@ -45,6 +46,11 @@ void ConditionContext_FillWorld(ConditionContext *ctx, GameData *gameData) {
     ctx->season = GameData_GetSeason(gameData);
     ctx->period = GetRealTimeDayPeriod(ctx->season);
     ctx->weather = GetNowWeather(gameData);
+    // The hack's tints are a look, not a weather to meet Pokémon in: they count as clear, which also keeps every
+    // weather that a condition or an encounter tests within the tables' 16 bits (paperwhite2/field_tint.h)
+    if (ctx->weather >= WEATHER_CUSTOM_TINT_1 && ctx->weather < WEATHER_MAX) {
+        ctx->weather = WEATHER_SUNNY;
+    }
     ctx->zone = PlayerState_GetZoneID(GameData_GetPlayerState(gameData));
     ctx->zoneParent = GetZoneParentZone(ctx->zone);
     ctx->zoneLoadCounter = *EventWork_GetWkPtr(eventWork, EVENT_WORK_ZONE_LOAD_COUNTER);

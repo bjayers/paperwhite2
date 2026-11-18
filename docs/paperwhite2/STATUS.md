@@ -2,6 +2,22 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-17: no money lost in a run; custom field tints (ROM session, on a branch)
+
+- **Money:** a run battle's loss takes no money and shows no "dropped"/"paid out" message (`CalcLossMoney` skips run
+  battles); a forfeit never did; a win's money is the original's (none for a wild battle but Pay Day's). Proven in
+  py-desmume: run loss 50000 to 50000; the same battle made plain, "dropped $3600", 46400. Prototype doc, "Money".
+- **Custom tints:** field weathers `WEATHER_CUSTOM_TINT_1`-`_12`, data in `res/paperwhite2/field_tints/tints.json`
+  (colour, strength %, `flat` or `fog`), packed into a header. They are the DS's fog in the tint's colour: flat is a
+  screen fade, fog thickens with distance. Slots 1-9: black, dark purple, pink, each flat light, flat heavy, fog.
+  Debug menu World > Weather lists them as "Custom tint 1"-"12"; `run.json`'s `field_weather` and the weather calendar
+  take them (a room's own `weather` is a battle weather, so it can't). plugins.md, "Custom tints".
+- **Correction** to the 2026-11-15 entry below: the original's tints are depth fog, and their tables are the fog's
+  shift and offset, not a level and a colour.
+- **For the user:** judge the nine in the forest (screenshots in the session's scratchpad `tints/shots/`); change colours and strengths in `tints.json`.
+  `--hack` build without warnings, DSi intact, plain build's modules match, editor tests (233) and the conditions tests
+  pass.
+
 ## 2026-11-16: the Entralink roguelike's step 4, game and editor (ROM session, on a branch)
 
 `docs/paperwhite2/design/entralink-roguelike-prototype.md`, "Step 4", has the design and the proof.

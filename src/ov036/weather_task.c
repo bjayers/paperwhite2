@@ -456,6 +456,22 @@ void WeatherTask_InitFog(WeatherTask *task, u32 depthShift, u32 offset, u32 mode
     }
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: the weather that the task plays and the field's fog, for the hack's tints (paperwhite2/field_tint.h)
+const WeatherData *WeatherTask_GetData(WeatherTask *task) {
+    return task->data;
+}
+
+FieldFog *WeatherTask_GetFog(WeatherTask *task) {
+    return task->fog;
+}
+
+// Applies the light's colours and the fog's colour at once
+void WeatherTask_FlushLight(WeatherTask *task) {
+    FieldLight_Flush(task->light, TRUE);
+}
+#endif
+
 void WeatherTask_DisableFog(WeatherTask *task, u32 mode) {
     if (mode == WEATHER_MODE_ALONE) {
         FieldFog_SetEnabled(task->fog, FALSE);
