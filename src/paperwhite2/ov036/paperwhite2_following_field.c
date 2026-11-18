@@ -32,6 +32,7 @@
 #include "paperwhite2/following_render.h"
 #include "paperwhite2/following_resident.h"
 #include "paperwhite2/following_scene.h"
+#include "paperwhite2/palette_variation.h"
 #include "pml/poke_party.h"
 #include "save/config.h"
 #include "save/player_info.h"
@@ -59,6 +60,9 @@
 // keeps this much
 #define FREE_ACTORS_KEPT 2
 #define FREE_HEAP_KEPT 0x8000
+
+// The colors of a follower sheet that palette variation turns: one palette of 16
+#define FOLLOWER_PALETTE_COLORS 16
 
 // The most bytes the registry can be: its header and the most rows
 #define REGISTRY_HEADER_SIZE 32
@@ -159,6 +163,7 @@ static void Cleanup(void);
 static BOOL IsMenuCallback(GameEventCallback callback);
 static BOOL IsChainOf(Field *field, BOOL (*isEvent)(GameEventCallback callback));
 static BOOL IsSummonOrigin(Field *field, const FollowingSummon *request);
+static void SetVariation(u16 code, const FollowingPokemon *mon);
 
 // The follower's move: its code, then its init, update, delete and return functions. Its update is the follower's step
 // on the trail
@@ -171,6 +176,11 @@ static FieldActor *sPlayer;
 static u32 sTick;
 static u32 sGeneration;
 static u16 sCode;
+// The follower whose palette variation the material of its sheet's code takes as it loads
+// (PaperWhite2_FollowingVaryMaterial)
+static u16 sVariationCode;
+static u16 sVariationSpecies;
+static u32 sVariationPersonality;
 static u8 sFlying;
 static u32 sRegistryCrc;
 static u16 sDescriptorCount;
@@ -1935,7 +1945,31 @@ void PaperWhite2_FollowingPreloadFollower(Field *field, MMSys *system) {
     if (code == 0) {
         return;
     }
+    SetVariation(code, &selected);
     FldActSys_LoadStaticBillboardActor(system, code);
+}
+
+// The follower's sheet takes its palette variation (docs/paperwhite2/design/palette-variation.md)
+static void SetVariation(u16 code, const FollowingPokemon *mon) {
+    sVariationCode = code;
+    sVariationSpecies = mon->species;
+    sVariationPersonality = mon->personality;
+}
+
+void PaperWhite2_FollowingVaryMaterial(u16 objCode, G3DResource *resource) {
+    NNSG3dResTex *tex;
+    int count;
+
+    if (objCode == 0 || objCode != sVariationCode) {
+        return;
+    }
+    tex = GFL_G3DResGetTexData(resource);
+    // The palette's size is in units of 8 bytes, 4 colors
+    count = tex->plttInfo.sizePltt * 4;
+    if (count > FOLLOWER_PALETTE_COLORS) {
+        count = FOLLOWER_PALETTE_COLORS;
+    }
+    PaperWhite2_VaryPalette(GFL_G3DResGetTexPaletteData(resource), count, sVariationSpecies, sVariationPersonality);
 }
 
 static void CycleFollower(GameData *gameData) {
@@ -2048,6 +2082,7 @@ static void CycleFollower(GameData *gameData) {
     sFollower.hasSelection = TRUE;
     sFollower.slot = (s8)slot;
     sCode = code;
+    SetVariation(code, &next);
     sCyclePending = TRUE;
     ClearRestore();
 }
@@ -2329,6 +2364,7 @@ static void UpdateBefore(MMSys *system) {
                     sFollower.selected = selected;
                     sFollower.hasSelection = TRUE;
                     sCode = code;
+                    SetVariation(code, &selected);
                 }
             }
         }

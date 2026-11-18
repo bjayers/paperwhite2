@@ -18,6 +18,7 @@ import { SpeciesIcon } from "./SpeciesIcon.tsx";
 import { formEvolutions, isOriginalForm, type Evolution, type Listed } from "./forms.ts";
 import { evolutionText } from "./evolutionText.ts";
 import { FollowerSpritesCard } from "./FollowerSprites.tsx";
+import { PaletteVariationCard } from "./PaletteVariationCard.tsx";
 
 export const SERVICES = "res/paperwhite2/pokemon_center/services.json";
 const map = (v: JsonValue | undefined) => (v instanceof Map ? v : new Map<string, JsonValue>());
@@ -442,6 +443,9 @@ export function FormPage({ entry, list: listed, info, constants, sprite, record,
         <h3>Pokédex</h3>
         <DocForm path={entry.speciesPath} at={["pokedex", "forms", entry.form - 1]} constants={constants} hideDescription flat />
       </section>
+      <PaletteVariationCard species={entry.species} name={speciesName} folder={hasArt ? artFolder : entry.folder}
+        paletteFolder={hasArt || (data instanceof Map && data.get("palette_forms") === true) ? artFolder : entry.folder}
+        constants={constants} />
       {hasArt && <FormArt entry={entry} speciesName={speciesName} onWritten={() => { setEpoch((n) => n + 1); onChanged(entry.key); }} epoch={epoch} />}
       <FollowerSpritesCard species={entry.species} form={entry.form} name={`${speciesName} (${formName})`} />
       {entry.recordPath ? record(entry.recordPath) : (

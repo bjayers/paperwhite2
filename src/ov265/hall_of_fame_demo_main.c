@@ -447,6 +447,11 @@ void HallOfFameDemoMain_AddMcss(HallOfFameDemoWork *wk) {
     VecFx32 scale = { FX32_CONST(16), FX32_CONST(16), FX32_ONE };
 
     SetupPokemonLoaderByPartyPkm(wk->mons[wk->monIndex], &info, 0);
+#ifdef PAPERWHITE2
+    // Paper White 2: the team's colors vary by their PIDs, as in battle (docs/paperwhite2/design/palette-variation.md)
+    MCSSSys_SetPaletteVariation(wk->mcssSys, PokeParty_GetParam(wk->mons[wk->monIndex], PKM_PARAM_SPECIES, NULL),
+                                PokeParty_GetParam(wk->mons[wk->monIndex], PKM_PARAM_PID, NULL));
+#endif
     wk->mcss = MCSSSys_Add(wk->mcssSys, FX32_CONST(176), -FX32_CONST(48), 0, &info);
     MCSS_SetScale(wk->mcss, &scale);
     MCSS_PauseAnimation(wk->mcss);

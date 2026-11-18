@@ -1243,6 +1243,17 @@ def main():
                 implicit=["tools/paperwhite2/type_colors.py", *script_imports("tools/paperwhite2/type_colors.py"),
                           "res/paperwhite2/type_colors.schema.json", "tools/data/datajson.py", "generated/types.txt"])
         constant_headers.append(output)
+        # Paper White 2: palette variation's settings, from res/paperwhite2/palette_variation.json
+        # (docs/paperwhite2/design/palette-variation.md)
+        n.rule("palette_variation", "$python tools/paperwhite2/palette_variation.py $in $out", "Generating $out",
+               restat="1")
+        output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "palette_variation_config.h"
+        n.build([output], "palette_variation", ["res/paperwhite2/palette_variation.json"],
+                implicit=["tools/paperwhite2/palette_variation.py",
+                          *script_imports("tools/paperwhite2/palette_variation.py"),
+                          "res/paperwhite2/palette_variation.schema.json", "tools/data/datajson.py",
+                          "generated/species.txt"])
+        constant_headers.append(output)
         # Paper White 2: the custom field tints, from res/paperwhite2/field_tints/tints.json
         # (docs/paperwhite2/plugins.md, Custom tints)
         n.rule("field_tints", "$python tools/paperwhite2/field_tints.py $in $out", "Generating $out", restat="1")

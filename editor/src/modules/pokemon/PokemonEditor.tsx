@@ -28,6 +28,7 @@ import { FollowerSpritesCard } from "./FollowerSprites.tsx";
 import { BattleSpriteArt } from "./BattleSpriteArt.tsx";
 import { isOriginalForm, listSpecies, type Listed } from "./forms.ts";
 import { AddedSpeciesArt, AddedSpeciesCard, AddPokemonDialog, CryCard, FollowerCard } from "./AddedSpecies.tsx";
+import { PaletteVariationCard } from "./PaletteVariationCard.tsx";
 import { isRigFile } from "../rig/setupFiles.ts";
 
 const SCHEMA = "res/pokemon/species.schema.json";
@@ -307,6 +308,8 @@ function SpeciesPage({ entry, list, info, speciesInfo, constants, onOpen, onSele
       {entry.number > 0 && <FormsCard entry={entry} forms={forms} info={info} onOpen={onSelect} onChanged={onChanged} />}
       {entry.number > 0 && <BattleSpriteArt species={entry.species} form={0} folder={entry.folder} speciesName={String(data.get("name") ?? entry.name)}
         onWritten={() => { setSpriteEpoch((n) => n + 1); onChanged(entry.key); }} />}
+      {entry.number > 0 && <PaletteVariationCard key={`pv${spriteEpoch}`} species={entry.species}
+        name={String(data.get("name") ?? entry.name)} folder={entry.folder} constants={constants} />}
       {entry.added && <AddedSpeciesArt entry={entry} onWritten={() => { setSpriteEpoch((n) => n + 1); onChanged(entry.key); }} />}
       {added ? <FollowerCard list={list} added={added} onChanged={() => onChanged(entry.key)} />
         : entry.number > 0 && <FollowerSpritesCard species={entry.species} form={0} name={String(data.get("name") ?? entry.name)} />}

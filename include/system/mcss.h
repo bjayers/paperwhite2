@@ -155,6 +155,11 @@ void GetTrainerSpriteResIDs(u32 trainerType, MCSSLoadInfo *info, BOOL back);
 void MCSSSys_SetSpindaLoadCallback(MCSSSystem *system, u32 personality);
 // Draws a Spinda's spots for its personality on a sprite's characters
 void MCSS_DrawSpindaSpots(void *chars, u32 personality);
+#ifdef PAPERWHITE2
+// Paper White 2: varies the next sprite's palette that loads by an individual's PID, as the next Spinda's spots are
+// (docs/paperwhite2/design/palette-variation.md)
+void MCSSSys_SetPaletteVariation(MCSSSystem *system, u32 species, u32 personality);
+#endif
 // Adds the sprite of a party Pokémon
 MCSS *MCSSSys_AddPartyPkm(MCSSSystem *system, PartyPkm *pkm, u32 dir, fx32 x, fx32 y, fx32 z);
 

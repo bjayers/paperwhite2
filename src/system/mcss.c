@@ -12,6 +12,9 @@
 #include "nnsys/g3d.h"
 #include "system/mcss.h"
 #include "system/palanm.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/palette_variation.h"
+#endif
 
 // MCSS, the multi-cell sprite system: each sprite is a multi-cell animation whose cells are drawn as textured quads of
 // one image in texture VRAM, described by the sprite's bin file, with a shadow drawn from the same quads. The file's
@@ -76,6 +79,12 @@ struct MCSSSystem {
     fx32 offsetScale;
     // How far apart in depth the cells are drawn, 0 for the default
     fx32 cellDepth;
+#ifdef PAPERWHITE2
+    // Paper White 2: the individual whose palette variation the next load takes (MCSSSys_SetPaletteVariation)
+    BOOL variationPending;
+    u32 variationSpecies;
+    u32 variationPersonality;
+#endif
 };
 
 struct MCSS {
@@ -187,6 +196,9 @@ static void MCSS_RemoveLoadTask(TCB *tcb);
 static void MCSS_RemovePaletteTask(TCB *tcb);
 static void MCSS_MakeMosaic(MCSS *mcss, MCSSLoad *load);
 static void MCSS_MulVecMtx44(const VecFx32 *vec, const MtxFx44 *mtx, VecFx32 *dest, fx32 *w);
+#ifdef PAPERWHITE2
+static void MCSSSys_VaryPalette(MCSSSystem *system, NNSG2dPaletteData *pltt);
+#endif
 
 MCSSSystem *MCSSSys_Create(u32 capacity, HeapID heapId) {
     MCSSSystem *system = GFL_HeapAllocate(heapId, sizeof(MCSSSystem), TRUE, "mcss.c", 122);
@@ -274,6 +286,25 @@ void MCSSSys_SetLoadCallback(MCSSSystem *system, MCSSLoadCallback callback, u32 
     system->loadCallback = callback;
     system->loadCallbackWork = work;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: the palette variation of an individual Pokémon (docs/paperwhite2/design/palette-variation.md), for
+// the next sprite that loads, as MCSSSys_SetSpindaLoadCallback's spots are
+void MCSSSys_SetPaletteVariation(MCSSSystem *system, u32 species, u32 personality) {
+    system->variationPending = TRUE;
+    system->variationSpecies = species;
+    system->variationPersonality = personality;
+}
+
+// Varies a palette just read by the pending individual's PID, before the sprite keeps its colors for fades and blends
+static void MCSSSys_VaryPalette(MCSSSystem *system, NNSG2dPaletteData *pltt) {
+    if (system->variationPending) {
+        PaperWhite2_VaryPalette(pltt->pRawData, pltt->szByte / sizeof(u16), system->variationSpecies,
+                                system->variationPersonality);
+        system->variationPending = FALSE;
+    }
+}
+#endif
 
 void MCSS_Reload(MCSSSystem *system, MCSS *mcss, const MCSSLoadInfo *info) {
     MCSS_FreeFiles(mcss);
@@ -1048,6 +1079,10 @@ static void LoadMCSSGraphicsData(MCSSSystem *system, int index, const MCSSLoadIn
     load->charFile =
         GFL_G2DIOReadBGNCGR(info->arcId, info->character, TRUE, &load->chars, HEAPID_TAIL((HeapID)mcss->heapId));
     load->plttFile = GFL_G2DIOReadNCLR(info->arcId, info->palette, &load->pltt, HEAPID_TAIL((HeapID)mcss->heapId));
+#ifdef PAPERWHITE2
+    // Paper White 2: an individual's colors vary by its PID
+    MCSSSys_VaryPalette(system, load->pltt);
+#endif
     mcss->pltt = GFL_HeapAllocate(heapId, load->pltt->szByte, FALSE, "mcss.c", 2138);
     mcss->blendedPltt = GFL_HeapAllocate(heapId, load->pltt->szByte, FALSE, "mcss.c", 2139);
     mcss->plttSize = load->pltt->szByte;
@@ -1096,6 +1131,10 @@ static void LoadMCSSGraphicsDataArc(MCSSSystem *system, int index, const MCSSLoa
     load->charFile =
         GFL_G2DIOReadBGNCGRArc(arc, info->character, TRUE, &load->chars, HEAPID_TAIL((HeapID)mcss->heapId));
     load->plttFile = GFL_G2DIOReadNCLRArc(arc, info->palette, &load->pltt, HEAPID_TAIL((HeapID)mcss->heapId));
+#ifdef PAPERWHITE2
+    // Paper White 2: an individual's colors vary by its PID
+    MCSSSys_VaryPalette(system, load->pltt);
+#endif
     mcss->pltt = GFL_HeapAllocate(mcss->heapId, load->pltt->szByte, FALSE, "mcss.c", 2245);
     mcss->blendedPltt = GFL_HeapAllocate(mcss->heapId, load->pltt->szByte, FALSE, "mcss.c", 2246);
     mcss->plttSize = load->pltt->szByte;

@@ -14,6 +14,7 @@
 #ifdef PAPERWHITE2
 #include "nnsys/gfd.h"
 #include "paperwhite2/ambients.h"
+#include "paperwhite2/following_field.h"
 #include "paperwhite2/sprites.h"
 #include "paperwhite2/wanderers.h"
 #ifdef PAPERWHITE2_DEBUG_MENU
@@ -1248,6 +1249,10 @@ static u16 FldBillboardActor_LoadMaterial(FieldBillboardActor *billboardActor, u
     BillboardActorMatRequest request;
     const BillboardSize *size;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the follower's sheet takes its PID's palette variation before any mode uploads it
+    PaperWhite2_FollowingVaryMaterial(objCode, resource);
+#endif
     if (mode == -1) {
         return BillboardActorSys_LoadSingleUseTexMaterial(billboardActor->sys, resource, sizeIdx, atlasIdx);
     }

@@ -137,3 +137,17 @@ button.danger { color: var(--error); border-color: var(--error); }
 .bsp-walking-item { display: flex; flex-direction: column; gap: 6px; }
 .bsp-walking-import { margin-bottom: 8px; }
 .bsp-rowpick { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; }
+
+/* Palette variation: the strength slider and the preview strip of variants */
+.pkv-strength { display: inline-flex; align-items: center; gap: 8px; }
+.pkm-row-control .pkv-strength input { min-width: 0; }
+.pkm-row-control .pkv-strength input[type="number"] { width: 64px; }
+.pkm-row-control .pkv-strength input[type="range"] { width: 240px; }
+.pkv-preview { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.pkv-strip { display: flex; flex-wrap: wrap; gap: 4px; }
+.pkv-variant { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; }
+.pkv-variant canvas { image-rendering: pixelated; }
+.pkv-variant:first-child { padding-right: 6px; margin-right: 4px; border-right: 1px solid var(--border); }
+.pkv-settings { display: grid; grid-template-columns: repeat(2, minmax(240px, 360px)); gap: 6px 24px; }
+.pkv-settings .pkm-field { grid-template-columns: 150px 1fr; }
+.pkv-settings .pkm-field input[type="number"] { width: 90px; }

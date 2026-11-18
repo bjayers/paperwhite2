@@ -2740,6 +2740,16 @@ NPCs (`src/paperwhite2/ov036/paperwhite2_entralink_markers.c`, a billboard syste
 art from `res/paperwhite2/entralink/markers/` and `npc_markers/` in the model table from member 24) and each round's
 fog.
 
+### Palette variation
+
+`docs/paperwhite2/design/palette-variation.md`: every Pokémon's colours turn a little by its PID's second byte (hue,
+brightness, saturation; greys never). `src/paperwhite2/main/paperwhite2_palette_variation.c`
+(`include/paperwhite2/palette_variation.h`), settings from `res/paperwhite2/palette_variation.json`
+(`tools/paperwhite2/palette_variation.py`, also the reference transform); hooks in `mcss.c` (`MCSSSys_SetPaletteVariation`,
+a pending individual for the next load), `mcss_tool.c`, `btlv_mcss.c`, `hall_of_fame_demo_main.c`, `pokegra.c`
+(`PokeGra_LoadClActPaletteByBoxData`), `field_actor_billboard.c` and `paperwhite2_following_field.c` (the follower's
+sheet). Editor: the Pokémon Editor's Palette variation card.
+
 ## Adding global scripts
 
 A global script file's IDs are limited by its row in `GLOBAL_SCRIPT_TABLE` (`src/ov012/script_sys.c`), e.g.
