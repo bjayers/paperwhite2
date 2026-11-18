@@ -589,11 +589,6 @@ static u32 EncountState_GetEncountRateStepCounter(EncountState *state) {
 // Paper White 2: the wanderers' encounters (src/paperwhite2/ov036/paperwhite2_wanderers.c,
 // docs/paperwhite2/plugins.md, Wanderers)
 
-// A species' sex ratio's ends: only male, only female and none (PERSONAL_SEX_RATIO)
-#define SEX_RATIO_MALE_ONLY 0
-#define SEX_RATIO_FEMALE_ONLY 254
-#define SEX_RATIO_NONE 255
-
 u32 EncSys_GetTileEncType(u32 tileType) {
     return FieldEncount_DecideTypeByTerrain(tileType, ENCOUNT_MODE_NORMAL);
 }
@@ -612,9 +607,6 @@ static void Wanderer_CreateManager(EncountSystem *system, EncountManager *manage
 BOOL EventWildBattleCall_PickWanderer(EncountSystem *system, u32 encType, WildPkmParam *out, u8 *gender, BOOL *shiny) {
     WildPkmParam params[ENCOUNTERS_WILD_MAX];
     EncountManager manager;
-    u32 rolls = 1;
-    u32 i;
-    u32 ratio;
     int count;
 
     if (!EncSys_IsActive(system, 1) || encType >= ENCTYPE_MAX || system->encData->userData[encType] == 0) {
@@ -633,48 +625,43 @@ BOOL EventWildBattleCall_PickWanderer(EncountSystem *system, u32 encType, WildPk
     PaperWhite2_Debug_OverrideWilds(params, 1);
 #endif
     *out = params[0];
-    // Shiny as a wild one is (FieldEncount_CreateWildPkm): its rolls of a PID, each shiny at the game's rate; the
-    // battle then makes it as it was rolled
-    if (BagSave_CheckAmount(GameData_GetBag(system->gameData), ITEM_SHINY_CHARM, 1, 4)) {
-        rolls += 2;
-    }
-    rolls = PassPower_ApplyLuckyShiny(rolls);
-    *shiny = FALSE;
-#ifdef PAPERWHITE2_DEBUG_MENU
-    if (EventWork_FlagGet(GameData_GetEventWork(system->gameData), EVENT_FLAG_DEBUG_ALWAYS_SHINY)) {
-        *shiny = TRUE;
-    }
-#endif
-    for (i = 0; i < rolls && !*shiny; i++) {
-        *shiny = PML_UtilPIDIsRare(manager.trainerId, GFL_RandomLC(0));
-    }
-    if (out->shinyLock == WILD_SHINY_RANDOM) {
-        out->shinyLock = *shiny ? WILD_SHINY_FORCED : WILD_SHINY_NEVER;
-    } else {
-        *shiny = out->shinyLock == WILD_SHINY_FORCED;
-    }
-    // Its sex as a PID's low byte gives it, by its species' ratio (Cute Charm aside), and the battle's then
-    ratio = PML_PersonalGetParamSingle(out->species, out->form, PERSONAL_SEX_RATIO);
-    if (ratio == SEX_RATIO_NONE) {
-        *gender = GENDER_UNKNOWN;
-    } else if (out->sex == WILD_SEX_MALE || ratio == SEX_RATIO_MALE_ONLY) {
-        *gender = GENDER_MALE;
-    } else if (out->sex == WILD_SEX_FEMALE || ratio == SEX_RATIO_FEMALE_ONLY) {
-        *gender = GENDER_FEMALE;
-    } else {
-        *gender = GFL_RandomLC(256) < ratio ? GENDER_FEMALE : GENDER_MALE;
-        out->sex = *gender == GENDER_FEMALE ? WILD_SEX_FEMALE : WILD_SEX_MALE;
-    }
+    // Its whole PID as the battle would roll it (FieldEncount_CreateWildPkm: its sex, its shininess with the Shiny
+    // Charm, the Pass Power and Always shiny), kept for the battle, so its sprite, its colours and the Pokémon caught
+    // are the same
+    out->pid = FieldEncount_RollWildPID(&manager, out);
+    out->fixedPid = TRUE;
+    *shiny = PML_UtilPIDIsRare(manager.trainerId, out->pid);
+    *gender = PML_UtilDerivePkmSex(out->species, out->form, out->pid);
     return TRUE;
 }
 
 GameEvent *EventWildBattleCall_CreateWanderer(EncountSystem *system, WildPkmParam *param, u32 encType) {
+    WildPkmParam params[ENCOUNTERS_WILD_MAX];
     EncountManager manager;
     BtlSetup *setup;
 
     Wanderer_CreateManager(system, &manager, encType);
+    MI_CpuFill8(params, 0, sizeof(params));
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // The debug menu's Triple battles: two partners, as a step's encounter here would bring them
+    // (PaperWhite2_Encounters_RollPartner), and the wanderer first
+    if (EventWork_FlagGet(GameData_GetEventWork(system->gameData), EVENT_FLAG_DEBUG_FORCE_TRIPLE)) {
+        int count;
+
+        PaperWhite2_EncountersField_SetContext(system->field);
+        count = FieldEncount_GenWilds(system->encData, &manager, Field_GetPlayerStateZoneID(system->field), params);
+        if (count > 1) {
+            PaperWhite2_Debug_OverrideWilds(params, count);
+            manager.doubleBattle = TRUE;
+            manager.pokeCount = count;
+        } else {
+            manager.pokeCount = 1;
+        }
+    }
+#endif
+    params[0] = *param;
     setup = BtlSetup_Create(4);
-    FieldEncount_SetupNormal(system, &manager, setup, 4, param);
+    FieldEncount_SetupNormal(system, &manager, setup, 4, params);
     EncountState_SyncToPlayer(GameData_GetEncountState(system->gameData), Field_GetPlayer(system->field));
     return EventWildBattleCall_CreateCore(system->gsys, system->field, setup, 0, ENCOUNT_MODE_NORMAL, N_POKE_NONE);
 }

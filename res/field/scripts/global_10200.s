@@ -615,6 +615,7 @@ L_DebugEncounters:
     Debug DEBUG_ACTION_FLAG_WORD, 1, EVENT_FLAG_DEBUG_NO_WILD_ENCOUNTERS, 0x8025
     Debug DEBUG_ACTION_FLAG_WORD, 4, EVENT_FLAG_DEBUG_FEWER_WILD_ENCOUNTERS, 0x8025
     Debug DEBUG_ACTION_FLAG_WORD, 5, EVENT_FLAG_DEBUG_NO_WANDERERS, 0x8025
+    Debug DEBUG_ACTION_FLAG_WORD, 6, EVENT_FLAG_DEBUG_FORCE_TRIPLE, 0x8025
     Debug DEBUG_ACTION_ENCOUNTER_WORDS, 0, 0, 0x8025
     SystemMsg Global10200_Text_DebugEncountersTitle, 2
     ListMenuAnchorTopRight 31, 1, 0, 1, 0x8020
@@ -622,6 +623,7 @@ L_DebugEncounters:
     ListMenuAdd Global10200_Text_DebugNoWildEncounters, 65535, 1
     ListMenuAdd Global10200_Text_DebugFewerWildEncounters, 65535, 4
     ListMenuAdd Global10200_Text_DebugNoWanderers, 65535, 5
+    ListMenuAdd Global10200_Text_DebugForceTriple, 65535, 7
     ListMenuAdd Global10200_Text_DebugWanderersNow, 65535, 6
     ListMenuAdd Global10200_Text_DebugForceSpecies, 65535, 2
     ListMenuAdd Global10200_Text_DebugWildLevel, 65535, 3
@@ -641,6 +643,8 @@ L_DebugEncounters:
     VMJumpIf CMP_EQ, L_DebugToggleNoWanderers
     WorkCmpConst 0x8020, 6
     VMJumpIf CMP_EQ, L_DebugWanderersNow
+    WorkCmpConst 0x8020, 7
+    VMJumpIf CMP_EQ, L_DebugToggleForceTriple
     VMJump L_DebugMenu
 
 L_DebugToggleAlwaysShiny:
@@ -660,6 +664,11 @@ L_DebugToggleFewerWild:
 
 L_DebugToggleNoWanderers:
     Debug DEBUG_ACTION_FLAG_TOGGLE, EVENT_FLAG_DEBUG_NO_WANDERERS, 0, 0x8025
+    SEPlay SEQ_SE_SELECT1
+    VMJump L_DebugEncounters
+
+L_DebugToggleForceTriple:
+    Debug DEBUG_ACTION_FLAG_TOGGLE, EVENT_FLAG_DEBUG_FORCE_TRIPLE, 0, 0x8025
     SEPlay SEQ_SE_SELECT1
     VMJump L_DebugEncounters
 

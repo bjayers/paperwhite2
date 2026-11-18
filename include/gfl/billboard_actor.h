@@ -148,6 +148,11 @@ void BillboardActorScene_GetMaterialFaceLocation(BillboardActorScene *scene, u32
 void PaperWhite2_BillboardActorMaterialBindTexture(BillboardActorMaterial *material, G3DResource *texResource);
 void PaperWhite2_BillboardActorMaterialSet(BillboardActorMaterial *material, u32 format, int size, u8 faceWidth,
                                            u8 faceHeight);
+// Paper White 2: a material of the scene that draws source's texture (the same VRAM) with the palette at plttKey, or
+// BILLBOARD_ACTOR_MATERIAL_NONE where the scene has no free slot; and its freeing, which frees its palette's VRAM and
+// leaves the texture to source (paperwhite2_actor_palettes.c)
+u32 PaperWhite2_BillboardActorScene_AddMaterialOwnPltt(BillboardActorScene *scene, u32 source, NNSGfdPlttKey plttKey);
+void PaperWhite2_BillboardActorScene_FreeMaterialOwnPltt(BillboardActorScene *scene, u32 material);
 #endif
 
 u32 BillboardActorScene_AddNewActor(BillboardActorScene *scene, u32 material, s16 scaleX, s16 scaleY,

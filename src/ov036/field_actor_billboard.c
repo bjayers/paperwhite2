@@ -13,8 +13,8 @@
 #include "nitro/mi.h"
 #ifdef PAPERWHITE2
 #include "nnsys/gfd.h"
+#include "paperwhite2/actor_palettes.h"
 #include "paperwhite2/ambients.h"
-#include "paperwhite2/following_field.h"
 #include "paperwhite2/sprites.h"
 #include "paperwhite2/wanderers.h"
 #ifdef PAPERWHITE2_DEBUG_MENU
@@ -228,6 +228,10 @@ void FldActSys_InitBillboardActor(MMSys *system, BillboardActorSys *sys, u32 cou
 void FldBillboardActor_Exit(MMSys *system) {
     FieldBillboardActor *billboardActor = FldActSys_GetFieldBillboardActor(system);
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the wanderers' and the follower's own palettes go with the billboards
+    PaperWhite2_ActorPalettes_ReleaseAll(billboardActor->sys);
+#endif
     FldBillboardActor_FreeUnloader(billboardActor);
     FldBillboardActor_FreeLoader(billboardActor);
     FldBillboardActor_FreeCachedMaterials(billboardActor);
@@ -1250,8 +1254,9 @@ static u16 FldBillboardActor_LoadMaterial(FieldBillboardActor *billboardActor, u
     const BillboardSize *size;
 
 #ifdef PAPERWHITE2
-    // Paper White 2: the follower's sheet takes its PID's palette variation before any mode uploads it
-    PaperWhite2_FollowingVaryMaterial(objCode, resource);
+    // Paper White 2: a Pokémon sheet's colours kept before any mode uploads it, for the palettes of its own that the
+    // follower and the wanderers vary by their PIDs (paperwhite2_actor_palettes.c)
+    PaperWhite2_ActorPalettes_Capture(objCode, resource);
 #endif
     if (mode == -1) {
         return BillboardActorSys_LoadSingleUseTexMaterial(billboardActor->sys, resource, sizeIdx, atlasIdx);

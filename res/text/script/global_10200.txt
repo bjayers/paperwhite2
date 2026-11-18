@@ -221,3 +221,4 @@ Global10200_Text_DebugWeatherCustomTint9 = Custom tint 9
 Global10200_Text_DebugWeatherCustomTint10 = Custom tint 10
 Global10200_Text_DebugWeatherCustomTint11 = Custom tint 11
 Global10200_Text_DebugWeatherCustomTint12 = Custom tint 12
+Global10200_Text_DebugForceTriple = Triple battles: {0100:6}

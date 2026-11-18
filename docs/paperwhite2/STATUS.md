@@ -2,6 +2,23 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-18: palette variation in the field; wanderers' PIDs; debug Triple battles (ROM session, on a branch)
+
+- **Wanderers' PIDs:** a wanderer's whole PID is rolled as it spawns, by the battle's own rolls
+  (`FieldEncount_RollWildPID`: Cute Charm, Shiny Charm, Pass Power, debug Always shiny), kept in its `WildPkmParam`
+  (`pid`, `fixedPid`) and used for its battle's Pokémon, so its sprite, battle sprite and the Pokémon caught match.
+- **Own palettes:** each wanderer and the follower draw a copy of their billboard's material with a 16-colour palette
+  of their own, varied by their PID (`src/paperwhite2/ov036/paperwhite2_actor_palettes.c`); the shared sheet stays
+  unvaried. Two wanderers of a species differ, and the L/R switch between two same-sprite party members shows the new
+  one's colours at once (the old known limit is gone). Cost: 32 bytes of palette VRAM a slot (128 at most), one
+  billboard material a slot, 0x224 bytes of BSS.
+- **Debug:** Encounters... > Triple battles (`EVENT_FLAG_DEBUG_FORCE_TRIPLE`, 0xbde): wild encounters of the new
+  encounter data become triple battles (double or single with fewer able Pokémon), wanderers' too.
+- **Tests (py-desmume, scratchpad `palvar2/`):** all of the above checked by memory reads against the reference and
+  screenshots (palette-variation.md, Tests). `--hack` build without warnings, DSi intact, plain modules match, editor
+  243 tests pass.
+- **For the user:** the variation is subtle by design; Triple battles shows three side by side to compare.
+
 ## 2026-11-18: palette variation (ROM session, on a branch)
 
 `docs/paperwhite2/design/palette-variation.md` has the design and the proof.
@@ -18,7 +35,7 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   palette hooked in py-desmume (battle, summary, follower, shiny, Arceus form 10, Kecleon unchanged, PC box in OBJ
   palette RAM). `--hack` build without warnings, DSi intact, plain build's modules match.
 - **For the user:** playtest the strengths; set other species to 0 in the card if their colours should stay (Arceus?).
-  Known limit: L/R-cycling between two same-sprite party members keeps the first's follower colours until a reload.
+  (The L/R known limit is fixed: see the entry above.)
 
 ## 2026-11-18: Entralink markers upright; the marker art in Graphics & Palettes (ROM session, on a branch)
 

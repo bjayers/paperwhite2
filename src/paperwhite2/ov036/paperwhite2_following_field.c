@@ -20,6 +20,7 @@
 #include "limits.h"
 #include "nitro/fx.h"
 #include "nitro/mi.h"
+#include "paperwhite2/actor_palettes.h"
 #include "paperwhite2/following.h"
 #include "paperwhite2/following_ambient.h"
 #include "paperwhite2/following_effects.h"
@@ -32,7 +33,6 @@
 #include "paperwhite2/following_render.h"
 #include "paperwhite2/following_resident.h"
 #include "paperwhite2/following_scene.h"
-#include "paperwhite2/palette_variation.h"
 #include "pml/poke_party.h"
 #include "save/config.h"
 #include "save/player_info.h"
@@ -60,9 +60,6 @@
 // keeps this much
 #define FREE_ACTORS_KEPT 2
 #define FREE_HEAP_KEPT 0x8000
-
-// The colors of a follower sheet that palette variation turns: one palette of 16
-#define FOLLOWER_PALETTE_COLORS 16
 
 // The most bytes the registry can be: its header and the most rows
 #define REGISTRY_HEADER_SIZE 32
@@ -176,11 +173,6 @@ static FieldActor *sPlayer;
 static u32 sTick;
 static u32 sGeneration;
 static u16 sCode;
-// The follower whose palette variation the material of its sheet's code takes as it loads
-// (PaperWhite2_FollowingVaryMaterial)
-static u16 sVariationCode;
-static u16 sVariationSpecies;
-static u32 sVariationPersonality;
 static u8 sFlying;
 static u32 sRegistryCrc;
 static u16 sDescriptorCount;
@@ -1949,27 +1941,10 @@ void PaperWhite2_FollowingPreloadFollower(Field *field, MMSys *system) {
     FldActSys_LoadStaticBillboardActor(system, code);
 }
 
-// The follower's sheet takes its palette variation (docs/paperwhite2/design/palette-variation.md)
+// The follower's billboard takes its palette variation, in a palette of its own (paperwhite2_actor_palettes.c,
+// docs/paperwhite2/design/palette-variation.md): set as its sheet's code is chosen, before the sheet loads
 static void SetVariation(u16 code, const FollowingPokemon *mon) {
-    sVariationCode = code;
-    sVariationSpecies = mon->species;
-    sVariationPersonality = mon->personality;
-}
-
-void PaperWhite2_FollowingVaryMaterial(u16 objCode, G3DResource *resource) {
-    NNSG3dResTex *tex;
-    int count;
-
-    if (objCode == 0 || objCode != sVariationCode) {
-        return;
-    }
-    tex = GFL_G3DResGetTexData(resource);
-    // The palette's size is in units of 8 bytes, 4 colors
-    count = tex->plttInfo.sizePltt * 4;
-    if (count > FOLLOWER_PALETTE_COLORS) {
-        count = FOLLOWER_PALETTE_COLORS;
-    }
-    PaperWhite2_VaryPalette(GFL_G3DResGetTexPaletteData(resource), count, sVariationSpecies, sVariationPersonality);
+    PaperWhite2_ActorPalettes_Set(ACTOR_PALETTE_FOLLOWER, code, mon->species, mon->personality);
 }
 
 static void CycleFollower(GameData *gameData) {
@@ -2591,6 +2566,7 @@ void PaperWhite2_FollowingUpdate(MMSys *system) {
     UpdateTerrain();
     if (IsOwned()) {
         FieldActor *actor = sFollower.actor;
+        const u16 *billboard;
         BOOL shown;
         BOOL firstBody;
 
@@ -2623,6 +2599,12 @@ void PaperWhite2_FollowingUpdate(MMSys *system) {
             FollowingEffects_Prepare(actor);
             FollowingEffects_Snapshot(actor);
         }
+        // Its own palette, varied by its PID, on its billboard (whose handle starts the actor's billboard work) once
+        // that's out, and on the new one after a switch
+        billboard = FldAct_GetBillboardActorWorkPtr(actor);
+        PaperWhite2_ActorPalettes_Bind(
+            ACTOR_PALETTE_FOLLOWER, FieldBillboardActor_GetBillboardActorSys(FldActSys_GetFieldBillboardActor(system)),
+            *billboard);
     }
     // Its steps count while it walks behind the player or waits as its resting ball, and its ambient emotes show while
     // it is out

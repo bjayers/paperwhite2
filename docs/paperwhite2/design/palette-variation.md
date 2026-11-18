@@ -30,7 +30,7 @@ same species". Built 2026-11-18 (ROM session).
 | Summary, evolution, trade, hatching (not the egg) | `MCSSSys_AddPartyPkm` (`mcss_tool.c`) |
 | Hall of Fame | `HallOfFameDemoMain_AddMcss` |
 | PC box preview, move tutor, Hall of Fame list, Mystery Gift, others through `PokeGra_LoadClActPaletteByBoxData` | `pokegra.c`: loaded as before, then the varied colours replace it (`PaperWhite2_VaryClActPalette`) |
-| The follower's overworld sprite | `FldBillboardActor_LoadMaterial` calls `PaperWhite2_FollowingVaryMaterial` before any mode uploads the sheet: the code of the follower picked (`SetVariation` beside each `sCode` and the preload) |
+| The follower's and the wanderers' overworld sprites | a palette of their own on their billboards (below): `PaperWhite2_ActorPalettes_Set` as the sprite is chosen (the follower's `SetVariation` beside each `sCode` and the preload; `Wanderers_Spawn`), `_Bind` every frame (`PaperWhite2_FollowingUpdate`, `Wanderers_Draw`), `_Capture` in `FldBillboardActor_LoadMaterial` |
 
 MCSS's way: `MCSSSys_SetPaletteVariation(system, species, personality)` sets a pending individual on the system (a
 field of its own, private to `mcss.c`), which the next load consumes as it reads the palette (`MCSSSys_VaryPalette`, in
@@ -41,9 +41,34 @@ both `LoadMCSSGraphicsData` paths), before the sprite keeps its colours for fade
 callback), the field's "show Pokémon" script picture and the HM cut-in (`scrcmd_poke_disp.c`, `fld3d_ci.c`: species
 only, no PID), the evolution scene's sparkle pieces, the GTS.
 
-**Known limit:** the follower's material is cached by object code for the map, so cycling (L/R) between two party
-members that share a follower sprite (species, form, sex, shininess) keeps the first one's colours until the field
-reloads (any menu, battle or warp does).
+## Field sprites: a palette of their own
+
+The field's sprites share one material an object code (`field_actor_billboard.c`'s cache), and so one palette: every
+wanderer of a species looked alike, and the follower's colours were baked into the shared sheet, so switching (L/R)
+between two party members with the same follower sprite kept the first one's until the field reloaded. Now each
+wanderer and the follower draw a copy of their billboard's material (`src/paperwhite2/ov036/paperwhite2_actor_palettes.c`,
+`include/paperwhite2/actor_palettes.h`): the same texture VRAM, with a 16-colour palette of its own, its sprite's
+colours varied by its PID; the shared material stays unvaried for everything else that draws it (ambients, NPCs).
+
+- **Slots:** one a wanderer (3), then the follower's (`ACTOR_PALETTE_FOLLOWER`). `_Set(slot, objCode, species, PID)`
+  before the sprite's load is asked for; `_Bind(slot, sys, billboard)` every frame the billboard is out: it makes the
+  copy (`PaperWhite2_BillboardActorScene_AddMaterialOwnPltt` in `billboard.c`, a scene slot copied from the source with
+  its own `plttKey`), sends the colours through the billboard system's VBlank transfer, and puts the billboard on the
+  copy while it shows its shared material. A new billboard (the follower's after a switch reuses the handle or takes
+  another), another material or another PID makes it again or re-sends the colours, so the switched follower shows
+  its own colours from its first frame. `_Release` when a wanderer goes; `_ReleaseAll` in `FldBillboardActor_Exit`.
+- **The base colours:** a trimmed sheet keeps no palette in main memory and palette VRAM can't be read back, so
+  `_Capture` in `FldBillboardActor_LoadMaterial` keeps the colours of every follower sprite (object code from
+  `FOLLOWING_CODE_BASE`) and of any sprite a slot waits for, 8 at a time (the oldest no slot shows replaced first).
+  A slot whose sprite was loaded before it was wanted, below `FOLLOWING_CODE_BASE` (a stock sprite an NPC loaded),
+  finds none and keeps the shared, unvaried material.
+- **Cost:** 32 bytes of texture palette VRAM a slot, 128 bytes at most (4 slots) of the field's 16 KB; no texture
+  VRAM; one of the 96 billboard materials a slot; 0x224 bytes of overlay 36's BSS (slots and captures).
+- **Wanderers' PIDs:** a wanderer's whole PID is rolled as it spawns (`EventWildBattleCall_PickWanderer` calls
+  `FieldEncount_RollWildPID`, the battle's own rolls), kept in its `WildPkmParam` (`pid`, `fixedPid`), and
+  `FieldEncount_CreateWildPkm` makes its battle's Pokémon with it: the field sprite, the battle sprite and the Pokémon
+  caught have the same PID, so the same variation (the overworld and battle palettes are different sheets, turned by
+  the same key).
 
 ## Data
 
@@ -76,3 +101,11 @@ settings.
   summary, the follower, a shiny wild one (input `pignite/shiny.pal`), Arceus form 10 (input `arceus/form_10/normal.pal`)
   and the PC box (the varied colours found in the sub OBJ palette RAM, the original gone). Kecleon's call changed
   nothing; greys, white and black stayed in every call.
+- **Field palettes** (py-desmume, scratchpad `palvar2/`, 2026-11-18): on Route 20, every bound slot's colours equal
+  the reference on its captured sprite colours, and its billboard's scene material is its copy (own palette address
+  next to the shared one's). Two Lillipup wanderers drew different colours on screen (e.g. (224,200,112) against
+  (216,200,112)); a touched wanderer's battle Pokémon had its PID (0x99915bb7: `FieldEncount_CreateWildPkm`'s param
+  and the PID it made, the battle's variation call with key 0x5b), and the Pokémon caught (sent to Box 1) had it in
+  memory too. With Always shiny each spawn rolled until shiny (1118 and 2749 rolls) and showed the shiny sprite;
+  without, one roll each. L/R from the lead Pignite to a second Pignite (another key): the slot's PID changed at the
+  press, and the new billboard was on its own palette with the new colours as it came out (read every 10 frames).

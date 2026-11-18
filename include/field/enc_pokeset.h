@@ -78,7 +78,14 @@ typedef struct {
     // A WILD_SHINY_ value
     u8 shinyLock;
     u8 hiddenAbility;
+#ifdef PAPERWHITE2
+    // Paper White 2: a PID chosen before the battle (a wanderer's, rolled as it spawned), used where fixedPid is set
+    u32 pid;
+    u8 fixedPid;
+    u8 unk0D[3];
+#else
     u8 unk08[8];
+#endif
     // A WILD_SEX_ value
     u8 sex;
     u8 unk11[3];
@@ -107,6 +114,11 @@ RoamingPkm *FieldEncount_RndCheckRoaming(EncountManager *manager, u32 zoneId);
 
 u8 FieldEncount_RndCheckNPoke(EncountManager *manager, u32 zoneId);
 void FieldEncount_CreateWildPkm(PartyPkm *pkm, const EncountManager *manager, WildPkmParam *param);
+#ifdef PAPERWHITE2
+// Paper White 2: a wild Pokémon's PID as FieldEncount_CreateWildPkm rolls it (its sex and shininess with the lead's
+// abilities, the Shiny Charm, the Pass Power and the debug menu's Always shiny), for a wanderer as it spawns
+u32 FieldEncount_RollWildPID(const EncountManager *manager, WildPkmParam *param);
+#endif
 void FieldEncount_GenRoamingPkm(PartyPkm *pkm, const EncountManager *manager, const RoamingPkm *roamingPkm);
 void makeNPokeFromData(PartyPkm *pkm, u8 index);
 const SwarmData *getSwarmDataPtr(GameData *gameData);

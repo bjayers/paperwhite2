@@ -257,6 +257,10 @@ DEBUG                           L_DebugMenu
     No wild encounters: ON/OFF      EVENT_FLAG_DEBUG_NO_WILD_ENCOUNTERS
     Fewer step encounters: ON/OFF   EVENT_FLAG_DEBUG_FEWER_WILD_ENCOUNTERS: a quarter of the step rate
     No wanderers: ON/OFF            EVENT_FLAG_DEBUG_NO_WANDERERS (Wanderers, below)
+    Triple battles: ON/OFF          EVENT_FLAG_DEBUG_FORCE_TRIPLE (0xbde): every wild encounter the new encounter data
+                                    makes (not fishing) is a triple battle, partners from the whole area
+                                    (PaperWhite2_Encounters_RollPartner), a double with two able Pokémon, a single
+                                    with one; a wanderer's battle takes two partners too (CreateWanderer)
     Wanderers now                   how many are out, and each one's species, level, shininess and state
     Force species: <Off|species>    number, 0 for Off
     Wild level: <Off|level>         number, 0 for Off
@@ -528,7 +532,7 @@ used one is named with a `# Paper White 2:` comment). New features take theirs f
 | 0x92f-0x95f | the hack's features | 0x92f `EVENT_FLAG_EXP_SHARE_OFF`, 0x930 `EVENT_FLAG_SPAWN_HIDDEN`, 0x931-0x935 `EVENT_FLAG_BLACK2_*` (the places as Black 2's, `paperwhite2/version_places.h`), 0x936 `EVENT_FLAG_DAYCARE_COUNTER_EXPLAINED` (the Centers' Day Care attendant, `design/pokemon-center.md`), 0x937 `EVENT_FLAG_WONDER_TRADE_EXPLAINED` and 0x938 `EVENT_FLAG_WONDER_TRADE_SPECIAL_RECEIVED` (the Wonder Trade's) |
 | 0xaef | the user's: the Wurmple daily-feeding mini-event (`route_20.s`), a daily flag | `EVENT_FLAG_DAILY_0x0aef`; don't touch |
 | 0xaf0 | the user's: the Pokémon Center lottery girl (`global_10850.s`, set in `aspertia_city.s` too), a daily flag | `EVENT_FLAG_DAILY_0x0af0`; don't touch |
-| 0xbd9-0xbf7 | the debug menu's toggles | 0xbd9 `EVENT_FLAG_DEBUG_ALWAYS_SHINY`, 0xbda `EVENT_FLAG_DEBUG_NO_WILD_ENCOUNTERS`, 0xbdb `EVENT_FLAG_DEBUG_WALK_THROUGH_WALLS`, 0xbdc `EVENT_FLAG_DEBUG_FEWER_WILD_ENCOUNTERS`, 0xbdd `EVENT_FLAG_DEBUG_NO_WANDERERS` |
+| 0xbd9-0xbf7 | the debug menu's toggles | 0xbd9 `EVENT_FLAG_DEBUG_ALWAYS_SHINY`, 0xbda `EVENT_FLAG_DEBUG_NO_WILD_ENCOUNTERS`, 0xbdb `EVENT_FLAG_DEBUG_WALK_THROUGH_WALLS`, 0xbdc `EVENT_FLAG_DEBUG_FEWER_WILD_ENCOUNTERS`, 0xbdd `EVENT_FLAG_DEBUG_NO_WANDERERS`, 0xbde `EVENT_FLAG_DEBUG_FORCE_TRIPLE` |
 
 Flags elsewhere, even ones no text search finds, may be reached by a base plus an index (hidden items, trainers), so
 don't take them. 0x5d0, which the Exp. Share used first, is back to its original name.
@@ -1489,12 +1493,14 @@ sinking, random wandering, the touch and the battle.
   nearest other wanderer twice as likely, 5 or more four times), whose encounter type is `ENCTYPE_GRASS` or `ENCTYPE_GRASS_RARE`
   (`EncSys_GetTileEncType`, the step's `FieldEncount_DecideTypeByTerrain`). Its Pokémon is the one a step there would
   bring (`EventWildBattleCall_PickWanderer` in `field_encount.c`: `FieldEncount_GenWilds` with one Pokémon, no
-  partner and through a Repel, the new encounter data's context and the debug overrides). Its shininess is rolled
-  as a wild one's (its rolls of a PID, the Shiny Charm and the Pass Power's, the debug Always shiny) and its sex
-  from its species' ratio (Cute Charm aside), and both are set in its `WildPkmParam` for the battle
-  (`WILD_SHINY_FORCED` or `NEVER`, `WILD_SEX_*`). Its sprite is its follower sprite for its species, form, sex and
-  shininess (`PaperWhite2_FollowingCodeFor`, the follower's registry match without its side effects), loaded on
-  demand where the sprite cache has room (`FldBillboardActor_CanLoadObjCode`).
+  partner and through a Repel, the new encounter data's context and the debug overrides). Its whole PID is rolled
+  then as the battle would roll a wild one's (`FieldEncount_RollWildPID`: the lead's Cute Charm, the Shiny Charm and
+  the Pass Power's rolls, the debug Always shiny), and kept in its `WildPkmParam` (`pid`, `fixedPid`), which
+  `FieldEncount_CreateWildPkm` uses for the battle's Pokémon: its shininess and sex are the PID's, and the Pokémon
+  caught is the one seen (its nature is still picked by the battle, Synchronize included). Its sprite is its follower
+  sprite for its species, form, sex and shininess (`PaperWhite2_FollowingCodeFor`, the follower's registry match
+  without its side effects), loaded on demand where the sprite cache has room (`FldBillboardActor_CanLoadObjCode`),
+  with a palette of its own varied by its PID (`paperwhite2_actor_palettes.c`; palette-variation.md, Field sprites).
 - **Rising and sinking:** from 20 units under its tile's ground over 12 frames (the ground hides what's under it),
   and back down at the end of its 20 to 40 seconds, where its tile has grass (`0x20`). Where it has none (a cave's
   floor, sand), it appears in a dust cloud instead, cut off after a second as it shows. It goes from sand or snow
@@ -2747,8 +2753,9 @@ brightness, saturation; greys never). `src/paperwhite2/main/paperwhite2_palette_
 (`include/paperwhite2/palette_variation.h`), settings from `res/paperwhite2/palette_variation.json`
 (`tools/paperwhite2/palette_variation.py`, also the reference transform); hooks in `mcss.c` (`MCSSSys_SetPaletteVariation`,
 a pending individual for the next load), `mcss_tool.c`, `btlv_mcss.c`, `hall_of_fame_demo_main.c`, `pokegra.c`
-(`PokeGra_LoadClActPaletteByBoxData`), `field_actor_billboard.c` and `paperwhite2_following_field.c` (the follower's
-sheet). Editor: the Pokémon Editor's Palette variation card.
+(`PokeGra_LoadClActPaletteByBoxData`); the follower and the wanderers draw palettes of their own
+(`src/paperwhite2/ov036/paperwhite2_actor_palettes.c`, hooks in `field_actor_billboard.c`, `billboard.c`,
+`paperwhite2_following_field.c` and `paperwhite2_wanderers.c`). Editor: the Pokémon Editor's Palette variation card.
 
 ## Adding global scripts
 

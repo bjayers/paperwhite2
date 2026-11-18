@@ -415,6 +415,21 @@ void PaperWhite2_Encounters_RollPartner(EncountManager *manager, u32 able) {
         return;
     }
     picked = &GetCandidates()[sBuild.candidate[sPicked]];
+#ifdef PAPERWHITE2_DEBUG_MENU
+    // The debug menu's Triple battles: three when three can fight (two when two can), the partners from the whole
+    // area, whatever the first one's battle styles
+    if (EventWork_FlagGet(GameData_GetEventWork(manager->gameData), EVENT_FLAG_DEBUG_FORCE_TRIPLE)) {
+        for (i = 0; i < sBuild.count; i++) {
+            sPartnerWeights[i] = sBuild.weights[i];
+            total += sPartnerWeights[i];
+        }
+        if (total != 0) {
+            manager->doubleBattle = TRUE;
+            manager->pokeCount = able >= 3 ? 3 : 2;
+        }
+        return;
+    }
+#endif
     roll = GFL_RandomLC(100);
     if (roll < picked->single || picked->doubleChance + picked->triple == 0) {
         return;
