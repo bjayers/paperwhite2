@@ -564,6 +564,16 @@ its item is taken.
   (`ENTRALINK_RUN_MARKER_FILE`, `ENTRALINK_RUN_NPC_MARKER_FILE`, `ENTRALINK_NPC_MARKER_<NAME>`). The ten and four (rest,
   buff, item, shop) in the commit are placeholders: a disc of a colour with a letter (E, !, B, R, G, *, $, ?, D, C).
   A new NPC marker needs `python3 configure.py w2_us --hack` again.
+- **Orientation (2026-11-18):** the ground markers were drawn upside down: the game's flat billboards
+  (`BILLBOARD_ACTOR_TYPE_FACE_CAMERA_Y_FLAT`, `billboard.c`) put the texture's top edge on the quad's south side, a
+  vertical flip only (checked in py-desmume with an "F" with a red top-left corner, from the south: the F's bar at the
+  bottom, the corner at the bottom left). The packer now reverses a ground marker's rows (`marker_texture(flat=True)`),
+  so the PNG reads as the player sees it, its top toward the north; the original code, which the footprints and shadows
+  share, is untouched. The NPC markers (camera-facing quads) were upright and are unchanged.
+- **Editor (2026-11-18):** every marker's PNG is on Graphics & Palettes' Sprite sheets page (the ten room markers
+  and each NPC marker, listed by `tools/paperwhite2/entralink_marker_art.py list`, so a new `npc_markers/` PNG shows
+  without an edit): see it, Download/Import PNG (indexed, or RGB(A) of at most 15 colors; 32 by 32 or 16 by 16; index
+  past 15 refused, no clear pixel warned) and edit the 16-color palette, then Apply.
 - **Memory:** about 2.3 KB more code and data in overlays 12 and 36 (the DS arena 54 KB left, from 56); at run time
   about 2.5 KB of the field heap for the system (its scene's 12 materials and 19 actors, handles and allocators) and
   about 150 bytes per texture kept after trimming, at most 12; VRAM 544 bytes per ground marker's texture and palette,

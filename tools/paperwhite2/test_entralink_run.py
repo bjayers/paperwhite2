@@ -181,3 +181,18 @@ def test_marker_members(tmp_path):
     (directory / "markers" / "boss.png").unlink()
     with pytest.raises(datajson.DataError, match="missing"):
         entralink_run.marker_members(directory)
+
+
+def test_ground_markers_are_packed_upside_down(tmp_path):
+    # The game's flat billboards put a texture's top edge on the quad's south side, so a ground marker's rows are
+    # packed reversed: its PNG's top is toward the north, as the player sees it from the south
+    from tools.data.nitro_2d import read_indexed_png, write_indexed_png
+    width, height, pixels, colors = read_indexed_png(entralink_run.SOURCE / "markers" / "enemy.png")
+    size = entralink_run.MARKER_SIZE
+    rows = [pixels[row * size:(row + 1) * size] for row in range(size)]
+    assert rows != rows[::-1]
+    flipped = tmp_path / "enemy.png"
+    flipped.write_bytes(write_indexed_png(size, size, b"".join(reversed(rows)), colors))
+    path = entralink_run.SOURCE / "markers" / "enemy.png"
+    assert entralink_run.marker_texture(path, size, flat=True) == entralink_run.marker_texture(flipped, size)
+    assert entralink_run.marker_texture(path, size, flat=True) != entralink_run.marker_texture(path, size)

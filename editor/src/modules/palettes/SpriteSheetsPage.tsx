@@ -1,7 +1,9 @@
 // The sprite sheets' page: sheets of OBJ art that a build tool packs whole (GET /api/sprite-sheets), such as the
 // Pokédex Area page's icons. A PNG from an image editor is checked by the sheet's own tool (POST
 // /api/sprite-sheets/check), which says whether it packs, or which icons keep it from packing, and shows it as the
-// game will; Apply writes it over the sheet's PNG under res/, which the next build packs.
+// game will; Apply writes it over the sheet's PNG under res/, which the next build packs. A sheet that is one picture
+// of up to 16 colors (the Entralink run's markers, listed by their tool) also has its palette on the page: a color
+// changed there is checked by the tool again and Apply writes the PNG with it.
 
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../api.ts";
@@ -37,6 +39,8 @@ export function SpriteSheetsPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [zoom, setZoom] = useState(2);
+  // A sheet with a palette: the colors edited on the page (16 "#rrggbb"), over the chosen PNG or the one in res/
+  const [palette, setPalette] = useState<string[] | null>(null);
 
   useEffect(() => {
     api.spriteSheets().then((list) => {
@@ -59,6 +63,7 @@ export function SpriteSheetsPage() {
     if (!sheet) return;
     setMessage(null);
     setResult(null);
+    setPalette(null);
     const size = await pngSize(file);
     if (!size) {
       setChosen(null);
@@ -82,13 +87,14 @@ export function SpriteSheetsPage() {
   };
 
   const apply = async () => {
-    if (!sheet || !chosen) return;
+    if (!sheet || (!chosen && !palette)) return;
     setBusy(true);
     try {
-      const out = await api.spriteSheetCheck(sheet.name, chosen.base64, true);
+      const out = await api.spriteSheetCheck(sheet.name, chosen?.base64, true, palette ?? undefined);
       if (out.written) {
         setMessage(`Wrote ${sheet.path}. Build (Ctrl+B) to see it in the game.`);
         setChosen(null);
+        setPalette(null);
         setResult(null);
         readCurrent();
       } else {
@@ -102,15 +108,52 @@ export function SpriteSheetsPage() {
   };
 
   const pick = (n: string) => {
-    if (chosen && !confirm("Leave the sheet you chose without applying it?")) return;
+    if ((chosen || palette) && !confirm("Leave the changes you made without applying them?")) return;
     setName(n);
     setChosen(null);
+    setPalette(null);
     setResult(null);
     setMessage(null);
   };
 
+  // A color of the palette changed: the picture with it is checked again, so that its preview shows it
+  const setColor = async (index: number, color: string) => {
+    if (!sheet) return;
+    const colors = [...(palette ?? result?.colors ?? current?.colors ?? [])];
+    if (colors.length === 0) return;
+    colors[index] = color;
+    setPalette(colors);
+    setMessage(null);
+    setBusy(true);
+    try {
+      const out = await api.spriteSheetCheck(sheet.name, chosen?.base64, false, colors);
+      setResult(out);
+      if (out.colors) setPalette(out.colors);
+    } catch (e) {
+      setMessage((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (error) return <div className="pal-empty pal-error">{error}</div>;
   if (!sheets) return <div className="pal-empty muted">Reading the sprite sheets…</div>;
+
+  // The palette of a picture of up to 16 colors: each color changes by its picker (to the DS's 5 bits an axis); 0 is clear
+  const swatches = (colors: string[]) => (
+    <div className="marker-palette">
+      <p className="muted pal-hint">Palette: color 0 is clear (the ground shows through), 1-15 are the picture's colors.
+        Click one to change it; the picture is checked again with it.</p>
+      <div className="marker-swatches">
+        {colors.map((color, i) => (
+          <label key={i} className={`marker-swatch${i === 0 ? " clear" : ""}`} title={i === 0 ? "0: clear" : `${i}: ${color}`}>
+            <input type="color" value={color} disabled={busy} onChange={(e) => setColor(i, e.target.value)} />
+            <span>{i}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
 
   const shown = (check: SpriteSheetCheck | null, caption: string) => check?.preview && sheet && (
     <figure>
@@ -145,8 +188,8 @@ export function SpriteSheetsPage() {
                 {[1, 2, 3, 4].map((z) => <option key={z} value={z}>{z}×</option>)}
               </select>
             </label>
-            <button className="primary" disabled={!result?.ok || busy || !chosen} onClick={apply}>Apply to the game's files</button>
-            {chosen && <button onClick={() => { setChosen(null); setResult(null); }}>Discard sheet</button>}
+            <button className="primary" disabled={!result?.ok || busy || (!chosen && !palette)} onClick={apply}>Apply to the game's files</button>
+            {(chosen || palette) && <button onClick={() => { setChosen(null); setPalette(null); setResult(null); }}>Discard changes</button>}
           </header>
           {message && <div className="pal-message">{message} <button className="link" onClick={() => setMessage(null)}>✕</button></div>}
           <div className="pal-body art-body">
@@ -154,8 +197,9 @@ export function SpriteSheetsPage() {
               <p>{sheet.description}</p>
               <p className="muted pal-hint">
                 A {sheet.width}×{sheet.height} PNG (indexed with color 0 transparent, or RGBA); colors are rounded to the
-                DS's (5 bits an axis). The previews show the sheet as the game does, on the page's grey, over the grey
-                copies. Checked by <code>{sheet.tool}</code>; written to <code>{sheet.path}</code>.
+                DS's (5 bits an axis). {sheet.palette
+                  ? "The previews show the picture as the game does, clear pixels over a checkerboard. A PNG with more than 16 colors, or a color index past 15, is refused; a picture with no clear pixel is warned about."
+                  : "The previews show the sheet as the game does, on the page's grey, over the grey copies."} Checked by <code>{sheet.tool}</code>; written to <code>{sheet.path}</code>.
               </p>
             </div>
 
@@ -167,12 +211,13 @@ export function SpriteSheetsPage() {
               </div>
               <div className="pal-images">{shown(current, sheet.path)}</div>
               {current && <p className={`pal-hint${current.ok ? " muted" : " pal-error"}`}>{current.message}</p>}
+              {sheet.palette && !chosen && !palette && current?.colors && swatches(current.colors)}
               {!current && <p className="muted pal-hint">Checking…</p>}
             </section>
 
             <section className="pal-panel art-screen">
               <div className="pal-row wrap">
-                <h3>New sheet</h3>
+                <h3>{sheet.palette ? "New picture" : "New sheet"}</h3>
                 <label className="pal-file-button" title={`A ${sheet.width}×${sheet.height} PNG`}>
                   {chosen ? "Choose another PNG…" : "Import PNG…"}
                   <input type="file" accept=".png" onChange={(e) => { const f = e.target.files?.[0]; if (f) choose(f); e.target.value = ""; }} />
@@ -180,6 +225,7 @@ export function SpriteSheetsPage() {
                 {chosen && <span className="muted">{chosen.file} ({chosen.size})</span>}
               </div>
               {busy && <p className="muted pal-hint">Checking…</p>}
+              {sheet.palette && (chosen || palette) && (palette ?? result?.colors) && swatches(palette ?? result?.colors ?? [])}
               {result && (
                 <>
                   <div className="pal-images">{shown(result, "With the new sheet, as the DS will show it")}</div>

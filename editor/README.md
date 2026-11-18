@@ -119,6 +119,13 @@ sheet's size and runs the tool's `check` on it (`POST /api/sprite-sheets/check`)
 palette rows, or names the icons with too many colors; **Apply to the game's files** writes it over the sheet's PNG,
 and the next build packs it.
 
+The Entralink run's markers are listed here too, from `tools/paperwhite2/entralink_marker_art.py list` (the ten room
+markers, 32×32, and each PNG of `npc_markers/`, 16×16, so a new one appears without an edit). They are one picture of up
+to 16 colors with index 0 clear: **Import PNG** takes an indexed PNG or an RGB(A) one with at most 15 colors besides
+transparency (more, a color index past 15 or another size is refused; a picture with no clear pixel is warned about),
+the palette's 16 colors are edited on the page (the picture is checked again with each change), and **Apply** writes
+the PNG. A ground marker's top is toward the north, as the player sees it.
+
 ### Item icons
 
 Every item's bag icon, the hack's items first ("Paper White 2's items": every constant in `docs/paperwhite2/items.md`'s table, plus any item

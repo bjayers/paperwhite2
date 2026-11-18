@@ -149,6 +149,11 @@ export interface SpriteSheet {
   width: number;
   height: number;
   description: string;
+  /** Arguments the tool's check takes after the PNG's path (a listing tool's marker says its size here) */
+  toolArgs?: string[];
+  /** The sheet is a picture of up to 16 colors whose palette the page edits: its tool takes --palette, --output and
+   * --info, and the check says the colors */
+  palette?: boolean;
 }
 
 /** A sheet's check by its tool (POST /api/sprite-sheets/check): its last line, and the sheet as the game shows it. */
@@ -157,6 +162,8 @@ export interface SpriteSheetCheck {
   message: string;
   written: boolean;
   preview: string | null;
+  /** A sheet with a palette: its colors ("#rrggbb", 16) in the checked picture */
+  colors?: string[];
 }
 
 /** An item's icon (GET /api/item-icons): the icon and palette members it shows in the hack's build, their files, the
