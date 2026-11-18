@@ -1,0 +1,17 @@
+{
+    "$schema": "palette_variation.schema.json",
+    "enabled": true,
+    "hue_degrees": 12,
+    "brightness_percent": 6,
+    "saturation_percent": 10,
+    "species": [
+        {
+            "species": "SPECIES_UNOWN",
+            "strength": 0
+        },
+        {
+            "species": "SPECIES_KECLEON",
+            "strength": 0
+        }
+    ]
+}

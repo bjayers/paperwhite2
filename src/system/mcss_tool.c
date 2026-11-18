@@ -117,6 +117,13 @@ MCSS *MCSSSys_AddPartyPkm(MCSSSystem *system, PartyPkm *pkm, u32 dir, fx32 x, fx
     MCSSLoadInfo info;
 
     MCSSSys_SetSpindaLoadCallback(system, PokeParty_GetParam(pkm, PKM_PARAM_PID, NULL));
+#ifdef PAPERWHITE2
+    // Paper White 2: the summary's, evolution's, trade's and hatching's Pokémon vary by their PIDs, but not an egg
+    if (!PokeParty_GetParam(pkm, PKM_PARAM_IS_EGG, NULL)) {
+        MCSSSys_SetPaletteVariation(system, PokeParty_GetParam(pkm, PKM_PARAM_SPECIES, NULL),
+                                    PokeParty_GetParam(pkm, PKM_PARAM_PID, NULL));
+    }
+#endif
     SetupPokemonLoaderByPartyPkm(pkm, &info, dir);
     return MCSSSys_Add(system, x, y, z, &info);
 }

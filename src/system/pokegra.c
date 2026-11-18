@@ -14,6 +14,7 @@
 #include "system/app_menu_common.h"
 
 #ifdef PAPERWHITE2
+#include "paperwhite2/palette_variation.h"
 #include "paperwhite2/pokemon_forms.h"
 #include "paperwhite2/species.h"
 #endif
@@ -474,7 +475,20 @@ u32 PokeGra_LoadClActPaletteByBoxData(ArcTool *arc, BoxPkm *pkm, u32 dir, u32 vr
     BOOL rare = PML_PkmIsRare(pkm);
     BOOL egg = PML_PkmGetParam(pkm, PKM_PARAM_IS_EGG, NULL);
 
+#ifdef PAPERWHITE2
+    // Paper White 2: an individual's colors vary by its PID (the PC's preview, the Hall of Fame, the move tutor):
+    // loaded as the original does, then replaced by the varied colors (docs/paperwhite2/design/palette-variation.md)
+    u32 palette = PokeGra_LoadClActPalette(arc, species, form, sex, rare, dir, egg, vramType, offset, heapId);
+
+    if (!egg) {
+        PaperWhite2_VaryClActPalette(
+            arc, palette, GetPokemonPaletteDataNo(GetPokemonGraphicsARCID(), species, form, sex, rare, dir, egg),
+            species, PML_PkmGetParam(pkm, PKM_PARAM_PID, NULL), heapId);
+    }
+    return palette;
+#else
     return PokeGra_LoadClActPalette(arc, species, form, sex, rare, dir, egg, vramType, offset, heapId);
+#endif
 }
 
 u32 PokeGra_LoadClActCharsByBoxData(ArcTool *arc, BoxPkm *pkm, u32 dir, u32 vramType, HeapID heapId) {

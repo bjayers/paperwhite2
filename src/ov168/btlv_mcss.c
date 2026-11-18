@@ -1116,6 +1116,11 @@ void BtlvMcss_SetSubstitute(BtlvMcss *work, int pos, BOOL substitute, BOOL flag)
     }
     if (!substitute) {
         MCSSSys_SetSpindaLoadCallback(work->mcssSys, work->entries[index].mon.personality);
+#ifdef PAPERWHITE2
+        // Paper White 2: the Pokémon's own colors again, varied by its PID
+        MCSSSys_SetPaletteVariation(work->mcssSys, work->entries[index].mon.species,
+                                    work->entries[index].mon.personality);
+#endif
         MCSS_Reload(work->mcssSys, work->entries[index].mcss, &work->entries[index].info);
         MCSS_SetAnimationEndCallback(work->entries[index].mcss, index, BtlvMcss_OnAnimationEnd, 1);
         if (flag) {
@@ -1148,6 +1153,10 @@ static void BtlvMcss_SetLevel(BtlvMcss *work, int pos, int level) {
         return;
     }
     MCSSSys_SetSpindaLoadCallback(work->mcssSys, work->entries[index].mon.personality);
+#ifdef PAPERWHITE2
+    // Paper White 2: the mosaic reloads the sprite, which keeps its colors varied by its PID
+    MCSSSys_SetPaletteVariation(work->mcssSys, work->entries[index].mon.species, work->entries[index].mon.personality);
+#endif
     MCSS_SetMosaic(work->mcssSys, work->entries[index].mcss, level);
 }
 
@@ -1176,6 +1185,10 @@ void BtlvMcss_Transform(BtlvMcss *work, int targetPos, int pos) {
     }
     work->entries[index].mon = work->entries[target].mon;
     dst = &work->entries[index].info;
+#ifdef PAPERWHITE2
+    // Paper White 2: a Pokémon that transforms takes the target's colors as the target shows them, varied by its PID
+    MCSSSys_SetPaletteVariation(work->mcssSys, work->entries[index].mon.species, work->entries[index].mon.personality);
+#endif
     MCSS_Reload(work->mcssSys, work->entries[index].mcss, dst);
 }
 
@@ -1185,6 +1198,10 @@ void BtlvMcss_ReloadSprite(BtlvMcss *work, int pos, const MCSSLoadInfo *info) {
 
     *dst = *info;
     MCSSSys_SetSpindaLoadCallback(work->mcssSys, work->entries[index].mon.personality);
+#ifdef PAPERWHITE2
+    // Paper White 2: a new form keeps the Pokémon's variation
+    MCSSSys_SetPaletteVariation(work->mcssSys, work->entries[index].mon.species, work->entries[index].mon.personality);
+#endif
     MCSS_Reload(work->mcssSys, work->entries[index].mcss, dst);
 }
 
@@ -1286,6 +1303,11 @@ void BtlvMcss_SetupPokemonLoadInfo(BtlvMcss *work, PartyPkm *pkm, MCSSLoadInfo *
     }
     SetupPokemonLoaderByPartyPkm(pkm, info, back);
     MCSSSys_SetSpindaLoadCallback(work->mcssSys, PokeParty_GetParam(pkm, PKM_PARAM_PID, NULL));
+#ifdef PAPERWHITE2
+    // Paper White 2: every battler's colors vary by its PID (docs/paperwhite2/design/palette-variation.md)
+    MCSSSys_SetPaletteVariation(work->mcssSys, PokeParty_GetParam(pkm, PKM_PARAM_SPECIES, NULL),
+                                PokeParty_GetParam(pkm, PKM_PARAM_PID, NULL));
+#endif
 }
 
 BOOL BtlvMcss_SetAnimation(BtlvMcss *work, int pos, int anim) {

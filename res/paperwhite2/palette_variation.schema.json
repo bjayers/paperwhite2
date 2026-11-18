@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Palette variation",
+  "description": "Every Pokémon's colours turn a little by its PID's second byte (docs/paperwhite2/design/palette-variation.md): its battle, summary, PC, evolution, trade, hatching and follower sprites, normal and shiny alike. The low nibble turns the hue by one of 16 steps across the hue range; two bits each pick one of 4 steps of the saturation and brightness ranges. Greys, white, black and the transparent colour never change. tools/paperwhite2/palette_variation.py checks the file and writes it into paperwhite2/palette_variation_config.h for src/paperwhite2/main/paperwhite2_palette_variation.c.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [ "enabled", "hue_degrees", "brightness_percent", "saturation_percent" ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "enabled": { "type": "boolean", "description": "Off, every Pokémon has its species' own colours" },
+    "hue_degrees": {
+      "type": "integer", "minimum": 0, "maximum": 45,
+      "description": "How far the hue turns at most, either way, in degrees: 16 steps from minus this to plus this. On the DS's 5 bits a channel a strong colour shows a step of about 2 degrees, a pale one needs more"
+    },
+    "brightness_percent": {
+      "type": "integer", "minimum": 0, "maximum": 25,
+      "description": "How much brighter or darker at most, in percent: 4 steps from minus this to plus this, scaled by each colour's saturation, so greys keep theirs. Below about 4 the 5-bit channels round most of it away"
+    },
+    "saturation_percent": {
+      "type": "integer", "minimum": 0, "maximum": 50,
+      "description": "How much more or less saturated at most, in percent: 4 steps from minus this to plus this. Below about 5 the 5-bit channels round most of it away"
+    },
+    "species": {
+      "type": "array", "maxItems": 1024,
+      "description": "The species whose variation isn't full strength, each listed once: 0 turns it off (a species whose colours mean something, as Kecleon's), 50 halves every range. Its forms, Arceus's plates among them, take the species' strength",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": [ "species", "strength" ],
+        "properties": {
+          "species": { "type": "string", "x-constant": "SPECIES_" },
+          "strength": { "type": "integer", "minimum": 0, "maximum": 100, "description": "The share of every range, in percent" }
+        }
+      }
+    }
+  }
+}

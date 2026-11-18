@@ -2,6 +2,24 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-18: palette variation (ROM session, on a branch)
+
+`docs/paperwhite2/design/palette-variation.md` has the design and the proof.
+
+- **Game:** every Pokémon's colours turn a little by its PID's second byte (hue +/-12 degrees in 16 steps, brightness
+  +/-6% and saturation +/-10% in 4 steps each, weighted so greys, white and black never change), normal and shiny,
+  in battle, the summary, evolution, trade, hatching, the Hall of Fame, the PC's preview and the follower; Arceus's
+  palette forms take it on top. `src/paperwhite2/main/paperwhite2_palette_variation.c`; hooks in `mcss.c`,
+  `mcss_tool.c`, `btlv_mcss.c`, `hall_of_fame_demo_main.c`, `pokegra.c`, `field_actor_billboard.c`,
+  `paperwhite2_following_field.c`. Settings and per-species strength (Unown, Kecleon 0) in
+  `res/paperwhite2/palette_variation.json`.
+- **Editor:** the Pokémon Editor's Palette variation card: strength, 16-variant preview (normal/shiny), the settings.
+- **Tests:** shared vectors pass in Python and the editor (243 editor tests); the C matched the reference on every
+  palette hooked in py-desmume (battle, summary, follower, shiny, Arceus form 10, Kecleon unchanged, PC box in OBJ
+  palette RAM). `--hack` build without warnings, DSi intact, plain build's modules match.
+- **For the user:** playtest the strengths; set other species to 0 in the card if their colours should stay (Arceus?).
+  Known limit: L/R-cycling between two same-sprite party members keeps the first's follower colours until a reload.
+
 ## 2026-11-18: Entralink markers upright; the marker art in Graphics & Palettes (ROM session, on a branch)
 
 - **Flip:** the ground markers drew with a vertical flip (the game's flat billboards put a texture's top on the south
