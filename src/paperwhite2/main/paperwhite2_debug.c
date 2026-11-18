@@ -1,6 +1,7 @@
 #include "types.h"
 #include "constants/flags.h"
 #include "paperwhite2/debug.h"
+#include "pml/personal.h"
 #include "save/event_work.h"
 #include "system/game_data.h"
 #include "system/rtc.h"
@@ -14,7 +15,8 @@
 #define LIGHT_SECONDS_IN_HOUR 1800
 
 static u16 sOverrides[DEBUG_OVERRIDE_COUNT] = {
-    DEBUG_OVERRIDE_OFF, DEBUG_OVERRIDE_OFF, DEBUG_OVERRIDE_OFF, DEBUG_OVERRIDE_OFF, DEBUG_OVERRIDE_OFF,
+    DEBUG_OVERRIDE_OFF, DEBUG_OVERRIDE_OFF, DEBUG_OVERRIDE_OFF,
+    DEBUG_OVERRIDE_OFF, DEBUG_OVERRIDE_OFF, DEBUG_OVERRIDE_OFF,
 };
 
 u16 PaperWhite2_Debug_GetOverride(u32 override) {
@@ -55,10 +57,17 @@ void PaperWhite2_Debug_OverrideWilds(WildPkmParam *params, int count) {
     int i;
 
     for (i = 0; i < count; i++) {
-        // A forced species drops the slot's form, item, sex and hidden ability, which may not fit it
+        // A forced species drops the slot's form, item, sex and hidden ability, which may not fit it, and takes the
+        // forced form where it has it
         if (sOverrides[DEBUG_OVERRIDE_WILD_SPECIES] != DEBUG_OVERRIDE_OFF) {
+            u16 form = sOverrides[DEBUG_OVERRIDE_WILD_FORM];
+
             params[i].species = sOverrides[DEBUG_OVERRIDE_WILD_SPECIES];
-            params[i].form = 0;
+            if (form == DEBUG_OVERRIDE_OFF ||
+                form >= PML_PersonalGetParamSingle(params[i].species, 0, PERSONAL_FORM_COUNT)) {
+                form = 0;
+            }
+            params[i].form = form;
             params[i].item = 0;
             params[i].sex = WILD_SEX_RANDOM;
             params[i].hiddenAbility = FALSE;

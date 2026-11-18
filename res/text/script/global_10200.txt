@@ -221,3 +221,6 @@ Global10200_Text_DebugWeatherCustomTint9 = Custom tint 9
 Global10200_Text_DebugWeatherCustomTint10 = Custom tint 10
 Global10200_Text_DebugWeatherCustomTint11 = Custom tint 11
 Global10200_Text_DebugWeatherCustomTint12 = Custom tint 12
+Global10200_Text_DebugNumberForm = Form {0200:0} of {0100:1} (0-{0200:3})
+Global10200_Text_DebugNumberWildForm = Wild form {0200:0} of {0100:1} (0-{0200:3})
+Global10200_Text_DebugWildForm = Wild form: {0100:6}

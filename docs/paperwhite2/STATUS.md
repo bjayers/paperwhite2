@@ -2,6 +2,27 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-18: the battle freeze after Primal Dialga, and the debug menu's forms (ROM session, on a branch)
+
+- **The freeze:** every battle started to a white top screen, with the C-Gear still on the lower one, once the palette
+  variation and Primal Dialga were merged. **Cause: melonDS DS's JIT literal optimisations** (the known issue of
+  2026-11-05, below), not the game. `RetroArch-Win64/config/melonDS DS/melonDS DS.opt` (written 2026-11-07) had
+  `melonds_jit_literal_optimisations = "enabled"` again, with DSi mode and the JIT on. The palette variation's code in
+  ARM9 main moved every overlay, and that freeze comes and goes with where code lands. **Proof:** the same build
+  (main with the uncommitted `obj_codes.txt` lines) and the user's current save (`saves/melonDS DS/paperwhite2.srm`)
+  start the Entralink Dialga battle in py-desmume, and with literal optimisations off the user's battles work again,
+  palette variation included. No code change. **Keep JIT Literal Optimisations off.**
+- **Primal Dialga (Dialga form 1):** its data from Add form is complete. In battle the game asks for form 1's sprite
+  (`GetPokemonCharacterDataNo` and `GetPokemonPaletteDataNo` hooked: species 483, form 1), the archive's file 15103
+  (group 67's palette) is form_1/normal.pal, and the battle shows the Primal art. Spiky-eared Pichu, given in form 1,
+  has form 1 in the party.
+- **Debug menu:** Give Pokémon asks for the form after the species, only when the species has more than one
+  (`DEBUG_NUMBER_FORM`, `DEBUG_ACTION_FORM_COUNT`, `GivePokemon`'s form). Encounters has **Wild form**, which Force
+  species also asks for (`DEBUG_OVERRIDE_WILD_FORM`, `PaperWhite2_Debug_OverrideWilds`, which keeps form 0 for a form
+  the species lacks). A form entry's range is its species' personal form count. Tested in py-desmume: Pichu form 1
+  given; Dialga form 1 forced on Route 19 gave a wild double battle of two Dialga loaded as form 1 (the wanderers were
+  Dialga too). plugins.md's Debug menu has them.
+
 ## 2026-11-18: palette variation (ROM session, on a branch)
 
 `docs/paperwhite2/design/palette-variation.md` has the design and the proof.

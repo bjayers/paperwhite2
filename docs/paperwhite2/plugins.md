@@ -238,7 +238,8 @@ DEBUG                           L_DebugMenu
     Make shiny                      the Shiny Candy's PID (PaperWhite2_MakeShinyPID); not an Egg or a shiny one
     Friendship...                   0 / 70 / 255
     Heal party                      PokeParty_RecoverAll, as a Center
-    Give Pokémon...                 number: species, then level; to the party, or the PC when it is full
+    Give Pokémon...                 number: species, its form (only for a species with more than one), then level;
+                                    to the party, or the PC when it is full
     Level 100                       the target to level 100's experience and stats; the moves stay
     Party to level 100              the same for every Pokémon of the party but Eggs
     Add prestige                    the target's Prestige level up by one, at level 100 (Prestige levels, below)
@@ -258,7 +259,8 @@ DEBUG                           L_DebugMenu
     Fewer step encounters: ON/OFF   EVENT_FLAG_DEBUG_FEWER_WILD_ENCOUNTERS: a quarter of the step rate
     No wanderers: ON/OFF            EVENT_FLAG_DEBUG_NO_WANDERERS (Wanderers, below)
     Wanderers now                   how many are out, and each one's species, level, shininess and state
-    Force species: <Off|species>    number, 0 for Off
+    Force species: <Off|species>    number, 0 for Off; then its form, for a species with more than one
+    Wild form: <Off|form>           number: the forced species' form, 0 to its forms count - 1 (Off after a new species)
     Wild level: <Off|level>         number, 0 for Off
   Player...
     Warp to last Pokémon Center     the town of the last Center used, at its fly spot, as Teleport
@@ -372,7 +374,9 @@ or Cancel or B (0x8024 0). The step starts at 1 and stays within the range's lar
 at the range's end, and from the end goes round to the other end. The kinds (`sDebugNumberKinds`) give the range, the
 message and the name: level 1-100, nature 0-24 (its name), species 1-649 (its name), item 1-638 (its name), count
 1-999, flag 1-0xbf7 (its hex and state), variable 0x4000-0x41ae (its hex), value 0-65535, money 0-9999999, zone 0-614
-(its place name), wild species 0-649 and wild level 0-100 (0 shows "(off)"). An entry starts at the target's level or
+(its place name), wild species 0-649 and wild level 0-100 (0 shows "(off)"), and a form, 0 to the last form of its
+species (the species' personal form count; Give Pokémon's species or the forced wild species), with the species' name
+and the last form shown. An entry starts at the target's level or
 nature, the money, the current zone, the override, a variable's value, or else the last number entered of the kind.
 The state lives in overlay 12 (`sDebugNumber`), which stays loaded while the script runs. A two-number option keeps the
 first in 0x8026.
@@ -391,7 +395,7 @@ Each hook is under `PAPERWHITE2_DEBUG_MENU` with the original in `#else`:
 | Flag/variable | none | `EventWork_FlagGet/Set/Reset`, `EventWork_GetWkPtr` |
 | Always shiny | `FieldEncount_CreateWildPkm` (`src/ov036/enc_pokeset.c`) | rolls the PID up to `ALWAYS_SHINY_ROLLS` (0x4000) times until it is shiny: grass, surfing, fishing and `EventWildBattleCall_CreateStatic`'s scripted encounters. Gifts, eggs and trainers' Pokémon aren't affected |
 | No wild encounters | `EventWildBattleCall_CreateRandom` (`src/ov036/field_encount.c`) | returns no battle before the step's roll; Sweet Scent and other forced encounters still happen |
-| Force species, wild level | `EventWildBattleCall_CreateRandom`, after `FieldEncount_GenWilds` | `PaperWhite2_Debug_OverrideWilds`: each wild Pokémon's species (with form 0, no item, a random sex and no hidden ability) and level. Roaming Pokémon, N's Pokémon and scripted battles keep theirs |
+| Force species, wild level | `EventWildBattleCall_CreateRandom`, after `FieldEncount_GenWilds` | `PaperWhite2_Debug_OverrideWilds`: each wild Pokémon's species (with the forced form where the species has it, else form 0, no item, a random sex and no hidden ability) and level; the wanderers take it too. Roaming Pokémon, N's Pokémon and scripted battles keep theirs |
 | Walk through walls | `FieldPlayerGrid_UpdateMovement` (`src/ov036/field_player_grid.c`) and `FieldPlayerRail_GetHitBits` (`src/ov036/field_player_nogrid.c`) | the player's step only. On grids it turns on the grid's forced step (`GridMoveInput.force`, always off in the original), which clears every collision bit but the map's edge (`ACTOR_COLL_OUT_OF_BOUNDS`) and lets the player walk onto water and surf onto land; ledges are walked over, not jumped. On rails every bit but the rail's ends (bit 1). Other actors still collide |
 | Warp to last Pokémon Center | none: `EventMapChangeTeleport_Create` (ov035) | the respawn index of the last Center (`GetReturnLocationIdx`), its town's fly spot, as Teleport and a blackout use |
 | Warp to zone | none: `EventMapChange_CreateForFly` | the zone's fly spot (`ZoneHeader`'s flyX/Y/Z, the same `LoadZoneSpawnInfoCheckRail` as Teleport): the only entry point a zone's header has without loading its events. 600 of the 616 zones' headers (`fly` in `res/field/zones/*.json`) have one, interiors too; the 16 at 0, 0, 0 (some of Castelia City's buildings among them) are refused with a message |

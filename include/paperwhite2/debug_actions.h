@@ -31,8 +31,8 @@
 #define DEBUG_ACTION_PARTY_SET_FRIENDSHIP 9
 // Heals the whole party (PokeParty_RecoverAll), as a Pokémon Center does
 #define DEBUG_ACTION_PARTY_HEAL 10
-// Gives a Pokémon of species arg1 at the number's level, as a script's gift does, to the party or else the boxes. Puts
-// its species in word 0 and returns a DEBUG_GIVE_* result
+// Gives a Pokémon of species arg1 in form arg2 at the number's level, as a script's gift does, to the party or else the
+// boxes. Puts its species in word 0 and returns a DEBUG_GIVE_* result
 #define DEBUG_ACTION_GIVE_POKEMON 11
 
 // Gives item arg1, as many as the number. Puts its name in word 0 and returns whether the bag had room
@@ -82,7 +82,8 @@
 #define DEBUG_ACTION_INFO 29
 
 // Starts a number entry of kind arg1 (a DEBUG_NUMBER_*), at the kind's start: the target's value, the game's, arg2
-// for DEBUG_NUMBER_VALUE, or else the last one entered of the kind
+// for DEBUG_NUMBER_VALUE, or else the last one entered of the kind. A form's range is the forms of species arg2 for
+// DEBUG_NUMBER_FORM, of the forced wild species for DEBUG_NUMBER_WILD_FORM
 #define DEBUG_ACTION_NUMBER_BEGIN 30
 // Puts the number in word 0, its name (a species, an item, a nature, a place, a flag's state, or the hex of a flag or
 // variable ID) in word 1 and the step in word 2, and returns the kind's message
@@ -166,6 +167,11 @@
 // no warp, in the Union Room's zones, whose field has overlay 34 in place of overlay 33's warp code
 #define DEBUG_ACTION_WARP_ENTRALINK 54
 
+// Returns how many forms species arg1 has (its personal record's form count, 1 for none and for 0)
+#define DEBUG_ACTION_FORM_COUNT 55
+// Sets the wild form override to the number: the form a forced species' encounters take where it has that form
+#define DEBUG_ACTION_SET_WILD_FORM 56
+
 // The kinds of number entry: their ranges and messages are sDebugNumberKinds (paperwhite2_debug_commands.c)
 #define DEBUG_NUMBER_LEVEL 0
 #define DEBUG_NUMBER_NATURE 1
@@ -179,7 +185,9 @@
 #define DEBUG_NUMBER_ZONE 9
 #define DEBUG_NUMBER_WILD_SPECIES 10
 #define DEBUG_NUMBER_WILD_LEVEL 11
-#define DEBUG_NUMBER_KIND_COUNT 12
+#define DEBUG_NUMBER_FORM 12
+#define DEBUG_NUMBER_WILD_FORM 13
+#define DEBUG_NUMBER_KIND_COUNT 14
 
 // DEBUG_ACTION_NUMBER_ADJUST's changes, which are the number entry's list entries: plus or minus the step, which
 // clamps at the range's end and wraps from it, and the step times or over ten

@@ -37,6 +37,7 @@
 #include "paperwhite2/terrain_groups.h"
 #include "paperwhite2/vram_stats.h"
 #include "paperwhite2/wanderers.h"
+#include "pml/personal.h"
 #include "pml/poke_party.h"
 #include "save/bag.h"
 #include "save/event_work.h"
@@ -110,9 +111,11 @@ enum {
     NUMBER_NAME_SPECIES_OR_OFF,
     // Off for 0
     NUMBER_NAME_OFF,
+    // The species whose forms they are
+    NUMBER_NAME_FORM_SPECIES,
 };
 
-// A kind of number entry: its range, its message and its name
+// A kind of number entry: its range (a form's ends at its species' last form), its message and its name
 typedef struct {
     u32 min;
     u32 max;
@@ -120,11 +123,13 @@ typedef struct {
     u8 name;
 } DebugNumberKind;
 
-// The number being entered, its kind and its step, and each kind's last number
+// The number being entered, its kind, its step and its range's end, a form's species, and each kind's last number
 typedef struct {
     u32 value;
     u32 step;
     u8 kind;
+    u32 max;
+    u16 formSpecies;
     u32 last[DEBUG_NUMBER_KIND_COUNT];
 } DebugNumber;
 
@@ -141,6 +146,8 @@ static const DebugNumberKind sDebugNumberKinds[DEBUG_NUMBER_KIND_COUNT] = {
     { 0, ZONE_MAX - 1, Global10200_Text_DebugNumberZone, NUMBER_NAME_PLACE },
     { 0, PAPERWHITE2_SPECIES_LAST, Global10200_Text_DebugNumberWildSpecies, NUMBER_NAME_SPECIES_OR_OFF },
     { 0, LEVEL_MAX, Global10200_Text_DebugNumberWildLevel, NUMBER_NAME_OFF },
+    { 0, 0, Global10200_Text_DebugNumberForm, NUMBER_NAME_FORM_SPECIES },
+    { 0, 0, Global10200_Text_DebugNumberWildForm, NUMBER_NAME_FORM_SPECIES },
 };
 
 // The DEBUG_STAT_* stats' names, the last for all six
@@ -222,7 +229,8 @@ static u32 DebugCommands_NumberStart(FieldScriptEnv *env, u32 kind, u32 initial)
 static void DebugCommands_ShowNumber(FieldScriptEnv *env);
 static void DebugCommands_AdjustNumber(u32 change);
 static u32 DebugCommands_GiveKeyItems(GameData *gameData, HeapID heapId);
-static u32 DebugCommands_GivePokemon(FieldScriptEnv *env, u16 species, u16 level);
+static u32 DebugCommands_GetFormCount(u16 species);
+static u32 DebugCommands_GivePokemon(FieldScriptEnv *env, u16 species, u16 form, u16 level);
 static void DebugCommands_SetSeason(GameData *gameData, u16 season);
 static void DebugCommands_SetWeather(GameSystem *gsys, u16 weather);
 static void DebugCommands_SetMoney(GameData *gameData, u32 money);
@@ -305,7 +313,7 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
         return TRUE;
     }
     case DEBUG_ACTION_GIVE_POKEMON:
-        return DebugCommands_GivePokemon(env, arg1, sDebugNumber.value);
+        return DebugCommands_GivePokemon(env, arg1, arg2, sDebugNumber.value);
     case DEBUG_ACTION_GIVE_ITEM:
         loadItemNameToStrbuf(ScriptWork_GetWordSet(FieldScriptEnv_GetScriptWork(env)), 0, arg1);
         DebugCommands_SetWordNumber(env, PARTY_WORD_VALUE, sDebugNumber.value);
@@ -364,6 +372,12 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
         } else {
             WordSet_LoadSpeciesName(ScriptWork_GetWordSet(FieldScriptEnv_GetScriptWork(env)), 2, value);
         }
+        value = PaperWhite2_Debug_GetOverride(DEBUG_OVERRIDE_WILD_FORM);
+        if (value == DEBUG_OVERRIDE_OFF) {
+            DebugCommands_SetWordText(env, 6, Global10200_Text_DebugOff);
+        } else {
+            DebugCommands_SetWordNumber(env, 6, value);
+        }
         value = PaperWhite2_Debug_GetOverride(DEBUG_OVERRIDE_WILD_LEVEL);
         if (value == DEBUG_OVERRIDE_OFF) {
             DebugCommands_SetWordText(env, 3, Global10200_Text_DebugOff);
@@ -374,7 +388,14 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
     case DEBUG_ACTION_SET_WILD_SPECIES:
         PaperWhite2_Debug_SetOverride(DEBUG_OVERRIDE_WILD_SPECIES,
                                       sDebugNumber.value == 0 ? DEBUG_OVERRIDE_OFF : sDebugNumber.value);
+        // A new species starts at its first form
+        PaperWhite2_Debug_SetOverride(DEBUG_OVERRIDE_WILD_FORM, DEBUG_OVERRIDE_OFF);
         return TRUE;
+    case DEBUG_ACTION_SET_WILD_FORM:
+        PaperWhite2_Debug_SetOverride(DEBUG_OVERRIDE_WILD_FORM, sDebugNumber.value);
+        return TRUE;
+    case DEBUG_ACTION_FORM_COUNT:
+        return DebugCommands_GetFormCount(arg1);
     case DEBUG_ACTION_SET_WILD_LEVEL:
         PaperWhite2_Debug_SetOverride(DEBUG_OVERRIDE_WILD_LEVEL,
                                       sDebugNumber.value == 0 ? DEBUG_OVERRIDE_OFF : sDebugNumber.value);
@@ -416,6 +437,16 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
         return DebugCommands_Info(env);
     case DEBUG_ACTION_NUMBER_BEGIN:
         sDebugNumber.kind = arg1;
+        sDebugNumber.max = sDebugNumberKinds[arg1].max;
+        if (arg1 == DEBUG_NUMBER_FORM || arg1 == DEBUG_NUMBER_WILD_FORM) {
+            sDebugNumber.formSpecies =
+                arg1 == DEBUG_NUMBER_FORM ? arg2 : PaperWhite2_Debug_GetOverride(DEBUG_OVERRIDE_WILD_SPECIES);
+            // No species forced: only form 0
+            if (sDebugNumber.formSpecies == DEBUG_OVERRIDE_OFF) {
+                sDebugNumber.formSpecies = SPECIES_NONE;
+            }
+            sDebugNumber.max = DebugCommands_GetFormCount(sDebugNumber.formSpecies) - 1;
+        }
         sDebugNumber.value = DebugCommands_NumberStart(env, arg1, arg2);
         sDebugNumber.step = 1;
         return sDebugNumber.value;
@@ -681,12 +712,21 @@ static u32 DebugCommands_NumberStart(FieldScriptEnv *env, u32 kind, u32 initial)
             value = 0;
         }
         break;
+    case DEBUG_NUMBER_FORM:
+        value = 0;
+        break;
+    case DEBUG_NUMBER_WILD_FORM:
+        value = PaperWhite2_Debug_GetOverride(DEBUG_OVERRIDE_WILD_FORM);
+        if (value == DEBUG_OVERRIDE_OFF) {
+            value = 0;
+        }
+        break;
     }
     if (value < sDebugNumberKinds[kind].min) {
         value = sDebugNumberKinds[kind].min;
     }
-    if (value > sDebugNumberKinds[kind].max) {
-        value = sDebugNumberKinds[kind].max;
+    if (value > sDebugNumber.max) {
+        value = sDebugNumber.max;
     }
     return value;
 }
@@ -730,6 +770,11 @@ static void DebugCommands_ShowNumber(FieldScriptEnv *env) {
         DebugCommands_SetWordText(env, NUMBER_WORD_NAME,
                                   value == 0 ? Global10200_Text_DebugOffParenthesized : Global10200_Text_DebugEmpty);
         break;
+    case NUMBER_NAME_FORM_SPECIES:
+        // The species, and its last form in the step's word's place after it
+        WordSet_LoadSpeciesName(wordSet, NUMBER_WORD_NAME, sDebugNumber.formSpecies);
+        DebugCommands_SetWordNumber(env, NUMBER_WORD_STEP + 1, sDebugNumber.max);
+        break;
     }
 }
 
@@ -740,17 +785,17 @@ static void DebugCommands_AdjustNumber(u32 change) {
 
     switch (change) {
     case DEBUG_NUMBER_STEP_PLUS:
-        if (sDebugNumber.value == kind->max) {
+        if (sDebugNumber.value == sDebugNumber.max) {
             sDebugNumber.value = kind->min;
-        } else if (kind->max - sDebugNumber.value < sDebugNumber.step) {
-            sDebugNumber.value = kind->max;
+        } else if (sDebugNumber.max - sDebugNumber.value < sDebugNumber.step) {
+            sDebugNumber.value = sDebugNumber.max;
         } else {
             sDebugNumber.value += sDebugNumber.step;
         }
         break;
     case DEBUG_NUMBER_STEP_MINUS:
         if (sDebugNumber.value == kind->min) {
-            sDebugNumber.value = kind->max;
+            sDebugNumber.value = sDebugNumber.max;
         } else if (sDebugNumber.value - kind->min < sDebugNumber.step) {
             sDebugNumber.value = kind->min;
         } else {
@@ -758,7 +803,7 @@ static void DebugCommands_AdjustNumber(u32 change) {
         }
         break;
     case DEBUG_NUMBER_STEP_UP:
-        if (sDebugNumber.step * 10 <= kind->max - kind->min) {
+        if (sDebugNumber.step * 10 <= sDebugNumber.max - kind->min) {
             sDebugNumber.step *= 10;
         }
         break;
@@ -784,8 +829,19 @@ static u32 DebugCommands_GiveKeyItems(GameData *gameData, HeapID heapId) {
     return count;
 }
 
+// A species' forms, from its personal record: 1 for a species without forms and for none
+static u32 DebugCommands_GetFormCount(u16 species) {
+    u32 count;
+
+    if (species == SPECIES_NONE) {
+        return 1;
+    }
+    count = PML_PersonalGetParamSingle(species, 0, PERSONAL_FORM_COUNT);
+    return count == 0 ? 1 : count;
+}
+
 // A Pokémon as PokePartyAdd makes one (scrcmd_pokemon.c): a random ability and sex, a Poké Ball, the met data of here
-static u32 DebugCommands_GivePokemon(FieldScriptEnv *env, u16 species, u16 level) {
+static u32 DebugCommands_GivePokemon(FieldScriptEnv *env, u16 species, u16 form, u16 level) {
     GameData *gameData = FieldScriptEnv_GetGameData(env);
     BoxPkmCreateParams params;
 
@@ -793,7 +849,7 @@ static u32 DebugCommands_GivePokemon(FieldScriptEnv *env, u16 species, u16 level
     MI_CpuFill8(&params, 0, sizeof(BoxPkmCreateParams));
     params.heapId = FieldScriptEnv_GetHeapID(env);
     params.species = species;
-    params.form = 0;
+    params.form = form;
     params.level = level;
     params.item = ITEM_NONE;
     params.ability = 2;

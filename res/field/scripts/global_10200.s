@@ -20,8 +20,8 @@ Script_1:
 // to the menu above it. The work is done by one command, Debug action, arg1, arg2, result
 // (include/paperwhite2/debug_actions.h), whose result goes in 0x8025. A list entry's label is formatted with the
 // script's words, so a block's Debug ..._WORDS action before its list puts each entry's state (ON/OFF, a name) in them.
-// The work variables: 0x8020 a list's pick, 0x8023 the stat list's cursor or whether the Conditions readout shows all
-// its pages, 0x8024 whether a number entry was Done, 0x8025 the command's result, 0x8026 a first number kept for a
+// The work variables: 0x8020 a list's pick, 0x8023 the stat list's cursor, whether the Conditions readout shows all
+// its pages or the form of Give Pokémon, 0x8024 whether a number entry was Done, 0x8025 the command's result, 0x8026 a first number kept for a
 // second (an item and its count, a species and its level, a variable and its value) or the Conditions readout's first
 // rule, 0x8027 the number entry's cursor. See docs/paperwhite2/plugins.md, Debug menu
 // A list's Back: a value no list's other entries take, under 0x4000, which ListMenuAdd would read as a variable
@@ -340,18 +340,30 @@ L_DebugHealParty:
     LastKeyWait
     VMJump L_DebugParty
 
-// Give Pokémon...: the species, then the level, to the party, or the PC with the party full
+// Give Pokémon...: the species, its form if it has more than one, then the level, to the party, or the PC with the
+// party full
 L_DebugGivePokemon:
     Debug DEBUG_ACTION_NUMBER_BEGIN, DEBUG_NUMBER_SPECIES, 0, 0x8025
     VMCall L_DebugNumber
     WorkCmpConst 0x8024, 0
     VMJumpIf CMP_EQ, L_DebugParty
     WorkSet 0x8026, 0x8025
+    WorkSetConst 0x8023, 0
+    Debug DEBUG_ACTION_FORM_COUNT, 0x8026, 0, 0x8025
+    WorkCmpConst 0x8025, 1
+    VMJumpIf CMP_EQ, L_DebugGiveLevel
+    Debug DEBUG_ACTION_NUMBER_BEGIN, DEBUG_NUMBER_FORM, 0x8026, 0x8025
+    VMCall L_DebugNumber
+    WorkCmpConst 0x8024, 0
+    VMJumpIf CMP_EQ, L_DebugParty
+    WorkSet 0x8023, 0x8025
+
+L_DebugGiveLevel:
     Debug DEBUG_ACTION_NUMBER_BEGIN, DEBUG_NUMBER_LEVEL, 0, 0x8025
     VMCall L_DebugNumber
     WorkCmpConst 0x8024, 0
     VMJumpIf CMP_EQ, L_DebugParty
-    Debug DEBUG_ACTION_GIVE_POKEMON, 0x8026, 0, 0x8025
+    Debug DEBUG_ACTION_GIVE_POKEMON, 0x8026, 0x8023, 0x8025
     WorkCmpConst 0x8025, DEBUG_GIVE_BOX
     VMJumpIf CMP_EQ, L_DebugGiveBox
     WorkCmpConst 0x8025, DEBUG_GIVE_FULL
@@ -624,6 +636,7 @@ L_DebugEncounters:
     ListMenuAdd Global10200_Text_DebugNoWanderers, 65535, 5
     ListMenuAdd Global10200_Text_DebugWanderersNow, 65535, 6
     ListMenuAdd Global10200_Text_DebugForceSpecies, 65535, 2
+    ListMenuAdd Global10200_Text_DebugWildForm, 65535, 7
     ListMenuAdd Global10200_Text_DebugWildLevel, 65535, 3
     ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
     ListMenuShow
@@ -641,6 +654,8 @@ L_DebugEncounters:
     VMJumpIf CMP_EQ, L_DebugToggleNoWanderers
     WorkCmpConst 0x8020, 6
     VMJumpIf CMP_EQ, L_DebugWanderersNow
+    WorkCmpConst 0x8020, 7
+    VMJumpIf CMP_EQ, L_DebugWildForm
     VMJump L_DebugMenu
 
 L_DebugToggleAlwaysShiny:
@@ -670,12 +685,26 @@ L_DebugWanderersNow:
     LastKeyWait
     VMJump L_DebugEncounters
 
+// Force species: the species, then its form if it has more than one
 L_DebugForceSpecies:
     Debug DEBUG_ACTION_NUMBER_BEGIN, DEBUG_NUMBER_WILD_SPECIES, 0, 0x8025
     VMCall L_DebugNumber
     WorkCmpConst 0x8024, 0
     VMJumpIf CMP_EQ, L_DebugEncounters
+    WorkSet 0x8026, 0x8025
     Debug DEBUG_ACTION_SET_WILD_SPECIES, 0, 0, 0x8025
+    SEPlay SEQ_SE_SELECT1
+    Debug DEBUG_ACTION_FORM_COUNT, 0x8026, 0, 0x8025
+    WorkCmpConst 0x8025, 1
+    VMJumpIf CMP_EQ, L_DebugEncounters
+
+// Wild form: the forced species' form, while one is forced that has more than one
+L_DebugWildForm:
+    Debug DEBUG_ACTION_NUMBER_BEGIN, DEBUG_NUMBER_WILD_FORM, 0, 0x8025
+    VMCall L_DebugNumber
+    WorkCmpConst 0x8024, 0
+    VMJumpIf CMP_EQ, L_DebugEncounters
+    Debug DEBUG_ACTION_SET_WILD_FORM, 0, 0, 0x8025
     SEPlay SEQ_SE_SELECT1
     VMJump L_DebugEncounters
 

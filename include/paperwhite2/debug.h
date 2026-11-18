@@ -23,6 +23,8 @@ enum {
     DEBUG_OVERRIDE_WILD_LEVEL,
     // The season mode (a SEASON_MODE_*, paperwhite2/season.h) that Force season replaced, which Off sets again
     DEBUG_OVERRIDE_SAVED_SEASON_MODE,
+    // The form of the forced species' encounters, where the species has it
+    DEBUG_OVERRIDE_WILD_FORM,
     DEBUG_OVERRIDE_COUNT,
 };
 
@@ -43,7 +45,7 @@ BOOL PaperWhite2_Debug_IsWalkingThroughWalls(GameData *gameData);
 // The collision of the player's next step with Walk through walls on: only the bits of kept, which leave the rail's
 // end blocking. hit as the game computed it otherwise
 u32 PaperWhite2_Debug_FilterPlayerHit(GameData *gameData, u32 hit, u32 kept);
-// Sets the species and the level overrides on the wild Pokémon of a random encounter, before they are made
+// Sets the species, form and level overrides on the wild Pokémon of a random encounter, before they are made
 // (EventWildBattleCall_CreateRandom, ov036/field_encount.c)
 void PaperWhite2_Debug_OverrideWilds(WildPkmParam *params, int count);
 #endif
