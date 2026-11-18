@@ -1,0 +1,6 @@
+{
+    "$schema": "../map_model.schema.json",
+    "texture_set": "MAP_TEXTURE_SET_ENTREE_FOREST",
+    "written": true,
+    "template": "MAP_MODEL_ENTREE_FOREST_5_PALACE07_00_00"
+}

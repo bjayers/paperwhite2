@@ -1,4 +1,7 @@
 #include "asm/field_script.inc"
 
+    ScriptEntry Script_1
     ScriptEntriesEnd
-    .balign 4, 0
+
+Script_1:
+    VMHalt

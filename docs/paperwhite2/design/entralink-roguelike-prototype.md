@@ -499,6 +499,31 @@ copies made to faint in room 1's battle: "out of usable Pokémon", "blacked out"
 50000. The same battle with the run's flag cleared as it was created (a plain wild battle): "Riku dropped $3600 in
 panic...", money 46400, as the original.
 
+## The pre-boss map (2026-11-17)
+
+`ZONE_ENTREE_FOREST_10` (zone 276, 0x114) is a tenth clearing for the room before a boss: north and south exits only.
+It was the unused `ZONE_NS_CASTLE_GATE_10` (the unused zone nearest the forest's 280-288), made with
+`tools/paperwhite2/new_map.py create` from `entree_forest_5`'s chunk with its props (`MAP_MODEL_ENTREE_FOREST_10_00_00`,
+`MAP_MATRIX_ENTREE_FOREST_10`). Its header is `entree_forest_5`'s field for field but the matrix, scripts and text:
+parent `ZONE_ENTRALINK`, `AREA_ENTREE_FOREST`, `SEQ_BGM_PALACE`, camera 35, battle background 6, place name shown,
+transition 0, cycling. Its events are `entree_forest_5`'s without the east exit: the north trigger (15-16, 9, Script_5,
+10494), the south one (15-16, 24, the back door, Script_6, 10495) and the init script 10492; its zone and init scripts
+are `entree_forest_5`'s too. The chunk still has the east opening (26, 15-17) until the user closes it in the Map
+Editor; walking into it does nothing.
+
+**A forest zone everywhere:** every check of "in the forest" goes through `GetZoneIsEntreeForest` (`zonedata.c`: the
+blank C-Gear, the actors' offsets and shadows, the beacons, the run's own checks in `paperwhite2_entralink_run.c` and
+`paperwhite2_entralink_run_state.c`), so that function also takes `ZONE_ENTREE_FOREST_10` (`#ifdef PAPERWHITE2`). The
+forest's grid (`SymbolMap_GetZone`) is outside the run and leaves the zone out. A later clearing is one more comparison
+there. The run takes it as a room map with no code change: `run.json`'s `room_maps` or `final_map` naming it is enough
+(the packer turns the constant into its number; the schema's `x-constant` takes any `ZONE_ENTREE_FOREST*`).
+
+Tested (py-desmume, the user's save copy, a scratch build whose `run.json` put room 1 in it, scripts in the session's
+scratchpad `forest10/`): room 1 loads in zone 276 looking like `entree_forest_5`, the lower screen blank; the south
+exit asks "Return to the Entralink?", No steps back; the north exit before the win says "A nightmare blocks the way."
+and steps back; at the east opening (26, 16) nothing happens; the room opened, the north exit leads to room 2
+(`entree_forest_6`, zone 285).
+
 ## The re-entry question
 
 **Re-entering the same map works as a fresh room.** Tested by poking the room-maps table in RAM to `entree_forest`
