@@ -182,6 +182,26 @@ void PaperWhite2_BillboardActorMaterialSet(BillboardActorMaterial *material, u32
                                            u8 faceHeight) {
     BillboardActorMaterial_Set(material, format, size, faceWidth, faceHeight);
 }
+
+// Paper White 2: a material that draws another's texture with a palette of its own (paperwhite2_actor_palettes.c)
+u32 PaperWhite2_BillboardActorScene_AddMaterialOwnPltt(BillboardActorScene *scene, u32 source, NNSGfdPlttKey plttKey) {
+    u32 idx;
+
+    if (!BillboardActorScene_GetAvailMatSlotIdx(scene, &idx)) {
+        return BILLBOARD_ACTOR_MATERIAL_NONE;
+    }
+    scene->materials[idx] = scene->materials[source];
+    scene->materials[idx].texResource = NULL;
+    scene->materials[idx].plttKey = plttKey;
+    scene->materials[idx].plttAddr = NNS_GfdGetPlttKeyAddr(plttKey);
+    return idx;
+}
+
+void PaperWhite2_BillboardActorScene_FreeMaterialOwnPltt(BillboardActorScene *scene, u32 material) {
+    NNS_GfdFreePlttVram(scene->materials[material].plttKey);
+    scene->materials[material].texResource = NULL;
+    scene->materials[material].texFormat = BILLBOARD_ACTOR_TEXFMT_FREE;
+}
 #endif
 
 u32 BillboardActorScene_AddMaterialNewTex(BillboardActorScene *scene, G3DResource *texResource, u32 format, int size,

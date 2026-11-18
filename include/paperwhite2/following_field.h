@@ -43,9 +43,6 @@
 void PaperWhite2_FollowingUpdate(MMSys *system);
 // Binds the follower's sprite while the map is spawned, before the entrance fade shows it (field-follower-matcache)
 void PaperWhite2_FollowingPreloadFollower(Field *field, MMSys *system);
-// Varies the palette of the follower's sheet by its PID as its material loads, before the upload: the resource of
-// object code objCode, in FldBillboardActor_LoadMaterial (docs/paperwhite2/design/palette-variation.md)
-void PaperWhite2_FollowingVaryMaterial(u16 objCode, G3DResource *resource);
 // Frees the follower before the field's actors, at FieldRoutine_MapUnload's start (field-unload)
 void PaperWhite2_FollowingUnload(GameSystem *gsys, Field *field);
 // FieldRenderPhase2_Fieldmap's draws of the actors, the wild effects (the grass) and the effects (the shadows)

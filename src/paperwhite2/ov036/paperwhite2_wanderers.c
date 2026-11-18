@@ -19,6 +19,7 @@
 #include "gfl/sound.h"
 #include "nitro/fx.h"
 #include "nitro/mi.h"
+#include "paperwhite2/actor_palettes.h"
 #include "paperwhite2/encounters.h"
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/wanderers.h"
@@ -411,6 +412,7 @@ static void Wanderers_Remove(MMSys *actorSystem, Wanderer *wanderer) {
     if (wanderer->billboard[1] == BILLBOARD_ACTOR_NONE) {
         FldBillboardActor_CancelPendingPos(actorSystem, wanderer->billboard);
     }
+    PaperWhite2_ActorPalettes_Release((u32)(wanderer - sWanderers.list));
     FldBillboardActor_DeleteActorPos(actorSystem, wanderer->billboard);
     wanderer->state = WANDERER_FREE;
     FldBillboardActor_ReleaseObjCode(actorSystem, objCode);
@@ -548,6 +550,9 @@ static BOOL Wanderers_Spawn(Field *field, Wanderer *wanderer) {
     wanderer->timer = WANDERER_LOAD_FRAMES;
     ConvGXZToVector(wanderer->x, wanderer->z, &at);
     at.y = y - WANDERER_RISE_DEPTH;
+    // Its own palette, varied by its PID, asked for before its sprite loads so that the load keeps the sprite's colours
+    PaperWhite2_ActorPalettes_Set((u32)(wanderer - sWanderers.list), wanderer->objCode, wanderer->param.species,
+                                  wanderer->param.pid);
     FldBillboardActor_AddActorPosOrReserve(field->actorSystem, &config, wanderer->billboard, &at, NULL, NULL,
                                            func_ov012_02166fc0(field->actorSystem));
     return TRUE;
@@ -820,6 +825,7 @@ static void Wanderers_Draw(Field *field, BillboardActorSys *sys, Wanderer *wande
         pos.y -= WANDERER_DEEP_SAND_SINK;
     }
     pos.y += Field_GetActorYOffset(field);
+    PaperWhite2_ActorPalettes_Bind((u32)(wanderer - sWanderers.list), sys, wanderer->billboard[1]);
     BillboardActorScene_SetActorPos(BillboardActorSys_GetScene(sys), wanderer->billboard[1], &pos);
     // A walking Pokémon's animation: one a direction, always playing (as an ambient's)
     anim = wanderer->byDirection ? wanderer->facing : wanderer->facing + 2 * 4;

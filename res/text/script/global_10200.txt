@@ -224,3 +224,4 @@ Global10200_Text_DebugWeatherCustomTint12 = Custom tint 12
 Global10200_Text_DebugNumberForm = Form {0200:0} of {0100:1} (0-{0200:3})
 Global10200_Text_DebugNumberWildForm = Wild form {0200:0} of {0100:1} (0-{0200:3})
 Global10200_Text_DebugWildForm = Wild form: {0100:6}
+Global10200_Text_DebugForceTriple = Triple battles: {0100:7}

@@ -3048,7 +3048,8 @@ EVENT_FLAG_DEBUG_WALK_THROUGH_WALLS
 # Paper White 2: the debug menu's Fewer step encounters (0xbdc) and No wanderers (0xbdd), in the debug toggles' block
 EVENT_FLAG_DEBUG_FEWER_WILD_ENCOUNTERS
 EVENT_FLAG_DEBUG_NO_WANDERERS
-EVENT_FLAG_HIDDEN_ITEM_218
+# Paper White 2: the debug menu's Triple battles (0xbde), in the debug toggles' block
+EVENT_FLAG_DEBUG_FORCE_TRIPLE
 EVENT_FLAG_HIDDEN_ITEM_219
 EVENT_FLAG_HIDDEN_ITEM_220
 EVENT_FLAG_HIDDEN_ITEM_221

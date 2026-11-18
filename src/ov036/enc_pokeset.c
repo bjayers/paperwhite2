@@ -375,8 +375,9 @@ u8 FieldEncount_RndCheckNPoke(EncountManager *manager, u32 zoneId) {
 #define ALWAYS_SHINY_ROLLS 0x4000
 #endif
 
-void FieldEncount_CreateWildPkm(PartyPkm *pkm, const EncountManager *manager, WildPkmParam *param) {
-    PersonalData *personal = PML_PersonalLoad(param->species, param->form, 4);
+#ifdef PAPERWHITE2
+// Paper White 2: the original's rolls of a PID, apart so that a wanderer's is rolled the same way as it spawns
+static u32 FieldEncount_RollPID(const EncountManager *manager, PersonalData *personal, WildPkmParam *param) {
     u32 rolls = 1;
     u32 pid;
     u32 i;
@@ -386,8 +387,8 @@ void FieldEncount_CreateWildPkm(PartyPkm *pkm, const EncountManager *manager, Wi
     }
     rolls = PassPower_ApplyLuckyShiny(rolls);
 #ifdef PAPERWHITE2_DEBUG_MENU
-    // Paper White 2: the debug menu's Always shiny rolls until the PID is shiny, about 1024 rolls at 1/1024, within
-    // a bound that a PID the encounter's constraints can't make shiny still ends
+    // The debug menu's Always shiny rolls until the PID is shiny, about 1024 rolls at 1/1024, within a bound that a
+    // PID the encounter's constraints can't make shiny still ends
     if (EventWork_FlagGet(GameData_GetEventWork(manager->gameData), EVENT_FLAG_DEBUG_ALWAYS_SHINY)) {
         rolls = ALWAYS_SHINY_ROLLS;
     }
@@ -398,6 +399,45 @@ void FieldEncount_CreateWildPkm(PartyPkm *pkm, const EncountManager *manager, Wi
             break;
         }
     }
+    return pid;
+}
+
+u32 FieldEncount_RollWildPID(const EncountManager *manager, WildPkmParam *param) {
+    PersonalData *personal = PML_PersonalLoad(param->species, param->form, 4);
+    u32 pid = FieldEncount_RollPID(manager, personal, param);
+
+    PML_PersonalFree(personal);
+    return pid;
+}
+
+void FieldEncount_CreateWildPkm(PartyPkm *pkm, const EncountManager *manager, WildPkmParam *param) {
+    PersonalData *personal = PML_PersonalLoad(param->species, param->form, 4);
+    u32 pid;
+
+    // Paper White 2: a wanderer keeps the PID it spawned with, so its battle's Pokémon is the one seen in the field
+    if (param->fixedPid) {
+        pid = param->pid;
+    } else {
+        pid = FieldEncount_RollPID(manager, personal, param);
+    }
+#else
+void FieldEncount_CreateWildPkm(PartyPkm *pkm, const EncountManager *manager, WildPkmParam *param) {
+    PersonalData *personal = PML_PersonalLoad(param->species, param->form, 4);
+    u32 rolls = 1;
+    u32 pid;
+    u32 i;
+
+    if (BagSave_CheckAmount(GameData_GetBag(manager->gameData), ITEM_SHINY_CHARM, 1, 4)) {
+        rolls += 2;
+    }
+    rolls = PassPower_ApplyLuckyShiny(rolls);
+    for (i = 0; i < rolls; i++) {
+        pid = FieldEncount_GenPID(manager, personal, param);
+        if (PML_UtilPIDIsRare(manager->trainerId, pid)) {
+            break;
+        }
+    }
+#endif
     PokeParty_CreatePkm(pkm, param->species, param->level, manager->trainerId, PKM_IVS_RANDOM, pid);
     PokeParty_ChangeForme(pkm, param->form);
     PokeParty_SetDefaultMoves(pkm);
