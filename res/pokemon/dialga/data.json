@@ -7,6 +7,16 @@
         "height": "17'09\"",
         "weight": "1505.8 lbs.",
         "shape": 4,
+        "form_name": "Dialga",
+        "forms": [
+            {
+                "name": "Primal",
+                "entry": "A legendary Pokémon of Sinnoh.\nIt is said that time flows when\nDialga's heart beats.",
+                "height": "17'09\"",
+                "weight": "1505.8 lbs.",
+                "shape": 4
+            }
+        ],
         "languages": {
             "en": {
                 "name": "Dialga",
@@ -93,8 +103,8 @@
     "hidden_ability": "ABILITY_TELEPATHY",
     "flee_rate": 0,
     "forms": {
-        "count": 1,
-        "sprite_offset": 0
+        "count": 2,
+        "sprite_offset": 67
     },
     "color": "COLOR_WHITE",
     "asymmetric": false,
