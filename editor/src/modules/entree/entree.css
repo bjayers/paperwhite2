@@ -89,3 +89,8 @@
 .en-run-summary { line-height: 1.35; padding: 2px 0 4px 8px; border-left: 2px solid var(--border); }
 .en-run-problems { padding-left: 16px; font-size: 12px; }
 .en-dialogue .dialogue-actions .view-switch button { padding: 1px 6px; }
+
+/* The markers' pickers: the art's icons, pixel for pixel */
+.en-markers { display: flex; flex-wrap: wrap; gap: 4px; }
+.en-markers button:has(img) { padding: 3px; line-height: 0; }
+.en-marker-icon { image-rendering: pixelated; }

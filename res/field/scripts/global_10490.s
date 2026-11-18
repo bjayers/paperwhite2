@@ -191,9 +191,9 @@ L_0214:
 Script_5:
     ActorsPauseAll
 #ifdef PAPERWHITE2
-    // Paper White 2: in an Entralink run, the room's exits open once its battle is won
+    // Paper White 2: in an Entralink run, a door opens once the room is done, if a room is behind it
     // (paperwhite2/entralink_run_actions.h)
-    EntralinkRun ENTRALINK_RUN_ACTION_CAN_LEAVE, 0, 0, 0x8000
+    EntralinkRun ENTRALINK_RUN_ACTION_CAN_LEAVE, ENTRALINK_RUN_NORTH_EXIT, 0, 0x8000
     WorkCmpConst 0x8000, 0
     VMJumpIf CMP_EQ, L_RunExitBlocked0
 #endif
@@ -262,9 +262,9 @@ Movement_027C:
 Script_7:
     ActorsPauseAll
 #ifdef PAPERWHITE2
-    // Paper White 2: in an Entralink run, the room's exits open once its battle is won
+    // Paper White 2: in an Entralink run, a door opens once the room is done, if a room is behind it
     // (paperwhite2/entralink_run_actions.h)
-    EntralinkRun ENTRALINK_RUN_ACTION_CAN_LEAVE, 0, 0, 0x8000
+    EntralinkRun ENTRALINK_RUN_ACTION_CAN_LEAVE, ENTRALINK_RUN_WEST_EXIT, 0, 0x8000
     WorkCmpConst 0x8000, 0
     VMJumpIf CMP_EQ, L_RunExitBlocked2
 #endif
@@ -291,9 +291,9 @@ Movement_029C:
 Script_8:
     ActorsPauseAll
 #ifdef PAPERWHITE2
-    // Paper White 2: in an Entralink run, the room's exits open once its battle is won
+    // Paper White 2: in an Entralink run, a door opens once the room is done, if a room is behind it
     // (paperwhite2/entralink_run_actions.h)
-    EntralinkRun ENTRALINK_RUN_ACTION_CAN_LEAVE, 0, 0, 0x8000
+    EntralinkRun ENTRALINK_RUN_ACTION_CAN_LEAVE, ENTRALINK_RUN_EAST_EXIT, 0, 0x8000
     WorkCmpConst 0x8000, 0
     VMJumpIf CMP_EQ, L_RunExitBlocked3
 #endif
@@ -318,7 +318,8 @@ Movement_02BC:
     MoveEnd
 #ifdef PAPERWHITE2
 L_RunExitBlocked:
-    // Paper White 2: an exit of an Entralink run's room before its battle is won: the player steps back
+    // Paper White 2: an exit of an Entralink run's room before the room is done, or with no room behind it: the
+    // player steps back
     SystemMsg Global10490_Text_NightmareBlocksWay, 2
     LastKeyWait
     SystemMsgClose
@@ -364,6 +365,8 @@ Script_9:
     SystemMsgClose
 
 L_RunNpcDone:
+    // Paper White 2: a rest or buff NPC talked to counts as used, which can finish a room with no battle
+    EntralinkRun ENTRALINK_RUN_ACTION_NPC_USED, 0, 0, 0x8000
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt

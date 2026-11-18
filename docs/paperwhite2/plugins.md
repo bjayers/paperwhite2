@@ -2735,7 +2735,10 @@ reads 17 as "no type" (Roost, STAB, Color Change, Conversion 2, the PWT's "any t
 `myitem_savedata.c`, `itemmenu.c`, `b_bag_item.c`, `zone_weather.c`), the progress that persists in the Symbol save
 block (`paperwhite2_entralink_progress.c`; hooks in `save_table.c`, `symbol_save.c`), the Nightmare Ball (`items.md`;
 hooks in `btl_server_flow_sub.c`, `event_battle_return.c`, `pml_item.c`) and the back door's question. No event flags
-or variables.
+or variables. Step 5 (2026-11-17): the doors' rooms drawn on entering a room, markers on the ground in front of them and over
+NPCs (`src/paperwhite2/ov036/paperwhite2_entralink_markers.c`, a billboard system of its own; hooks in `fieldmap.c`;
+art from `res/paperwhite2/entralink/markers/` and `npc_markers/` in the model table from member 24) and each round's
+fog.
 
 ## Adding global scripts
 

@@ -2,6 +2,28 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-17: the Entralink roguelike's step 5: doors, markers, round fogs (ROM session, on a branch)
+
+`docs/paperwhite2/design/entralink-roguelike-prototype.md`, "Step 5", has the design and the proof.
+
+- **Doors:** entering a room draws the rooms behind its north, east and west doors; the door taken decides the next
+  room. Before a boss or the final room the room is in `run.json`'s `pre_boss_map` (`ZONE_ENTREE_FOREST_5` as a
+  stand-in until the two-exit `ZONE_ENTREE_FOREST_10` lands) and only its north door leads on, to the boss.
+- **Markers:** once a room is done (battle won; or every item/rest/buff NPC used; or nothing spawned), 2x2 icons lie
+  on the ground at `run.json`'s `marker_spots`, one per door: the room's `marker` (default by role), catch when a
+  catchable enemy's conditions hold and the run's bag has a Nightmare Ball, ??? by `unknown_chance` (5%). NPCs can
+  have an icon over their heads (`marker`). Placeholder art in `res/paperwhite2/entralink/markers/` (32x32) and
+  `npc_markers/` (16x16), packed into the model table from member 24. Own billboard system in the field heap (~2.5 KB
+  while in a run), code ~2.3 KB (arena 54 KB left).
+- **Fogs:** each round has its `field_weather`: pink, dark purple, black (the final room takes round 3's). A room's
+  `weather` is now its battles' only.
+- **Editor:** room and NPC marker pickers, per-round fog, unknown chance, marker spots (drawn on the grid; NPCs on them
+  warned), pre-boss map shown.
+- **For the user:** replace the placeholder icons; check the spots in play (east/west sit near the screen's edges);
+  set `pre_boss_map` to the new zone when merging. Tested in py-desmume (doors, hidden-until-done, gift room, catch
+  with/without the ball, unknown, pre-boss, rain in battle only, the three fogs); `--hack` build without warnings,
+  DSi intact, packer tests (14) and editor tests (234) pass.
+
 ## 2026-11-17: no money lost in a run; custom field tints (ROM session, on a branch)
 
 - **Money:** a run battle's loss takes no money and shows no "dropped"/"paid out" message (`CalcLossMoney` skips run

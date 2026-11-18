@@ -18,8 +18,32 @@
       "description": "The zones of the rooms before the final one, taken in turn; each needs a bottom exit, where a room is entered"
     },
     "final_map": { "type": "string", "x-constant": "ZONE_ENTREE_FOREST", "description": "The final room's zone" },
+    "pre_boss_map": {
+      "type": "string", "x-constant": "ZONE_ENTREE_FOREST",
+      "description": "The zone of the room played just before a boss or the final room, a clearing with only north and south exits, whose north door leads to the boss; left out, the room maps, with only the north door open"
+    },
+    "unknown_chance": {
+      "type": "integer", "minimum": 0, "maximum": 100,
+      "description": "The chance, in percent, that a door to a room of role room shows the unknown marker (???) whatever is behind it, rolled as the player enters the room with the door; 5 if left out"
+    },
+    "marker_spots": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Where each forward door's marker lies, 2 by 2 tiles from its top-left tile, on the clearings' shared 32 by 32 grid; left out, north 15, 12, east 21, 16 and west 9, 16. NPCs should keep off them",
+      "properties": {
+        "north": { "$ref": "#/$defs/spot" },
+        "east": { "$ref": "#/$defs/spot" },
+        "west": { "$ref": "#/$defs/spot" }
+      }
+    },
     "field_weather": {
-      "description": "The forest's field weather (include/system/zone_weather.h) in the rooms with no weather of their own, the hack's tints (WEATHER_CUSTOM_TINT_*, res/paperwhite2/field_tints/tints.json) among them; the forest's own if left out",
+      "$ref": "#/$defs/field_weather",
+      "description": "The forest's field weather (include/system/zone_weather.h) in the rounds with no field_weather of their own, the hack's tints (WEATHER_CUSTOM_TINT_*, res/paperwhite2/field_tints/tints.json) among them; the forest's own if left out"
+    }
+  },
+  "$defs": {
+    "field_weather": {
+      "description": "A WEATHER_* of include/system/zone_weather.h",
       "enum": [
         "WEATHER_SUNNY", "WEATHER_FLAKE", "WEATHER_RAIN", "WEATHER_SANDSTORM", "WEATHER_BLIZZARD",
         "WEATHER_FLUTTER", "WEATHER_THUNDERSTORM", "WEATHER_GUSTY_RAIN", "WEATHER_DIAMOND_DUST",
@@ -29,17 +53,24 @@
         "WEATHER_CUSTOM_TINT_5", "WEATHER_CUSTOM_TINT_6", "WEATHER_CUSTOM_TINT_7", "WEATHER_CUSTOM_TINT_8",
         "WEATHER_CUSTOM_TINT_9", "WEATHER_CUSTOM_TINT_10", "WEATHER_CUSTOM_TINT_11", "WEATHER_CUSTOM_TINT_12"
       ]
-    }
-  },
-  "$defs": {
+    },
     "round": {
       "type": "object",
       "additionalProperties": false,
       "required": [ "rooms" ],
       "properties": {
         "rooms": { "type": "integer", "minimum": 0, "maximum": 8, "description": "How many rooms of role room are drawn for it, from those kept to it and the generic ones; when unused ones run out, rooms come up again" },
-        "boss": { "type": "boolean", "description": "Rounds 1 and 2: whether a boss room ends it, drawn from the boss rooms kept to it, else from the generic ones; false if left out" }
+        "boss": { "type": "boolean", "description": "Rounds 1 and 2: whether a boss room ends it, drawn from the boss rooms kept to it, else from the generic ones; false if left out" },
+        "field_weather": {
+          "$ref": "#/$defs/field_weather",
+          "description": "The field weather (a fog) of the round's rooms, its boss's and, for the last round, the final room's; left out, the run's field_weather"
+        }
       }
+    },
+    "spot": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "items": { "type": "integer", "minimum": 0, "maximum": 30 },
+      "description": "x, z: the marker's top-left tile"
     }
   }
 }

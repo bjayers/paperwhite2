@@ -18,6 +18,9 @@
 #define ENTRALINK_RUN_ROOMS_MAX 15
 // The most enemies of a battle
 #define ENTRALINK_RUN_ENEMIES_MAX 3
+// A room's forward doors (ENTRALINK_DOOR_COUNT), and no room behind one
+#define ENTRALINK_RUN_DOORS 3
+#define ENTRALINK_RUN_ROOM_NONE 0xff
 // A room's field weather when it keeps the zone's own
 #define ENTRALINK_FIELD_WEATHER_ZONE 0xff
 // No catchable enemy
@@ -31,10 +34,16 @@
 typedef struct {
     // The room the player is in, from 1, or 0 outside a run
     u8 room;
+    // How many rooms the run has: its rounds' rooms and bosses, and the final room
     u8 roomCount;
-    // The rooms of the run in turn, by their place in res/paperwhite2/entralink/rooms/
+    // The rooms played so far in turn, the one the player is in last, by their place in rooms/
     u8 order[ENTRALINK_RUN_ROOMS_MAX];
-    // TRUE once the room's exits are open: one of its battles won, or none to fight
+    // The rooms behind the room's forward doors (ENTRALINK_DOOR_*), drawn as the player entered it, or
+    // ENTRALINK_RUN_ROOM_NONE; and a bit for each door that shows the unknown marker whatever is behind it
+    u8 doorRooms[ENTRALINK_RUN_DOORS];
+    u8 doorUnknown;
+    // TRUE once the room is done and its exits are open: its battle won, its NPCs used (talked to, an item taken) in a
+    // room with no battle, or nothing came up in it
     u8 cleared;
     // The room's field weather, a WEATHER_* (system/zone_weather.h), or ENTRALINK_FIELD_WEATHER_ZONE
     u8 fieldWeather;
@@ -44,6 +53,8 @@ typedef struct {
     u16 npcsSpawned;
     // A bit for each that has gone since: an item NPC that gave its item, the other battles' NPCs after a win
     u16 npcsGone;
+    // A bit for each rest or buff NPC talked to
+    u16 npcsUsed;
     // The battle being fought: its catchable enemies' PIDs and catch progress ids (ENTRALINK_CATCH_NONE for none)
     u32 catchPids[ENTRALINK_RUN_ENEMIES_MAX];
     u16 catchIds[ENTRALINK_RUN_ENEMIES_MAX];

@@ -19,7 +19,11 @@
     },
     "weather": {
       "type": "string", "x-constant": "BTL_WEATHER_",
-      "description": "Its weather, on the field (the matching field weather shows in the room) and in its battles from their start (constants/battle.h; BTL_WEATHER_NONE for clear); left out, run.json's field_weather on the field and random in battle"
+      "description": "Its battles' weather from their start (constants/battle.h; BTL_WEATHER_NONE for clear); the field keeps its round's fog (run.json). Left out, the battles take the field's"
+    },
+    "marker": {
+      "enum": [ "enemy", "challenge", "boss", "rest", "gift", "event", "shop", "unknown", "final" ],
+      "description": "The marker on the ground in front of any door leading to it (markers/<marker>.png); left out, by its role: enemy for a room, boss, final. unknown always shows ???. The game shows catch instead of enemy, challenge or boss while one of its enemies can be caught and the run's bag holds a Nightmare Ball"
     },
     "battles": {
       "type": "array", "maxItems": 8, "items": { "$ref": "#/$defs/battle" },
@@ -118,6 +122,10 @@
         "x": { "type": "integer", "minimum": 0, "maximum": 31, "description": "Its tile, 0-31 from the room's left; every forest clearing has the same 32 by 32 grid and exits" },
         "z": { "type": "integer", "minimum": 0, "maximum": 31, "description": "Its tile, 0-31 from the room's top" },
         "facing": { "enum": [ "DIR_UP", "DIR_DOWN", "DIR_LEFT", "DIR_RIGHT" ] },
+        "marker": {
+          "type": "string", "pattern": "^[a-z0-9_]+$",
+          "description": "An icon floating above its head, by name: npc_markers/<marker>.png; none if left out"
+        },
         "dialogue": {
           "type": "object",
           "additionalProperties": false,

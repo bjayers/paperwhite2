@@ -11,15 +11,23 @@ src/paperwhite2/ov012/paperwhite2_entralink_run.c reads (the structs and ENTRALI
 include/paperwhite2/entralink_run.h). The NPCs' dialogue goes into the script text bank entralink_dialogue, whose one
 line \\from{entralink.dialogue} stands for dialogue_lines() (tools/text/text_sources.py); the header gives each NPC
 its messages' numbers there. Only the hack's build runs this (configure.py --hack); the text is in every build.
+
+The markers' art (step 5): markers/<type>.png, one per MARKER_TYPES, 32 by 32, and npc_markers/<name>.png, any
+number, 16 by 16, each an indexed PNG of at most 16 colors with index 0 transparent. marker_members() packs them as
+BTX0s (one GX_TEXFMT_PLTT16 texture and its palette each), the ground markers in MARKER_TYPES' order and then the NPC
+markers in their names' order, which field_actor_data.py puts in the model table (a/0/4/7) from member
+MARKER_FIRST_MEMBER on, after the Following Pokémon's; the header gives the C the members' numbers.
 """
 import argparse
 import json
+import struct
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from tools.data import datajson  # noqa: E402
+from tools.data.nitro_2d import color5, encode_characters, read_indexed_png  # noqa: E402
 
 SOURCE = ROOT / "res" / "paperwhite2" / "entralink"
 GUARD = "POKEBW2_PAPERWHITE2_ENTRALINK_RUN_CONFIG_H"
@@ -32,6 +40,29 @@ NPC_TYPES = {"battle": 0, "item": 1, "rest": 2, "buff": 3}
 STYLES = {"talk": 0, "bubble": 1, "yell": 2, "event": 3}
 WEATHER_FIELD = 0xff
 FIELD_WEATHER_ZONE = 0xff
+# The ground markers' types (ENTRALINK_MARKER_*), in their members' order. catch is never set by hand: the game shows
+# it instead of enemy, challenge or boss when the room has an enemy the Nightmare Ball catches now and the run's bag
+# holds one
+MARKER_TYPES = ["enemy", "challenge", "boss", "rest", "gift", "event", "shop", "unknown", "final", "catch"]
+# A room's marker by its role, when it has none
+ROLE_MARKERS = {"room": "enemy", "boss": "boss", "final": "final"}
+# An NPC without a marker (ENTRALINK_NPC_MARKER_NONE)
+NPC_MARKER_NONE = 0xff
+NPC_MARKERS_MAX = 64
+# The markers' textures: a ground marker 32 by 32 (2 by 2 tiles), an NPC's 16 by 16, 16 colors with index 0 clear
+MARKER_SIZE = 32
+NPC_MARKER_SIZE = 16
+MARKER_COLORS = 16
+GX_TEXFMT_PLTT16 = 3
+# The model table's first member after the Following Pokémon's members 0 to 23 (field_actor_data.py)
+MARKER_FIRST_MEMBER = 24
+# The doors in front of which the markers lie, in ENTRALINK_DOOR_* order, and their spots' defaults (each the top-left
+# tile of the 2 by 2 marker on the clearings' 32 by 32 grid)
+DOORS = ["north", "east", "west"]
+DEFAULT_MARKER_SPOTS = {"north": [15, 12], "east": [21, 16], "west": [9, 16]}
+DEFAULT_UNKNOWN_CHANCE = 5
+# A pre-boss map left out: the room maps, with only the north door
+PRE_BOSS_ZONE_NONE = 0xffff
 ABILITY_SPECIES = 0
 ABILITY_HIDDEN = 0xffff
 GENDERS = {None: 0, "male": 1, "female": 2}
@@ -47,11 +78,6 @@ BATTLES_MAX = 1024
 CATCHES_MAX = 512
 # The rooms of a run, the final's included (ENTRALINK_RUN_ROOMS_MAX)
 RUN_ROOMS_MAX = 15
-# The field weather of a room's battle weather: the field has no harsh sun, so sun and none are clear, and hail is the
-# snow that gives hail in battle (paperwhite2_battle_weather_event.c's BattleWeather_ToFieldWeather)
-FIELD_WEATHERS = {"BTL_WEATHER_NONE": "WEATHER_SUNNY", "BTL_WEATHER_SUN": "WEATHER_SUNNY",
-                  "BTL_WEATHER_RAIN": "WEATHER_RAIN", "BTL_WEATHER_HAIL": "WEATHER_FLUTTER",
-                  "BTL_WEATHER_SANDSTORM": "WEATHER_SANDSTORM"}
 
 
 def error(where: str, message: str):
@@ -95,7 +121,48 @@ def load_rooms(directory: Path) -> dict[str, dict]:
                     error(where, f"{at} shows enemy {npc['enemy']}, which its battle doesn't have")
             elif npc["type"] == "item" and "item" not in npc:
                 error(where, f"{at} is an item NPC without an item")
+            if "marker" in npc and npc["marker"] not in npc_marker_names(directory):
+                error(where, f"{at}'s marker {npc['marker']!r} has no npc_markers/{npc['marker']}.png")
     return rooms
+
+
+def npc_marker_names(directory: Path = SOURCE) -> list[str]:
+    """The NPC markers' names, in their members' order: npc_markers/<name>.png's names, sorted."""
+    return sorted(path.stem for path in (directory / "npc_markers").glob("*.png"))
+
+
+def marker_texture(path: Path, size: int) -> bytes:
+    """A marker's BTX0: its PNG as one GX_TEXFMT_PLTT16 texture, named after the file, and its 16-color palette."""
+    # nitro_btx imports its neighbour as a script does
+    sys.path.insert(0, str(ROOT / "tools" / "data"))
+    from tools.data.nitro_btx import texture_set
+    if not path.is_file():
+        raise datajson.DataError(f"{datajson.label(path)}: missing")
+    try:
+        width, height, pixels, colors = read_indexed_png(path)
+    except ValueError as error_:
+        raise datajson.DataError(f"{datajson.label(path)}: {error_}") from error_
+    if (width, height) != (size, size):
+        raise datajson.DataError(f"{datajson.label(path)}: must be {size} by {size}, not {width} by {height}")
+    if pixels and max(pixels) >= MARKER_COLORS:
+        raise datajson.DataError(f"{datajson.label(path)}: uses palette index {max(pixels)}, past "
+                                 f"{MARKER_COLORS - 1}")
+    colors = (list(colors) + [(0, 0, 0)] * MARKER_COLORS)[:MARKER_COLORS]
+    palette = b"".join(struct.pack("<H", r | g << 5 | b << 10) for r, g, b in map(color5, colors))
+    name = path.stem[:12]
+    return texture_set([(name, size, size, GX_TEXFMT_PLTT16, True,
+                         encode_characters(size, size, pixels, linear=True))], [(f"{name}_pl", palette)])
+
+
+def marker_members(directory: Path = SOURCE) -> list[bytes]:
+    """The model table's members from MARKER_FIRST_MEMBER: the ground markers in MARKER_TYPES' order, then the NPC
+    markers in npc_marker_names()' order."""
+    names = npc_marker_names(directory)
+    if len(names) > NPC_MARKERS_MAX:
+        raise datajson.DataError(f"{datajson.label(directory / 'npc_markers')}: {len(names)} markers, more than "
+                                 f"{NPC_MARKERS_MAX}")
+    return ([marker_texture(directory / "markers" / f"{kind}.png", MARKER_SIZE) for kind in MARKER_TYPES]
+            + [marker_texture(directory / "npc_markers" / f"{name}.png", NPC_MARKER_SIZE) for name in names])
 
 
 def check_progress(directory: Path, rooms: dict[str, dict]):
@@ -224,6 +291,15 @@ def tables(directory: Path) -> dict:
     default_weather = run.get("field_weather")
     if default_weather is not None and default_weather not in weathers:
         error("run.json", f"field_weather {default_weather!r} is not a WEATHER_* of include/system/zone_weather.h")
+    round_weathers = []
+    for number, round_ in enumerate(run["rounds"], 1):
+        weather = round_.get("field_weather", default_weather)
+        if weather is not None and weather not in weathers:
+            error("run.json", f"round {number}'s field_weather {weather!r} is not a WEATHER_* of "
+                  "include/system/zone_weather.h")
+        round_weathers.append(FIELD_WEATHER_ZONE if weather is None else weathers[weather])
+    spots = {**DEFAULT_MARKER_SPOTS, **run.get("marker_spots", {})}
+    npc_markers = {name: i for i, name in enumerate(npc_marker_names(directory))}
     errors = [message for level, message in draw_problems(run, rooms) if level == "error"]
     if errors:
         error("run.json", errors[0])
@@ -232,9 +308,6 @@ def tables(directory: Path) -> dict:
     message = 1
     for name, room in rooms.items():
         weather = room.get("weather")
-        field_weather = FIELD_WEATHERS.get(weather) if weather is not None else default_weather
-        if weather is not None and field_weather is None:
-            error(f"rooms/{name}.json", f"weather {weather} has no field weather to show")
         battle_index = {}
         first_battle = len(battles)
         for battle in room["battles"]:
@@ -293,6 +366,7 @@ def tables(directory: Path) -> dict:
                 "before": messages[0], "after": messages[1],
                 "beforeStyle": STYLES[dialogue.get("before_style", "talk")],
                 "afterStyle": STYLES[dialogue.get("after_style", "talk")],
+                "marker": npc_markers[npc["marker"]] if "marker" in npc else NPC_MARKER_NONE,
             })
         rounds = 0
         for number in room.get("rounds", []):
@@ -300,7 +374,7 @@ def tables(directory: Path) -> dict:
         room_rows.append({
             "name": name, "role": ROLES[room["role"]], "rounds": rounds,
             "weather": WEATHER_FIELD if weather is None else constants[weather],
-            "fieldWeather": FIELD_WEATHER_ZONE if field_weather is None else weathers[field_weather],
+            "marker": MARKER_TYPES.index(room.get("marker", ROLE_MARKERS[room["role"]])),
             "firstBattle": first_battle, "battleCount": len(battles) - first_battle,
             "firstNpc": first_npc, "npcCount": len(npcs) - first_npc,
         })
@@ -311,9 +385,15 @@ def tables(directory: Path) -> dict:
         "enemies": enemies,
         "npcs": npcs,
         "requirements": requirements,
-        "rounds": [(r["rooms"], int(r.get("boss", False))) for r in run["rounds"]],
+        "rounds": [(r["rooms"], int(r.get("boss", False)), weather)
+                   for r, weather in zip(run["rounds"], round_weathers)],
         "room_zones": [(zone, constants[zone]) for zone in run["room_maps"]],
         "final_zone": (run["final_map"], constants[run["final_map"]]),
+        "pre_boss_zone": (run["pre_boss_map"], constants[run["pre_boss_map"]]) if "pre_boss_map" in run
+        else ("none: the room maps, north door only", PRE_BOSS_ZONE_NONE),
+        "unknown_chance": run.get("unknown_chance", DEFAULT_UNKNOWN_CHANCE),
+        "marker_spots": [tuple(spots[door]) for door in DOORS],
+        "npc_markers": list(npc_markers),
     }
 
 
@@ -323,7 +403,7 @@ def initializer(rows: list[str]) -> str:
 
 def header(directory: Path) -> str:
     data = tables(directory)
-    rooms = [f"/* {r['name']} */ {{ {r['role']}, 0x{r['rounds']:x}, 0x{r['weather']:02x}, 0x{r['fieldWeather']:02x}, "
+    rooms = [f"/* {r['name']} */ {{ {r['role']}, 0x{r['rounds']:x}, 0x{r['weather']:02x}, {r['marker']}, "
              f"{r['firstBattle']}, {r['battleCount']}, {r['firstNpc']}, {r['npcCount']} }}" for r in data["rooms"]]
     battles = [f"/* {b['name']} */ {{ {b['format']}, {b['enemyCount']}, {b['firstEnemy']}, {b['progressId']} }}"
                for b in data["battles"]]
@@ -333,8 +413,9 @@ def header(directory: Path) -> str:
     npcs = [f"/* {n['name']} */ {{ {n['item']}, {n['sprite']}, {n['firstRequirement']}, "
             f"0x{n['before']:x}, 0x{n['after']:x}, {n['type']}, {n['battle']}, {n['enemy']}, {n['count']}, "
             f"{n['chance']}, {n['x']}, {n['z']}, {n['direction']}, {n['requirementCount']}, {n['beforeStyle']}, "
-            f"{n['afterStyle']} }}" for n in data["npcs"]]
-    rounds = [f"{{ {rooms_}, {boss} }}" for rooms_, boss in data["rounds"]]
+            f"{n['afterStyle']}, 0x{n['marker']:02x} }}" for n in data["npcs"]]
+    rounds = [f"{{ {rooms_}, {boss}, 0x{weather:02x} }}" for rooms_, boss, weather in data["rounds"]]
+    spots = [f"{{ {x}, {z} }}" for x, z in data["marker_spots"]]
     zones = [f"{value} /* {name} */" for name, value in data["room_zones"]]
     requirements = [f"0x{value:x}" for value in data["requirements"]]
     return "\n".join([
@@ -351,7 +432,17 @@ def header(directory: Path) -> str:
         f"#define ENTRALINK_RUN_ROUND_COUNT {len(data['rounds'])}",
         f"#define ENTRALINK_RUN_ROOM_ZONE_COUNT {len(zones)}",
         f"#define ENTRALINK_RUN_FINAL_ZONE {data['final_zone'][1]} // {data['final_zone'][0]}",
-        "// EntralinkRoom: role, rounds, weather, field weather, first battle, battle count, first NPC, NPC count",
+        f"#define ENTRALINK_RUN_PRE_BOSS_ZONE 0x{data['pre_boss_zone'][1]:x} // {data['pre_boss_zone'][0]}",
+        f"#define ENTRALINK_RUN_UNKNOWN_CHANCE {data['unknown_chance']}",
+        "// The ground markers' spots, the top-left tiles of 2 by 2, in ENTRALINK_DOOR_* order (north, east, west)",
+        f"#define ENTRALINK_RUN_MARKER_SPOTS {{ {', '.join(spots)} }}",
+        "// The markers' art in the model table (ARCID_MMODEL_TBL): the ground markers from the first, in",
+        "// ENTRALINK_MARKER_* order, then the NPC markers",
+        f"#define ENTRALINK_RUN_MARKER_FILE {MARKER_FIRST_MEMBER}",
+        f"#define ENTRALINK_RUN_NPC_MARKER_FILE {MARKER_FIRST_MEMBER + len(MARKER_TYPES)}",
+        f"#define ENTRALINK_RUN_NPC_MARKER_COUNT {len(data['npc_markers'])}",
+        *(f"#define ENTRALINK_NPC_MARKER_{name.upper()} {i}" for i, name in enumerate(data["npc_markers"])),
+        "// EntralinkRoom: role, rounds, weather, marker, first battle, battle count, first NPC, NPC count",
         f"#define ENTRALINK_RUN_ROOMS {initializer(rooms)}",
         "// EntralinkBattle: format, enemy count, first enemy, progress id",
         f"#define ENTRALINK_RUN_BATTLES {initializer(battles)}",
@@ -359,11 +450,11 @@ def header(directory: Path) -> str:
         "// catch once, requirement count",
         f"#define ENTRALINK_RUN_ENEMIES {initializer(enemies)}",
         "// EntralinkNpc: item, sprite, first requirement, before and after messages, type, battle, enemy, count,",
-        "// chance, x, z, direction, requirement count, before and after styles",
+        "// chance, x, z, direction, requirement count, before and after styles, marker",
         f"#define ENTRALINK_RUN_NPCS {initializer(npcs)}",
         "// The NPCs' and catches' requirements: battles' progress ids, or ENTRALINK_REQUIRE_RUN_COMPLETED",
         f"#define ENTRALINK_RUN_REQUIREMENTS {{ {', '.join(requirements) or '0'} }}",
-        "// EntralinkRound: rooms, boss",
+        "// EntralinkRound: rooms, boss, field weather",
         f"#define ENTRALINK_RUN_ROUNDS {{ {', '.join(rounds)} }}",
         f"#define ENTRALINK_RUN_ROOM_ZONES {{ {', '.join(zones)} }}",
         "", f"#endif // {GUARD}", "",

@@ -137,3 +137,47 @@ def test_dialogue_and_requirements_pack(tmp_path):
     requirements = data["requirements"][ho_oh[1]["firstRequirement"]:][:ho_oh[1]["requirementCount"]]
     assert requirements == [entralink_run.REQUIRE_RUN_COMPLETED, 1]
     assert ho_oh[1]["sprite"] == datajson.constants()["OBJ_CODE_110"] and ho_oh[1]["chance"] == 50
+
+
+def test_markers_and_round_fogs_pack(tmp_path):
+    directory = copy_data(tmp_path)
+    edit(room(directory, "ho_oh"), lambda data: data["npcs"][0].update(marker="rest"))
+    edit(room(directory, "dialga"), lambda data: data.update(marker="challenge"))
+    edit(directory / "run.json", lambda data: (data.pop("pre_boss_map"), data.pop("marker_spots"),
+                                                 data["rounds"][1].pop("field_weather"),
+                                                 data.update(field_weather="WEATHER_RAIN", unknown_chance=40)))
+    data = entralink_run.tables(directory)
+    rows = {name: row for name, row in zip(data["ids"], data["rooms"])}
+    markers = entralink_run.MARKER_TYPES
+    assert rows["dialga"]["marker"] == markers.index("challenge")
+    assert rows["ho_oh"]["marker"] == markers.index("boss") and rows["darkrai"]["marker"] == markers.index("final")
+    assert rows["rayquaza_raid"]["marker"] == markers.index("enemy")
+    assert data["npcs"][rows["ho_oh"]["firstNpc"]]["marker"] == data["npc_markers"].index("rest")
+    assert data["npcs"][rows["dialga"]["firstNpc"]]["marker"] == entralink_run.NPC_MARKER_NONE
+    weathers = entralink_run.field_weathers()
+    # A round without a fog takes the run's field_weather
+    assert [w for _, _, w in data["rounds"]] == [weathers["WEATHER_CUSTOM_TINT_9"], weathers["WEATHER_RAIN"],
+                                                  weathers["WEATHER_CUSTOM_TINT_7"]]
+    assert data["pre_boss_zone"][1] == entralink_run.PRE_BOSS_ZONE_NONE and data["unknown_chance"] == 40
+    assert data["marker_spots"] == [tuple(entralink_run.DEFAULT_MARKER_SPOTS[d]) for d in entralink_run.DOORS]
+    assert "#define ENTRALINK_RUN_MARKER_SPOTS { { 15, 12 }, { 21, 16 }, { 9, 16 } }" in entralink_run.header(directory)
+
+
+def test_npc_marker_needs_its_art(tmp_path):
+    directory = copy_data(tmp_path)
+    edit(room(directory, "ho_oh"), lambda data: data["npcs"][0].update(marker="nothing"))
+    with pytest.raises(datajson.DataError, match="npc_markers/nothing.png"):
+        entralink_run.tables(directory)
+
+
+def test_marker_members(tmp_path):
+    members = entralink_run.marker_members()
+    assert len(members) == len(entralink_run.MARKER_TYPES) + len(entralink_run.npc_marker_names())
+    assert all(member[:4] == b"BTX0" for member in members)
+    directory = copy_data(tmp_path)
+    (directory / "markers" / "boss.png").write_bytes((directory / "npc_markers" / "rest.png").read_bytes())
+    with pytest.raises(datajson.DataError, match="must be 32 by 32"):
+        entralink_run.marker_members(directory)
+    (directory / "markers" / "boss.png").unlink()
+    with pytest.raises(datajson.DataError, match="missing"):
+        entralink_run.marker_members(directory)

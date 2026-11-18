@@ -29,6 +29,32 @@ export const NPC_TYPES = ["battle", "item", "rest", "buff"] as const;
 export type NpcType = (typeof NPC_TYPES)[number];
 export const FACINGS = ["DIR_UP", "DIR_DOWN", "DIR_LEFT", "DIR_RIGHT"] as const;
 
+// ---- Markers (step 5): on the ground in front of a done room's forward doors, and over NPCs ----------------------------
+
+/** A room's marker (room.schema.json's marker), shown in front of any door leading to it: markers/<type>.png. The game
+ * also has catch, which it shows instead of enemy, challenge or boss while one of the room's enemies can be caught and
+ * the run's bag holds a Nightmare Ball; it is never set by hand. */
+export const MARKER_TYPES = ["enemy", "challenge", "boss", "rest", "gift", "event", "shop", "unknown", "final"] as const;
+export type MarkerType = (typeof MARKER_TYPES)[number];
+export const MARKER_NOTES: Record<MarkerType, string> = {
+  enemy: "An enemy", challenge: "A challenging enemy", boss: "A boss", rest: "A rest", gift: "A gift",
+  event: "An event", shop: "A shop", unknown: "??? (always, whatever is behind the door)", final: "Darkrai's, the final room",
+};
+/** A room's marker when it has none, by its role (the packer's ROLE_MARKERS). */
+export const ROLE_MARKERS: Record<Role, MarkerType> = { room: "enemy", boss: "boss", final: "final" };
+export const MARKERS_DIR = "res/paperwhite2/entralink/markers";
+export const NPC_MARKERS_DIR = "res/paperwhite2/entralink/npc_markers";
+export const markerArt = (type: string) => `${MARKERS_DIR}/${type}.png`;
+export const npcMarkerArt = (name: string) => `${NPC_MARKERS_DIR}/${name}.png`;
+/** The forward doors, whose markers lie at run.json's marker_spots (south is the back door). */
+export const DOORS = ["north", "east", "west"] as const;
+export type Door = (typeof DOORS)[number];
+/** Each marker's 2 by 2 tiles from its top-left tile, when run.json leaves them out (the packer's DEFAULT_MARKER_SPOTS). */
+export const DEFAULT_MARKER_SPOTS: Record<Door, [number, number]> = { north: [15, 12], east: [21, 16], west: [9, 16] };
+export const DEFAULT_UNKNOWN_CHANCE = 5;
+/** Whether a tile is under a door's marker. */
+export const onSpot = (spot: [number, number], x: number, z: number) => x >= spot[0] && x < spot[0] + 2 && z >= spot[1] && z < spot[1] + 2;
+
 /** The most enemies each format takes, and the fewest. */
 export const FORMAT_ENEMIES: Record<Format, { min: number; max: number }> = {
   single: { min: 1, max: 1 }, double: { min: 1, max: 2 }, triple: { min: 1, max: 3 }, raid: { min: 1, max: 1 },
@@ -120,6 +146,8 @@ export interface Npc {
   z: number;
   facing: string;
   dialogue?: Dialogue;
+  /** The icon over its head: npc_markers/<marker>.png. */
+  marker?: string;
 }
 
 export interface Room {
@@ -128,6 +156,8 @@ export interface Room {
   rounds: Round[];
   role: Role;
   weather?: string;
+  /** Its marker in front of the doors leading to it; its role's (ROLE_MARKERS) when left out. */
+  marker?: MarkerType;
   battles: Battle[];
   npcs: Npc[];
 }
@@ -145,6 +175,7 @@ export function readRoom(data: JsonValue | null | undefined): Room {
     rounds: asList(m.get("rounds")).filter((r): r is Round => ROUNDS.includes(r as Round)),
     role: (ROLES.includes(m.get("role") as Role) ? m.get("role") : "room") as Role,
     weather: str(m.get("weather")),
+    marker: MARKER_TYPES.includes(m.get("marker") as MarkerType) ? m.get("marker") as MarkerType : undefined,
     battles: asList(m.get("battles")).map((b) => {
       const bm = asMap(b);
       return {
@@ -174,6 +205,7 @@ export function readRoom(data: JsonValue | null | undefined): Room {
         battle: str(nm.get("battle")), enemy: num(nm.get("enemy")), item: str(nm.get("item")), count: num(nm.get("count")),
         sprite: str(nm.get("sprite")), requires: asList(nm.get("requires")).map(String), chance: num(nm.get("chance")),
         x: num(nm.get("x")) ?? 0, z: num(nm.get("z")) ?? 0, facing: str(nm.get("facing")) ?? "DIR_DOWN",
+        marker: str(nm.get("marker")),
         dialogue: d instanceof Map ? {
           before: str(d.get("before")), after: str(d.get("after")),
           ...(messageStyle(d.get("before_style")) && { beforeStyle: messageStyle(d.get("before_style")) }),
@@ -252,10 +284,15 @@ export interface Problem {
 
 const npcName = (i: number, npc: Npc) => `NPC ${i + 1} (${npc.type})`;
 
+/** What checkRoom knows of the run: the doors' marker spots, and the NPC markers' names (npc_markers/). */
+export interface MarkerInfo { spots: Record<Door, [number, number]>; npcMarkers?: ReadonlySet<string> }
+
 /** The checks beyond the schema's for one room. clearings: the forest clearings' exits and blocked tiles, as far as
  * they are loaded; an NPC is checked against every one, since the game picks the clearing. known: every room's battles'
- * keys (battleKeys), to check what catches and spawn conditions name; not checked without it. */
-export function checkRoom(room: Room, constants: ReadonlyMap<string, number>, clearings: MapInfo[] = [], known?: ReadonlySet<string>): Problem[] {
+ * keys (battleKeys), to check what catches and spawn conditions name; not checked without it. markers: the doors'
+ * marker spots, which NPCs should keep clear of, and the NPC markers there are; not checked without it. */
+export function checkRoom(room: Room, constants: ReadonlyMap<string, number>, clearings: MapInfo[] = [], known?: ReadonlySet<string>,
+  markers?: MarkerInfo): Problem[] {
   const out: Problem[] = [];
   const add = (severity: Severity, where: Problem["where"], message: string) => out.push({ severity, where, message });
   if (!room.name.trim()) add("warning", { field: "name" }, "The room has no name.");
@@ -309,6 +346,10 @@ export function checkRoom(room: Room, constants: ReadonlyMap<string, number>, cl
       if (blocked.length) add("warning", { npc: i }, `${name} stands on a blocked tile (${n.x}, ${n.z}) in ${blocked.length > 1 && blocked.length === clearings.length ? "every clearing" : blocked.join(", ")}.`);
     }
     if (n.x === ARRIVAL.x && n.z === ARRIVAL.z) add("error", { npc: i }, `${name} stands where the player arrives (${n.x}, ${n.z}).`);
+    const spot = markers ? DOORS.find((d) => onSpot(markers.spots[d], n.x, n.z)) : undefined;
+    if (spot) add("warning", { npc: i }, `${name} stands on the ${spot} door's marker (${n.x}, ${n.z}), which shows there once the room is done.`);
+    if (n.marker && markers?.npcMarkers && !markers.npcMarkers.has(n.marker))
+      add("error", { npc: i }, `${name}'s marker "${n.marker}" has no art: ${npcMarkerArt(n.marker)} is missing.`);
   });
   return out;
 }
@@ -324,16 +365,33 @@ export const inRound = (room: Room, round: Round) => !room.rounds.length || room
 /** The rooms of a run, the final's included (the game's ENTRALINK_RUN_ROOMS_MAX). */
 export const RUN_ROOMS_MAX = 15;
 
-export interface RunRound { rooms: number; boss: boolean }
-export interface RunLayout { rounds: RunRound[]; roomMaps: string[]; finalMap?: string }
+export interface RunRound { rooms: number; boss: boolean; fieldWeather?: string }
+export interface RunLayout {
+  rounds: RunRound[];
+  roomMaps: string[];
+  finalMap?: string;
+  /** The room before a boss or the final room; without it the room maps, north door only. */
+  preBossMap?: string;
+  unknownChance: number;
+  markerSpots: Record<Door, [number, number]>;
+}
 
 /** run.json's data as plain records. */
 export function readRun(data: JsonValue | null | undefined): RunLayout {
   const m = asMap(data ?? undefined);
   return {
-    rounds: asList(m.get("rounds")).map((r) => { const rm = asMap(r); return { rooms: num(rm.get("rooms")) ?? 0, boss: rm.get("boss") === true }; }),
+    rounds: asList(m.get("rounds")).map((r) => {
+      const rm = asMap(r);
+      return { rooms: num(rm.get("rooms")) ?? 0, boss: rm.get("boss") === true, fieldWeather: str(rm.get("field_weather")) };
+    }),
     roomMaps: asList(m.get("room_maps")).map(String),
     finalMap: str(m.get("final_map")),
+    preBossMap: str(m.get("pre_boss_map")),
+    unknownChance: num(m.get("unknown_chance")) ?? DEFAULT_UNKNOWN_CHANCE,
+    markerSpots: Object.fromEntries(DOORS.map((d) => {
+      const spot = asList(asMap(m.get("marker_spots")).get(d)).map((v) => num(v) ?? 0);
+      return [d, spot.length === 2 ? [spot[0], spot[1]] : DEFAULT_MARKER_SPOTS[d]];
+    })) as Record<Door, [number, number]>,
   };
 }
 
@@ -366,7 +424,7 @@ export function roundSummary(rooms: { id: string; room: Room }[], round: Round, 
 /** The checks of the run's draw, as tools/paperwhite2/entralink_run.py's draw_problems makes them (the build fails on
  * the errors and prints the warnings). The game draws each room from its round's pool, one of the least used so far
  * other than the room just before, so too few rooms only means repeats: a warning. */
-export function runProblems(run: RunLayout, rooms: { id: string; room: Room }[]): { severity: Severity; message: string }[] {
+export function runProblems(run: Pick<RunLayout, "rounds">, rooms: { id: string; room: Room }[]): { severity: Severity; message: string }[] {
   const out: { severity: Severity; message: string }[] = [];
   const add = (severity: Severity, message: string) => out.push({ severity, message });
   if (!rooms.some((r) => r.room.role === "final")) add("error", "No room is the final room, which every run ends with.");

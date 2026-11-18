@@ -10,7 +10,8 @@
 // Paper White 2: the Entralink roguelike (docs/paperwhite2/design/entralink-roguelike-prototype.md). Walking off the
 // hub's top edge starts a run: rooms of res/paperwhite2/entralink/rooms/ drawn at random for run.json's rounds, then
 // a final room, each a room of the Entree Forest with its NPCs standing in it. Talking to a battle NPC starts its
-// battle; winning one opens the room's exits, any but the one the player came in by leading to the next room. The
+// battle; winning one opens the room's exits. Entering a room draws the rooms behind its north, east and west doors,
+// shown by markers on the ground once it is done (paperwhite2/entralink_markers.h), and the door taken decides. The
 // run's state and bag are in ARM9 main (paperwhite2/entralink_run_state.h), its team the party's copies at level 100
 // (paperwhite2/entralink_run_party.h), and what it unlocks for good in the save (paperwhite2/entralink_progress.h).
 // Its code is src/paperwhite2/ov012/paperwhite2_entralink_run.c, in overlay 12 beside the Entree Forest's script
@@ -55,6 +56,33 @@
 #define ENTRALINK_NONE 0xffff
 // A requirement that is a finished run, rather than a battle's progress id
 #define ENTRALINK_REQUIRE_RUN_COMPLETED 0xffff
+
+// The markers on the ground in front of a cleared room's forward doors, which say what is behind each: a room's own
+// (EntralinkRoom's marker), or catch instead of enemy, challenge or boss while one of its enemies can be caught and the
+// run's bag holds a Nightmare Ball. Their art is in the model table from ENTRALINK_RUN_MARKER_FILE, in this order
+#define ENTRALINK_MARKER_ENEMY 0
+#define ENTRALINK_MARKER_CHALLENGE 1
+#define ENTRALINK_MARKER_BOSS 2
+#define ENTRALINK_MARKER_REST 3
+#define ENTRALINK_MARKER_GIFT 4
+#define ENTRALINK_MARKER_EVENT 5
+#define ENTRALINK_MARKER_SHOP 6
+#define ENTRALINK_MARKER_UNKNOWN 7
+#define ENTRALINK_MARKER_FINAL 8
+#define ENTRALINK_MARKER_CATCH 9
+// No marker, on the ground or over an NPC
+#define ENTRALINK_MARKER_NONE 0xff
+#define ENTRALINK_NPC_MARKER_NONE 0xff
+
+// A room's forward doors (south is the back door), each with a room behind it once the player is in the room
+#define ENTRALINK_DOOR_NORTH 0
+#define ENTRALINK_DOOR_EAST 1
+#define ENTRALINK_DOOR_WEST 2
+#define ENTRALINK_DOOR_COUNT 3
+// No door: the back door, or a forward door with no room behind it
+#define ENTRALINK_DOOR_NONE 0xff
+// No pre-boss map in run.json: the room before a boss is in the room maps, with only its north door open
+#define ENTRALINK_PRE_BOSS_ZONE_NONE 0xffff
 
 typedef struct {
     u16 species;
@@ -112,6 +140,8 @@ typedef struct {
     // Its messages' windows, ENTRALINK_STYLE_*
     u8 beforeStyle;
     u8 afterStyle;
+    // The icon over its head: an NPC marker (ENTRALINK_NPC_MARKER_* of the config), or ENTRALINK_NPC_MARKER_NONE
+    u8 marker;
 } EntralinkNpc;
 
 typedef struct {
@@ -119,10 +149,10 @@ typedef struct {
     u8 role;
     // A bit for each round it is kept to (round 1 the lowest), or 0 for any
     u8 rounds;
-    // A BTL_WEATHER_*, or ENTRALINK_WEATHER_FIELD
+    // Its battles' BTL_WEATHER_*, or ENTRALINK_WEATHER_FIELD
     u8 weather;
-    // A WEATHER_*, or ENTRALINK_FIELD_WEATHER_ZONE (paperwhite2/entralink_run_state.h)
-    u8 fieldWeather;
+    // The marker in front of a door leading to it, ENTRALINK_MARKER_*
+    u8 marker;
     // Its battles and NPCs in their tables
     u16 firstBattle;
     u8 battleCount;
@@ -134,6 +164,9 @@ typedef struct {
     // How many rooms it draws, and whether a boss ends it
     u8 rooms;
     u8 boss;
+    // The field weather (a fog) of its rooms, a WEATHER_*, or ENTRALINK_FIELD_WEATHER_ZONE
+    // (paperwhite2/entralink_run_state.h)
+    u8 fieldWeather;
 } EntralinkRound;
 
 // Starts a run as the player walks into the forest from the hub (CheckEntralinkForestFirstWarpEvent)
@@ -142,14 +175,21 @@ void EntralinkRun_Start(GameData *gameData);
 BOOL EntralinkRun_IsActive(GameData *gameData);
 // The zone of the run's room, for the Entree Forest's warp (EventEntreeForestWarp_Callback)
 u16 EntralinkRun_GetRoomZone(GameData *gameData);
-// The event of an exit of a run's room (Scrcmd_EntreeForest_MapChangeEntreeForest): the next room, or the hub after the
-// last
-GameEvent *EntralinkRun_CreateExitEvent(GameSystem *gsys);
+// The event of an exit (a DIR_*) of a run's room (Scrcmd_EntreeForest_MapChangeEntreeForest): the room behind its
+// door, or the hub after the last
+GameEvent *EntralinkRun_CreateExitEvent(GameSystem *gsys, u32 exit);
 // Puts the room's NPCs in it, those that came up as the player entered and are still there
 // (Scrcmd_EntreeForest_EntreeForestSpawnAllPkm)
 void EntralinkRun_SpawnRoom(GameSystem *gsys);
 // Ends a run that the player has left by any other way than its own, as each map loads (ZoneChange_OnFieldLoad)
 void EntralinkRun_OnFieldLoad(GameData *gameData, u16 zoneId);
+// The marker in front of a forward door (ENTRALINK_DOOR_*) of the room, ENTRALINK_MARKER_*, or ENTRALINK_MARKER_NONE
+// where no room is behind it; shown once the room is done (EntralinkRunState's cleared). Its 2 by 2 tiles' top-left
+// tile on the clearings' grid in x and z
+u32 EntralinkRun_GetDoorMarker(GameData *gameData, u32 door);
+void EntralinkRun_GetMarkerSpot(u32 door, u32 *x, u32 *z);
+// The marker over the room's NPC of an index (its actor's ID), ENTRALINK_NPC_MARKER_NONE if it has none or isn't there
+u32 EntralinkRun_GetNpcMarker(u32 index);
 
 // Command 0x2f8, EntralinkRun action, arg1, arg2, result: runs one of the run's actions
 // (ENTRALINK_RUN_ACTION_*, paperwhite2/entralink_run_actions.h), and puts what it returns in the variable result

@@ -5,9 +5,10 @@
 // (include/paperwhite2/entralink_run.h), and what they return. Only #defines, since the scripts include it
 // (res/field/scripts/global_10490.s). docs/paperwhite2/design/entralink-roguelike-prototype.md has the run
 
-// arg1 the exit (MapChangeEntreeForest's): returns ENTRALINK_RUN_EXIT_OPEN outside a run, ENTRALINK_RUN_EXIT_BACK for
-// the exit the player came in by (which asks whether to go back to the hub), and for the others
-// ENTRALINK_RUN_EXIT_OPEN once the room is cleared, else ENTRALINK_RUN_EXIT_BLOCKED
+// arg1 the exit (MapChangeEntreeForest's, a DIR_*): returns ENTRALINK_RUN_EXIT_OPEN outside a run,
+// ENTRALINK_RUN_EXIT_BACK for the exit the player came in by (which asks whether to go back to the hub), and for the
+// others ENTRALINK_RUN_EXIT_OPEN once the room is done and a room is behind the exit's door, else
+// ENTRALINK_RUN_EXIT_BLOCKED
 #define ENTRALINK_RUN_ACTION_CAN_LEAVE 0
 // Returns the species of the talked-to battle NPC's enemy, for its cry, or 0
 #define ENTRALINK_RUN_ACTION_GET_SPECIES 1
@@ -26,7 +27,8 @@
 // arg1 0 for its before message, 1 for its after one: returns the message's number in the text bank
 // SCRIPT_TEXT_ENTRALINK_DIALOGUE, or ENTRALINK_RUN_NO_MESSAGE
 #define ENTRALINK_RUN_ACTION_DIALOGUE 6
-// After a won battle's after message: the room's battle NPCs go away
+// After a won battle's after message: the room's battle NPCs go away, and the room is done: its exits open and the
+// markers in front of them show
 #define ENTRALINK_RUN_ACTION_CLEAR_ROOM 7
 // An item NPC: returns its item
 #define ENTRALINK_RUN_ACTION_GET_ITEM 8
@@ -40,6 +42,9 @@
 // talk, bubble, yell or event), with the player's name in word 0 as the script set it, and the script waits for it to
 // print; returns the message as ENTRALINK_RUN_ACTION_DIALOGUE does. MsgWinCloseAll closes any of the windows
 #define ENTRALINK_RUN_ACTION_SHOW_DIALOGUE 12
+// A rest or buff NPC after it has been talked to: it counts as used, and a room with no battle is done once every NPC
+// that came up in it is used
+#define ENTRALINK_RUN_ACTION_NPC_USED 13
 
 #define ENTRALINK_RUN_RESULT_LOST 0
 #define ENTRALINK_RUN_RESULT_CLEARED 1
@@ -56,8 +61,12 @@
 #define ENTRALINK_RUN_EXIT_OPEN 1
 #define ENTRALINK_RUN_EXIT_BACK 2
 
-// The exit every room is entered by, its bottom one, which leads back to the hub from the first
+// A room's exits, MapChangeEntreeForest's (the DIR_* of each): the north, east and west ones are forward doors, the
+// bottom one is the exit every room is entered by, which leads back to the hub
+#define ENTRALINK_RUN_NORTH_EXIT 0
 #define ENTRALINK_RUN_BACK_EXIT 1
+#define ENTRALINK_RUN_WEST_EXIT 2
+#define ENTRALINK_RUN_EAST_EXIT 3
 
 #define ENTRALINK_RUN_NO_MESSAGE 0xffff
 

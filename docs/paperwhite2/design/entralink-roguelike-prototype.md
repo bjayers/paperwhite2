@@ -4,7 +4,8 @@ Built 2026-11-15 on `entralink-roguelike.md`'s design and survey (sections 1 and
 four rooms in the Entree Forest, each with a legendary to battle, from a cleared Entralink hub. No buffs, no damage or
 HP numbers, no C-Gear screen. Step 2 (same day) added the level-100 team and the forfeit, step 3 the room format, the
 run's bag, catching and saved progress, step 4 the run's rounds with repeats, the dialogue's window styles and the
-greyed pockets; see "Step 2", "Step 3" and "Step 4" below.
+greyed pockets, step 5 the doors' rooms drawn on entering a room, the markers and the rounds' fogs; see "Step 2" to
+"Step 5" below.
 
 ## What a run is
 
@@ -79,9 +80,13 @@ game read `challenges/` (one challenge per file, an enemy's `actor` placing it);
 | Field | What |
 | --- | --- |
 | `rounds` | 1-3 rounds in order, each `rooms` (how many rooms of role `room` are drawn for it: kept to that round, or to none) and `boss` (rounds 1 and 2: a room of role `boss` ends it, from the bosses kept to that round, else the generic ones; false). The final room follows the last round. Rooms repeat only once every fitting room has come up (step 4, "The draw"); at most 15 rooms with the final |
-| `room_maps` | `ZONE_ENTREE_FOREST*` zones of the rooms before the final, taken in turn; each needs a bottom exit |
+| `room_maps` | `ZONE_ENTREE_FOREST*` zones of the rooms before the final, taken in turn; each needs a bottom exit, and north, east and west exits for its doors (step 5) |
 | `final_map` | The final room's zone |
-| `field_weather` | Optional `WEATHER_*` (`include/system/zone_weather.h`): the field weather of the rooms without a `weather`; left out, the forest's own |
+| `pre_boss_map` | Optional (step 5): the zone of the room played just before a boss or the final room, a clearing with only north and south exits, whose north door leads to it. Left out, those rooms take the room maps with only the north door open |
+| `field_weather` | Optional `WEATHER_*` (`include/system/zone_weather.h`): the field weather of the rounds without a `field_weather` of their own; left out, the forest's own |
+| `rounds[].field_weather` | Optional (step 5): the round's fog, in its rooms and its boss's; the final room takes the last round's. Left out, the run's `field_weather` |
+| `unknown_chance` | Optional (step 5): the percent chance (0-100, 5) that a door to a room of role `room` shows ??? whatever is behind it |
+| `marker_spots` | Optional (step 5): `north`, `east` and `west`, each `[x, z]`, the top-left tile of the door's 2 by 2 marker on the clearings' grid (left out: 15, 12; 21, 16; 9, 16) |
 
 The run (step 4): 3 rounds of 3 rooms, rounds 1 and 2 each ending in a boss, then the final room: 12 rooms. The
 generic rooms are Dialga, the Rayquaza raid and Prince or Princess (each comes up 3 times a run), the bosses Seaside
@@ -99,7 +104,8 @@ final room). All names are the repo's constants.
 | `name` | For the editor |
 | `rounds` | Optional: the rounds it is kept to, any of `1` (before the first boss), `2` (before the second), `3` (before the final room). Left out, a generic room that can come up in any round |
 | `role` | `room` (one of a round's rooms), `boss` (ends round 1 or 2; the bosses have their own pool) or `final` (the run's last room; one is drawn if there are several) |
-| `weather` | Optional `BTL_WEATHER_*`: its battles start in it, and the field shows the matching weather (none and sun: clear, the field has no harsh sun; rain: rain; hail: snow; sandstorm: sandstorm). Left out, the battles take the field's and the field `run.json`'s `field_weather` |
+| `weather` | Optional `BTL_WEATHER_*`: its battles start in it. Since step 5 the field doesn't show it (step 3 showed the matching field weather): the field has its round's fog. Left out, the battles take the field's |
+| `marker` | Optional (step 5): what lies in front of any door leading to it, `enemy`, `challenge`, `boss`, `rest`, `gift`, `event`, `shop`, `unknown` (always ???) or `final`; left out, its role's (`enemy`, `boss`, `final`). `catch` is never set: the game shows it instead of `enemy`, `challenge` or `boss` while one of its enemies can be caught and the run's bag holds a Nightmare Ball |
 | `battles[]` | Up to 8 of: `id` (lower case, the name NPCs use), `progress_id` (its won-ever bit, below), `format` (`single` 1 enemy, `double` 1-2, `triple` 1-3, `raid` exactly 1 in the center), `enemies[]` (1-3: `species`, `form` (0), `level` (70), `moves`, `ability` (`ABILITY_*` or `"hidden"`), `item`, `gender`, `shiny` (false), `catch`, `progress_id`) |
 | `npcs[]` | Up to 16 of the NPC record below. If no battle NPC spawns, the room is free: its exits are open at once |
 
@@ -120,6 +126,7 @@ An NPC:
 | `chance` | Its chance to spawn, 1-100 percent (100), rolled once as the player enters the room |
 | `dialogue` | Optional `before` (on talking; a battle NPC's before its battle) and `after` (a battle NPC's, after its battle is won or its enemy caught, before the room opens): a message in the text files' codes (below); `before_style` and `after_style`, each message's window (below; `talk` if left out) |
 | `x`, `z`, `facing` | Its tile (0-31) and `DIR_*` |
+| `marker` | Optional (step 5): an icon floating over its head, `npc_markers/<marker>.png` by name |
 
 **Dialogue** is written as a line of `res/text/` with real line breaks (or `\n`): `{be01}` waits for a key and
 `{be00}` starts a new page after one, as the text files use them, and **`{0100:0}` is the player's name** (the script
@@ -170,7 +177,8 @@ battles or catches with one progress id, a room called `run`, an After message o
   variables (0x405b-0x405d) are free again. The Entralink's field menu has no Save, so a run can't be saved mid-way.
   Each map load (`ZoneChange_OnFieldLoad`) ends a run the player is no longer in (any zone outside the forest, or a run
   without its copies), so leaving it another way (the debug menu's warps) also ends it.
-- **Rooms:** `EventEntreeForestWarp` with the run's zone instead of `SymbolMap_GetZone`; the zone's init script
+- **Rooms:** `EventEntreeForestWarp` with the run's zone instead of `SymbolMap_GetZone` (since step 5 the pre-boss map
+  before a boss or the final room); the zone's init script
   (`EntreeForestSpawnAllPkm`, type 4, which runs on every load) spawns the enemies, skipping any already there and a
   won room's.
 - **Battles:** the enemy party made as the forest makes its Pokémon (`PokeParty_CreatePkm`, the data's form, ability,
@@ -499,6 +507,120 @@ copies made to faint in room 1's battle: "out of usable Pokémon", "blacked out"
 50000. The same battle with the run's flag cleared as it was created (a plain wild battle): "Riku dropped $3600 in
 panic...", money 46400, as the original.
 
+## Step 5: doors drawn on entry, markers, round fogs (2026-11-17)
+
+### The doors
+
+A run is still its places in order (each round's rooms, its boss, then the final), but a place's room is no longer
+drawn at the start: **entering a room draws the rooms behind its forward doors** (north, east, west; south is the back
+door) for the next place, and **the door taken decides the next room** (`EntralinkRun_EnterRoom`, `_DrawDoors`; the
+state's `doorRooms`). Only the first room is drawn at the start. Each door's room comes from the place's pool by step
+4's rules (the least used so far, never the room just played), and the doors get different rooms while the pool has
+enough; then a room behind another door again, and the room just played only if it is the only one that fits. The real
+run's rounds have three generic rooms, one just played, so two doors differ and the third repeats one of them.
+
+**Before a boss or the final room** the current room is in `pre_boss_map` (run.json's: `ZONE_ENTREE_FOREST_5` until
+the new two-exit zone replaces it) and only its north door has a room behind it, the boss or the final room; east and
+west say "A nightmare blocks the way." The other rooms use `room_maps` in turn, which have all four exits. A boss room's
+doors lead to the next round's rooms. The script's exits pass their own exit (`ENTRALINK_RUN_NORTH_EXIT`, `_WEST_EXIT`,
+`_EAST_EXIT`) to `ENTRALINK_RUN_ACTION_CAN_LEAVE`, which blocks a door with no room behind it, and
+`MapChangeEntreeForest`'s direction now reaches `EntralinkRun_CreateExitEvent`.
+
+### When a room is done
+
+The exits open and the markers show at the same moment: a battle room once its battle is won (the script's
+`ENTRALINK_RUN_ACTION_CLEAR_ROOM`, after the after message; `EntralinkRun_FinishBattle` no longer opens it); a room
+with no battle once every NPC that came up in it is used (an item NPC's item taken, a rest or buff NPC talked to: the
+new `ENTRALINK_RUN_ACTION_NPC_USED`, 13, at the end of Script_9's rest/buff path; the state's `npcsUsed`); a room where
+nothing came up at once. An item NPC that can't give its item (the bag full) isn't used, so a gift room stays shut until
+its item is taken.
+
+### The markers
+
+- **What a door shows** (`EntralinkRun_GetDoorMarker`): the room's `marker`; `catch` instead of enemy, challenge or
+  boss when an enemy of the room can be caught now (`EntralinkRun_CanCatch`: its `after` battles won, not spent if
+  `once`) and the run's bag holds a Nightmare Ball (looked at every 16 frames, so it follows the bag); ??? for a door
+  whose unknown roll came up (`unknown_chance`, rolled per door of role `room` as the room is entered, never for a boss
+  or the final). Nothing until the room is done, and nothing in front of a door with no room behind it.
+- **How they are drawn** (`src/paperwhite2/ov036/paperwhite2_entralink_markers.c`, `include/paperwhite2/entralink_markers.h`):
+  a billboard system of their own (`BillboardActorSys`, 12 materials, 19 actors), made in the field's heap the first
+  time a run's room needs it and freed with the field's billboards (`FieldG3D_Free`), drawn in the field's effects
+  pass (after the shadows, with the objects' depth offset) and updated from the field's update (`fieldmap.c`, three
+  `#ifdef PAPERWHITE2` hooks). Its scene has the field effects' scale (8) and polygon IDs. A ground marker is a quad
+  lying on the ground (`BILLBOARD_ACTOR_TYPE_FACE_CAMERA_Y_FLAT`, as the footprints and the actors' shadows lie), 2 by
+  2 tiles, at the ground's height (`FieldG3DMapper_GetTerrainAll`); an NPC's marker is a quad facing the camera over
+  the NPC's sprite (its billboard size, 16, 32 or 64, plus 10 units), following the actor, gone when the NPC goes. Both
+  unlit (the art's own colours), and in the fog like the map. Chosen over the field effects' own billboard system
+  (which the footprints, grass and shadows share, 58 materials, and whose material loader writes outside its table
+  when full) and over the follower emotes' private scenes (one quad each, drawn by hand): a system of their own keeps
+  the effects' materials and needs no draw code. The textures are loaded as the room is entered (what the doors show
+  then, and the NPCs' markers), while the screen fades in, so none is sent to VRAM in the middle of play, except a
+  catch marker that comes later.
+- **The art:** `res/paperwhite2/entralink/markers/<type>.png` (32 by 32, the ten types) and
+  `npc_markers/<name>.png` (16 by 16, any number), indexed PNGs of up to 16 colours, index 0 clear. The packer
+  (`entralink_run.py`, `marker_members`) makes each a BTX0 of one GX_TEXFMT_PLTT16 texture and its palette;
+  `field_actor_data.py` puts them in the model table (a/0/4/7) from member 24, after the Following Pokémon's, the ground
+  markers in `ENTRALINK_MARKER_*` order, then the NPC markers by name; the header gives the members' numbers
+  (`ENTRALINK_RUN_MARKER_FILE`, `ENTRALINK_RUN_NPC_MARKER_FILE`, `ENTRALINK_NPC_MARKER_<NAME>`). The ten and four (rest,
+  buff, item, shop) in the commit are placeholders: a disc of a colour with a letter (E, !, B, R, G, *, $, ?, D, C).
+  A new NPC marker needs `python3 configure.py w2_us --hack` again.
+- **Memory:** about 2.3 KB more code and data in overlays 12 and 36 (the DS arena 54 KB left, from 56); at run time
+  about 2.5 KB of the field heap for the system (its scene's 12 materials and 19 actors, handles and allocators) and
+  about 150 bytes per texture kept after trimming, at most 12; VRAM 544 bytes per ground marker's texture and palette,
+  160 per NPC marker's. Nothing outside a run.
+
+### The rounds' fogs and the rooms' weather
+
+Each round has its own field weather (run.json `rounds[].field_weather`): round 1 the pink fog (`WEATHER_CUSTOM_TINT_9`),
+round 2 the dark purple fog (`_8`), round 3 and the final room the black fog (`_7`), tints.json's "Pink fog", "Dark
+purple fog" and "Black fog". The packer resolves a round without one to the run's `field_weather`, and
+`EntralinkRun_EnterRoom` sets the round's as the room's field weather. A room's `weather` is now its battles' only
+(`EntralinkRoom`'s `fieldWeather` became `marker`; `EntralinkRound` has `fieldWeather`). After a battle the fog stays:
+the run's weather comes before the battle's weather that `GetWeatherAll` keeps for a while.
+
+### The editor
+
+- **Room:** a Marker picker of the nine types' icons, the role's marked as the default (left out of the file); the
+  Weather row says it is the battles'.
+- **NPC:** a Marker picker (None, or the icons of `npc_markers/`).
+- **Run:** a Fog per round (the tints shown by name, "Custom tint 9: Pink fog"), Unknown doors (`unknown_chance`), the
+  pre-boss map read only, and the Marker spots (x, z per door).
+- **The grid** draws the three spots as 2 by 2 areas ("north marker: keep clear"); the checks warn when an NPC stands
+  on one, and give an error for an NPC marker with no art.
+
+### Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `markers/`)
+
+With temporary test data (not committed): Dialga catchable from the first encounter and in rain, the raid catchable
+only after Time and Space's battle (never won in the save), Prince or Princess marked `unknown`, and `zz_gift`, a
+round-1 room with no battle: a Nightmare Ball ×2 item NPC (NPC marker `item`) and a rest NPC (`rest`).
+
+- **Doors on entry:** three runs: room 1 Rayquaza raid, doors Dialga / Prince or Princess / Dialga; room 1 Prince or
+  Princess, doors Dialga / raid / raid; then room 2 (through the east door) the raid, as drawn, with doors Dialga /
+  Prince or Princess / Dialga. The pool of two (the room just played excluded) gives two different rooms.
+- **Hidden until done, the real flow:** in room 1 (Prince or Princess) no markers and the north exit blocked; the
+  Gardevoir battle won, the after message and "The nightmare faded away!": three enemy markers at the spots (shot
+  `m3_cleared.png`); the east door led to the raid, the room drawn behind it.
+- **A gift room:** nothing on the ground on entering, the NPC markers + and R floating over the ball and the Lady
+  (`m4_npc_markers.png`); after the item was taken still shut (the rest NPC unused); after talking to the rest NPC the
+  room done and the markers shown.
+- **Types:** doors set to Dialga, the raid and Prince or Princess with a Nightmare Ball in the run's bag: catch, enemy
+  (its condition unmet), unknown (`m4_types_ball.png`); the ball taken out of the bag: enemy, enemy, unknown.
+- **The pre-boss room:** place 3 in `ZONE_ENTREE_FOREST_5` (the run.json stand-in) with Ho-Oh behind the north door
+  and nothing behind east and west; Dialga's battle in rain ("It started to rain!", `m4_dialga_battle.png`) while the
+  field kept the pink fog before and after; done, one boss marker (`m4_preboss_done.png`); the east exit blocked; north
+  to Seaside Gales in `entree_forest_6`.
+- **The fogs:** places 1-4 pink (`WEATHER_CUSTOM_TINT_9`), place 5 dark purple (`_8`, `m4_fog_round2.png`), place 10
+  black (`_7`, `m4_fog_round3.png`; the run's place poked).
+- **unknown_chance 100** (a scratch copy): every door of room 1 ???; the room before the final (place 11, poked) in the
+  pre-boss map with Darkrai's marker behind the north door and no unknown roll.
+- **The editor:** the Run section with the fogs and spots, the room's and an NPC's marker pickers, the spots on the
+  grid (screenshots `ed2-run-spots.png`, `ed3-room-npc.png`, `ed4-npc-marker.png`); its tests (234) and the packer's
+  (14, three new: the markers, an NPC marker's art, the members) pass.
+
+Not tested: real hardware (the markers' first upload while playing, a catch marker appearing after a ball is picked
+up), a run through the real two-exit pre-boss zone (another branch makes it), a full run with every room's battle
+fought (the places past 5 were reached by poking the run's place).
+
 ## The re-entry question
 
 **Re-entering the same map works as a fresh room.** Tested by poking the room-maps table in RAM to `entree_forest`
@@ -543,6 +665,7 @@ enemies, a run left by other means (the debug menu's warps), real hardware.
   freed Symbol block (survey 3.3) and a Save in the Entralink's menu; the three variables are the prototype's
   stand-in.
 - **The forest grid:** a run ignores `SymbolMap` (areas, `deepestArea`); the zones' other layouts (two and three exits)
-  aren't used yet. An exit's direction is ignored: every exit leads to the same next room.
-- **Exits** step the player back; a marker in front of each exit would say what lies behind it (design section 1).
+  aren't used yet, but the pre-boss map is one.
+- **Exits:** since step 5 each forward door leads to its own room, with a marker in front of it once the room is
+  done.
 - The Entralink is still reached only by the debug menu.

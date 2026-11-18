@@ -3,16 +3,26 @@
     "rounds": [
         {
             "rooms": 3,
-            "boss": true
+            "boss": true,
+            "field_weather": "WEATHER_CUSTOM_TINT_9"
         },
         {
             "rooms": 3,
-            "boss": true
+            "boss": true,
+            "field_weather": "WEATHER_CUSTOM_TINT_8"
         },
         {
-            "rooms": 3
+            "rooms": 3,
+            "field_weather": "WEATHER_CUSTOM_TINT_7"
         }
     ],
     "room_maps": [ "ZONE_ENTREE_FOREST", "ZONE_ENTREE_FOREST_6" ],
-    "final_map": "ZONE_ENTREE_FOREST_2"
+    "final_map": "ZONE_ENTREE_FOREST_2",
+    "pre_boss_map": "ZONE_ENTREE_FOREST_5",
+    "unknown_chance": 5,
+    "marker_spots": {
+        "north": [ 15, 12 ],
+        "east": [ 21, 16 ],
+        "west": [ 9, 16 ]
+    }
 }

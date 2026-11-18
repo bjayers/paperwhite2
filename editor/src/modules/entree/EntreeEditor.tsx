@@ -30,6 +30,7 @@ import {
   newRoomData, npcSprite, readRoom, roomId, roomPath, shownEnemy, walkingSprite,
   DEFAULT_ONCE, PROGRESS_IDS, PROGRESS_IDS_SCHEMA, RUN_COMPLETED, assignProgressIds, battleKey, battleKeys, renameKeys, withoutProgressIds,
   MESSAGE_STYLES, MESSAGE_STYLE_NOTES, readRun, roundSummary, runProblems, type MessageStyle,
+  DOORS, MARKER_NOTES, MARKER_TYPES, NPC_MARKERS_DIR, ROLE_MARKERS, markerArt, npcMarkerArt, type Door,
   type Round, type Exit, type MapInfo, type NpcType, type Problem, type ProgressCounters, type Role, type Room,
 } from "./model.ts";
 
@@ -60,6 +61,7 @@ const TYPE_NOTES: Record<NpcType, string> = {
 };
 const RUN = "res/paperwhite2/entralink/run.json";
 const RUN_SCHEMA = "res/paperwhite2/entralink/run.schema.json";
+const TINTS = "res/paperwhite2/field_tints/tints.json";
 /** The schema's own complaint about a battle or catch with no progress id yet: Save gives it one. */
 const awaitsId = (e: { path: JsonPath; message: string }) => e.message === "progress_id is missing";
 const zoneFile = (zone: string) => zone.replace(/^ZONE_/, "").toLowerCase();
@@ -168,6 +170,16 @@ export function EntreeEditor({ constants }: ToolProps) {
   }, []);
   useEffect(() => { refresh(); return documents.onFiles((paths) => { if (paths.some((p) => p.startsWith(`${ROOMS_DIR}/`))) refresh(); }); }, [refresh]);
   useEffect(() => { api.schema(ROOM_SCHEMA).then(setSchema, (e: Error) => setError(e.message)); }, []);
+  // The NPC markers' art, by name (npc_markers/<name>.png)
+  const [npcMarkers, setNpcMarkers] = useState<string[]>([]);
+  useEffect(() => {
+    api.list(`${NPC_MARKERS_DIR}/*.png`).then((paths) => setNpcMarkers(paths.map((p) => p.slice(p.lastIndexOf("/") + 1).replace(/\.png$/, "")).sort()), () => undefined);
+  }, []);
+  // The doors' marker spots, from run.json (the Run section holds it), which NPCs should keep clear of
+  useEffect(() => { documents.hold(RUN).catch(() => undefined); }, []);
+  const runData = docs.get(RUN)?.data;
+  const markerSpots = useMemo(() => readRun(runData instanceof Map ? runData : null).markerSpots, [runData]);
+  const markerInfo = useMemo(() => ({ spots: markerSpots, npcMarkers: new Set(npcMarkers) }), [markerSpots, npcMarkers]);
 
   // Every room held, for the list and the checks over all of them; new ones are held unsaved until Save
   const paths = useMemo(() => {
@@ -306,10 +318,10 @@ export function EntreeEditor({ constants }: ToolProps) {
 
   const schemaErrors = useMemo(() => (current?.data && schema ? validate(current.data, schema, constants).filter((e) => !awaitsId(e)) : []), [current?.data, schema, constants]);
   const known = useMemo(() => battleKeys(rooms), [rooms]);
-  const problems = useMemo(() => (room ? checkRoom(room, constants, infos, known) : []), [room, constants, infos, known]);
+  const problems = useMemo(() => (room ? checkRoom(room, constants, infos, known, markerInfo) : []), [room, constants, infos, known, markerInfo]);
   const overall = useMemo(() => checkRooms(rooms), [rooms]);
   const roomProblems = useMemo(() => new Map(rooms.map((r): [string, number] =>
-    [r.id, checkRoom(r.room, constants, infos, known).filter((p) => p.severity === "error").length])), [rooms, constants, infos, known]);
+    [r.id, checkRoom(r.room, constants, infos, known, markerInfo).filter((p) => p.severity === "error").length])), [rooms, constants, infos, known, markerInfo]);
   /** Every room's battles, for the catches' and spawn conditions' pickers. */
   const battleOptions: Option[] = useMemo(() => rooms.flatMap((r) => r.room.battles.map((b) => ({
     value: battleKey(r.id, b.id), label: `${r.room.name || r.id}: ${b.id}`, detail: battleKey(r.id, b.id),
@@ -337,8 +349,12 @@ export function EntreeEditor({ constants }: ToolProps) {
     const exits: Entity[] = (mapInfo?.exits ?? []).map((e, k) => ({
       kind: "trigger", index: 1000 + k, x: e.x, z: e.z, y: 0, width: e.width, depth: e.depth, label: `${e.side} exit`,
     }));
-    return [...npcs, ...exits];
-  }, [room, mapInfo, constants]);
+    // The doors' markers' spots, 2 by 2, which NPCs should keep clear of
+    const spots: Entity[] = DOORS.map((d, k) => ({
+      kind: "trigger", index: 2000 + k, x: markerSpots[d][0], z: markerSpots[d][1], y: 0, width: 2, depth: 2, label: `${d} marker: keep clear`,
+    }));
+    return [...npcs, ...exits, ...spots];
+  }, [room, mapInfo, constants, markerSpots]);
   const selectedEntity = npcIndex !== null ? entities.find((e) => e.kind === "npc" && e.index === npcIndex) ?? null : null;
 
   const moveNpc = (i: number, x: number, z: number) => {
@@ -365,7 +381,7 @@ export function EntreeEditor({ constants }: ToolProps) {
     <div className="en-editor">
       <header className="en-header">
         <h2>Entree</h2>
-        <span className="muted en-lead">The Entralink roguelike's rooms: their battles and what stands in them. The game reads these at the wiring step; until then it reads challenges/.</span>
+        <span className="muted en-lead">The Entralink roguelike's rooms: their battles, what stands in them and the markers in front of the doors leading to them.</span>
         <span className="spacer" />
         {unsaved.length > 0 && <span className="muted">{unsaved.length} unsaved</span>}
         <button onClick={() => unsaved.forEach((p) => void documents.reload(p))} disabled={!unsaved.length}>Revert</button>
@@ -461,7 +477,7 @@ export function EntreeEditor({ constants }: ToolProps) {
                               renameKeyElsewhere={renameKeyElsewhere} />
               <NpcsSection room={room} constants={constants} get={get} set={set} setField={setField} selected={npcIndex} battleOptions={battleOptions}
                            select={setNpcIndex} add={(type) => { const t = freeTile(); addNpc(type, t.x, t.z); }}
-                           openPicker={() => setPicking(true)} npcOrder={orderOf("npc")} />
+                           openPicker={() => setPicking(true)} npcOrder={orderOf("npc")} npcMarkers={npcMarkers} />
             </div>
           ) : current?.data === null ? <p className="ow-error en-pad">{current.path} isn't in a layout the editor can write back; edit it as text.</p>
             : <p className="muted en-pad">Choose a room, or make one with New.</p>}
@@ -516,13 +532,24 @@ function RunSection({ rooms }: { rooms: { id: string; room: Room }[] }) {
   const { docs } = useDocuments();
   const [schema, setSchema] = useState<Schema | null>(null);
   const [open, setOpen] = useState(readRunOpen);
-  useEffect(() => { documents.hold(RUN).catch(() => undefined); api.schema(RUN_SCHEMA).then(setSchema, () => undefined); }, []);
+  useEffect(() => {
+    documents.hold(RUN).catch(() => undefined);
+    documents.hold(TINTS).catch(() => undefined);
+    api.schema(RUN_SCHEMA).then(setSchema, () => undefined);
+  }, []);
+  // The custom tints' names (WEATHER_CUSTOM_TINT_<n> is slot n of tints.json), so the fogs read as what they are
+  const tints = asList(asMap(docs.get(TINTS)?.data ?? undefined).get("tints"));
+  const fogLabel = (w: string) => {
+    const slot = /^WEATHER_CUSTOM_TINT_(\d+)$/.exec(w);
+    const name = slot ? asMap(tints[Number(slot[1]) - 1]).get("name") : undefined;
+    return typeof name === "string" ? `${weatherLabel(w)}: ${name}` : weatherLabel(w);
+  };
   const doc = docs.get(RUN);
   const data = doc?.data instanceof Map ? doc.data : null;
   const run = useMemo(() => readRun(data), [data]);
   const problems = useMemo(() => runProblems(run, rooms), [run, rooms]);
   const weather = typeof data?.get("field_weather") === "string" ? String(data.get("field_weather")) : "";
-  const choices = (schema?.properties?.field_weather?.enum ?? []).map(String);
+  const choices = (schema?.$defs?.field_weather?.enum ?? schema?.properties?.field_weather?.enum ?? []).map(String);
   const order = Object.keys(schema?.properties ?? {});
   const roundSchema = schema?.$defs?.round;
   const roundOrder = Object.keys(roundSchema?.properties ?? { rooms: 0, boss: 0 });
@@ -536,9 +563,14 @@ function RunSection({ rooms }: { rooms: { id: string; room: Room }[] }) {
   };
   const setKey = (key: string, v: JsonValue | undefined) => documents.replace(RUN, put(data, key, v, order));
   const rounds = asList(data.get("rounds"));
-  const setRound = (i: number, key: "rooms" | "boss", v: JsonValue | undefined) =>
+  const setRound = (i: number, key: "rooms" | "boss" | "field_weather", v: JsonValue | undefined) =>
     setKey("rounds", rounds.map((r, k) => (k === i ? put(asMap(r), key, v, roundOrder) : r)));
   const total = run.rounds.reduce((n, r, i) => n + r.rooms + (r.boss && i < 2 ? 1 : 0), 0) + 1;
+  /** A door's spot, every door's written once one is changed. */
+  const setSpot = (door: Door, axis: 0 | 1, n: number) => {
+    const spots = new Map<string, JsonValue>(DOORS.map((d) => [d, d === door ? run.markerSpots[d].map((v, k) => (k === axis ? n : v)) : [...run.markerSpots[d]]]));
+    setKey("marker_spots", spots);
+  };
   const errors = problems.filter((p) => p.severity === "error").length;
   const warnings = problems.length - errors;
   const state = [errors && `${errors} error${errors > 1 ? "s" : ""}`, warnings && `${warnings} warning${warnings > 1 ? "s" : ""}`].filter(Boolean).join(", ");
@@ -555,10 +587,18 @@ function RunSection({ rooms }: { rooms: { id: string; room: Room }[] }) {
           <span className="muted small">Field weather</span>
           <select value={weather} onChange={(e) => setKey("field_weather", e.target.value || undefined)} title={weather ? weatherNote(weather) : "No field weather"}>
             <option value="">None</option>
-            {choices.map((w) => <option key={w} value={w}>{weatherLabel(w)}</option>)}
+            {choices.map((w) => <option key={w} value={w}>{fogLabel(w)}</option>)}
           </select>
         </div>
-        <span className="muted small">On the field in the rooms with no weather of their own</span>
+        <span className="muted small">On the field in the rounds with no fog of their own</span>
+        <div className="en-run">
+          <span className="muted small">Unknown doors</span>
+          <span className="en-run-controls">
+            <NumberBox value={run.unknownChance} min={0} max={100} width={52} onChange={(n) => setKey("unknown_chance", n)} />
+            <span className="small">%</span>
+          </span>
+        </div>
+        <span className="muted small">The chance that a door to a round's room shows ??? whatever is behind it</span>
 
         <h6 className="en-sub en-run-head">Rounds <span className="muted">then the final room</span></h6>
         <div className="en-list-actions">
@@ -581,7 +621,15 @@ function RunSection({ rooms }: { rooms: { id: string; room: Room }[] }) {
                     : <span className="muted small">then the final</span>}
                 </span>
               </div>
-              <span className="muted small en-run-summary">{roundSummary(rooms, round, r, last)}</span>
+              <div className="en-run">
+                <span className="muted small">Fog</span>
+                <select value={r.fieldWeather ?? ""} title={r.fieldWeather ? weatherNote(r.fieldWeather) : "The run's field weather"}
+                        onChange={(e) => setRound(i, "field_weather", e.target.value || undefined)}>
+                  <option value="">The run's ({weather ? fogLabel(weather) : "none"})</option>
+                  {choices.map((w) => <option key={w} value={w}>{fogLabel(w)}</option>)}
+                </select>
+              </div>
+              <span className="muted small en-run-summary">{roundSummary(rooms, round, r, last)}{last ? "; the final room takes this round's fog" : ""}</span>
             </div>
           );
         })}
@@ -592,7 +640,23 @@ function RunSection({ rooms }: { rooms: { id: string; room: Room }[] }) {
           <span className="small" title="The rooms before the final take these in turn">{run.roomMaps.map(clearingName).join(", ") || "none"}</span>
           <span className="muted small">Final</span>
           <span className="small">{run.finalMap ? clearingName(run.finalMap) : "none"}</span>
+          <span className="muted small">Pre-boss</span>
+          <span className="small" title="The room played just before a boss or the final room: its north door leads there">
+            {run.preBossMap ? clearingName(run.preBossMap) : "none: the room maps, north door only"}</span>
         </div>
+
+        <h6 className="en-sub en-run-head">Marker spots <span className="muted">2 by 2 from the top-left tile; drawn on the grid</span></h6>
+        {DOORS.map((d) => (
+          <div key={d} className="en-run">
+            <span className="muted small">{cap(d)}</span>
+            <span className="en-run-controls">
+              <span className="muted small">x</span>
+              <NumberBox value={run.markerSpots[d][0]} min={0} max={30} width={48} onChange={(n) => setSpot(d, 0, n)} />
+              <span className="muted small">z</span>
+              <NumberBox value={run.markerSpots[d][1]} min={0} max={30} width={48} onChange={(n) => setSpot(d, 1, n)} />
+            </span>
+          </div>
+        ))}
 
         {problems.length > 0 && (
           <ul className="en-problems en-run-problems">
@@ -602,6 +666,11 @@ function RunSection({ rooms }: { rooms: { id: string; room: Room }[] }) {
       </>}
     </div>
   );
+}
+
+/** A marker's icon, as its art draws it. */
+function MarkerIcon({ path, size = 24, title }: { path: string; size?: number; title?: string }) {
+  return <img className="en-marker-icon" src={api.assetUrl(path)} width={size} height={size} alt="" title={title} />;
 }
 
 // ---- Checks ----------------------------------------------------------------------------------------------------------
@@ -660,9 +729,21 @@ function RoomSection({ id, room, constants, saved, setField, rename }: {
         <Row label="Role" hint={ROLE_NOTES[room.role]}>
           <Switch value={room.role} options={ROLES} onChange={(v) => setField("role", v)} titles={ROLE_NOTES} />
         </Row>
-        <Row label="Weather" hint={room.weather ? "Shows on the field in the room and in its battles from their start"
-          : "On the field the run's field weather (Run, above the rooms), in battle random (designed later)"}>
-          <SearchSelect value={room.weather ?? ""} options={weathers} placeholder="The run's / random" onChange={(v) => setField("weather", v || undefined)} />
+        <Row label="Weather" hint={room.weather ? "Its battles start in it; the field keeps its round's fog (Run, above the rooms)"
+          : "Its battles take the field's; in battle random (designed later)"}>
+          <SearchSelect value={room.weather ?? ""} options={weathers} placeholder="The field's / random" onChange={(v) => setField("weather", v || undefined)} />
+        </Row>
+        <Row label="Marker" hint={`In front of any door leading to it: ${MARKER_NOTES[room.marker ?? ROLE_MARKERS[room.role]].toLowerCase()}${room.marker ? "" : " (its role's)"}. `
+          + "Enemy, challenge and boss show catch instead while one of its enemies can be caught and the run's bag holds a Nightmare Ball"}>
+          <span className="en-markers">
+            {MARKER_TYPES.map((m) => (
+              <button key={m} className={(room.marker ?? ROLE_MARKERS[room.role]) === m ? "active" : ""} title={`${MARKER_NOTES[m]}${!room.marker && ROLE_MARKERS[room.role] === m ? " (the role's)" : ""}`}
+                      onClick={() => setField("marker", m === ROLE_MARKERS[room.role] ? undefined : m)}>
+                <MarkerIcon path={markerArt(m)} size={24} />
+              </button>
+            ))}
+          </span>
+          <span className="small">{cap(room.marker ?? ROLE_MARKERS[room.role])}{room.marker ? "" : <span className="muted"> (default)</span>}</span>
         </Row>
       </div>
     </Section>
@@ -815,8 +896,9 @@ function EnemyCard({ at, index, over, constants, get, set, setField, remove, bat
 
 // ---- NPCs ------------------------------------------------------------------------------------------------------------
 
-function NpcsSection({ room, constants, get, set, setField, selected, select, add, openPicker, npcOrder, battleOptions }: EditProps & {
+function NpcsSection({ room, constants, get, set, setField, selected, select, add, openPicker, npcOrder, battleOptions, npcMarkers }: EditProps & {
   selected: number | null; select(i: number | null): void; add(type: NpcType): void; openPicker(): void; npcOrder: string[]; battleOptions: Option[];
+  npcMarkers: string[];
 }) {
   const spawnOptions: Option[] = useMemo(() => [{ value: RUN_COMPLETED, label: "Finished a run", detail: "the final room beaten once" }, ...battleOptions], [battleOptions]);
   const npc = selected !== null ? room.npcs[selected] : undefined;
@@ -909,6 +991,18 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
               {npc.sprite && (npc.type === "battle" || npc.type === "item") && (
                 <button onClick={() => f("sprite", undefined)} title={npc.type === "item" ? `Back to the item ball (${ITEM_BALL_SPRITE})` : "Back to its enemy's walking sprite"}>Default</button>
               )}
+            </Row>
+            <Row label="Marker" hint={npc.marker ? `Floats over its head: ${npcMarkerArt(npc.marker)}` : "An icon over its head, from npc_markers/ (16 by 16)"}>
+              <span className="en-markers">
+                <button className={!npc.marker ? "active" : ""} onClick={() => f("marker", undefined)} title="No marker">None</button>
+                {npcMarkers.map((m) => (
+                  <button key={m} className={npc.marker === m ? "active" : ""} title={m} onClick={() => f("marker", m)}>
+                    <MarkerIcon path={npcMarkerArt(m)} size={20} />
+                  </button>
+                ))}
+                {npc.marker && !npcMarkers.includes(npc.marker) && <button className="active" title="No art for it">{npc.marker} (missing)</button>}
+              </span>
+              {npc.marker && <span className="small">{npc.marker}</span>}
             </Row>
             <Row label="Chance" hint="Its chance to spawn each time the room comes up">
               <NumberBox value={npc.chance ?? DEFAULT_CHANCE} min={1} max={100} onChange={(n) => f("chance", n === 100 ? undefined : n)} />

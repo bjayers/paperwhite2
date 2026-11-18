@@ -199,10 +199,10 @@ BOOL Scrcmd_EntreeForest_MapChangeEntreeForest(VM *vm, FieldScriptEnv *env) {
     VecFx32 playerPos;
 
 #ifdef PAPERWHITE2
-    // Paper White 2: in a run an exit leads to the next room, or to the hub after the last
-    // (paperwhite2/entralink_run.h); the exit's script has checked that the room is cleared
+    // Paper White 2: in a run an exit leads to the room behind its door, or to the hub after the last
+    // (paperwhite2/entralink_run.h); the exit's script has checked that the room is done
     if (EntralinkRun_IsActive(gameData)) {
-        ScriptWork_CallEvent(work, EntralinkRun_CreateExitEvent(gsys));
+        ScriptWork_CallEvent(work, EntralinkRun_CreateExitEvent(gsys, dir));
         return TRUE;
     }
 #endif

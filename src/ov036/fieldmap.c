@@ -94,6 +94,7 @@
 #include "paperwhite2/ambients.h"
 #include "paperwhite2/battle_weather.h"
 #include "paperwhite2/camera_areas.h"
+#include "paperwhite2/entralink_markers.h"
 #include "paperwhite2/field.h"
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/sprites.h"
@@ -564,6 +565,8 @@ u32 FieldRoutine_Run(GameSystem *gsys, Field *field) {
         PaperWhite2_AmbientsUpdate(field);
         // Paper White 2: the wanderers, wild Pokémon seen in grass (paperwhite2_wanderers.c)
         PaperWhite2_WanderersUpdate(field);
+        // Paper White 2: the Entralink run's markers at the doors and over NPCs (paperwhite2_entralink_markers.c)
+        PaperWhite2_EntralinkMarkersUpdate(field);
 #else
         FldActSys_Update(field->actorSystem);
 #endif
@@ -1067,6 +1070,10 @@ void FieldG3D_RenderPhase2(Field *field) {
 }
 
 void FieldG3D_Free(Field *field) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the Entralink run's markers go with the field's other billboards (paperwhite2_entralink_markers.c)
+    PaperWhite2_EntralinkMarkersFree();
+#endif
     GFL_G3DLightFree(field->g3dLights);
     GFL_G3DCameraFree(field->g3dCamera);
     BillboardActorSys_Free(field->actorBillboardActor);
@@ -1483,6 +1490,8 @@ void FieldRenderPhase2_Fieldmap(Field *field) {
 #ifdef PAPERWHITE2
     // Paper White 2: the shadows, then the Following Pokémon's effects (field-billboard-draw)
     PaperWhite2_FollowingEffectsDraw(field->effectBillboardActor, field->g3dCamera, field->g3dLights);
+    // Paper White 2: the Entralink run's markers, among the effects (paperwhite2_entralink_markers.c)
+    PaperWhite2_EntralinkMarkersDraw(field->g3dCamera, field->g3dLights);
 #else
     BillboardActorSys_Draw(field->effectBillboardActor, field->g3dCamera, field->g3dLights);
 #endif

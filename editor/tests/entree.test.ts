@@ -15,6 +15,7 @@ import { removable } from "../server/weather.ts";
 import {
   EXIT_SCRIPTS, ROOMS_DIR, ROOM_SCHEMA, assignProgressIds, checkRoom, checkRooms, freeId, idFromName, newNpc, newRoomData, npcSprite, readRoom,
   readRun, roundSummary, runProblems, type Exit, type MapInfo, type Room,
+  DEFAULT_MARKER_SPOTS, DOORS, MARKER_TYPES, ROLE_MARKERS,
 } from "../src/modules/entree/model.ts";
 
 const ROOT = resolve(import.meta.dirname, "../..");
@@ -177,4 +178,35 @@ test("a message's window style is read, written in the schema's order and valid"
   const real = (d: JsonValue) => errors(d).filter((e) => !e.endsWith("progress_id is missing"));
   assert.deepEqual(real(data), []);
   assert.equal(real(setIn(data, ["npcs", 0, "dialogue", "before_style"], "whisper")).length, 1);
+});
+
+test("markers: a room's and an NPC's are read and valid, the run's spots and fogs read, NPCs on a spot warned", () => {
+  let data = newRoomData("Markers");
+  data = setIn(data, ["marker"], "gift");
+  data = setIn(data, ["npcs", 0, "marker"], "rest");
+  const room = readRoom(data);
+  assert.equal(room.marker, "gift");
+  assert.equal(room.npcs[0].marker, "rest");
+  const real = (d: JsonValue) => errors(d).filter((e) => !e.endsWith("progress_id is missing"));
+  assert.deepEqual(real(data), []);
+  // catch is the game's, never set by hand
+  assert.equal(real(setIn(data, ["marker"], "catch")).length, 1);
+  assert.ok(!(MARKER_TYPES as readonly string[]).includes("catch"));
+  assert.deepEqual(ROLE_MARKERS, { room: "enemy", boss: "boss", final: "final" });
+  // Every marker type and every NPC marker named has its art
+  for (const m of MARKER_TYPES) readFileSync(join(ROOT, "res/paperwhite2/entralink/markers", `${m}.png`));
+  readFileSync(join(ROOT, "res/paperwhite2/entralink/markers/catch.png"));
+  // The real run: three fogs, spots, the chance
+  const run = readRun(parseJson(readFileSync(join(ROOT, "res/paperwhite2/entralink/run.json"), "utf8")));
+  assert.deepEqual(run.rounds.map((r) => r.fieldWeather), ["WEATHER_CUSTOM_TINT_9", "WEATHER_CUSTOM_TINT_8", "WEATHER_CUSTOM_TINT_7"]);
+  assert.deepEqual(run.markerSpots, DEFAULT_MARKER_SPOTS);
+  assert.equal(run.unknownChance, 5);
+  assert.deepEqual(readRun(fromPlain({ rounds: [] })).markerSpots, DEFAULT_MARKER_SPOTS);
+  // An NPC on a marker's spot, and one whose marker has no art
+  const npc = { ...room.npcs[0], x: DEFAULT_MARKER_SPOTS.north[0] + 1, z: DEFAULT_MARKER_SPOTS.north[1] + 1, marker: "nothing" };
+  const found = checkRoom({ ...room, npcs: [npc] }, constants, [], undefined, { spots: DEFAULT_MARKER_SPOTS, npcMarkers: new Set(["rest"]) })
+    .map((p) => `${p.severity}: ${p.message}`);
+  assert.ok(found.some((m) => m.startsWith("warning:") && m.includes("north door's marker")), found.join("; "));
+  assert.ok(found.some((m) => m.startsWith("error:") && m.includes("npc_markers/nothing.png")), found.join("; "));
+  assert.equal(DOORS.length, 3);
 });

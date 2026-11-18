@@ -4,6 +4,7 @@
 #include "constants/arc.h"
 #include "constants/battle.h"
 #include "constants/directions.h"
+#include "constants/items.h"
 #include "constants/moves.h"
 #include "constants/pokemon.h"
 #include "constants/script_text_banks.h"
@@ -48,8 +49,6 @@
 #define ENTREE_FOREST_ENTRANCE_AREA 4
 // The party slot of a raid's enemy, which a triple battle puts in the center
 #define RAID_CENTER_SLOT 1
-// No room is drawn
-#define ROOM_NONE 0xff
 // More uses than any room has in a run
 #define USES_NONE 0xff
 // The rooms a room of a round is drawn from: those kept to the round or to none, only those kept to it, or only those
@@ -128,57 +127,11 @@ static BOOL EntralinkRun_IsInPool(u32 index, u32 role, u32 round, u32 pool) {
     return kept || room->rounds == 0;
 }
 
-// Whether a room can be drawn next: in the pool, not the room just before, and among the least used so far
-static BOOL EntralinkRun_IsDrawable(u32 index, u32 role, u32 round, u32 pool, u32 previous, const u8 *uses,
+// Whether a room can be drawn: in the pool, not excluded (the room just played, the other doors' rooms), and among the
+// least used so far
+static BOOL EntralinkRun_IsDrawable(u32 index, u32 role, u32 round, u32 pool, const u8 *excluded, const u8 *uses,
                                     u32 fewest) {
-    return index != previous && uses[index] == fewest && EntralinkRun_IsInPool(index, role, round, pool);
-}
-
-// A room of a role for a round from a pool, at random among those other than the room just before that have come up
-// the fewest times in the run so far: so no room comes up twice while one that fits hasn't come up, and none twice in
-// a row unless it is the only one that fits. ROOM_NONE if none fits
-static u32 EntralinkRun_DrawRoom(EntralinkRunState *state, u32 role, u32 round, u32 pool) {
-    u8 uses[ENTRALINK_RUN_ROOM_COUNT];
-    u32 previous = ROOM_NONE;
-    u32 fewest = USES_NONE;
-    u32 count = 0;
-    u32 pick;
-    u32 i;
-
-    MI_CpuFill8(uses, 0, sizeof(uses));
-    for (i = 0; i < state->roomCount; i++) {
-        uses[state->order[i]]++;
-    }
-    if (state->roomCount != 0) {
-        previous = state->order[state->roomCount - 1];
-    }
-    for (i = 0; i < ENTRALINK_RUN_ROOM_COUNT; i++) {
-        if (i != previous && uses[i] < fewest && EntralinkRun_IsInPool(i, role, round, pool)) {
-            fewest = uses[i];
-        }
-    }
-    if (fewest == USES_NONE) {
-        // Only the room just before fits, or none
-        if (previous != ROOM_NONE && EntralinkRun_IsInPool(previous, role, round, pool)) {
-            return previous;
-        }
-        return ROOM_NONE;
-    }
-    for (i = 0; i < ENTRALINK_RUN_ROOM_COUNT; i++) {
-        if (EntralinkRun_IsDrawable(i, role, round, pool, previous, uses, fewest)) {
-            count++;
-        }
-    }
-    pick = GFL_RandomLC(count);
-    for (i = 0; i < ENTRALINK_RUN_ROOM_COUNT; i++) {
-        if (EntralinkRun_IsDrawable(i, role, round, pool, previous, uses, fewest)) {
-            if (pick == 0) {
-                break;
-            }
-            pick--;
-        }
-    }
-    return i;
+    return !excluded[index] && uses[index] == fewest && EntralinkRun_IsInPool(index, role, round, pool);
 }
 
 // The pool a round's room of a role is drawn from: a round's rooms from those kept to it and the generic ones, its boss
@@ -197,29 +150,156 @@ static u32 EntralinkRun_GetPool(u32 role, u32 round) {
     return POOL_GENERIC;
 }
 
-static void EntralinkRun_AddRoom(EntralinkRunState *state, u32 role, u32 round) {
-    u32 room;
+// A room of a role for a round (0: any), at random among those of its pool not excluded that have come up the fewest
+// times in the run so far: so no room comes up twice while one that fits hasn't come up. ENTRALINK_RUN_ROOM_NONE if
+// none fits
+static u32 EntralinkRun_DrawRoom(EntralinkRunState *state, u32 role, u32 round, const u8 *excluded) {
+    u8 uses[ENTRALINK_RUN_ROOM_COUNT];
+    u32 pool = EntralinkRun_GetPool(role, round);
+    u32 fewest = USES_NONE;
+    u32 count = 0;
+    u32 pick;
+    u32 i;
 
-    if (state->roomCount >= ENTRALINK_RUN_ROOMS_MAX) {
+    MI_CpuFill8(uses, 0, sizeof(uses));
+    for (i = 0; i < state->room; i++) {
+        uses[state->order[i]]++;
+    }
+    for (i = 0; i < ENTRALINK_RUN_ROOM_COUNT; i++) {
+        if (!excluded[i] && uses[i] < fewest && EntralinkRun_IsInPool(i, role, round, pool)) {
+            fewest = uses[i];
+        }
+    }
+    if (fewest == USES_NONE) {
+        return ENTRALINK_RUN_ROOM_NONE;
+    }
+    for (i = 0; i < ENTRALINK_RUN_ROOM_COUNT; i++) {
+        if (EntralinkRun_IsDrawable(i, role, round, pool, excluded, uses, fewest)) {
+            count++;
+        }
+    }
+    pick = GFL_RandomLC(count);
+    for (i = 0; i < ENTRALINK_RUN_ROOM_COUNT; i++) {
+        if (EntralinkRun_IsDrawable(i, role, round, pool, excluded, uses, fewest)) {
+            if (pick == 0) {
+                break;
+            }
+            pick--;
+        }
+    }
+    return i;
+}
+
+// The role of a place of the run (from 1): one of a round's rooms, its boss, or the final room after the last round;
+// and its round, from 1 (the final room's is the last round's)
+static u32 EntralinkRun_GetPlace(u32 place, u32 *round) {
+    u32 count = 0;
+    u32 i;
+
+    for (i = 0; i < ENTRALINK_RUN_ROUND_COUNT; i++) {
+        *round = i + 1;
+        count += sRounds[i].rooms;
+        if (place <= count) {
+            return ENTRALINK_ROLE_ROOM;
+        }
+        if (sRounds[i].boss) {
+            count++;
+            if (place == count) {
+                return ENTRALINK_ROLE_BOSS;
+            }
+        }
+    }
+    *round = ENTRALINK_RUN_ROUND_COUNT;
+    return ENTRALINK_ROLE_FINAL;
+}
+
+// How many rooms a run has: each round's rooms and boss, and the final room
+static u32 EntralinkRun_CountPlaces(void) {
+    u32 count = 1;
+    u32 i;
+
+    for (i = 0; i < ENTRALINK_RUN_ROUND_COUNT; i++) {
+        count += sRounds[i].rooms + sRounds[i].boss;
+    }
+    return count < ENTRALINK_RUN_ROOMS_MAX ? count : ENTRALINK_RUN_ROOMS_MAX;
+}
+
+// A room for a place: the final room is drawn from every final room, whatever its round
+static u32 EntralinkRun_GetDrawRound(u32 role, u32 round) {
+    return role == ENTRALINK_ROLE_FINAL ? 0 : round;
+}
+
+// The room behind a door: never the room just played, and another than the other doors' while enough rooms fit;
+// the room just played only if it is the only one that fits
+static u32 EntralinkRun_DrawDoorRoom(EntralinkRunState *state, u32 role, u32 round) {
+    u8 excluded[ENTRALINK_RUN_ROOM_COUNT];
+    u32 previous = state->order[state->room - 1];
+    u32 room;
+    u32 door;
+
+    MI_CpuFill8(excluded, 0, sizeof(excluded));
+    excluded[previous] = TRUE;
+    for (door = 0; door < ENTRALINK_RUN_DOORS; door++) {
+        if (state->doorRooms[door] != ENTRALINK_RUN_ROOM_NONE) {
+            excluded[state->doorRooms[door]] = TRUE;
+        }
+    }
+    room = EntralinkRun_DrawRoom(state, role, round, excluded);
+    if (room != ENTRALINK_RUN_ROOM_NONE) {
+        return room;
+    }
+    // Fewer rooms fit than there are doors: one behind another door again
+    MI_CpuFill8(excluded, 0, sizeof(excluded));
+    excluded[previous] = TRUE;
+    room = EntralinkRun_DrawRoom(state, role, round, excluded);
+    if (room != ENTRALINK_RUN_ROOM_NONE) {
+        return room;
+    }
+    MI_CpuFill8(excluded, 0, sizeof(excluded));
+    return EntralinkRun_DrawRoom(state, role, round, excluded);
+}
+
+// The rooms behind the room's forward doors, for the run's next place: a round's room behind each, with a chance of
+// showing the unknown marker; before a boss or the final room, it alone, behind the north door (the pre-boss map's one
+// way on). Nothing after the final room
+static void EntralinkRun_DrawDoors(EntralinkRunState *state) {
+    u32 round;
+    u32 role;
+    u32 door;
+
+    for (door = 0; door < ENTRALINK_RUN_DOORS; door++) {
+        state->doorRooms[door] = ENTRALINK_RUN_ROOM_NONE;
+    }
+    state->doorUnknown = 0;
+    if (EntralinkRun_IsFinalRoom(state)) {
         return;
     }
-    room = EntralinkRun_DrawRoom(state, role, round, EntralinkRun_GetPool(role, round));
-    if (room != ROOM_NONE) {
-        state->order[state->roomCount++] = room;
+    role = EntralinkRun_GetPlace(state->room + 1, &round);
+    if (role != ENTRALINK_ROLE_ROOM) {
+        state->doorRooms[ENTRALINK_DOOR_NORTH] =
+            EntralinkRun_DrawDoorRoom(state, role, EntralinkRun_GetDrawRound(role, round));
+        return;
+    }
+    for (door = 0; door < ENTRALINK_RUN_DOORS; door++) {
+        state->doorRooms[door] = EntralinkRun_DrawDoorRoom(state, role, round);
+        if (state->doorRooms[door] != ENTRALINK_RUN_ROOM_NONE && GFL_RandomLC(100) < ENTRALINK_RUN_UNKNOWN_CHANCE) {
+            state->doorUnknown |= 1 << door;
+        }
     }
 }
 
-// As the player enters the room: which of its NPCs come up (their requirements and chance, rolled once), whether
-// its exits are open from the start (no battle NPC came up), and its field weather
+// As the player enters the room: which of its NPCs come up (their requirements and chance, rolled once), whether it is
+// done from the start (nothing came up), its round's field weather, and the rooms behind its doors
 static void EntralinkRun_EnterRoom(GameData *gameData) {
     EntralinkRunState *state = EntralinkRun_GetState();
     const EntralinkRoom *room = EntralinkRun_GetRoom();
     const EntralinkNpc *npc;
-    BOOL battles = FALSE;
+    u32 round;
     u32 i;
 
     state->npcsSpawned = 0;
     state->npcsGone = 0;
+    state->npcsUsed = 0;
     for (i = 0; i < room->npcCount; i++) {
         npc = &sNpcs[room->firstNpc + i];
         if (!EntralinkRun_MeetsRequirements(gameData, npc->firstRequirement, npc->requirementCount)) {
@@ -229,31 +309,30 @@ static void EntralinkRun_EnterRoom(GameData *gameData) {
             continue;
         }
         state->npcsSpawned |= 1 << i;
-        if (npc->type == ENTRALINK_NPC_BATTLE) {
-            battles = TRUE;
-        }
     }
-    // A room where no battle came up is free
-    state->cleared = !battles;
-    state->fieldWeather = room->fieldWeather;
+    state->cleared = state->npcsSpawned == 0;
+    EntralinkRun_GetPlace(state->room, &round);
+    state->fieldWeather = sRounds[round - 1].fieldWeather;
+    EntralinkRun_DrawDoors(state);
 }
 
 void EntralinkRun_Start(GameData *gameData) {
     EntralinkRunState *state = EntralinkRun_GetState();
+    u8 excluded[ENTRALINK_RUN_ROOM_COUNT];
     u32 round;
-    u32 i;
+    u32 role;
+    u32 room;
 
     MI_CpuFill8(state, 0, sizeof(EntralinkRunState));
-    // Each round's rooms and its boss, then the final room
-    for (round = 0; round < ENTRALINK_RUN_ROUND_COUNT; round++) {
-        for (i = 0; i < sRounds[round].rooms; i++) {
-            EntralinkRun_AddRoom(state, ENTRALINK_ROLE_ROOM, round + 1);
-        }
-        if (sRounds[round].boss) {
-            EntralinkRun_AddRoom(state, ENTRALINK_ROLE_BOSS, round + 1);
-        }
+    MI_CpuFill8(excluded, 0, sizeof(excluded));
+    // The first room; each room draws the rooms behind its doors as the player enters it
+    state->roomCount = EntralinkRun_CountPlaces();
+    role = EntralinkRun_GetPlace(1, &round);
+    room = EntralinkRun_DrawRoom(state, role, EntralinkRun_GetDrawRound(role, round), excluded);
+    if (room == ENTRALINK_RUN_ROOM_NONE) {
+        return;
     }
-    EntralinkRun_AddRoom(state, ENTRALINK_ROLE_FINAL, 0);
+    state->order[0] = room;
     state->room = 1;
     EntralinkRun_EnterRoom(gameData);
     // The team, the party's copies at level 100 (paperwhite2/entralink_run_party.h), and the run's own bag, empty
@@ -285,9 +364,15 @@ void EntralinkRun_OnFieldLoad(GameData *gameData, u16 zoneId) {
 
 u16 EntralinkRun_GetRoomZone(GameData *gameData) {
     EntralinkRunState *state = EntralinkRun_GetState();
+    u32 round;
 
     if (EntralinkRun_IsFinalRoom(state)) {
         return ENTRALINK_RUN_FINAL_ZONE;
+    }
+    // The room before a boss or the final room is in the pre-boss map, if run.json has one
+    if (EntralinkRun_GetPlace(state->room + 1, &round) != ENTRALINK_ROLE_ROOM &&
+        ENTRALINK_RUN_PRE_BOSS_ZONE != ENTRALINK_PRE_BOSS_ZONE_NONE) {
+        return ENTRALINK_RUN_PRE_BOSS_ZONE;
     }
     // The room maps in turn, so that two rooms in a row are two maps when run.json lists two
     return sRoomZones[(state->room - 1) % ENTRALINK_RUN_ROOM_ZONE_COUNT];
@@ -298,13 +383,38 @@ static GameEvent *EntralinkRun_CreateHubWarp(GameSystem *gsys) {
     return EventMapChangeWarp_CreateGrid(gsys, GSYS_GetField(gsys), ZONE_ENTRALINK, &sHubEntrancePos, DIR_UP, FALSE);
 }
 
-GameEvent *EntralinkRun_CreateExitEvent(GameSystem *gsys) {
+// The forward door of an exit, or ENTRALINK_DOOR_NONE for the back door
+static u32 EntralinkRun_GetExitDoor(u32 exit) {
+    switch (exit) {
+    case ENTRALINK_RUN_NORTH_EXIT:
+        return ENTRALINK_DOOR_NORTH;
+    case ENTRALINK_RUN_EAST_EXIT:
+        return ENTRALINK_DOOR_EAST;
+    case ENTRALINK_RUN_WEST_EXIT:
+        return ENTRALINK_DOOR_WEST;
+    }
+    return ENTRALINK_DOOR_NONE;
+}
+
+// The room behind an exit, or ENTRALINK_RUN_ROOM_NONE
+static u32 EntralinkRun_GetExitRoom(EntralinkRunState *state, u32 exit) {
+    u32 door = EntralinkRun_GetExitDoor(exit);
+
+    if (door == ENTRALINK_DOOR_NONE) {
+        return ENTRALINK_RUN_ROOM_NONE;
+    }
+    return state->doorRooms[door];
+}
+
+GameEvent *EntralinkRun_CreateExitEvent(GameSystem *gsys, u32 exit) {
     GameData *gameData = GSYS_GetGameData(gsys);
     EntralinkRunState *state = EntralinkRun_GetState();
+    u32 room = EntralinkRun_GetExitRoom(state, exit);
 
-    if (EntralinkRun_IsFinalRoom(state)) {
+    if (EntralinkRun_IsFinalRoom(state) || room == ENTRALINK_RUN_ROOM_NONE) {
         return EntralinkRun_CreateHubWarp(gsys);
     }
+    state->order[state->room] = room;
     state->room++;
     EntralinkRun_EnterRoom(gameData);
     return EventEntreeForestWarp_Create(gsys, TRUE, &sRoomArrivalPos, DIR_UP, ENTREE_FOREST_ENTRANCE_AREA);
@@ -373,7 +483,7 @@ static void EntralinkRun_RemoveNpc(GameSystem *gsys, u32 index) {
     }
 }
 
-// After a won battle, its NPCs and the other battles' go: the room has been fought
+// After a won battle, its NPCs and the other battles' go: the room has been fought, and is done
 static void EntralinkRun_ClearRoom(GameSystem *gsys, const EntralinkRoom *room) {
     u32 i;
 
@@ -382,6 +492,30 @@ static void EntralinkRun_ClearRoom(GameSystem *gsys, const EntralinkRoom *room) 
             EntralinkRun_RemoveNpc(gsys, i);
         }
     }
+    EntralinkRun_GetState()->cleared = TRUE;
+}
+
+// A room with no battle is done once every NPC that came up in it has been used: talked to, or its item taken
+static void EntralinkRun_CheckRoomDone(void) {
+    EntralinkRunState *state = EntralinkRun_GetState();
+    const EntralinkRoom *room = EntralinkRun_GetRoom();
+    u32 i;
+
+    if (room == NULL) {
+        return;
+    }
+    for (i = 0; i < room->npcCount; i++) {
+        if (!(state->npcsSpawned & (1 << i))) {
+            continue;
+        }
+        if (sNpcs[room->firstNpc + i].type == ENTRALINK_NPC_BATTLE) {
+            return;
+        }
+        if (!((state->npcsGone | state->npcsUsed) & (1 << i))) {
+            return;
+        }
+    }
+    state->cleared = TRUE;
 }
 
 // An enemy of the data as a Pokémon, as the Entree Forest makes its own (EntreeForest_CreateSymbolMon)
@@ -419,6 +553,66 @@ static BOOL EntralinkRun_CanCatch(GameData *gameData, const EntralinkEnemy *enem
         return FALSE;
     }
     return EntralinkRun_MeetsRequirements(gameData, enemy->firstRequirement, enemy->requirementCount);
+}
+
+// Whether the Nightmare Ball catches one of a room's enemies now
+static BOOL EntralinkRun_RoomHasCatch(GameData *gameData, const EntralinkRoom *room) {
+    const EntralinkBattle *battle;
+    u32 i;
+    u32 j;
+
+    for (i = 0; i < room->battleCount; i++) {
+        battle = &sBattles[room->firstBattle + i];
+        for (j = 0; j < battle->enemyCount; j++) {
+            if (EntralinkRun_CanCatch(gameData, &sEnemies[battle->firstEnemy + j])) {
+                return TRUE;
+            }
+        }
+    }
+    return FALSE;
+}
+
+u32 EntralinkRun_GetDoorMarker(GameData *gameData, u32 door) {
+    EntralinkRunState *state = EntralinkRun_GetState();
+    const EntralinkRoom *room;
+
+    if (state->room == 0 || door >= ENTRALINK_RUN_DOORS || state->doorRooms[door] == ENTRALINK_RUN_ROOM_NONE) {
+        return ENTRALINK_MARKER_NONE;
+    }
+    if (state->doorUnknown & (1 << door)) {
+        return ENTRALINK_MARKER_UNKNOWN;
+    }
+    room = &sRooms[state->doorRooms[door]];
+    switch (room->marker) {
+    case ENTRALINK_MARKER_ENEMY:
+    case ENTRALINK_MARKER_CHALLENGE:
+    case ENTRALINK_MARKER_BOSS:
+        // A Nightmare in it to catch, and the ball to catch it with
+        if (EntralinkRun_RoomHasCatch(gameData, room) &&
+            BagSave_CheckAmount(GameData_GetBag(gameData), ITEM_NIGHTMARE_BALL, 1, HEAPID_GAMEEVENT)) {
+            return ENTRALINK_MARKER_CATCH;
+        }
+        break;
+    }
+    return room->marker;
+}
+
+void EntralinkRun_GetMarkerSpot(u32 door, u32 *x, u32 *z) {
+    static const u8 SPOTS[ENTRALINK_RUN_DOORS][2] = ENTRALINK_RUN_MARKER_SPOTS;
+
+    *x = SPOTS[door][0];
+    *z = SPOTS[door][1];
+}
+
+u32 EntralinkRun_GetNpcMarker(u32 index) {
+    EntralinkRunState *state = EntralinkRun_GetState();
+    const EntralinkRoom *room = EntralinkRun_GetRoom();
+
+    if (room == NULL || index >= room->npcCount || !(state->npcsSpawned & (1 << index)) ||
+        (state->npcsGone & (1 << index))) {
+        return ENTRALINK_NPC_MARKER_NONE;
+    }
+    return sNpcs[room->firstNpc + index].marker;
 }
 
 // Adds an enemy to the battle's party, and to the battle's catches if the Nightmare Ball catches it
@@ -510,7 +704,7 @@ static u16 EntralinkRun_FinishBattle(GameSystem *gsys, const EntralinkBattle *ba
         state->catchIds[i] = ENTRALINK_CATCH_NONE;
     }
     state->caught = FALSE;
-    state->cleared = TRUE;
+    // The room is done once the script has shown the after message (ENTRALINK_RUN_ACTION_CLEAR_ROOM)
     if (EntralinkRun_IsFinalRoom(state)) {
         EntralinkProgress_AddRunCompleted(progress);
         return ENTRALINK_RUN_RESULT_RUN_WON;
@@ -528,7 +722,12 @@ static u16 EntralinkRun_CheckExit(u32 exit) {
     if (exit == ENTRALINK_RUN_BACK_EXIT) {
         return ENTRALINK_RUN_EXIT_BACK;
     }
-    return state->cleared ? ENTRALINK_RUN_EXIT_OPEN : ENTRALINK_RUN_EXIT_BLOCKED;
+    // A door opens once the room is done, if a room is behind it
+    if (!state->cleared ||
+        (!EntralinkRun_IsFinalRoom(state) && EntralinkRun_GetExitRoom(state, exit) == ENTRALINK_RUN_ROOM_NONE)) {
+        return ENTRALINK_RUN_EXIT_BLOCKED;
+    }
+    return ENTRALINK_RUN_EXIT_OPEN;
 }
 
 // The talked-to NPC's message, if it has one
@@ -575,6 +774,7 @@ static BOOL EntralinkRun_GiveItem(GameSystem *gsys, const EntralinkNpc *npc, Hea
         return FALSE;
     }
     EntralinkRun_RemoveNpc(gsys, EntralinkRun_GetState()->talkedNpc);
+    EntralinkRun_CheckRoomDone();
     return TRUE;
 }
 
@@ -645,6 +845,12 @@ BOOL Scrcmd_PaperWhite2_EntralinkRun(VM *vm, FieldScriptEnv *env) {
         return FALSE;
     case ENTRALINK_RUN_ACTION_GIVE_ITEM:
         *result = EntralinkRun_GiveItem(gsys, npc, FieldScriptEnv_GetHeapID(env));
+        return FALSE;
+    case ENTRALINK_RUN_ACTION_NPC_USED:
+        if (npc != NULL) {
+            state->npcsUsed |= 1 << state->talkedNpc;
+            EntralinkRun_CheckRoomDone();
+        }
         return FALSE;
     case ENTRALINK_RUN_ACTION_WARP_HUB:
         ScriptWork_CallEvent(FieldScriptEnv_GetScriptWork(env), EntralinkRun_CreateHubWarp(gsys));

@@ -26,7 +26,8 @@ The sprites' texture sets are written from the PNGs, as the game's are, byte for
 installer wrote them for a sprite whose "texture_set_format" is "pokeweb". When some codes have a "follower", the
 table's archive gets the follower registry and positioning table as members 1 and 2
 (tools/paperwhite2/following_data.py), and the follower's interactions, contextual dialogues and gifts, emotes,
-effects and balls from res/paperwhite2/following/ as members 3 to 23 (tools/paperwhite2/following_assets.py).
+effects and balls from res/paperwhite2/following/ as members 3 to 23 (tools/paperwhite2/following_assets.py), and
+the Entralink run's markers from res/paperwhite2/entralink/ from member 24 (tools/paperwhite2/entralink_run.py).
 """
 import struct
 import sys
@@ -39,7 +40,7 @@ from tools.data.narc import read_narc, write_narc  # noqa: E402
 from tools.data.nitro_2d import (color5, encode_characters, palette_indices, read_indexed_png,  # noqa: E402
                                  read_palette, write_indexed_png, write_palette)
 from tools.data.nitro_btx import texture_set  # noqa: E402
-from tools.paperwhite2 import following_assets  # noqa: E402
+from tools.paperwhite2 import entralink_run, following_assets  # noqa: E402
 from tools.paperwhite2.following_data import members  # noqa: E402
 
 TABLE = "a/0/4/7"
@@ -262,6 +263,12 @@ def pack(root: Path, table_output: Path, graphics_output: Path):
         except ValueError as error:
             raise DataError(f"{label(root)}: {error}") from error
         table += following_assets.members()
+        # Paper White 2: the Entralink run's ground and NPC markers (tools/paperwhite2/entralink_run.py), whose
+        # members' numbers its header gives the game
+        if len(table) != entralink_run.MARKER_FIRST_MEMBER:
+            raise DataError(f"{label(root)}: the Entralink markers would start at member {len(table)}, not "
+                            f"{entralink_run.MARKER_FIRST_MEMBER} (entralink_run.MARKER_FIRST_MEMBER)")
+        table += entralink_run.marker_members()
     table_output.parent.mkdir(parents=True, exist_ok=True)
     table_output.write_bytes(write_narc(table))
     graphics_output.parent.mkdir(parents=True, exist_ok=True)
