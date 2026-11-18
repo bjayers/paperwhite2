@@ -10,9 +10,10 @@
             "enemies": [
                 {
                     "species": "SPECIES_DIALGA",
+                    "form": 1,
                     "level": 70,
-                    "item": "ITEM_ADAMANT_ORB",
-                    "moves": [ "MOVE_ROAR_OF_TIME", "MOVE_DRAGON_PULSE", "MOVE_FLASH_CANNON", "MOVE_EARTHQUAKE" ]
+                    "moves": [ "MOVE_ROAR_OF_TIME", "MOVE_DRAGON_PULSE", "MOVE_FLASH_CANNON", "MOVE_EARTHQUAKE" ],
+                    "item": "ITEM_ADAMANT_ORB"
                 }
             ]
         }
@@ -21,6 +22,7 @@
         {
             "type": "battle",
             "battle": "dialga",
+            "sprite": "OBJ_CODE_POKEMON_DIALGA_FORM_1",
             "x": 15,
             "z": 14,
             "facing": "DIR_DOWN"
