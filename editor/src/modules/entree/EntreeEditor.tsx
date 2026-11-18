@@ -202,8 +202,9 @@ export function EntreeEditor({ constants }: ToolProps) {
   const path = current?.path ?? null;
   const room = current?.room ?? null;
 
-  // Every clearing, for the checks (an NPC is checked against all of them) and the reference behind the grid
-  const zones = useMemo(() => [...constants].filter(([k]) => k.startsWith(CLEARINGS_PREFIX)).sort((a, b) => a[1] - b[1]).map(([k]) => k), [constants]);
+  // Every clearing, for the checks (an NPC is checked against all of them) and the reference behind the grid,
+  // by name (Entree Forest 10 after 9)
+  const zones = useMemo(() => [...constants].filter(([k]) => k.startsWith(CLEARINGS_PREFIX)).sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true })).map(([k]) => k), [constants]);
   useEffect(() => {
     let live = true;
     for (const zone of zones) {
