@@ -24,6 +24,20 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   with/without the ball, unknown, pre-boss, rain in battle only, the three fogs); `--hack` build without warnings,
   DSi intact, packer tests (14) and editor tests (234) pass.
 
+## 2026-11-17: Entree Forest 10, the pre-boss map (ROM session, on a branch)
+
+- **New clearing** `ZONE_ENTREE_FOREST_10` (276, was the unused `ZONE_NS_CASTLE_GATE_10`), from `entree_forest_5`'s
+  chunk and props, its header matching `entree_forest_5`'s; events are its north and south exits (the same exit
+  scripts) without the east one. `GetZoneIsEntreeForest` takes it (`#ifdef PAPERWHITE2`), so the C-Gear, actors and
+  the run treat it as the forest. Prototype doc, "The pre-boss map".
+- **New Map tool fix:** `new_map.py` now copies the whole look and flags of the template's zone (it left the leftover
+  gate's transition, place name display, cycling and easy level). map-editor.md.
+- **For the user:** close the east opening (trees and collision around 26, 15-17) in the Map Editor; put the zone in
+  `run.json` where the pre-boss room should be.
+- Tested in py-desmume with a scratch `run.json` (room 1 there): loads, blank lower screen, south asks to return,
+  north blocked then leads on, east does nothing. `--hack` build without new warnings, DSi intact, plain build's
+  modules match, editor tests (233) pass (the Entree checks' clearing count is 7 with an up exit at 16, 9).
+
 ## 2026-11-17: no money lost in a run; custom field tints (ROM session, on a branch)
 
 - **Money:** a run battle's loss takes no money and shows no "dropped"/"paid out" message (`CalcLossMoney` skips run

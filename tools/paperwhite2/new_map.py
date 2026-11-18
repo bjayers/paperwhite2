@@ -15,8 +15,9 @@ game's in generated/map_matrices.txt, res/field/matrices/<name>.json) of width b
 collision and, with --copy-props, its props; their data.json names the template, whose container the packer copies,
 and says the model is written whole, bound to the area's texture set. The zone's header takes the matrix, the area, map
 type and place name given, and how the template's zone looks and sounds (area, map type, BGM, weather, battle
-background, camera and its boundary, place name) where not given; its parent is itself unless given. Warps to and from the map, its
-events, scripts and text are the editors' to fill.
+background, camera and its boundary, place name and whether it pops up, the transition into it, the name icon, the
+easy mode's levels, and the flags: cycling, Escape Rope, flying from it, the Entralink warp) where not given; its parent
+is itself unless given. Warps to and from the map, its events, scripts and text are the editors' to fill.
 """
 import argparse
 import json
@@ -111,8 +112,11 @@ def template_zone(template):
     return None
 
 
-# What a new map takes from its template's zone where not given: how it looks and sounds
-COPIED = ("map_type", "area", "bgm", "weather", "battle_bg", "camera", "cam_bound", "projection", "place")
+# What a new map takes from its template's zone where not given: how it looks and sounds, and what the player may do
+# there. The leftover zones' own values are a gate's (a building's fade in, no place name, no cycling, easy level 5)
+COPIED = ("map_type", "npc_cache", "area", "bgm", "enc_slot", "weather", "battle_bg", "camera", "cam_bound",
+          "projection", "place", "place_display", "transition", "name_icon", "easy_level", "cycling", "escape_rope",
+          "fly_from", "cycle_surf_bgm", "entralink_warp")
 
 
 def area_texture_set(area):

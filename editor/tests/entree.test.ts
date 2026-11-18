@@ -117,7 +117,7 @@ test("the checks", () => {
   // On an exit, on the arrival tile, on a blocked tile, two on one tile
   const at = (x: number, z: number) => ({ ...base.npcs[0], x, z });
   assert.deepEqual(messages({ ...base, npcs: [at(16, 9), at(15, 23), at(3, 3), at(3, 3)] }, [[3, 3]]).filter((m) => !m.includes("may all")), [
-    "error: NPC 1 (battle) stands on the up exit (16, 9), in 6 clearing(s).",
+    "error: NPC 1 (battle) stands on the up exit (16, 9), in 7 clearing(s).",
     "error: NPC 2 (battle) stands where the player arrives (15, 23).",
     "warning: NPC 3 (battle) stands on a blocked tile (3, 3) in every clearing.",
     "error: NPC 4 (battle) stands on the same tile as NPC 3 (3, 3).",

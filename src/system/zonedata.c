@@ -593,6 +593,14 @@ BOOL GetZoneIsEntreeForest(u16 zoneId) {
     if (zoneId >= ZONE_ENTREE_FOREST && zoneId <= ZONE_ENTREE_FOREST_9) {
         return TRUE;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the forest's clearings made from unused zones, rooms of the Entralink run, are the forest too. The
+    // blank C-Gear, the actors' offsets and shadows, the beacons and the run's checks ask here (prototype doc, "The
+    // pre-boss map")
+    if (zoneId == ZONE_ENTREE_FOREST_10) {
+        return TRUE;
+    }
+#endif
     return FALSE;
 }
 

@@ -144,6 +144,14 @@ events files and must list the new one (its entry 615 is the null placeholder).
 
 **The plan:** start with unused zones, which need no code; add the zone fixes when they run out.
 
+**First use in game (2026-11-17):** `new_map.py create` made `ZONE_ENTREE_FOREST_10` from `ZONE_NS_CASTLE_GATE_10` and
+`entree_forest_5`'s chunk, and it loads and plays in game (entralink-roguelike-prototype.md, "The pre-boss map"). One
+fix: the tool copied only the look (area, map type, BGM, weather, battle background, camera, place), so the rest of
+the header kept the leftover gate's values: a building's fade-in transition, no place name shown, no cycling, easy
+level 5. It now copies every header field but the matrix, scripts, text, encounters, parent and fly point from the
+template's zone (`COPIED`: also `npc_cache`, `enc_slot`, `place_display`, `transition`, `name_icon`, `easy_level` and
+the cycling, Escape Rope, fly-from and Entralink-warp flags).
+
 ### What a new map needs
 
 In order, each with what packs it:
