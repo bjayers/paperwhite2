@@ -1,0 +1,37 @@
+{
+    "$schema": "follower_camera_fixes.schema.json",
+    "fixes": [
+        {
+            "setup": 3,
+            "zones": "the 18 Pokémon Centers, the Pokémon League's and Victory Road's",
+            "z_buffer": true,
+            "near": 64,
+            "scale_offset": true,
+            "note": "Variant 12c, tested on melonDS and a 3DS: near 64 keeps the back wall's window 22 to 47 steps behind the wall"
+        },
+        {
+            "setup": 7,
+            "zones": "Castelia City's Central Plaza (castelia_city_2)",
+            "z_buffer": false,
+            "near": null,
+            "scale_offset": true,
+            "note": "Z-buffered with a near plane of 5: the offset times 5 gives the ordinary depth; the planes stay"
+        },
+        {
+            "setup": 24,
+            "zones": "White Forest and Black City, and their gates",
+            "z_buffer": true,
+            "near": 32,
+            "scale_offset": true,
+            "note": "W-buffered, no fog: near 32 keeps every overlapping layer 3.2 steps apart or more at the view's farthest (628 units)"
+        },
+        {
+            "setup": 35,
+            "zones": "the Entree Forest",
+            "z_buffer": false,
+            "near": null,
+            "scale_offset": true,
+            "note": "Z-buffered with a near plane of 112, tested on melonDS and a 3DS (variant 11); the planes and the forest's fog stay"
+        }
+    ]
+}

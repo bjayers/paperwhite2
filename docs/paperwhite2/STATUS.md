@@ -2,6 +2,29 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-19: follower shadow, camera fixes across the game (ROM session, on a branch)
+
+- **Camera fixes are data now:** `res/paperwhite2/follower_camera_fixes.json` (a camera setup each: Z-buffer, near
+  plane, offset scaled by the near plane), packed by `tools/paperwhite2/following_camera_fixes.py` into a generated
+  header that `FollowingRender_AdjustCamera` and `FollowingRender_ClipOffset` read. The camera table stays vanilla;
+  deleting an entry reverts that setup alone.
+- **Built in:** the Pokémon Centers (setup 3, 12c: Z-buffered, near 64, offset scaled; the user's melonDS and 3DS tests
+  passed), the Entree Forest (35, as before), Castelia's Central Plaza (7, `castelia_city_2`: offset scaled by its near
+  plane of 5) and White Forest/Black City with their gates (24: W to Z, near 32, offset scaled; the layer maths gives
+  3.2 steps or more at the view's farthest, no fog).
+- **The audit:** `tools/paperwhite2/camera_audit.py table` (every setup's buffering, planes, distance, pitch, zones,
+  G sin p, the oval's cover) and `layers SETUP` (near-coplanar overlapping layers of the setup's maps and props, Z steps
+  per near plane). Table and decisions in `following-pokemon.md`, "The whole game".
+- **Debug rows:** `9 Center near 1` (the old 9 over the fix), `12c Center fix: now 0`, new `13 Camera fixes off`.
+- **Not changed, for the user:** Castelia's streets (setup 2: the far plane in view, windows 0.2 units off their
+  facades, weather fog tuned for W), Skyarrow Bridge (1: zone fog, the span sees the horizon), Victory Road's outside
+  (11: zone fog), the Tubeline Bridge, the Marine Tube and the Skyarrow gate (fog, low cameras), and five Z-buffered
+  near-1 setups under the line by about a pixel (a Castelia street, the Opelucid and Castelia Gyms, Celestial Tower,
+  PWT). A W-depth offset for the actors (untried) is noted as the way for the W outdoor ones.
+- Shots in the scratchpad's `shadow4/`. Build clean, `verify_dsi_rom.py` intact, editor tests 251 pass.
+- **For the user:** in melonDS and on the 3DS, walk White Forest (feet, and any shimmer on painted shadows or the
+  Pokémon Center's walls) and Castelia's Central Plaza; `13 Camera fixes off` compares live.
+
 ## 2026-11-19: follower shadow, the forest's fix built in, center variants 12a to 12c (ROM session, on a branch)
 
 - **Entree Forest, permanent:** the actors' clip Z offset is scaled by the near plane for camera setup 35 alone

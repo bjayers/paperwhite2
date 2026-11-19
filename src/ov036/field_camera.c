@@ -226,8 +226,8 @@ void FieldCamera_ReadDefaults(FieldCamera *camera, FieldCameraDefaults *defaults
     GFL_ArcToolReadRange(camera->defaultsArc, 0, camera->defaultsIndex * sizeof(FieldCameraDefaults),
                          sizeof(FieldCameraDefaults), defaults);
 #ifdef PAPERWHITE2
-    // Paper White 2: the debug menu's camera-side shadow variants change the forest's near plane or the centers'
-    // buffering (paperwhite2_following_render.c)
+    // Paper White 2: the follower shadow's camera fixes (a Z-buffer and a near plane for some setups), then the debug
+    // menu's camera-side variants (paperwhite2_following_render.c)
     FollowingRender_AdjustCamera(camera->defaultsIndex, defaults);
 #endif
 }

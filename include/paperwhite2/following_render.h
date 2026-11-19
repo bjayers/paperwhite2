@@ -40,26 +40,27 @@ enum {
     FOLLOWING_SHADOW_LOW,
     // The quad lowered on the screen only: the same picture, at the depth of a quad that isn't lowered
     FOLLOWING_SHADOW_SCREEN_LIFT,
-    // The camera-side fixes: the follower as FOLLOWING_SHADOW_CURRENT, the camera changed instead. The forest's camera
-    // setup with the ordinary near plane, so the actors' clip Z offset has its ordinary strength
+    // The camera-side experiments: the follower as FOLLOWING_SHADOW_CURRENT, the camera changed instead. Over the
+    // camera fixes (res/paperwhite2/follower_camera_fixes.json), the forest's camera setup with the ordinary near
+    // plane, so the actors' clip Z offset has its ordinary strength
     FOLLOWING_SHADOW_CAMERA_NEAR_1,
-    // The centers' camera setup Z-buffered, so the clip Z offset counts there at all
+    // The centers' camera setup Z-buffered with the ordinary near plane
     FOLLOWING_SHADOW_CAMERA_Z_BUFFER,
     // Both of the two above
     FOLLOWING_SHADOW_CAMERA_BOTH,
-    // The clip Z offset scaled by the near plane, which the forest now has always (FollowingRender_ClipOffset): the
-    // same as FOLLOWING_SHADOW_CURRENT, kept so the variants' numbers stay
+    // The forest's fix, now always on: the same as FOLLOWING_SHADOW_CURRENT, kept so the variants' numbers stay
     FOLLOWING_SHADOW_CAMERA_SCALED_OFFSET,
-    // The centers' camera setup Z-buffered with a near plane of 16, 32 or 64 units, for the Z-buffer's precision at
-    // the back wall, and the clip Z offset scaled by it
+    // The centers' camera setup with a near plane of 16 or 32 units instead of its fix's 64
     FOLLOWING_SHADOW_CAMERA_CENTER_NEAR_16,
     FOLLOWING_SHADOW_CAMERA_CENTER_NEAR_32,
-    FOLLOWING_SHADOW_CAMERA_CENTER_NEAR_64,
+    // The centers' fix, now always on: the same as FOLLOWING_SHADOW_CURRENT
+    FOLLOWING_SHADOW_CAMERA_CENTER_FIX,
+    // Every camera as the original has it: the camera fixes off
+    FOLLOWING_SHADOW_CAMERA_FIXES_OFF,
     FOLLOWING_SHADOW_VARIANT_COUNT,
 };
 
-// The camera setups that the camera-side fixes change: the Entree Forest's (near 112, its clip Z offset always scaled)
-// and the Pokémon Centers' (W-buffered, changed only by the variants)
+// The camera setups that the experiments change: the Entree Forest's and the Pokémon Centers'
 #define FOLLOWING_CAMERA_FOREST 35
 #define FOLLOWING_CAMERA_CENTER 3
 
@@ -67,14 +68,13 @@ enum {
 u32 FollowingRender_GetShadowVariant(void);
 // FldeffShadow_Draw's oval for the follower: moves pos and sets scale (fx32 of the oval's size) by the variant
 void FollowingRender_PlaceOval(VecFx32 *pos, s16 *scale);
-// FieldCamera_ReadDefaults's setup index of archive 0x3b changed by the camera-side variant: the forest's near plane
-// or the centers' buffering and near plane
+// FieldCamera_ReadDefaults's setup index of archive 0x3b changed by its camera fix (a Z-buffer and a near plane), then
+// by the camera-side variant
 void FollowingRender_AdjustCamera(u32 index, FieldCameraDefaults *defaults);
 // The camera's planes and buffering set again from its setup, as a map load does, so a new variant shows at once
 void FollowingRender_ApplyCamera(FieldCamera *camera);
 // The actors' clip Z offset (objectProjectionMatrixOffset, or half of it for the effects) for the camera's near plane:
-// multiplied by the near plane in units in the Entree Forest (setup FOLLOWING_CAMERA_FOREST, always) and in the
-// centers under the FOLLOWING_SHADOW_CAMERA_CENTER_NEAR_* variants, unchanged elsewhere
+// multiplied by the near plane in units where the setup's camera fix scales it, unchanged elsewhere
 fx32 FollowingRender_ClipOffset(FieldCamera *camera, fx32 offset);
 
 // The descriptor's Z offset moves the model and its shadow together, and stays the same whatever the facing, so

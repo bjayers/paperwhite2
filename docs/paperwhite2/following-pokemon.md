@@ -812,14 +812,15 @@ on the ordinary maps, where the follower looks right. The follower is drawn as i
     `center_counter_full.png`, `center_upstairs_full.png`.
 - **Who shares the setups.** Setup 3: the 18 Pokémon Centers' zones plus `pokemon_league_11` and `victory_road_27`
   (the League's and Victory Road's centers), all projection type 0. Setup 35: the ten `entree_forest*` zones alone.
-  A change to either setup's row in `res/field/cameras/defaults.json` touches only those zones. The other W-buffered
-  setups (1, 2, 4, 10, 11, 24, 39: Skyarrow Bridge, Castelia's street, the bridge gates, the Tubeline Bridge, Victory
-  Road's 2, Black City and White Forest, the Marine Tube) have the centers' problem too; they aren't changed.
-- **How.** `FieldCamera_ReadDefaults` passes its setup to `FollowingRender_AdjustCamera` (only setups 3 and 35, only
-  under the RAM override; the forest's scaled offset is in `FollowingRender_ClipOffset` and needs neither), and the menu's A calls `FollowingRender_ApplyCamera`, which sets the planes and the
-  buffering again from the setup without touching the camera's position: the variants show at once, with no map load.
-  The weather fog's cache (`paperwhite2_weather_fog.c`) reads the planes once per setup, so a weather in those zones
-  would keep the old planes until the next map; neither has weather.
+  A change to either setup touches only those zones. The other W-buffered setups (1, 2, 4, 10, 11, 24, 39: Skyarrow
+  Bridge, Castelia's street, the bridge gates, the Tubeline Bridge, Victory Road's 2, Black City and White Forest, the
+  Marine Tube) have the centers' problem too: see "The whole game" below.
+- **How.** `FieldCamera_ReadDefaults` passes its setup to `FollowingRender_AdjustCamera`, which applies the setup's
+  camera fix (below) and then the RAM override's experiment; the scaled offset is in `FollowingRender_ClipOffset`. The
+  menu's A calls `FollowingRender_ApplyCamera`, which sets the planes and the buffering again from the setup without
+  touching the camera's position: the variants show at once, with no map load. The weather fog's cache
+  (`paperwhite2_weather_fog.c`) reads the planes once per setup through the same `FieldCamera_ReadDefaults`, so it sees
+  the fixes; a variant changed in a zone with weather keeps the old planes there until the next map.
 - **Shown** (DeSmuME, scratchpad `shadow2/`): `center_sheet.png` and `forest_sheet.png` (rows 0, 8, 9, 10, 11; the
   follower stepping down into the player's old tile, standing beside on the right, walking up toward the player,
   standing beside on the left), `center_zbuffer_diff.png` (the room's changed pixels), `center_zbuffer_nurse.png`.
@@ -829,7 +830,120 @@ on the ordinary maps, where the follower looks right. The follower is drawn as i
   The user's melonDS test: 11 works in the forest (now built in, above); 9 fixes the feet but the windows fight, hence
   12. For the centers, 12c (near 64) has the most margin and no edge change in DeSmuME; once the user picks one, it
   becomes setup 3's row in `res/field/cameras/defaults.json` (`swap_mode` 0, `near`) with setup 3 added to the scaled
-  offset.
+  offset. The user's tests (melonDS and a 3DS): 12a, 12b and 12c all work; 9 fights the windows. 12c is built in.
+
+**The whole game (2026-11-19, after the user's tests of 12a to 12c).** The user saw the oval over the feet in
+Castelia's street and on Skyarrow Bridge too, and asked for every affected place, each fix limited to the cameras that
+need it.
+
+- **The fixes are data**: `res/paperwhite2/follower_camera_fixes.json` (`follower_camera_fixes.schema.json`), a setup
+  each: `z_buffer`, `near` (units, null keeps the setup's) and `scale_offset`, with the zones and the reason.
+  `tools/paperwhite2/following_camera_fixes.py` checks it against the camera table and writes
+  `paperwhite2/following_camera_fixes_config.h` (hack build only); `FollowingRender_AdjustCamera` and
+  `FollowingRender_ClipOffset` read it. `res/field/cameras/defaults.json` stays vanilla. Deleting an entry reverts that
+  setup alone; the debug row `13 Camera fixes off` turns them all off live, for comparing.
+- **Built in now:** setup 3 (the centers, 12c: Z-buffered, near 64, the offset scaled), setup 35 (the Entree Forest,
+  the offset scaled, as before), setup 7 (Castelia's Central Plaza, `castelia_city_2`: Z-buffered with a near plane
+  of 5, so the offset scaled alone, the forest's fix; G sin p 2.0 to 10) and setup 24 (White Forest and Black City and
+  their gates: W to Z, near 32, the offset scaled).
+- **The debug rows** keep their numbers: 8, 9 (now `9 Center near 1`: the centers Z-buffered at near 1, the old 9) and
+  10 are the experiments over the fixes; `11 Forest fix: now 0` and `12c Center fix: now 0` draw as 0; 12a and 12b put
+  the centers' near plane at 16 or 32; 13 turns the fixes off.
+
+**The audit** (`tools/paperwhite2/camera_audit.py`, stdlib Python). `table` reads the camera table, the zone headers'
+camera setup, projection type, weather and camera areas or rails, and the zone fog table (file 29 of `a/0/8/0`, from
+`extract/w2_us/` when it's there); `layers SETUP` reads the map models of the setup's zones (the map editor's
+`glb_mesh.read_mesh`) with the props their chunks place (their area's bundle). For each setup: its buffering, planes,
+distance and pitch to the follower (the table's zoom and pitch; for the cameras that move or stand still, the distance
+from the eye to the follower's quad and that ray's pitch as DeSmuME measured them, marked *), G sin p (affected under
+3), how far up the lowered quad the oval wins (units, capped where the oval's own near half doesn't reach that far on
+the screen, which spares the low cameras), and the same with the near-scaled offset. Bold: affected.
+
+| setup | buffer | near | far | distance | pitch | zones | G sin p | oval over the quad | near-scaled: G sin p, oval | fix |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 0 | Z | 1 | 1024 | 237 | 53 | abundant_shrine, abundant_shrine_2, abyssal_ruins, abyssal_ruins_2 and 533 more (moving camera, fog, weather) | 3.6 | 0.0 | - | - |
+| **1** | W | 19 | 2594 | 234* | 45* | skyarrow_bridge (moving camera, fog) | 0.0 | 4.2 | 5.0, 0.0 | - |
+| **2** | W | 100 | 2144 | 288* | 29* | castelia_city (moving camera) | 0.0 | 3.2 | 4.4, 0.0 | - |
+| **3** | W | 1 | 1024 | 229 | 39 | accumula_town_pokemon_center, aspertia_city_pokemon_center, black_city_pokemon_center, castelia_city_pokemon_center and 16 more | 0.0 | 3.9 | 2.7, 0.3 | Z-buffer, near 64, offset x near |
+| **4** | W | 1 | 2128 | 227* | 10* | bridge_gate (fog) | 0.0 | 0.9 | 1.1, 0.0 | - |
+| 5 | Z | 1 | 1968 | 352 | 36 | pokemon_league | 6.2 | 0.0 | - | - |
+| **6** | Z | 1 | 1536 | 158 | 20 | castelia_city_7 | 1.6 | 0.4 | - | - |
+| **7** | Z | 5 | 1026 | 488* | 42* | castelia_city_2 (moving camera) | 2.0 | 1.4 | 10.0, 0.0 | offset x near |
+| 8 | Z | 1 | 1536 | 348 | 38 | castelia_city_3 | 6.5 | 0.0 | - | - |
+| 9 | Z | 1 | 1024 | 317 | 51 | driftveil_drawbridge, driftveil_drawbridge_gate | 7.4 | 0.0 | - | - |
+| **10** | W | 1 | 1822 | 228 | 24 | tubeline_bridge, tubeline_bridge_gate (fog) | 0.0 | 2.6 | 2.8, 0.0 | - |
+| **11** | W | 1 | 2848 | 237 | 53 | victory_road_2 (moving camera, fog) | 0.0 | 5.0 | 5.7, 0.0 | - |
+| 12 | Z | 1 | 1024 | 237 | 42 | castelia_city_gym_2 | 3.0 | 0.0 | - | - |
+| 13 | Z | 1 | 1536 | 236 | 27 | castelia_city_4 | 3.3 | 0.0 | - | - |
+| 14 | Z | 1 | 1536 | 396 | 39 | castelia_city_6 | 7.4 | 0.0 | - | - |
+| 15 | Z | 1 | 1536 | 217 | 28 | castelia_city_5 | 3.1 | 0.0 | - | - |
+| 19 | Z | 1 | 1024 | 254 | 48 | pokemon_league_5, pokemon_league_6, pokemon_league_7, pokemon_league_8 (moving camera, fog) | 3.6 | 0.0 | - | - |
+| 20 | Z | 1 | 1024 | 367 | 47 | pokemon_league_2 (moving camera) | 8.0 | 0.0 | - | - |
+| 21 | Z | 1 | 1024 | 325 | 62 | pokemon_league_3 (moving camera) | 8.6 | 0.0 | - | - |
+| **24** | W | 1 | 1024 | 452* | 54* | black_city, black_city_gate, white_forest, white_forest_gate (moving camera) | 0.0 | 5.1 | 11.0, 0.0 | Z-buffer, near 32, offset x near |
+| 25 | Z | 1 | 1024 | 379 | 52 | castelia_city_10, castelia_city_11, castelia_city_12, castelia_city_8 and 1 more (moving camera) | 9.0 | 0.0 | - | - |
+| 26 | Z | 1 | 1168 | 352 | 52 | marvelous_bridge, marvelous_bridge_gate (fog) | 8.4 | 0.0 | - | - |
+| 27 | Z | 1 | 1296 | 237 | 53 | icirrus_city_2 (moving camera, fog) | 3.6 | 0.0 | - | - |
+| **32** | Z | 1 | 2144 | 153 | 59 | opelucid_city_gym (moving camera) | 2.5 | 1.0 | - | - |
+| **33** | Z | 1 | 1024 | 236 | 39 | celestial_tower_2, celestial_tower_3, celestial_tower_4, celestial_tower_5 (moving camera) | 2.8 | 0.3 | - | - |
+| 34 | Z | 1 | 1024 | 237 | 58 | abyssal_ruins_5, abyssal_ruins_6, abyssal_ruins_7, abyssal_ruins_8 (fog) | 6.1 | 0.0 | - | - |
+| **35** | Z | 112 | 512 | 237 | 53 | entree_forest, entree_forest_10, entree_forest_2, entree_forest_3 and 6 more | 0.1 | 4.9 | 7.0, 0.0 | offset x near |
+| 38 | Z | 1 | 1024 | 237 | 53 | nimbasa_city_gym | 3.6 | 0.0 | - | - |
+| **39** | W | 1 | 3280 | 228 | 16 | marine_tube (moving camera, fog) | 0.0 | 1.6 | 1.9, 0.0 | - |
+| **40** | Z | 1 | 1024 | 342 | 25 | castelia_city_gym | 2.7 | 0.0 | - | - |
+| **41** | Z | 1 | 1024 | 237 | 19 | pwt_3 | 1.5 | 0.4 | - | - |
+| 44 | Z | 1 | 1536 | 225 | 37 | join_avenue | 4.1 | 0.0 | - | - |
+
+(Setups 16 to 18, 22, 23, 28 to 31, 36, 37, 42 and 43 aren't named by any zone header. Setup 0 mixes both projection
+types; the row takes the weaker offset, 0x136. The distances are to the follower standing by the player.)
+
+- **How a W setup's near plane is chosen** (`layers`): faces whose planes are within 4 degrees and 0.05 to 4 units
+  apart and overlap on that plane (decals, shadows painted on floors, windows on facades, the centers' outside view),
+  the depth between them along the view (a floor's layers gap / sin(pitch) apart, a wall's about the gap), and the
+  Z-buffer steps between them for near 16, 32, 64, 128 (the setup's own if larger) at the farthest the view shows
+  them: the top of the screen at the player's level, H cos(fov) / sin(pitch - fov) with H the eye's height over the
+  follower, or the far plane when the camera sees the horizon (pitch within half a degree of the half field of view,
+  20 degrees). The smallest near keeping every pair at 3 steps or more is the setup's. That is strict: the centers'
+  floor logo (`in02_logo1`, 0.12 units over the floor) is at 0.6 steps there under 12a and 2.6 under 12c, and the user
+  saw nothing wrong under either; the window that fought under 9 was at 0.5.
+- **Setup 24 (White Forest, Black City): fixed, near 32.** No zone fog, no weather. The camera stays at pitch 53 and
+  452 units from the follower all over the city (traced in DeSmuME), so the view's farthest at the player's level is
+  628 units, inside the far plane's 1024. 184 layer groups; the closest, the painted shadows `h_kage` 0.93 units over
+  the Pokémon Center's wall base and the city's ground decals 1 unit over the ground, are 1.6 steps apart at near 16
+  and 3.2 at 32 (6.5 at 64). The eye is 363 units over the ground, far beyond 32. The far plane is unchanged.
+- **Setup 7 (Castelia's Central Plaza): fixed, the offset alone.** Already Z-buffered at near 5, so as the forest:
+  the offset times 5, which gives the ordinary maps' G (10 at the plaza's 488 units). The planes, the precision and
+  Castelia's weather fog don't change.
+- **Not changed, for the user** (the short list):
+  - **Castelia's streets (setup 2, `castelia_city`)**: no fog of its own, but the camera looks down only 23 degrees,
+    3 more than the half field of view, so the far plane (2144) is in view, and the facades' windows sit 0.2 units in
+    front of their walls. With the near plane at 100 (the setup's own) or 128 they stay 3 steps apart only up to 520 or
+    600 units away; the buildings down the street are farther, so their windows could shimmer. Castelia's weather fog
+    is also tuned on the 3DS for this camera's W-buffer (`W_BUFFER_FOG_EXTRA_STEPS`), which a Z-buffer would drop.
+  - **Skyarrow Bridge (setup 1)**: a zone fog of its own (the fog table's entry 4), tuned for the W-buffer's depths,
+    and the span's camera (pitch 19 to 25) sees the horizon: the painted shadows on the ramps (0.27 units over the
+    road) and the parapets' layers (2 to 4 units) aren't 3 steps apart there at any near plane. On the stairs alone
+    (pitch 37) near 64 would do (4.9 steps).
+  - **Victory Road's outside (setup 11)**: the table's camera would clear at near 16 (4.8 steps), but the zone has a
+    fog of its own (entry 3) made for W depths, which a Z-buffer remaps, and the rail camera wasn't measured.
+  - **The Tubeline Bridge (10), the Marine Tube (39), the gate by Skyarrow Bridge (4)**: fog of their own, and low
+    cameras (24, 16, 0 degrees) that see to the far plane: no near plane clears them. The gate's camera is level, so
+    the oval covers under a unit there anyway.
+  - **Z-buffered at near 1 but under 3** (6 a Castelia street, `castelia_city_7`; 32 the Opelucid Gym; 33 Celestial
+    Tower; 40 the Castelia Gym; 41 the PWT's `pwt_3`): their offset is the vanilla one and scaling by a near plane of 1
+    does nothing; the oval covers 0 to 1 unit of the quad (about a pixel at most, the Opelucid Gym's being the
+    largest), as an NPC's does there. The only lever would be a stronger offset, which carries every actor into
+    ledges and counters too. Left alone; worth a look.
+  - A third way for the W-buffered outdoor setups, not tried: in a W-buffer the actors could be moved nearer in W
+    (the actors' pass's projection with w less a few units and x, y scaled to keep their pictures), the W-buffer's
+    version of the engine's clip Z offset, which keeps the planes, the precision and the fog.
+- **Shown** (DeSmuME, scratchpad `shadow4/`, each the top screen before and after with the follower 8 times larger):
+  `white_before_after.png` (White Forest: the follower's and the player's feet now over their ovals),
+  `plaza_before_after.png` (the plaza: the feet's bottom row), `center2_before_after.png` (a center with 12c built
+  in; `shadow3/center_follower_feet.png` has the feet under 0 and 12c), and, unchanged, `street_before_after.png`
+  (Castelia's street, the oval over the feet's bottom row) and `skyarrow_before_after.png`. `white_changed_pixels.png`
+  marks what changed in White Forest: the actors' feet and the animated leaves and NPCs, no geometry. DeSmuME shows
+  the ovals but not z-fighting, so for 24 the layer maths is the evidence; melonDS and the 3DS are the check.
 
 ## Small followers in front of counters
 

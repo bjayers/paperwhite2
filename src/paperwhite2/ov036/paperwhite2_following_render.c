@@ -11,6 +11,7 @@
 #include "nitro/os.h"
 #include "paperwhite2/debug.h"
 #include "paperwhite2/following.h"
+#include "paperwhite2/following_camera_fixes_config.h"
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/following_render.h"
 #include "paperwhite2/following_render_math.h"
@@ -89,8 +90,9 @@ typedef struct {
 
 // A 32-pixel body leans back half as far, and a native 32-pixel sprite (the player, an NPC) already clears the walls
 // and counters the maps put behind it. The follower is drawn lower than one: FOLLOWING_SPRITE_LIFT, and the walk's
-// down frames sit up to two more pixels low, so in a W-buffered room (the Pokémon Centers, where the actors' clip Z
-// offset does nothing) the rows that a counter's top only just cleared go into it. So the split is smaller: only a wall
+// down frames sit up to two more pixels low, so in a W-buffered room (where the actors' clip Z offset does nothing, as
+// in the Pokémon Centers before their camera fix) the rows that a counter's top only just cleared go into it. So the
+// split is smaller: only a wall
 // SMALL_WALL_TILES behind is read, the field's quad keeps the bottom SMALL_STRIP_BASE_ROWS rows (the feet, which never
 // move), and the rows above are SMALL_STRIP_COUNT strips of SMALL_STRIP_ROWS. Each moves toward the camera only as far
 // as its top needs to clear the wall's face (no jut) and never along the ground past the feet, within the large
@@ -800,36 +802,65 @@ void FollowingRender_PlaceOval(VecFx32 *pos, s16 *scale) {
     }
 }
 
-// The centers' near plane under the FOLLOWING_SHADOW_CAMERA_CENTER_NEAR_* variants, 0 under the others. The
-// Z-buffer's step at a distance d is about d * d * (far - near) / (32768 * far * near) units, so a larger near plane
-// resolves the back wall's window from the wall 2 units in front of it (docs/paperwhite2/following-pokemon.md)
-static fx32 GetCenterNear(u32 variant) {
-    switch (variant) {
-    case FOLLOWING_SHADOW_CAMERA_CENTER_NEAR_16:
-        return FX32_CONST(16);
-    case FOLLOWING_SHADOW_CAMERA_CENTER_NEAR_32:
-        return FX32_CONST(32);
-    case FOLLOWING_SHADOW_CAMERA_CENTER_NEAR_64:
-        return FX32_CONST(64);
+// The camera fixes, by setup: tools/paperwhite2/following_camera_fixes.py writes them from
+// res/paperwhite2/follower_camera_fixes.json, which tools/paperwhite2/camera_audit.py derives
+// (docs/paperwhite2/following-pokemon.md, "Camera-side fixes"). A W-buffered setup compares W, which the actors' clip
+// Z offset doesn't change, so it is Z-buffered; a near plane over a unit leaves the offset too weak, so the offset is
+// multiplied by it; and the Z-buffer's step at a distance d is about d * d * (far - near) / (32768 * far * near) units,
+// so a Z-buffered W setup takes a near plane that keeps its overlapping layers 3 steps apart or more
+typedef struct {
+    u8 setup;
+    BOOL zBuffer;
+    BOOL scaleOffset;
+    // 0 keeps the setup's own
+    fx32 zNear;
+} FollowingCameraFix;
+
+static const FollowingCameraFix sCameraFixes[PAPERWHITE2_FOLLOWING_CAMERA_FIX_COUNT] =
+    PAPERWHITE2_FOLLOWING_CAMERA_FIXES;
+
+// The setup's fix, NULL for none or while the debug menu turns them off
+static const FollowingCameraFix *GetCameraFix(u32 setup) {
+    u32 i;
+
+    if (FollowingRender_GetShadowVariant() == FOLLOWING_SHADOW_CAMERA_FIXES_OFF) {
+        return NULL;
     }
-    return 0;
+    for (i = 0; i < NELEMS(sCameraFixes); i++) {
+        if (sCameraFixes[i].setup == setup) {
+            return &sCameraFixes[i];
+        }
+    }
+    return NULL;
 }
 
 void FollowingRender_AdjustCamera(u32 index, FieldCameraDefaults *defaults) {
+    const FollowingCameraFix *fix = GetCameraFix(index);
     u32 variant = FollowingRender_GetShadowVariant();
 
+    if (fix != NULL) {
+        if (fix->zBuffer) {
+            defaults->swapMode = GX_BUFFERMODE_Z;
+        }
+        if (fix->zNear != 0) {
+            defaults->zNear = fix->zNear;
+        }
+    }
+    // The experiments: the ordinary cameras' near plane of a unit (the far plane stays), and the centers' other near
+    // planes
     if (index == FOLLOWING_CAMERA_FOREST &&
         (variant == FOLLOWING_SHADOW_CAMERA_NEAR_1 || variant == FOLLOWING_SHADOW_CAMERA_BOTH)) {
-        // The ordinary cameras' near plane, a unit; the far plane stays
         defaults->zNear = FX32_ONE;
     }
     if (index == FOLLOWING_CAMERA_CENTER &&
         (variant == FOLLOWING_SHADOW_CAMERA_Z_BUFFER || variant == FOLLOWING_SHADOW_CAMERA_BOTH)) {
-        defaults->swapMode = GX_BUFFERMODE_Z;
+        defaults->zNear = FX32_ONE;
     }
-    if (index == FOLLOWING_CAMERA_CENTER && GetCenterNear(variant) != 0) {
-        defaults->swapMode = GX_BUFFERMODE_Z;
-        defaults->zNear = GetCenterNear(variant);
+    if (index == FOLLOWING_CAMERA_CENTER && variant == FOLLOWING_SHADOW_CAMERA_CENTER_NEAR_16) {
+        defaults->zNear = FX32_CONST(16);
+    }
+    if (index == FOLLOWING_CAMERA_CENTER && variant == FOLLOWING_SHADOW_CAMERA_CENTER_NEAR_32) {
+        defaults->zNear = FX32_CONST(32);
     }
 }
 
@@ -848,12 +879,12 @@ void FollowingRender_ApplyCamera(FieldCamera *camera) {
 }
 
 fx32 FollowingRender_ClipOffset(FieldCamera *camera, fx32 offset) {
+    const FollowingCameraFix *fix = GetCameraFix(camera->defaultsIndex);
     fx32 zNear;
 
-    // The Entree Forest's camera always (its near plane of 112 left the offset about 60 times too weak to keep the
-    // follower's oval under its body), the centers' only under the variants that give them a near plane over 1
-    if (camera->defaultsIndex != FOLLOWING_CAMERA_FOREST &&
-        (camera->defaultsIndex != FOLLOWING_CAMERA_CENTER || GetCenterNear(FollowingRender_GetShadowVariant()) == 0)) {
+    // The setups whose fix scales it (the Entree Forest's near plane of 112 left the offset about 60 times too weak to
+    // keep the follower's oval under its body)
+    if (fix == NULL || !fix->scaleOffset) {
         return offset;
     }
     // A clip Z offset k moves a point about k * distance * (far + near) / (2 * far * near) units of depth, k * distance

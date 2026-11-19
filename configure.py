@@ -1265,6 +1265,17 @@ def main():
                           "res/paperwhite2/field_tints/tints.schema.json", "include/system/zone_weather.h",
                           "tools/data/datajson.py"])
         constant_headers.append(output)
+        # Paper White 2: the follower shadow's camera fixes, from res/paperwhite2/follower_camera_fixes.json
+        # (docs/paperwhite2/following-pokemon.md, Camera-side fixes)
+        n.rule("following_camera_fixes", "$python tools/paperwhite2/following_camera_fixes.py $in $out",
+               "Generating $out", restat="1")
+        output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "following_camera_fixes_config.h"
+        n.build([output], "following_camera_fixes", ["res/paperwhite2/follower_camera_fixes.json"],
+                implicit=["tools/paperwhite2/following_camera_fixes.py",
+                          *script_imports("tools/paperwhite2/following_camera_fixes.py"),
+                          "res/paperwhite2/follower_camera_fixes.schema.json", "res/field/cameras/defaults.json",
+                          "tools/data/datajson.py"])
+        constant_headers.append(output)
         # Paper White 2: the Entralink roguelike's run and rooms, from res/paperwhite2/entralink/
         # (docs/paperwhite2/design/entralink-roguelike-prototype.md); the rooms' dialogue is text (TEXT_DATA_DIRS)
         n.rule("entralink_run", "$python tools/paperwhite2/entralink_run.py $out", "Generating $out", restat="1")

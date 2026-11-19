@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Follower shadow camera fixes",
+  "description": "The camera setups (res/field/cameras/defaults.json, by index) whose buffering, near plane or actors' clip Z offset Paper White 2 changes so the engine's oval stays under the follower's feet (docs/paperwhite2/following-pokemon.md, Camera-side fixes; tools/paperwhite2/camera_audit.py derives them). tools/paperwhite2/following_camera_fixes.py checks the file and writes it into paperwhite2/following_camera_fixes_config.h for src/paperwhite2/ov036/paperwhite2_following_render.c. A setup not listed keeps its vanilla camera; deleting an entry reverts that setup alone.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [ "fixes" ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "fixes": {
+      "type": "array",
+      "description": "One entry a setup, in any order, each setup once",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [ "setup", "z_buffer", "near", "scale_offset", "zones" ],
+        "properties": {
+          "setup": { "type": "integer", "minimum": 0, "maximum": 255, "description": "The camera setup's index in res/field/cameras/defaults.json" },
+          "zones": { "type": "string", "description": "Where the setup is, for the reader (the zones whose headers name it)" },
+          "z_buffer": { "type": "boolean", "description": "Z-buffer a W-buffered setup, so the actors' clip Z offset counts there" },
+          "near": { "type": [ "integer", "null" ], "minimum": 1, "maximum": 1024, "description": "The near plane in units, replacing the setup's, for the Z-buffer's precision; null keeps the setup's" },
+          "scale_offset": { "type": "boolean", "description": "Multiply the actors' clip Z offset (and the effects' half) by the near plane in units, which gives the ordinary maps' depth between a body and its oval at any near plane" },
+          "note": { "type": "string", "description": "Why, for the reader" }
+        }
+      }
+    }
+  }
+}

@@ -1466,8 +1466,8 @@ void FieldRenderPhase2_Fieldmap(Field *field) {
     saved = NNS_G3dGlb.projMtx;
     mtx = saved;
 #ifdef PAPERWHITE2
-    // Paper White 2: the offset scaled by the near plane in the Entree Forest, and in the centers under the debug
-    // menu's camera-side shadow variants, so the follower's body stays over its oval (paperwhite2_following_render.c)
+    // Paper White 2: the offset scaled by the near plane where the camera's fix says (the Entree Forest, the Pokémon
+    // Centers, ...), so the follower's body stays over its oval (paperwhite2_following_render.c)
     mtx.m[3][2] +=
         FX_Mul(mtx.m[2][2], FollowingRender_ClipOffset(field->cameraSystem, field->objectProjectionMatrixOffset));
 #else
