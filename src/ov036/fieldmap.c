@@ -1470,6 +1470,8 @@ void FieldRenderPhase2_Fieldmap(Field *field) {
     // Centers, ...), so the follower's body stays over its oval (paperwhite2_following_render.c)
     mtx.m[3][2] +=
         FX_Mul(mtx.m[2][2], FollowingRender_ClipOffset(field->cameraSystem, field->objectProjectionMatrixOffset));
+    // Paper White 2: the debug menu's actors nearer in W, the W-buffer's version of the offset
+    FollowingRender_NearerInW(field->cameraSystem, &mtx, field->objectProjectionMatrixOffset, TRUE);
 #else
     mtx.m[3][2] += FX_Mul(mtx.m[2][2], field->objectProjectionMatrixOffset);
 #endif
@@ -1495,6 +1497,7 @@ void FieldRenderPhase2_Fieldmap(Field *field) {
     // Paper White 2: as for the actors
     mtx.m[3][2] +=
         FX_Mul(mtx.m[2][2], FollowingRender_ClipOffset(field->cameraSystem, field->objectProjectionMatrixOffset / 2));
+    FollowingRender_NearerInW(field->cameraSystem, &mtx, field->objectProjectionMatrixOffset / 2, FALSE);
 #else
     mtx.m[3][2] += FX_Mul(mtx.m[2][2], field->objectProjectionMatrixOffset / 2);
 #endif

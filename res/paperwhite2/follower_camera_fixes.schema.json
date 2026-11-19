@@ -20,6 +20,7 @@
           "z_buffer": { "type": "boolean", "description": "Z-buffer a W-buffered setup, so the actors' clip Z offset counts there" },
           "near": { "type": [ "integer", "null" ], "minimum": 1, "maximum": 1024, "description": "The near plane in units, replacing the setup's, for the Z-buffer's precision; null keeps the setup's" },
           "scale_offset": { "type": "boolean", "description": "Multiply the actors' clip Z offset (and the effects' half) by the near plane in units, which gives the ordinary maps' depth between a body and its oval at any near plane" },
+          "w_pull": { "type": [ "number", "null" ], "minimum": 0, "maximum": 0.2, "description": "For a setup that stays W-buffered, the debug menu's variant 14a only: the actors' pass (every field actor's body, as the clip Z offset reaches on ordinary maps) moved nearer the camera along the eye rays by this fraction of their distance, their pictures unchanged; the effects stay. Absent or null for none" },
           "note": { "type": "string", "description": "Why, for the reader" }
         }
       }
