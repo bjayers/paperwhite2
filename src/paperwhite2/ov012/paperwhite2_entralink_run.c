@@ -307,14 +307,15 @@ static u32 EntralinkRun_DrawDoorRoom(EntralinkRunState *state, u32 role, u32 rou
     return EntralinkRun_DrawRoom(state, role, round, type, excluded);
 }
 
-// A room of a type behind a door: enemy and challenge rooms are rooms/'s, an event room rooms/'s, else its template if
-// there is one; a rest, item, buff or shop room is rooms/'s at run.json's custom chance if one fits, else its type's
-// template. ENTRALINK_RUN_ROOM_NONE if the type has none
+// A room of a type behind a door: enemy, enemy choice and challenge rooms are rooms/'s, an event room rooms/'s, else
+// its template if there is one; a rest, item, buff or shop room is rooms/'s at run.json's custom chance if one fits,
+// else its type's template. ENTRALINK_RUN_ROOM_NONE if the type has none
 static u32 EntralinkRun_DrawRoomOfType(EntralinkRunState *state, u32 round, u32 type) {
     u32 room;
 
     switch (type) {
     case ENTRALINK_TYPE_ENEMY:
+    case ENTRALINK_TYPE_ENEMY_CHOICE:
     case ENTRALINK_TYPE_CHALLENGE:
         return EntralinkRun_DrawDoorRoom(state, ENTRALINK_ROLE_ROOM, round, type);
     case ENTRALINK_TYPE_EVENT:
@@ -453,45 +454,64 @@ static BOOL EntralinkRun_IsAnythingCatchable(GameData *gameData, u32 round) {
     return FALSE;
 }
 
-// Whether an entry of the item table can be drawn: in the pool and the round, not one of the items excluded (the
-// others of a choice), and the Nightmare Ball only while something can be caught
-static BOOL EntralinkRun_ItemFits(const EntralinkItem *entry, u32 pool, u32 round, const u16 *excluded, u32 count,
-                                  BOOL catchable) {
+// Which entries of the item table a draw takes: its pool (ENTRALINK_POOL_*) and round, the items excluded (the others
+// of a choice), whether the Nightmare Ball can still catch something, and whether the run's bag holds the Dowsing MCHN
+typedef struct {
+    u32 pool;
+    u32 round;
+    const u16 *excluded;
+    u32 count;
+    BOOL catchable;
+    BOOL dowsing;
+} ItemFilter;
+
+// Whether an entry of the item table can be drawn: in the pool and the round, not one of the items excluded, the
+// Nightmare Ball only while something can be caught, and the Dowsing MCHN only while the run's bag doesn't hold it
+static BOOL EntralinkRun_ItemFits(const EntralinkItem *entry, const ItemFilter *filter) {
     u32 i;
 
-    if (!(entry->pools & (1 << pool)) || (entry->rounds != 0 && !(entry->rounds & (1 << (round - 1))))) {
+    if (!(entry->pools & (1 << filter->pool)) ||
+        (entry->rounds != 0 && !(entry->rounds & (1 << (filter->round - 1))))) {
         return FALSE;
     }
-    if (entry->item == ITEM_NIGHTMARE_BALL && !catchable) {
+    if ((entry->item == ITEM_NIGHTMARE_BALL && !filter->catchable) ||
+        (entry->item == ITEM_DOWSING_MCHN && filter->dowsing)) {
         return FALSE;
     }
-    for (i = 0; i < count; i++) {
-        if (excluded[i] == entry->item) {
+    for (i = 0; i < filter->count; i++) {
+        if (filter->excluded[i] == entry->item) {
             return FALSE;
         }
     }
     return TRUE;
 }
 
-// An item of a pool (ENTRALINK_POOL_*) for a round, at random by the entries' weights, other than the items excluded;
-// ITEM_NONE if none fits
-static u16 EntralinkRun_DrawItem(GameData *gameData, u32 pool, u32 round, const u16 *excluded, u32 count) {
-    BOOL catchable = EntralinkRun_IsAnythingCatchable(gameData, round);
+// The entry of an item of a pool (ENTRALINK_POOL_*) for a round, at random by the entries' weights, other than the
+// items excluded; NULL if none fits
+static const EntralinkItem *EntralinkRun_DrawItemEntry(GameData *gameData, u32 pool, u32 round, const u16 *excluded,
+                                                       u32 count) {
+    ItemFilter filter;
     u32 total = 0;
     u32 pick;
     u32 i;
 
+    filter.pool = pool;
+    filter.round = round;
+    filter.excluded = excluded;
+    filter.count = count;
+    filter.catchable = EntralinkRun_IsAnythingCatchable(gameData, round);
+    filter.dowsing = BagSave_CheckAmount(GameData_GetBag(gameData), ITEM_DOWSING_MCHN, 1, HEAPID_GAMEEVENT);
     for (i = 0; i < ENTRALINK_RUN_ITEM_COUNT; i++) {
-        if (EntralinkRun_ItemFits(&sItems[i], pool, round, excluded, count, catchable)) {
+        if (EntralinkRun_ItemFits(&sItems[i], &filter)) {
             total += sItems[i].weight;
         }
     }
     if (total == 0) {
-        return ITEM_NONE;
+        return NULL;
     }
     pick = GFL_RandomLC(total);
     for (i = 0; i < ENTRALINK_RUN_ITEM_COUNT; i++) {
-        if (!EntralinkRun_ItemFits(&sItems[i], pool, round, excluded, count, catchable)) {
+        if (!EntralinkRun_ItemFits(&sItems[i], &filter)) {
             continue;
         }
         if (pick < sItems[i].weight) {
@@ -499,7 +519,14 @@ static u16 EntralinkRun_DrawItem(GameData *gameData, u32 pool, u32 round, const 
         }
         pick -= sItems[i].weight;
     }
-    return sItems[i].item;
+    return &sItems[i];
+}
+
+// The same, the item; ITEM_NONE if none fits
+static u16 EntralinkRun_DrawItem(GameData *gameData, u32 pool, u32 round, const u16 *excluded, u32 count) {
+    const EntralinkItem *entry = EntralinkRun_DrawItemEntry(gameData, pool, round, excluded, count);
+
+    return entry != NULL ? entry->item : ITEM_NONE;
 }
 
 // The clearing of a zone, or NULL if the run's maps don't have it
@@ -645,13 +672,30 @@ static BOOL EntralinkRun_HasItemNpc(const EntralinkRoom *room) {
     return FALSE;
 }
 
-// The items of the room as it is entered: its item room balls' (each another item), its gift NPC's choice of 3, the
-// ball on the ground (run.json's ground_item_chance, in a room with no item NPC) and the hidden item
+// The room's shop's goods, each another item of the shop pool at its price, up to run.json's shop_items. The buffs
+// will join them here (a later step)
+static void EntralinkRun_DrawShop(GameData *gameData, EntralinkRunState *state, u32 round) {
+    const EntralinkItem *entry;
+
+    while (state->shopCount < ENTRALINK_RUN_SHOP_ITEMS) {
+        entry = EntralinkRun_DrawItemEntry(gameData, ENTRALINK_POOL_SHOP, round, state->shopItems, state->shopCount);
+        if (entry == NULL) {
+            return;
+        }
+        state->shopItems[state->shopCount] = entry->item;
+        state->shopPrices[state->shopCount] = entry->price;
+        state->shopCount++;
+    }
+}
+
+// The items of the room as it is entered: its item room balls' (each another item), its gift NPC's choice of 3, its
+// shop's goods, the ball on the ground (run.json's ground_item_chance, in a room with no item NPC) and the hidden item
 // (hidden_item_chance), the last two from the ground pool
 static void EntralinkRun_DrawRoomItems(GameData *gameData, EntralinkRunState *state, const EntralinkRoom *room,
                                        u32 round) {
     const EntralinkClearing *clearing = EntralinkRun_GetClearing(EntralinkRun_GetRoomZone(gameData));
     BOOL gift = FALSE;
+    BOOL shop = FALSE;
     u16 item;
     u32 type;
     u32 i;
@@ -659,6 +703,7 @@ static void EntralinkRun_DrawRoomItems(GameData *gameData, EntralinkRunState *st
     state->choiceMade = FALSE;
     state->groundItem = ITEM_NONE;
     state->hiddenItem = ITEM_NONE;
+    state->shopCount = 0;
     MI_CpuFill16(state->npcItems, ITEM_NONE, sizeof(state->npcItems));
     MI_CpuFill16(state->giftItems, ITEM_NONE, sizeof(state->giftItems));
     for (i = 0; i < room->npcCount; i++) {
@@ -671,6 +716,8 @@ static void EntralinkRun_DrawRoomItems(GameData *gameData, EntralinkRunState *st
                                                        ENTRALINK_RUN_NPCS_MAX);
         } else if (type == ENTRALINK_NPC_GIFT) {
             gift = TRUE;
+        } else if (type == ENTRALINK_NPC_SHOP) {
+            shop = TRUE;
         }
     }
     if (gift) {
@@ -678,6 +725,9 @@ static void EntralinkRun_DrawRoomItems(GameData *gameData, EntralinkRunState *st
             state->giftItems[i] =
                 EntralinkRun_DrawItem(gameData, ENTRALINK_POOL_GIFT, round, state->giftItems, ENTRALINK_RUN_GIFT_ITEMS);
         }
+    }
+    if (shop) {
+        EntralinkRun_DrawShop(gameData, state, round);
     }
     if (clearing == NULL) {
         return;
@@ -918,23 +968,20 @@ static void EntralinkRun_RemoveNpc(GameSystem *gsys, u32 index) {
     }
 }
 
-// Whether an NPC type makes the room's choice when used (a rest's heal, revive and gift, an item room's ball, a buff
-// ball; the shop will when it sells, step 7), and whether it is one of the room's choice NPCs that go once the choice
-// is made, the shop's among them
+// Whether an NPC type makes the room's choice when used, and is one of the room's choice NPCs that go once the choice
+// is made: a rest's heal, revive and gift, a shop (once talked to, whether anything is bought or not), an item room's
+// ball, a buff ball
 static BOOL EntralinkRun_IsChoiceType(u32 type) {
     switch (type) {
     case ENTRALINK_NPC_HEAL:
     case ENTRALINK_NPC_REVIVE:
     case ENTRALINK_NPC_GIFT:
+    case ENTRALINK_NPC_SHOP:
     case ENTRALINK_NPC_ITEM_CHOICE:
     case ENTRALINK_NPC_BUFF_CHOICE:
         return TRUE;
     }
     return FALSE;
-}
-
-static BOOL EntralinkRun_IsChoiceNpcType(u32 type) {
-    return EntralinkRun_IsChoiceType(type) || type == ENTRALINK_NPC_SHOP;
 }
 
 // Whether a choice NPC came up in the room and its choice isn't made yet: a rest or item room, which its battles (bonus
@@ -1012,7 +1059,7 @@ static void EntralinkRun_MakeChoice(GameSystem *gsys) {
     state->choiceMade = TRUE;
     for (i = 0; i < room->npcCount; i++) {
         if (i != state->talkedNpc && (state->npcsSpawned & (1 << i)) && !(state->npcsGone & (1 << i)) &&
-            EntralinkRun_IsChoiceNpcType(sNpcs[room->firstNpc + i].type)) {
+            EntralinkRun_IsChoiceType(sNpcs[room->firstNpc + i].type)) {
             EntralinkRun_RemoveNpc(gsys, i);
         }
     }
@@ -1058,6 +1105,7 @@ u32 EntralinkRun_GetDoorMarker(GameData *gameData, u32 door) {
     room = &sRooms[state->doorRooms[door]];
     switch (room->marker) {
     case ENTRALINK_MARKER_ENEMY:
+    case ENTRALINK_MARKER_ENEMY_CHOICE:
     case ENTRALINK_MARKER_CHALLENGE:
     case ENTRALINK_MARKER_BOSS:
         // A Nightmare in it to catch, and the ball to catch it with
@@ -1190,8 +1238,50 @@ static void EntralinkRun_RecordCatch(GameData *gameData) {
     }
 }
 
+// The Dream Dust a battle won in the room gives: its kind's (a boss's, the final room's, an enemy choice or challenge
+// room's, else an enemy room's) times its round's percent
+static u32 EntralinkRun_GetBattleDust(EntralinkRunState *state, const EntralinkRoom *room) {
+    static const u16 DUST[ENTRALINK_DUST_KINDS] = ENTRALINK_RUN_DUST;
+    static const u16 ROUND_PERCENTS[] = ENTRALINK_RUN_DUST_ROUND_PERCENT;
+    u32 kind;
+    u32 round;
+
+    switch (room->role) {
+    case ENTRALINK_ROLE_BOSS:
+        kind = ENTRALINK_DUST_BOSS;
+        break;
+    case ENTRALINK_ROLE_FINAL:
+        kind = ENTRALINK_DUST_FINAL;
+        break;
+    default:
+        switch (room->type) {
+        case ENTRALINK_TYPE_ENEMY_CHOICE:
+            kind = ENTRALINK_DUST_ENEMY_CHOICE;
+            break;
+        case ENTRALINK_TYPE_CHALLENGE:
+            kind = ENTRALINK_DUST_CHALLENGE;
+            break;
+        default:
+            kind = ENTRALINK_DUST_ENEMY;
+            break;
+        }
+        break;
+    }
+    EntralinkRun_GetPlace(state->room, &round);
+    return DUST[kind] * ROUND_PERCENTS[round - 1] / 100;
+}
+
+// Adds a battle's Dream Dust to the run's, which holds at most ENTRALINK_DUST_MAX
+static void EntralinkRun_AddDust(EntralinkRunState *state, u32 dust) {
+    if (state->dust + dust > ENTRALINK_DUST_MAX) {
+        dust = ENTRALINK_DUST_MAX - state->dust;
+    }
+    state->dust += dust;
+    state->dustGained = dust;
+}
+
 // After the room's battle, what the script does next (ENTRALINK_RUN_RESULT_*)
-static u16 EntralinkRun_FinishBattle(GameSystem *gsys, const EntralinkBattle *battle) {
+static u16 EntralinkRun_FinishBattle(GameSystem *gsys, const EntralinkRoom *room, const EntralinkBattle *battle) {
     GameData *gameData = GSYS_GetGameData(gsys);
     EntralinkRunState *state = EntralinkRun_GetState();
     EntralinkProgress *progress = EntralinkRun_GetProgress(gameData);
@@ -1203,9 +1293,10 @@ static u16 EntralinkRun_FinishBattle(GameSystem *gsys, const EntralinkBattle *ba
         EntralinkRun_End(gameData);
         return result == BTL_RESULT_FLEE ? ENTRALINK_RUN_RESULT_FORFEIT : ENTRALINK_RUN_RESULT_LOST;
     }
-    // A capture counts as a win
+    // A capture counts as a win, which gives the room's Dream Dust
     EntralinkProgress_SetBattleWon(progress, battle->progressId);
     EntralinkRun_RecordCatch(gameData);
+    EntralinkRun_AddDust(state, EntralinkRun_GetBattleDust(state, room));
     for (i = 0; i < ENTRALINK_RUN_ENEMIES_MAX; i++) {
         state->catchIds[i] = ENTRALINK_CATCH_NONE;
     }
@@ -1411,8 +1502,10 @@ BOOL Scrcmd_PaperWhite2_EntralinkRun(VM *vm, FieldScriptEnv *env) {
         } else if (GetActorUID(actor) < room->npcCount) {
             state->talkedNpc = GetActorUID(actor);
             *result = sNpcs[room->firstNpc + state->talkedNpc].type;
-            // A choice NPC whose choice was made only wishes the player well
-            if (EntralinkRun_IsChoiceType(*result) && state->choiceMade) {
+            // A choice NPC whose choice was made only wishes the player well, but a shop that was the choice opens
+            // again
+            if (EntralinkRun_IsChoiceType(*result) && state->choiceMade &&
+                !(*result == ENTRALINK_NPC_SHOP && (state->npcsUsed & (1 << state->talkedNpc)))) {
                 *result = ENTRALINK_RUN_NPC_DONE;
             }
         }
@@ -1436,7 +1529,7 @@ BOOL Scrcmd_PaperWhite2_EntralinkRun(VM *vm, FieldScriptEnv *env) {
         ScriptWork_CallEvent(FieldScriptEnv_GetScriptWork(env), EntralinkRun_CreateBattle(gsys, room, battle));
         return TRUE;
     case ENTRALINK_RUN_ACTION_BATTLE_RESULT:
-        *result = battle != NULL ? EntralinkRun_FinishBattle(gsys, battle) : ENTRALINK_RUN_RESULT_LOST;
+        *result = battle != NULL ? EntralinkRun_FinishBattle(gsys, room, battle) : ENTRALINK_RUN_RESULT_LOST;
         return FALSE;
     case ENTRALINK_RUN_ACTION_CLEAR_ROOM:
         if (room != NULL) {
@@ -1484,6 +1577,9 @@ BOOL Scrcmd_PaperWhite2_EntralinkRun(VM *vm, FieldScriptEnv *env) {
         return FALSE;
     case ENTRALINK_RUN_ACTION_TAKE_HIDDEN_ITEM:
         *result = EntralinkRun_TakeHiddenItem(GSYS_GetGameData(gsys), FieldScriptEnv_GetHeapID(env));
+        return FALSE;
+    case ENTRALINK_RUN_ACTION_GET_DUST:
+        *result = arg != 0 ? state->dust : state->dustGained;
         return FALSE;
     case ENTRALINK_RUN_ACTION_WARP_HUB:
         ScriptWork_CallEvent(FieldScriptEnv_GetScriptWork(env), EntralinkRun_CreateHubWarp(gsys));

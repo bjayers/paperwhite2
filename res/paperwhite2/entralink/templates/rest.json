@@ -11,7 +11,7 @@
             "x": 12,
             "z": 14,
             "facing": "DIR_DOWN",
-            "marker": "rest",
+            "marker": "heal",
             "dialogue": {
                 "before": "Rest here a while.\nI'll tend to every Pokémon still standing."
             }
@@ -22,7 +22,7 @@
             "x": 15,
             "z": 14,
             "facing": "DIR_DOWN",
-            "marker": "rest",
+            "marker": "revive",
             "dialogue": {
                 "before": "A fallen Pokémon can rise again here."
             }

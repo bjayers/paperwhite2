@@ -16,6 +16,32 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 - **For the user:** pick a variant by eye in melonDS (a Pokémon Center and the Entree Forest, standing and walking
   down); it then becomes the fixed behaviour and the switch goes.
 
+## 2026-11-19: Entralink step 7: fixes, enemy choice rooms, Dream Dust, shops, the Dowsing MCHN (ROM session, on a branch)
+
+Details, data tables, tests and shots: `docs/paperwhite2/design/entralink-roguelike-prototype.md`, "Step 7".
+
+- **Fixes:** the doors before the pre-boss rest already drew any type but rest and shop (retested); the item room's
+  icons moved right 4 and down 8 in their textures (centred over the balls); the NPC markers go along the camera's up
+  from where the sprite is drawn, directly over the heads (they were in front); placeholder NPC markers challenge, heal,
+  revive, used by the rest templates' heal and revive NPCs. Triple battles don't stall: the game's own auto center moves
+  the last two to the middle (tested), and the raid's lone foe stands there; nothing to fix.
+- **enemy_choice:** a room type (weight 8, enemy's 50 -> 42) and door marker (EE placeholder) for a room of several
+  battles; the packer and the editor warn an enemy room with more than 1 battle (Prince or Princess now: the user's
+  call) and an enemy_choice room with fewer than 2.
+- **Dream Dust:** run.json `dust` (enemy 40, enemy_choice 50, challenge 80, boss 150, final 0) x `dust_round_percent`
+  (100/150/200), given on a win or a catch and shown after the battle; in the run's RAM state, 0 at the start, gone at
+  the end.
+- **Shops:** the Poké Mart's own screen with a Dream Dust currency (`scrcmd_shop.c`, shop ID 0xfc), the room's
+  `shop_items` (5) drawn from the shop pool as it is entered; buying goes to the run's bag; talking to the shop is the
+  room's choice (the pre-boss rest's others go), and it opens again after.
+- **Dowsing MCHN:** the run's bag holds it in Key Items (shown and usable in a run), it finds the room's hidden item,
+  isn't drawn again while held, and goes with the run's bag. Not in `items.json` yet: the user adds it.
+- **Editor:** the Run section's Dream Dust (per kind, per round) and Shop items, enemy_choice everywhere types are, the
+  Items tab's price as Dream Dust; tests 251 (two new), the packer's 24.
+- **Memory:** about 1.2 KB of code (overlays 12, 36, 86, 142), ARM9 main +56 bytes; the DS arena 45 KB left (from 46).
+- **For the user:** Prince or Princess as enemy_choice or not; the placeholders (markers, lines, prices, Dust amounts);
+  adding the Dowsing MCHN to the item table.
+
 ## 2026-11-18: Entralink step 6, the game side (ROM session, on a branch)
 
 Details, data tables and tests: `docs/paperwhite2/design/entralink-roguelike-prototype.md`, "Step 6".

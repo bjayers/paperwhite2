@@ -95,7 +95,7 @@ export function ItemsPage({ constants, rooms }: { constants: Constants; rooms: {
                  </>}>
           <div className="en-item-table">
             <div className="en-item-row en-item-head muted small">
-              <span>#</span><span>Item</span><span>Weight</span><span>Rounds</span><span title="Dream Dust, in a shop (step 7)">Price</span><span>Pools</span><span />
+              <span>#</span><span>Item</span><span>Weight</span><span>Rounds</span><span title="Its price in Dream Dust, in a shop">Price (Dream Dust)</span><span>Pools</span><span />
             </div>
             {entries.map((e, i) => {
               const bad = problems.some((p) => p.index === i && p.severity === "error") || schemaErrors.some((s) => s.path[0] === "items" && s.path[1] === i);
@@ -118,7 +118,7 @@ export function ItemsPage({ constants, rooms }: { constants: Constants; rooms: {
                       </label>
                     ))}
                   </span>
-                  <NumberBox value={e.price} min={0} max={9999} width={64} onChange={(n) => setField(i, "price", n || undefined)} title="Its price in Dream Dust (shops come in step 7); 0 is left out" />
+                  <NumberBox value={e.price} min={0} max={9999} width={64} onChange={(n) => setField(i, "price", n || undefined)} title="Its price in Dream Dust in a shop; 0 is left out" />
                   <span className="en-checks">
                     {POOLS.map((p) => (
                       <label key={p} className="ow-check small" title={POOL_NOTES[p]}>

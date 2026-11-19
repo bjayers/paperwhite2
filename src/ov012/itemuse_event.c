@@ -18,6 +18,7 @@
 #include "system/game_system.h"
 
 #ifdef PAPERWHITE2
+#include "paperwhite2/entralink_run.h"
 #include "paperwhite2/exp_share.h"
 #include "paperwhite2/version_key.h"
 #endif
@@ -55,6 +56,10 @@ static FieldActionResult FieldActionBlockCheck_NormalZone(GameData *gameData, Fi
 static FieldActionResult FieldActionBlockCheck_Surf(GameData *gameData, Field *field, PlayerState *state);
 static FieldActionResult FieldActionBlockCheck_NormalZoneNotRoyalUnova(GameData *gameData, Field *field,
                                                                        PlayerState *state);
+#ifdef PAPERWHITE2
+static FieldActionResult PaperWhite2_FieldActionBlockCheck_Dowsing(GameData *gameData, Field *field,
+                                                                   PlayerState *state);
+#endif
 static GameEventReturnCode EventFieldToggleCycling_Callback(GameEvent *event, u32 *state, void *data);
 static GameEventReturnCode EventFieldToggleDowsing_Callback(GameEvent *event, u32 *state, void *data);
 
@@ -82,7 +87,12 @@ static const FieldActionBlockCheck FIELD_ACTION_BLOCK_CHECKS[12] = {
     FieldActionBlockCheck_NormalZoneNotRoyalUnova,
     NULL,
     NULL,
+#ifdef PAPERWHITE2
+    // Paper White 2: the Dowsing MCHN's (action 9, its common event's) also allows an Entralink run's rooms
+    PaperWhite2_FieldActionBlockCheck_Dowsing,
+#else
     FieldActionBlockCheck_NormalZoneNotRoyalUnova,
+#endif
     FieldActionBlockCheck_NormalZoneNotRoyalUnova,
     FieldActionBlockCheck_NormalZoneNotRoyalUnova,
 };
@@ -187,6 +197,18 @@ static FieldActionResult FieldActionBlockCheck_NormalZoneNotRoyalUnova(GameData 
     }
     return FIELD_ACTION_BLOCKED;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: the Dowsing MCHN where the original allows it, and in an Entralink run's rooms, whose hidden items it
+// finds (paperwhite2/entralink_run.h); the Entralink's zones aren't normal zones, so the original blocks it there
+static FieldActionResult PaperWhite2_FieldActionBlockCheck_Dowsing(GameData *gameData, Field *field,
+                                                                   PlayerState *state) {
+    if (EntralinkRun_IsActive(gameData) && GetZoneIsEntreeForest(PlayerState_GetZoneID(state))) {
+        return FIELD_ACTION_ALLOWED;
+    }
+    return FieldActionBlockCheck_NormalZoneNotRoyalUnova(gameData, field, state);
+}
+#endif
 
 static GameEventReturnCode EventFieldToggleCycling_Callback(GameEvent *event, u32 *state, void *data) {
     EventFieldToggleCyclingWork *work = data;

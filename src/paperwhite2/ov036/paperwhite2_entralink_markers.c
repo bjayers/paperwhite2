@@ -2,6 +2,7 @@
 #include "field/field.h"
 #include "field/field_actor.h"
 #include "field/field_actor_internal.h"
+#include "field/field_camera.h"
 #include "field/field_g3d_mapper.h"
 #include "field/zone.h"
 #include "gfl/arc.h"
@@ -45,9 +46,10 @@
 // billboard.c's material format 0, GX_TEXFMT_PLTT16
 #define MARKER_FORMAT_PLTT16 0
 #define MARKER_ALPHA 31
-// A tile, and the space between an NPC's sprite and its marker's middle
+// A tile, and the space between the top of an NPC's sprite (32 units for a person, whose head is a few under it) and
+// its marker's middle, along the camera's up
 #define TILE_SIZE FX32_CONST(16)
-#define NPC_MARKER_GAP FX32_CONST(10)
+#define NPC_MARKER_GAP FX32_CONST(2)
 // The space between the top of an item room ball's sprite and its icon's middle: the ball fills only the lower half of
 // its 32-unit billboard, so the 32-unit icon's bottom sits just over the ball
 #define ICON_GAP FX32_CONST(2)
@@ -209,6 +211,24 @@ static void Markers_UpdateDoors(Field *field, GameData *gameData, EntralinkRunSt
     }
 }
 
+// The way the camera's up points in the world, which a quad facing the camera stands along (billboard.c's rotation for
+// BILLBOARD_ACTOR_TYPE_FACE_CAMERA, the camera's inverse): its up vector less its part along the view, so leaning
+// back from the camera as far as the camera looks down
+static void Markers_GetCameraUp(Field *field, VecFx32 *up) {
+    G3DCamera *camera = FieldCamera_GetG3DCamera(Field_GetCameraSystem(field));
+    VecFx32 eye;
+    VecFx32 target;
+    VecFx32 view;
+
+    GFL_G3DCameraGetLookatPos(camera, &eye);
+    GFL_G3DCameraGetLookatTarget(camera, &target);
+    GFL_G3DCameraGetLookatUpVector(camera, up);
+    VEC_Subtract(&eye, &target, &view);
+    VEC_Normalize(&view, &view);
+    VEC_MultAdd(-VEC_DotProduct(up, &view), &view, up, up);
+    VEC_Normalize(up, up);
+}
+
 // The height of an NPC's sprite over its feet
 static fx32 Markers_GetSpriteHeight(FieldActor *actor) {
     switch (GetActorMdlInfo(actor)->billboardSize) {
@@ -220,15 +240,20 @@ static fx32 Markers_GetSpriteHeight(FieldActor *actor) {
     return FX32_CONST(32);
 }
 
-// Each NPC's marker over its head while it stands in the room
+// Each NPC's marker over its head while it stands in the room. The NPC's sprite, a quad facing the camera, stands from
+// its feet (the actors' scene's origin, fieldmap.c) along the camera's up, so the marker goes along it too, from where
+// the sprite is drawn: straight up from the feet it was in front of the head, toward the camera. An item room ball's
+// icon keeps straight up, over the ball in the lower half of its sprite
 static void Markers_UpdateNpcs(Field *field) {
     MMSys *actorSystem = Field_GetActorSystem(field);
     FieldActor *actor;
     VecFx32 pos;
     VecFx32 offset;
+    VecFx32 up;
     u32 marker;
     u32 i;
 
+    Markers_GetCameraUp(field, &up);
     for (i = 0; i < MARKER_NPCS; i++) {
         marker = EntralinkRun_GetNpcMarker(i);
         actor = marker != ENTRALINK_NPC_MARKER_NONE ? FindFieldActor(actorSystem, i) : NULL;
@@ -242,10 +267,16 @@ static void Markers_UpdateNpcs(Field *field) {
         if (actor == NULL) {
             continue;
         }
-        CopyActorWPos(actor, &pos);
-        CopyActorPosOffset(actor, &offset);
-        VEC_Add(&pos, &offset, &pos);
-        pos.y += Markers_GetSpriteHeight(actor) + (Markers_IsIcon(marker) ? ICON_GAP : NPC_MARKER_GAP);
+        if (Markers_IsIcon(marker)) {
+            CopyActorWPos(actor, &pos);
+            CopyActorPosOffset(actor, &offset);
+            VEC_Add(&pos, &offset, &pos);
+            pos.y += Markers_GetSpriteHeight(actor) + ICON_GAP;
+        } else {
+            CopyActorPosAllAdd(actor, &pos);
+            pos.y += Field_GetActorYOffset(field);
+            VEC_MultAdd(Markers_GetSpriteHeight(actor) + NPC_MARKER_GAP, &up, &pos, &pos);
+        }
         if (sMarkers.npcActors[i] == BILLBOARD_ACTOR_NONE) {
             sMarkers.npcActors[i] = Markers_AddActor(Markers_GetNpcMaterial(field, marker), &pos,
                                                      Markers_IsIcon(marker) ? MARKER_SCALE : NPC_MARKER_SCALE,

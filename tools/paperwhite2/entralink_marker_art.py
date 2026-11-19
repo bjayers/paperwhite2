@@ -45,7 +45,8 @@ def relative(path: Path) -> str:
 def sheets() -> list[dict]:
     out = []
     ground = {"enemy": "Enemy", "challenge": "Challenge", "boss": "Boss", "rest": "Rest", "gift": "Gift", "event": "Event",
-              "shop": "Shop", "unknown": "Unknown (???)", "final": "Final", "catch": "Catch (a Pokémon to catch)"}
+              "shop": "Shop", "unknown": "Unknown (???)", "final": "Final", "catch": "Catch (a Pokémon to catch)",
+              "enemy_choice": "Enemy choice (battles to choose from)"}
     for kind in entralink_run.MARKER_TYPES:
         out.append({"name": f"marker_{kind}", "title": f"Room marker: {ground.get(kind, kind)}",
                     "path": relative(entralink_run.SOURCE / "markers" / f"{kind}.png"), "tool": TOOL,

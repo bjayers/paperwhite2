@@ -53,15 +53,15 @@ def test_npc_names_a_missing_battle(tmp_path):
 def test_draw_problems(tmp_path):
     directory = copy_data(tmp_path)
     run, rooms = entralink_run.load_run(directory), entralink_run.load_rooms(directory)
-    # The real run: 9 rooms from 3 generic ones repeat, a warning only
-    assert entralink_run.draw_problems(run, rooms) == [("warning", "the rounds draw 9 rooms from 3, so rooms come up "
+    # The real run: 9 rooms from 4 generic ones repeat, a warning only
+    assert entralink_run.draw_problems(run, rooms) == [("warning", "the rounds draw 9 rooms from 4, so rooms come up "
                                                         "more than once in a run (the least used first, never twice in a row)")]
     assert entralink_run.boss_pool(rooms, 1) == ["ho_oh"] and entralink_run.boss_pool(rooms, 2) == ["time_and_space"]
     # More rooms in a round than can come up in it still packs
     edit(directory / "run.json", lambda data: data["rounds"][0].update(rooms=4))
     entralink_run.tables(directory)
     # A round with no room at all can't, without the templates (step 6)
-    for name in ("dialga", "prince_or_princess", "rayquaza_raid"):
+    for name in ("dialga", "prince_or_princess", "rayquaza_raid", "the_illusionist"):
         edit(room(directory, name), lambda data: data.update(rounds=[2, 3]))
     rooms = entralink_run.load_rooms(directory)
     assert ("error", "round 1 draws 4 rooms, but no room can come up in it (role room, rounds left out or naming "
@@ -284,13 +284,58 @@ def test_draw_problems_with_templates(tmp_path):
     run, rooms = entralink_run.load_run(directory), entralink_run.load_rooms(directory)
     templates = entralink_run.load_templates(directory)
     problems = entralink_run.draw_problems(run, rooms, templates)
-    assert ("warning", "round 1: no challenge or event room can come up, so those types are skipped") in problems
+    assert ("warning", "round 1: no challenge or event or enemy_choice room can come up, so those types are skipped") in problems
     assert not [p for p in problems if p[0] == "error"]
     # No premade room in round 1: its doors still draw the templates' types
-    for name in ("dialga", "prince_or_princess", "rayquaza_raid"):
+    for name in ("dialga", "prince_or_princess", "rayquaza_raid", "the_illusionist"):
         edit(room(directory, name), lambda data: data.update(rounds=[2, 3]))
     rooms = entralink_run.load_rooms(directory)
     assert not [p for p in entralink_run.draw_problems(run, rooms, templates) if p[0] == "error"]
     run["rounds"][0]["type_weights"] = {kind: 0 for kind in entralink_run.ROOM_TYPES}
     assert ("error", "round 1's room type weights add up to 0, so its doors can't draw a room") in \
         entralink_run.draw_problems(run, rooms, templates)
+
+
+def test_enemy_choice_and_room_problems(tmp_path):
+    """Step 7: enemy_choice is a type with its own marker (after catch, so the others keep their members) and weight;
+    an enemy room of 2 battles and an enemy_choice room of 1 are warned."""
+    assert entralink_run.ROOM_TYPES["enemy_choice"] == 7 and entralink_run.MARKER_TYPES[-1] == "enemy_choice"
+    assert entralink_run.MARKER_TYPES.index("catch") == 9
+    assert entralink_run.DEFAULT_TYPE_WEIGHTS["enemy"] == 42 and entralink_run.DEFAULT_TYPE_WEIGHTS["enemy_choice"] == 8
+    directory = copy_data(tmp_path)
+    edit(room(directory, "prince_or_princess"), lambda data: data.update(type="enemy_choice"))
+    edit(room(directory, "dialga"), lambda data: data.update(type="enemy_choice"))
+    rooms = entralink_run.load_rooms(directory)
+    assert entralink_run.room_problems(rooms) == [("warning", "rooms/dialga.json: an enemy_choice room has battles to "
+                                                   "choose from, but it has 1")]
+    data = entralink_run.tables(directory)
+    row = data["rooms"][data["ids"].index("prince_or_princess")]
+    assert row["type"] == 7 and row["marker"] == entralink_run.MARKER_TYPES.index("enemy_choice")
+    assert len(entralink_run.marker_members(directory)) == len(entralink_run.MARKER_TYPES) + len(
+        entralink_run.npc_marker_names(directory)) + data["icon_count"]
+
+
+def test_dust_and_shop(tmp_path):
+    """Step 7: run.json's dust, dust_round_percent and shop_items, with their defaults; a round left out of the
+    percents takes the last one given."""
+    text = entralink_run.header(entralink_run.SOURCE)
+    assert "#define ENTRALINK_RUN_DUST { 40, 50, 80, 150, 0 }" in text
+    assert "#define ENTRALINK_RUN_DUST_ROUND_PERCENT { 100, 150, 200 }" in text
+    assert "#define ENTRALINK_RUN_SHOP_ITEMS 5" in text
+    directory = copy_data(tmp_path)
+    edit(directory / "run.json", lambda data: data.update(dust={"boss": 300}, dust_round_percent=[100, 120],
+                                                          shop_items=8))
+    data = entralink_run.tables(directory)
+    assert data["dust"] == [40, 50, 80, 300, 0] and data["dust_round_percent"] == [100, 120, 120]
+    assert data["shop_items"] == 8
+    edit(directory / "run.json", lambda data: data.update(shop_items=9))
+    with pytest.raises(datajson.DataError, match="shop_items"):
+        entralink_run.tables(directory)
+
+
+def test_icon_shift():
+    """Step 7: a bag icon's picture, in the top-left 24 by 24 of its 32 by 32, moves right 4 and down 8."""
+    pixels = bytes([1] * 32 * 32)
+    moved = entralink_run.shift_picture(pixels, 32, 4, 8)
+    assert moved[8 * 32 + 4] == 1 and moved[8 * 32 + 3] == 0 and moved[7 * 32 + 4] == 0
+    assert sum(moved) == (32 - 4) * (32 - 8)

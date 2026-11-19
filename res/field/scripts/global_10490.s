@@ -349,7 +349,8 @@ Movement_RunExitBack3:
 // dialogue, its cry and its battle; a win (or a capture) its after dialogue and the room open, or after the final room
 // the run's end at the hub; a loss or a forfeit (running) end the run there too, with the real party and bag back. An
 // item NPC: its dialogue and its item into the run's bag. A rest or buff NPC: its dialogue, or a placeholder for now.
-// Step 6: the ball on the ground, the heal, revive, gift and shop NPCs, the item room's balls and the buff balls
+// Step 6: the ball on the ground, the heal, revive, gift and shop NPCs, the item room's balls and the buff balls.
+// Step 7: the Dream Dust a win gives, and the shop's screen
 Script_9:
     ActorsPauseAll
     ActorSetEyeToEye
@@ -521,15 +522,13 @@ L_RunGiftShow:
     VMJump L_RunNpcEnd
 
 L_RunShopNpc:
-    // Paper White 2: a shop, a placeholder until it sells (step 7): its dialogue or a line; talking to it uses it
+    // Paper White 2: a shop (step 7): its dialogue, then the Poké Mart's screen with the room's goods for Dream Dust,
+    // bought into the run's bag. Talking to it is the room's choice, whether anything is bought or not
     WorkSetConst 0x8002, 0
     VMCall L_RunDialogue
-    WorkCmpConst 0x8001, ENTRALINK_RUN_NO_MESSAGE
-    VMJumpIf CMP_NE, L_RunNpcDone
-    SystemMsg Global10490_Text_RunShopClosed, 2
-    LastKeyWait
-    SystemMsgClose
-    VMJump L_RunNpcDone
+    CallFriendlyShopBuy ENTRALINK_RUN_SHOP_ID, 0x8000
+    EntralinkRun ENTRALINK_RUN_ACTION_MAKE_CHOICE, 0, 0, 0x8000
+    VMJump L_RunNpcEnd
 
 L_RunItemChoice:
     // Paper White 2: an item room's ball: Yes takes its item into the run's bag, which is the room's choice
@@ -596,6 +595,7 @@ L_RunForfeited:
     VMJump L_RunToHub
 
 L_RunWon:
+    VMCall L_RunDust
     WorkSetConst 0x8002, 1
     VMCall L_RunDialogue
     SystemMsg Global10490_Text_DarkraiNightmareOver, 2
@@ -609,6 +609,7 @@ L_RunToHub:
     VMHalt
 
 L_RunRoomCleared:
+    VMCall L_RunDust
     WorkSetConst 0x8002, 1
     VMCall L_RunDialogue
     EntralinkRun ENTRALINK_RUN_ACTION_CLEAR_ROOM, 0, 0, 0x8000
@@ -632,6 +633,21 @@ L_RunDialogue:
     MsgWinCloseAll
 
 L_RunDialogueNone:
+    VMReturn
+
+L_RunDust:
+    // Paper White 2: the Dream Dust the battle won gave (step 7), if any, and the run's now
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_DUST, 0, 0, 0x8005
+    WorkCmpConst 0x8005, 0
+    VMJumpIf CMP_EQ, L_RunDustNone
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_DUST, 1, 0, 0x8006
+    WordSetNumber 1, 0x8005, 5
+    WordSetNumber 2, 0x8006, 5
+    SystemMsg Global10490_Text_RunGatheredDust, 2
+    LastKeyWait
+    SystemMsgClose
+
+L_RunDustNone:
     VMReturn
 
 Script_10:

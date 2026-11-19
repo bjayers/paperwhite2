@@ -10,9 +10,10 @@
 // only: loading a save or resetting finds no run.
 //
 // The run's bag: while a run is on, the game's bag (GameData_GetBag) is a bag of the run's own, empty at the start and
-// emptied at the end, holding at most ENTRALINK_RUN_BAG_* items in the Items, Medicine and Berries pockets and nothing
-// in the others. Everything that reads the bag (the bag screen, the party screen's Give and Take, the battle's bag,
-// item NPCs) sees it with no other hook, and the real bag stays untouched in the save's block, which any save writes
+// emptied at the end, holding at most ENTRALINK_RUN_BAG_* items in the Items, Medicine and Berries pockets, one in the
+// Key Items pocket (the Dowsing MCHN, step 7, which the bag shows that pocket for) and nothing in the others.
+// Everything that reads the bag (the bag screen, the party screen's Give and Take, the battle's bag, item NPCs, the
+// shops) sees it with no other hook, and the real bag stays untouched in the save's block, which any save writes
 
 // The most rooms a run has, the pre-boss rests and the final's included
 #define ENTRALINK_RUN_ROOMS_MAX 20
@@ -30,11 +31,14 @@
 #define ENTRALINK_RUN_GROUND_ITEM_NPC 16
 // A gift NPC's choice of items
 #define ENTRALINK_RUN_GIFT_ITEMS 3
+// The most goods a shop has (run.json's shop_items, 5 by default)
+#define ENTRALINK_RUN_SHOP_MAX 8
 
 // The run bag's slots in each pocket it has
 #define ENTRALINK_RUN_BAG_ITEMS 32
 #define ENTRALINK_RUN_BAG_MEDICINE 16
 #define ENTRALINK_RUN_BAG_BERRIES 16
+#define ENTRALINK_RUN_BAG_KEY_ITEMS 1
 
 typedef struct {
     // The room the player is in, from 1, or 0 outside a run
@@ -81,6 +85,14 @@ typedef struct {
     // The PID of the enemy the battle caught, and whether it caught one
     u32 caughtPid;
     BOOL caught;
+    // The run's Dream Dust (step 7), none at its start and lost at its end, and what the last battle won gave
+    u16 dust;
+    u16 dustGained;
+    // The room's shop's goods and their prices in Dream Dust, drawn as the player entered it (run.json's shop_items
+    // of the item table's shop pool), and how many. The buffs will join them (a later step)
+    u16 shopItems[ENTRALINK_RUN_SHOP_MAX];
+    u16 shopPrices[ENTRALINK_RUN_SHOP_MAX];
+    u8 shopCount;
 } EntralinkRunState;
 
 // The run's state, which overlay 12's run code keeps
