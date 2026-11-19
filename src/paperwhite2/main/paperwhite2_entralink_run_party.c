@@ -1,5 +1,7 @@
 #include "types.h"
+#include "constants/items.h"
 #include "constants/pokemon.h"
+#include "constants/species.h"
 #include "paperwhite2/entralink_run_party.h"
 #include "paperwhite2/prestige.h"
 #include "pml/poke_party.h"
@@ -8,6 +10,21 @@
 // Paper White 2: the Entralink run's team at level 100 (paperwhite2/entralink_run_party.h)
 
 #define RUN_LEVEL 100
+
+// Whether a Pokémon's held item decides its form, as the game's form-by-item code reads it
+// (Box2Main_PokeItemFormChange, the party screen's PokeList item code): Arceus's plates, Genesect's Drives, Giratina's
+// Griseous Orb
+static BOOL EntralinkRun_IsFormItem(u32 species, u32 item) {
+    switch (species) {
+    case SPECIES_ARCEUS:
+        return PaperWhite2_GetArceusPlateForm(item) != 0;
+    case SPECIES_GENESECT:
+        return PML_ItemGetGenesectDriveForme(item) != 0;
+    case SPECIES_GIRATINA:
+        return item == ITEM_GRISEOUS_ORB;
+    }
+    return FALSE;
+}
 
 // The run's copies, the game's party while a run is on
 static PokeParty sRunParty;
@@ -35,6 +52,11 @@ void EntralinkRun_KeepParty(GameData *gameData) {
             setLevel(pkm, RUN_LEVEL);
         }
         PokeParty_Recover(pkm);
+        // The copies hold no items but those that decide their form (the run's bag holds the run's own)
+        if (!EntralinkRun_IsFormItem(PokeParty_GetParam(pkm, PKM_PARAM_SPECIES, NULL),
+                                     PokeParty_GetParam(pkm, PKM_PARAM_ITEM, NULL))) {
+            PokeParty_SetParam(pkm, PKM_PARAM_ITEM, ITEM_NONE);
+        }
     }
     sRealParty = party;
     PaperWhite2_GameData_SetParty(gameData, &sRunParty);

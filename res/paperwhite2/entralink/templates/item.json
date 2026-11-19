@@ -1,0 +1,27 @@
+{
+    "$schema": "../room.schema.json",
+    "name": "Item room (template)",
+    "role": "room",
+    "type": "item",
+    "battles": [],
+    "npcs": [
+        {
+            "type": "item_choice",
+            "x": 12,
+            "z": 14,
+            "facing": "DIR_DOWN"
+        },
+        {
+            "type": "item_choice",
+            "x": 15,
+            "z": 14,
+            "facing": "DIR_DOWN"
+        },
+        {
+            "type": "item_choice",
+            "x": 18,
+            "z": 14,
+            "facing": "DIR_DOWN"
+        }
+    ]
+}

@@ -1,0 +1,39 @@
+{
+    "$schema": "../room.schema.json",
+    "name": "Rest (template)",
+    "role": "room",
+    "type": "rest",
+    "battles": [],
+    "npcs": [
+        {
+            "type": "heal",
+            "x": 12,
+            "z": 14,
+            "facing": "DIR_DOWN",
+            "marker": "rest",
+            "dialogue": {
+                "before": "Rest here a while.\nI'll tend to every Pokémon still standing."
+            }
+        },
+        {
+            "type": "revive",
+            "x": 15,
+            "z": 14,
+            "facing": "DIR_DOWN",
+            "marker": "rest",
+            "dialogue": {
+                "before": "A fallen Pokémon can rise again here.{be01}"
+            }
+        },
+        {
+            "type": "gift",
+            "x": 18,
+            "z": 14,
+            "facing": "DIR_DOWN",
+            "marker": "item",
+            "dialogue": {
+                "before": "Take one of these for the road."
+            }
+        }
+    ]
+}

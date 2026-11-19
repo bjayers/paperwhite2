@@ -19,13 +19,15 @@
 
 // Paper White 2: the Entralink run's markers (paperwhite2/entralink_markers.h). The ground markers are flat quads
 // lying on the ground (BILLBOARD_ACTOR_TYPE_FACE_CAMERA_Y_FLAT, as the footprints and the actors' shadows lie), 2 by 2
-// tiles; the NPC markers are quads facing the camera over the NPCs' heads, as the emote bubbles are. Their art is the
-// model table's members from ENTRALINK_RUN_MARKER_FILE (tools/paperwhite2/entralink_run.py), each a 16-color texture
+// tiles; the NPC markers are quads facing the camera over the NPCs' heads, as the emote bubbles are, and over an item
+// room's ball its item's bag icon, 2 by 2 tiles. Their art is the model table's members from ENTRALINK_RUN_MARKER_FILE
+// (tools/paperwhite2/entralink_run.py; the icons the bag's own graphics and palettes), each a 16-color texture
 // read with its palette, uploaded to VRAM and trimmed from main memory as the field's effects' textures are. They have
 // a billboard system of their own, so the field's effects keep every material and actor they had
 
-// The system's materials (each texture loaded once while the field lasts) and actors (the doors' and the NPCs')
-#define MARKER_MATERIALS 12
+// The system's materials (each texture loaded once while the field lasts: the doors' at most 3, the NPC markers' and
+// an item room's 3 icons) and actors (the doors' and the NPCs')
+#define MARKER_MATERIALS 16
 #define MARKER_NPCS 16
 #define MARKER_ACTORS (ENTRALINK_RUN_DOORS + MARKER_NPCS)
 // The frames between two looks at what the doors show (the catch marker follows the run's bag)
@@ -46,6 +48,9 @@
 // A tile, and the space between an NPC's sprite and its marker's middle
 #define TILE_SIZE FX32_CONST(16)
 #define NPC_MARKER_GAP FX32_CONST(10)
+// The space between an item room ball's sprite and its icon's middle, which keeps the icon's bottom where an NPC
+// marker's is
+#define ICON_GAP FX32_CONST(18)
 
 #define NO_FILE 0xffff
 
@@ -101,7 +106,20 @@ static u32 Markers_GetDoorMaterial(Field *field, u32 marker) {
     return Markers_GetMaterial(field, ENTRALINK_RUN_MARKER_FILE + marker, MARKER_SIZE, MARKER_TEX_SIZE);
 }
 
+static BOOL Markers_IsIcon(u32 marker) {
+    return (marker & ENTRALINK_NPC_MARKER_ICON) != 0;
+}
+
+// An NPC marker's material, or an item's bag icon's (ENTRALINK_NPC_MARKER_ICON)
 static u32 Markers_GetNpcMaterial(Field *field, u32 marker) {
+    u32 icon = marker & ~ENTRALINK_NPC_MARKER_ICON;
+
+    if (Markers_IsIcon(marker)) {
+        if (icon >= ENTRALINK_RUN_ITEM_ICON_COUNT) {
+            return BILLBOARD_ACTOR_NONE;
+        }
+        return Markers_GetMaterial(field, ENTRALINK_RUN_ITEM_ICON_FILE + icon, MARKER_SIZE, MARKER_TEX_SIZE);
+    }
     if (marker >= ENTRALINK_RUN_NPC_MARKER_COUNT) {
         return BILLBOARD_ACTOR_NONE;
     }
@@ -227,9 +245,10 @@ static void Markers_UpdateNpcs(Field *field) {
         CopyActorWPos(actor, &pos);
         CopyActorPosOffset(actor, &offset);
         VEC_Add(&pos, &offset, &pos);
-        pos.y += Markers_GetSpriteHeight(actor) + NPC_MARKER_GAP;
+        pos.y += Markers_GetSpriteHeight(actor) + (Markers_IsIcon(marker) ? ICON_GAP : NPC_MARKER_GAP);
         if (sMarkers.npcActors[i] == BILLBOARD_ACTOR_NONE) {
-            sMarkers.npcActors[i] = Markers_AddActor(Markers_GetNpcMaterial(field, marker), &pos, NPC_MARKER_SCALE,
+            sMarkers.npcActors[i] = Markers_AddActor(Markers_GetNpcMaterial(field, marker), &pos,
+                                                     Markers_IsIcon(marker) ? MARKER_SCALE : NPC_MARKER_SCALE,
                                                      BILLBOARD_ACTOR_TYPE_FACE_CAMERA);
         } else {
             Markers_SetActorPos(sMarkers.npcActors[i], &pos);

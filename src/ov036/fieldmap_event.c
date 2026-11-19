@@ -78,6 +78,7 @@
 #include "system/game_system.h"
 #include "system/wipe.h"
 #ifdef PAPERWHITE2
+#include "paperwhite2/entralink_run.h"
 #include "paperwhite2/field_moves.h"
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/wanderers.h"
@@ -353,6 +354,14 @@ static GameEvent *FieldEventProvider_Grid_CheckForEvent(GameSystem *gsys, Field 
         if (scrId != SCRID_NONE) {
             return EventScriptCall_Create(gsys, scrId, NULL, wk.heapId);
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: an Entralink run's hidden item on the tile in front, which no event has
+        // (paperwhite2/entralink_run.h)
+        scrId = EntralinkRun_CheckHiddenItem(wk.zoneId, &pos);
+        if (scrId != SCRID_NONE) {
+            return EventScriptCall_Create(gsys, scrId, NULL, wk.heapId);
+        }
+#endif
         scrId = CheckFieldEnvInteraction(&wk, field);
         if (scrId != SCRID_NONE) {
             return EventScriptCall_Create(gsys, scrId, NULL, wk.heapId);

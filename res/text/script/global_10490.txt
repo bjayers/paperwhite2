@@ -18,4 +18,16 @@ Global10490_Text_RunFoundItem = {0100:0} found {ff00:2}{0109:1}{ff00:0}!
 Global10490_Text_RunFoundItems = {0100:0} found {ff00:2}{0109:1}{ff00:0} ×{0202:2}!
 Global10490_Text_RunBagFull = The run's bag has no room for it...
 Global10490_Text_RunNotReady = This nightmare isn't ready for you yet...
+Global10490_Text_RunHealed = Every Pokémon still standing\nwas healed!
+Global10490_Text_RunNoneFainted = None of your Pokémon has fainted.\nNo one needs reviving.
+Global10490_Text_RunNotFainted = That Pokémon hasn't fainted.
+Global10490_Text_RunRevived = {0102:0} was revived!
+Global10490_Text_RunGiftWhich = Which one will you take?
+Global10490_Text_RunGiftItem0 = {0109:0}
+Global10490_Text_RunGiftItem1 = {0109:1}
+Global10490_Text_RunGiftItem2 = {0109:2}
+Global10490_Text_RunReceivedItem = {0100:0} received {ff00:2}{0109:1}{ff00:0}!
+Global10490_Text_RunShopClosed = The shop isn't open yet...
+Global10490_Text_RunTakeItem = It's {ff00:2}{0109:1}{ff00:0}!\nWill you take it?
+Global10490_Text_RunChoiceDone = Go on. The nightmare awaits.
 \pad{d6}

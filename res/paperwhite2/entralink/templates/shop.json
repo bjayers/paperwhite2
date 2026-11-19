@@ -1,0 +1,16 @@
+{
+    "$schema": "../room.schema.json",
+    "name": "Shop (template)",
+    "role": "room",
+    "type": "shop",
+    "battles": [],
+    "npcs": [
+        {
+            "type": "shop",
+            "x": 15,
+            "z": 14,
+            "facing": "DIR_DOWN",
+            "marker": "shop"
+        }
+    ]
+}

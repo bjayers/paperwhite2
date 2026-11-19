@@ -14,8 +14,8 @@
 // in the others. Everything that reads the bag (the bag screen, the party screen's Give and Take, the battle's bag,
 // item NPCs) sees it with no other hook, and the real bag stays untouched in the save's block, which any save writes
 
-// The most rooms a run has, the final's included
-#define ENTRALINK_RUN_ROOMS_MAX 15
+// The most rooms a run has, the pre-boss rests and the final's included
+#define ENTRALINK_RUN_ROOMS_MAX 20
 // The most enemies of a battle
 #define ENTRALINK_RUN_ENEMIES_MAX 3
 // A room's forward doors (ENTRALINK_DOOR_COUNT), and no room behind one
@@ -25,6 +25,11 @@
 #define ENTRALINK_FIELD_WEATHER_ZONE 0xff
 // No catchable enemy
 #define ENTRALINK_CATCH_NONE 0xffff
+// A room's NPCs (their actors' IDs), and the actor ID of its ball on the ground, after them
+#define ENTRALINK_RUN_NPCS_MAX 16
+#define ENTRALINK_RUN_GROUND_ITEM_NPC 16
+// A gift NPC's choice of items
+#define ENTRALINK_RUN_GIFT_ITEMS 3
 
 // The run bag's slots in each pocket it has
 #define ENTRALINK_RUN_BAG_ITEMS 32
@@ -53,8 +58,23 @@ typedef struct {
     u16 npcsSpawned;
     // A bit for each that has gone since: an item NPC that gave its item, the other battles' NPCs after a win
     u16 npcsGone;
-    // A bit for each rest or buff NPC talked to
+    // A bit for each rest, buff or shop NPC talked to, and choice NPC used
     u16 npcsUsed;
+    // Whether the room's choice is made (a choice NPC used: ENTRALINK_NPC_HEAL to ENTRALINK_NPC_BUFF_CHOICE but the
+    // shop)
+    u8 choiceMade;
+    // The tiles of the room's ball on the ground and of its hidden item
+    u8 groundX;
+    u8 groundZ;
+    u8 hiddenX;
+    u8 hiddenZ;
+    // The items of the room's ball on the ground and its hidden one, drawn as the player entered it, or ITEM_NONE
+    // (none, or taken)
+    u16 groundItem;
+    u16 hiddenItem;
+    // The items of the room's item room balls (ENTRALINK_NPC_ITEM_CHOICE), by NPC, and of its gift NPC's choice
+    u16 npcItems[ENTRALINK_RUN_NPCS_MAX];
+    u16 giftItems[ENTRALINK_RUN_GIFT_ITEMS];
     // The battle being fought: its catchable enemies' PIDs and catch progress ids (ENTRALINK_CATCH_NONE for none)
     u32 catchPids[ENTRALINK_RUN_ENEMIES_MAX];
     u16 catchIds[ENTRALINK_RUN_ENEMIES_MAX];

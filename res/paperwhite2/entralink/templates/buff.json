@@ -1,0 +1,30 @@
+{
+    "$schema": "../room.schema.json",
+    "name": "Buff room (template)",
+    "role": "room",
+    "type": "buff",
+    "battles": [],
+    "npcs": [
+        {
+            "type": "buff_choice",
+            "x": 12,
+            "z": 14,
+            "facing": "DIR_DOWN",
+            "marker": "buff"
+        },
+        {
+            "type": "buff_choice",
+            "x": 15,
+            "z": 14,
+            "facing": "DIR_DOWN",
+            "marker": "buff"
+        },
+        {
+            "type": "buff_choice",
+            "x": 18,
+            "z": 14,
+            "facing": "DIR_DOWN",
+            "marker": "buff"
+        }
+    ]
+}

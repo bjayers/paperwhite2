@@ -15,6 +15,7 @@
     ScriptEntry Script_8
 #ifdef PAPERWHITE2
     ScriptEntry Script_9
+    ScriptEntry Script_10
 #endif
     ScriptEntriesEnd
 
@@ -356,6 +357,23 @@ Script_9:
     VMJumpIf CMP_EQ, L_RunBattleNpc
     WorkCmpConst 0x8000, ENTRALINK_RUN_NPC_ITEM
     VMJumpIf CMP_EQ, L_RunItemNpc
+    // Paper White 2: step 6's NPCs (paperwhite2/entralink_run_actions.h)
+    WorkCmpConst 0x8000, ENTRALINK_RUN_NPC_GROUND
+    VMJumpIf CMP_EQ, L_RunGiveItem
+    WorkCmpConst 0x8000, ENTRALINK_RUN_NPC_HEAL
+    VMJumpIf CMP_EQ, L_RunHealNpc
+    WorkCmpConst 0x8000, ENTRALINK_RUN_NPC_REVIVE
+    VMJumpIf CMP_EQ, L_RunReviveNpc
+    WorkCmpConst 0x8000, ENTRALINK_RUN_NPC_GIFT
+    VMJumpIf CMP_EQ, L_RunGiftNpc
+    WorkCmpConst 0x8000, ENTRALINK_RUN_NPC_SHOP
+    VMJumpIf CMP_EQ, L_RunShopNpc
+    WorkCmpConst 0x8000, ENTRALINK_RUN_NPC_ITEM_CHOICE
+    VMJumpIf CMP_EQ, L_RunItemChoice
+    WorkCmpConst 0x8000, ENTRALINK_RUN_NPC_BUFF_CHOICE
+    VMJumpIf CMP_EQ, L_RunBuffChoice
+    WorkCmpConst 0x8000, ENTRALINK_RUN_NPC_DONE
+    VMJumpIf CMP_EQ, L_RunChoiceDone
     WorkSetConst 0x8002, 0
     VMCall L_RunDialogue
     WorkCmpConst 0x8001, ENTRALINK_RUN_NO_MESSAGE
@@ -374,6 +392,9 @@ L_RunNpcDone:
 L_RunItemNpc:
     WorkSetConst 0x8002, 0
     VMCall L_RunDialogue
+
+L_RunGiveItem:
+    // Paper White 2: an item NPC's item, or the ball on the ground's, into the run's bag
     EntralinkRun ENTRALINK_RUN_ACTION_GET_ITEM, 0, 0, 0x8004
     EntralinkRun ENTRALINK_RUN_ACTION_GET_ITEM_COUNT, 0, 0, 0x8005
     EntralinkRun ENTRALINK_RUN_ACTION_GIVE_ITEM, 0, 0, 0x8000
@@ -402,6 +423,154 @@ L_RunItemDone:
 L_RunBagFull:
     SystemMsg Global10490_Text_RunBagFull, 2
     VMJump L_RunItemDone
+
+L_RunHealNpc:
+    // Paper White 2: a heal NPC heals every Pokémon that hasn't fainted, which is the room's choice
+    WorkSetConst 0x8002, 0
+    VMCall L_RunDialogue
+    EntralinkRun ENTRALINK_RUN_ACTION_HEAL, 0, 0, 0x8000
+    MEPlay SEQ_ME_ASA
+    SystemMsg Global10490_Text_RunHealed, 2
+    MEWait
+    LastKeyWait
+    SystemMsgClose
+    EntralinkRun ENTRALINK_RUN_ACTION_MAKE_CHOICE, 0, 0, 0x8000
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+L_RunReviveNpc:
+    // Paper White 2: a revive NPC revives a fainted Pokémon the player chooses, which is the room's choice; with none
+    // fainted it says so, and leaving the party screen leaves the choice open
+    WorkSetConst 0x8002, 0
+    VMCall L_RunDialogue
+    EntralinkRun ENTRALINK_RUN_ACTION_CAN_REVIVE, 0, 0, 0x8000
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_EQ, L_RunNoneFainted
+
+L_RunReviveSelect:
+    CallPokeSelect 0, 0x8003, 0x8004, 0
+    WorkCmpConst 0x8003, 0
+    VMJumpIf CMP_EQ, L_RunNpcEnd
+    EntralinkRun ENTRALINK_RUN_ACTION_REVIVE, 0x8004, 0, 0x8000
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_EQ, L_RunNotFainted
+    WordSetPartyPokeName 0, 0x8004
+    SEPlay SEQ_SE_RECOVERY
+    SystemMsg Global10490_Text_RunRevived, 2
+    LastKeyWait
+    SystemMsgClose
+    EntralinkRun ENTRALINK_RUN_ACTION_MAKE_CHOICE, 0, 0, 0x8000
+    VMJump L_RunNpcEnd
+
+L_RunNotFainted:
+    SystemMsg Global10490_Text_RunNotFainted, 2
+    LastKeyWait
+    SystemMsgClose
+    VMJump L_RunReviveSelect
+
+L_RunNoneFainted:
+    SystemMsg Global10490_Text_RunNoneFainted, 2
+    LastKeyWait
+    SystemMsgClose
+
+L_RunNpcEnd:
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+L_RunGiftNpc:
+    // Paper White 2: a gift NPC's choice of 3 items in a list; the one taken goes into the run's bag, which is the
+    // room's choice, and B leaves the choice open
+    WorkSetConst 0x8002, 0
+    VMCall L_RunDialogue
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_GIFT_ITEM, 0, 0, 0x8004
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_GIFT_ITEM, 1, 0, 0x8005
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_GIFT_ITEM, 2, 0, 0x8006
+    WordSetItemName 0, 0x8004
+    WordSetItemName 1, 0x8005
+    WordSetItemName 2, 0x8006
+    SystemMsg Global10490_Text_RunGiftWhich, 2
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8000
+    ListMenuAdd Global10490_Text_RunGiftItem0, 65535, 0
+    WorkCmpConst 0x8005, 0
+    VMJumpIf CMP_EQ, L_RunGiftShow
+    ListMenuAdd Global10490_Text_RunGiftItem1, 65535, 1
+    WorkCmpConst 0x8006, 0
+    VMJumpIf CMP_EQ, L_RunGiftShow
+    ListMenuAdd Global10490_Text_RunGiftItem2, 65535, 2
+
+L_RunGiftShow:
+    ListMenuShow
+    SystemMsgClose
+    WorkCmpConst 0x8000, 65534
+    VMJumpIf CMP_EQ, L_RunNpcEnd
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_GIFT_ITEM, 0x8000, 0, 0x8004
+    EntralinkRun ENTRALINK_RUN_ACTION_GIVE_GIFT, 0x8000, 0, 0x8000
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_EQ, L_RunBagFull
+    WordSetPlayerName 0
+    WordSetItemName 1, 0x8004
+    MEPlay SEQ_ME_ITEM
+    SystemMsg Global10490_Text_RunReceivedItem, 2
+    MEWait
+    LastKeyWait
+    SystemMsgClose
+    EntralinkRun ENTRALINK_RUN_ACTION_MAKE_CHOICE, 0, 0, 0x8000
+    VMJump L_RunNpcEnd
+
+L_RunShopNpc:
+    // Paper White 2: a shop, a placeholder until it sells (step 7): its dialogue or a line; talking to it uses it
+    WorkSetConst 0x8002, 0
+    VMCall L_RunDialogue
+    WorkCmpConst 0x8001, ENTRALINK_RUN_NO_MESSAGE
+    VMJumpIf CMP_NE, L_RunNpcDone
+    SystemMsg Global10490_Text_RunShopClosed, 2
+    LastKeyWait
+    SystemMsgClose
+    VMJump L_RunNpcDone
+
+L_RunItemChoice:
+    // Paper White 2: an item room's ball: Yes takes its item into the run's bag, which is the room's choice
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_ITEM, 0, 0, 0x8004
+    WordSetItemName 1, 0x8004
+    SystemMsg Global10490_Text_RunTakeItem, 2
+    YesNoWin 0x8000
+    SystemMsgClose
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_NE, L_RunNpcEnd
+    EntralinkRun ENTRALINK_RUN_ACTION_GIVE_ITEM, 0, 0, 0x8000
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_EQ, L_RunBagFull
+    WordSetPlayerName 0
+    MEPlay SEQ_ME_ITEM
+    SystemMsg Global10490_Text_RunFoundItem, 2
+    MEWait
+    LastKeyWait
+    SystemMsgClose
+    EntralinkRun ENTRALINK_RUN_ACTION_MAKE_CHOICE, 0, 0, 0x8000
+    VMJump L_RunNpcEnd
+
+L_RunBuffChoice:
+    // Paper White 2: a buff ball, a placeholder until the buffs: its dialogue or a line, and the room's choice
+    WorkSetConst 0x8002, 0
+    VMCall L_RunDialogue
+    WorkCmpConst 0x8001, ENTRALINK_RUN_NO_MESSAGE
+    VMJumpIf CMP_NE, L_RunBuffChosen
+    SystemMsg Global10490_Text_RunNotReady, 2
+    LastKeyWait
+    SystemMsgClose
+
+L_RunBuffChosen:
+    EntralinkRun ENTRALINK_RUN_ACTION_MAKE_CHOICE, 0, 0, 0x8000
+    VMJump L_RunNpcEnd
+
+L_RunChoiceDone:
+    // Paper White 2: a choice NPC once the room's choice is made
+    SystemMsg Global10490_Text_RunChoiceDone, 2
+    LastKeyWait
+    SystemMsgClose
+    VMJump L_RunNpcEnd
 
 L_RunBattleNpc:
     WorkSetConst 0x8002, 0
@@ -463,4 +632,23 @@ L_RunDialogue:
 
 L_RunDialogueNone:
     VMReturn
+
+Script_10:
+    // Paper White 2: the room's hidden item, found by pressing A facing its flower tile (script 10499,
+    // EntralinkRun_CheckHiddenItem), into the run's bag
+    ActorsPauseAll
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_HIDDEN_ITEM, 0, 0, 0x8004
+    EntralinkRun ENTRALINK_RUN_ACTION_TAKE_HIDDEN_ITEM, 0, 0, 0x8000
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_EQ, L_RunBagFull
+    WordSetPlayerName 0
+    WordSetItemName 1, 0x8004
+    MEPlay SEQ_ME_ITEM
+    SystemMsg Global10490_Text_RunFoundItem, 2
+    MEWait
+    LastKeyWait
+    SystemMsgClose
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
 #endif

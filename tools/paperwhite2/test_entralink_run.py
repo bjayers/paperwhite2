@@ -60,10 +60,17 @@ def test_draw_problems(tmp_path):
     # More rooms in a round than can come up in it still packs
     edit(directory / "run.json", lambda data: data["rounds"][0].update(rooms=4))
     entralink_run.tables(directory)
-    # A round with no room at all can't
+    # A round with no room at all can't, without the templates (step 6)
     for name in ("dialga", "prince_or_princess", "rayquaza_raid"):
         edit(room(directory, name), lambda data: data.update(rounds=[2, 3]))
-    with pytest.raises(datajson.DataError, match="round 1 draws 4 rooms, but no room"):
+    rooms = entralink_run.load_rooms(directory)
+    assert ("error", "round 1 draws 4 rooms, but no room can come up in it (role room, rounds left out or naming "
+            "it)") in entralink_run.draw_problems(entralink_run.load_run(directory), rooms)
+    # With them its doors draw the templates' types; with every weight 0 it can't
+    entralink_run.tables(directory)
+    edit(directory / "run.json", lambda data: data["rounds"][0].update(
+        type_weights={kind: 0 for kind in entralink_run.ROOM_TYPES}))
+    with pytest.raises(datajson.DataError, match="round 1's room type weights add up to 0"):
         entralink_run.tables(directory)
 
 
@@ -156,7 +163,7 @@ def test_markers_and_round_fogs_pack(tmp_path):
     assert data["npcs"][rows["dialga"]["firstNpc"]]["marker"] == entralink_run.NPC_MARKER_NONE
     weathers = entralink_run.field_weathers()
     # A round without a fog takes the run's field_weather
-    assert [w for _, _, w in data["rounds"]] == [weathers["WEATHER_CUSTOM_TINT_9"], weathers["WEATHER_RAIN"],
+    assert [w for _, _, w, _ in data["rounds"]] == [weathers["WEATHER_CUSTOM_TINT_9"], weathers["WEATHER_RAIN"],
                                                   weathers["WEATHER_CUSTOM_TINT_7"]]
     assert data["pre_boss_zone"][1] == entralink_run.PRE_BOSS_ZONE_NONE and data["unknown_chance"] == 40
     assert data["marker_spots"] == [tuple(entralink_run.DEFAULT_MARKER_SPOTS[d]) for d in entralink_run.DOORS]
@@ -172,7 +179,8 @@ def test_npc_marker_needs_its_art(tmp_path):
 
 def test_marker_members(tmp_path):
     members = entralink_run.marker_members()
-    assert len(members) == len(entralink_run.MARKER_TYPES) + len(entralink_run.npc_marker_names())
+    assert len(members) == (len(entralink_run.MARKER_TYPES) + len(entralink_run.npc_marker_names())
+                            + len(entralink_run.icon_items()))
     assert all(member[:4] == b"BTX0" for member in members)
     directory = copy_data(tmp_path)
     (directory / "markers" / "boss.png").write_bytes((directory / "npc_markers" / "rest.png").read_bytes())
@@ -196,3 +204,93 @@ def test_ground_markers_are_packed_upside_down(tmp_path):
     path = entralink_run.SOURCE / "markers" / "enemy.png"
     assert entralink_run.marker_texture(path, size, flat=True) == entralink_run.marker_texture(flipped, size)
     assert entralink_run.marker_texture(path, size, flat=True) != entralink_run.marker_texture(path, size)
+
+
+def test_room_types_and_templates_pack(tmp_path):
+    directory = copy_data(tmp_path)
+    edit(room(directory, "dialga"), lambda data: data.update(type="challenge"))
+    edit(directory / "run.json", lambda data: data["rounds"][0].update(type_weights={"shop": 0, "enemy": 7}))
+    data = entralink_run.tables(directory)
+    rows = {row["name"]: row for row in data["rooms"]}
+    markers, types = entralink_run.MARKER_TYPES, entralink_run.ROOM_TYPES
+    assert rows["dialga"]["type"] == types["challenge"] and rows["dialga"]["marker"] == markers.index("challenge")
+    assert rows["templates/item"]["template"] == 1 and rows["templates/item"]["marker"] == markers.index("gift")
+    assert rows["templates/pre_boss_rest"]["type"] == types["rest"]
+    assert rows["templates/pre_boss_rest"]["marker"] == markers.index("rest")
+    assert data["type_templates"][types["enemy"]] == entralink_run.TEMPLATE_NONE
+    assert data["type_templates"][types["shop"]] == data["templates"]["shop"]
+    weights = data["rounds"][0][3]
+    assert weights[types["shop"]] == 0 and weights[types["enemy"]] == 7 and weights[types["rest"]] == 10
+    # The pre-boss rests count: 3 rounds of 3 rooms, 2 bosses, 3 rests and the final
+    assert entralink_run.place_count(entralink_run.load_run(directory)) == 15
+
+
+def test_missing_template(tmp_path):
+    directory = copy_data(tmp_path)
+    (directory / "templates" / "shop.json").unlink()
+    with pytest.raises(datajson.DataError, match="shop.json is missing: the run draws it"):
+        entralink_run.tables(directory)
+    # No round draws a shop: only a warning, and its doors skip the type
+    edit(directory / "run.json", lambda data: [r.update(type_weights={"shop": 0}) for r in data["rounds"]])
+    data = entralink_run.tables(directory)
+    assert data["type_templates"][entralink_run.ROOM_TYPES["shop"]] == entralink_run.TEMPLATE_NONE
+    (directory / "templates" / "pre_boss_rest.json").unlink()
+    with pytest.raises(datajson.DataError, match="pre_boss_rest.json is missing"):
+        entralink_run.tables(directory)
+
+
+def test_template_type_is_its_files(tmp_path):
+    directory = copy_data(tmp_path)
+    edit(directory / "templates" / "item.json", lambda data: data.update(type="rest"))
+    with pytest.raises(datajson.DataError, match="its type is item"):
+        entralink_run.tables(directory)
+
+
+def test_items_and_icons_pack(tmp_path):
+    data = entralink_run.tables(entralink_run.SOURCE)
+    icons = entralink_run.icon_items()
+    rows = {row["name"]: row for row in data["items"]}
+    assert rows["ITEM_POTION"]["icon"] == entralink_run.ICON_NONE and rows["ITEM_REVIVE"]["icon"] == icons.index("ITEM_REVIVE")
+    assert rows["ITEM_HYPER_POTION"]["rounds"] == 0b110
+    assert rows["ITEM_NIGHTMARE_BALL"]["pools"] == 0b111
+    # The bag's own icon and palette: the Super Potion shares the Potion's icon, with its own palette
+    icon, palette = entralink_run.item_icon_files("ITEM_SUPER_POTION")
+    assert icon.parent.name == "potion" and palette.parent.name == "super_potion"
+    assert entralink_run.icon_texture("ITEM_SUPER_POTION")[:4] == b"BTX0"
+    directory = copy_data(tmp_path)
+    edit(directory / "items.json", lambda data: data["items"][0].update(pools=["nowhere"]))
+    with pytest.raises(datajson.DataError, match="nowhere"):
+        entralink_run.tables(directory)
+
+
+def test_clearings_pack(tmp_path):
+    data = entralink_run.tables(entralink_run.SOURCE)
+    clearings = {c["name"]: c for c in data["clearings"]}
+    assert set(clearings) == {"ZONE_ENTREE_FOREST", "ZONE_ENTREE_FOREST_6", "ZONE_ENTREE_FOREST_10",
+                              "ZONE_ENTREE_FOREST_2"}
+    forest = clearings["ZONE_ENTREE_FOREST"]
+    # The arrival tile can be walked on, the forest's edge can't
+    assert not forest["blocked"][23] >> 15 & 1 and forest["blocked"][0] == 0xffffffff
+    flowers = data["flower_tiles"][forest["firstFlower"]:][:forest["flowerCount"]]
+    assert (18, 10) in flowers and len(flowers) == forest["flowerCount"] > 0
+    directory = copy_data(tmp_path)
+    edit(directory / "flower_tiles.json", lambda data: data.update(ZONE_ENTREE_FOREST_99=[[1, 2]]))
+    with pytest.raises(datajson.DataError, match="not an Entree Forest clearing"):
+        entralink_run.tables(directory)
+
+
+def test_draw_problems_with_templates(tmp_path):
+    directory = copy_data(tmp_path)
+    run, rooms = entralink_run.load_run(directory), entralink_run.load_rooms(directory)
+    templates = entralink_run.load_templates(directory)
+    problems = entralink_run.draw_problems(run, rooms, templates)
+    assert ("warning", "round 1: no challenge or event room can come up, so those types are skipped") in problems
+    assert not [p for p in problems if p[0] == "error"]
+    # No premade room in round 1: its doors still draw the templates' types
+    for name in ("dialga", "prince_or_princess", "rayquaza_raid"):
+        edit(room(directory, name), lambda data: data.update(rounds=[2, 3]))
+    rooms = entralink_run.load_rooms(directory)
+    assert not [p for p in entralink_run.draw_problems(run, rooms, templates) if p[0] == "error"]
+    run["rounds"][0]["type_weights"] = {kind: 0 for kind in entralink_run.ROOM_TYPES}
+    assert ("error", "round 1's room type weights add up to 0, so its doors can't draw a room") in \
+        entralink_run.draw_problems(run, rooms, templates)

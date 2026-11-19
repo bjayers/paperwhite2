@@ -1,0 +1,46 @@
+{
+    "$schema": "../room.schema.json",
+    "name": "Pre-boss rest (template)",
+    "role": "room",
+    "type": "rest",
+    "battles": [],
+    "npcs": [
+        {
+            "type": "heal",
+            "x": 11,
+            "z": 14,
+            "facing": "DIR_DOWN",
+            "marker": "rest",
+            "dialogue": {
+                "before": "Rest here a while.\nI'll tend to every Pokémon still standing."
+            }
+        },
+        {
+            "type": "revive",
+            "x": 14,
+            "z": 14,
+            "facing": "DIR_DOWN",
+            "marker": "rest",
+            "dialogue": {
+                "before": "A fallen Pokémon can rise again here.{be01}"
+            }
+        },
+        {
+            "type": "gift",
+            "x": 17,
+            "z": 14,
+            "facing": "DIR_DOWN",
+            "marker": "item",
+            "dialogue": {
+                "before": "Take one of these for the road."
+            }
+        },
+        {
+            "type": "shop",
+            "x": 20,
+            "z": 14,
+            "facing": "DIR_DOWN",
+            "marker": "shop"
+        }
+    ]
+}

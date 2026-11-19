@@ -35,7 +35,29 @@ GUARD = "POKEBW2_PAPERWHITE2_ENTRALINK_RUN_CONFIG_H"
 FORMATS = {"single": 0, "double": 1, "triple": 2, "raid": 3}
 ENEMY_COUNTS = {"single": (1, 1), "double": (1, 2), "triple": (1, 3), "raid": (1, 1)}
 ROLES = {"room": 0, "boss": 1, "final": 2}
-NPC_TYPES = {"battle": 0, "item": 1, "rest": 2, "buff": 3}
+NPC_TYPES = {"battle": 0, "item": 1, "rest": 2, "buff": 3, "heal": 4, "revive": 5, "gift": 6, "shop": 7,
+             "item_choice": 8, "buff_choice": 9}
+# A room's type (ENTRALINK_TYPE_*), which its doors draw by the round's weights, and the marker it shows by default
+ROOM_TYPES = {"enemy": 0, "challenge": 1, "rest": 2, "item": 3, "buff": 4, "shop": 5, "event": 6}
+TYPE_MARKERS = {"enemy": "enemy", "challenge": "challenge", "rest": "rest", "item": "gift", "buff": "gift",
+                "shop": "shop", "event": "event"}
+# The types a door draws from rooms/ only (event from its template too, if there is one)
+PREMADE_TYPES = ["enemy", "challenge", "event"]
+DEFAULT_TYPE_WEIGHTS = {"enemy": 50, "challenge": 12, "item": 10, "buff": 10, "rest": 10, "event": 5, "shop": 3}
+# The templates (templates/<name>.json): each a room of role room, the generated room of its type, and the pre-boss
+# rest before a boss or the final room; event's is optional (with none, a door draws event only from rooms/)
+TEMPLATES = {"rest": "rest", "item": "item", "buff": "buff", "shop": "shop", "pre_boss_rest": "rest",
+             "event": "event"}
+OPTIONAL_TEMPLATES = {"event"}
+TEMPLATE_NONE = 0xff
+DEFAULT_CUSTOM_CHANCE = 25
+DEFAULT_GROUND_ITEM_CHANCE = 30
+DEFAULT_HIDDEN_ITEM_CHANCE = 20
+# The item table's pools (ENTRALINK_POOL_*, bits)
+POOLS = {"item_room": 0, "gift": 1, "shop": 2, "ground": 3}
+# An item without a bag icon in the model table
+ICON_NONE = 0xff
+ICONS_MAX = 127
 # A message's window (ENTRALINK_STYLE_*): talk is the default
 STYLES = {"talk": 0, "bubble": 1, "yell": 2, "event": 3}
 WEATHER_FIELD = 0xff
@@ -72,12 +94,14 @@ RUN_COMPLETED = "run/completed"
 REQUIRE_RUN_COMPLETED = 0xffff
 DEFAULT_LEVEL = 70
 # The sprites an NPC shows without its own: an item NPC the item ball, rest and buff NPCs the Lady
-DEFAULT_SPRITES = {"item": "OBJ_CODE_110", "rest": "OBJ_CODE_LADY", "buff": "OBJ_CODE_LADY"}
+DEFAULT_SPRITES = {"item": "OBJ_CODE_110", "rest": "OBJ_CODE_LADY", "buff": "OBJ_CODE_LADY", "heal": "OBJ_CODE_LADY",
+                   "revive": "OBJ_CODE_LADY", "gift": "OBJ_CODE_LADY", "shop": "OBJ_CODE_LADY",
+                   "item_choice": "OBJ_CODE_110", "buff_choice": "OBJ_CODE_110"}
 # The save's bits (include/paperwhite2/entralink_progress.h)
 BATTLES_MAX = 1024
 CATCHES_MAX = 512
-# The rooms of a run, the final's included (ENTRALINK_RUN_ROOMS_MAX)
-RUN_ROOMS_MAX = 15
+# The rooms of a run, the pre-boss rests and the final's included (ENTRALINK_RUN_ROOMS_MAX)
+RUN_ROOMS_MAX = 20
 
 
 def error(where: str, message: str):
@@ -92,38 +116,97 @@ def load_rooms(directory: Path) -> dict[str, dict]:
     """Every room by ID, in ID order, checked against the schema and the rules the schema can't say."""
     schema = datajson.load_schema(directory / "room.schema.json")
     rooms = {path.stem: datajson.load(path, schema) for path in sorted((directory / "rooms").glob("*.json"))}
-    constants = datajson.constants()
     for name, room in rooms.items():
         where = f"rooms/{name}.json"
         if name == RUN_COMPLETED.split("/")[0]:
             error(where, f"a room can't be called {name!r}, which requirements use for {RUN_COMPLETED!r}")
-        battles = {}
-        for i, battle in enumerate(room["battles"]):
-            if battle["id"] in battles:
-                error(where, f"two battles are called {battle['id']!r}")
-            battles[battle["id"]] = battle
-            low, high = ENEMY_COUNTS[battle["format"]]
-            count = len(battle["enemies"])
-            if not low <= count <= high:
-                error(where, f"battles[{i}]: a {battle['format']} battle takes {low} to {high} enemies, not {count}")
-            for j, enemy in enumerate(battle["enemies"]):
-                ability = enemy.get("ability")
-                if ability is not None and ability != "hidden" and not (
-                        ability.startswith("ABILITY_") and ability in constants):
-                    error(where, f"battles[{i}].enemies[{j}].ability {ability!r} is not \"hidden\" or a known "
-                          "ABILITY_* constant")
-        for i, npc in enumerate(room["npcs"]):
-            at = f"npcs[{i}]"
-            if npc["type"] == "battle":
-                if npc.get("battle") not in battles:
-                    error(where, f"{at} starts battle {npc.get('battle')!r}, which the room doesn't have")
-                if npc.get("enemy", 0) >= len(battles[npc["battle"]]["enemies"]):
-                    error(where, f"{at} shows enemy {npc['enemy']}, which its battle doesn't have")
-            elif npc["type"] == "item" and "item" not in npc:
-                error(where, f"{at} is an item NPC without an item")
-            if "marker" in npc and npc["marker"] not in npc_marker_names(directory):
-                error(where, f"{at}'s marker {npc['marker']!r} has no npc_markers/{npc['marker']}.png")
+        check_room(directory, where, room)
     return rooms
+
+
+def load_templates(directory: Path) -> dict[str, dict]:
+    """The templates there are by name, in TEMPLATES' order, checked as the rooms are: each of role room, of its type
+    (TEMPLATES). A missing one is template_problems()' to tell."""
+    schema = datajson.load_schema(directory / "room.schema.json")
+    templates = {}
+    for name, kind in TEMPLATES.items():
+        path = directory / "templates" / f"{name}.json"
+        where = f"templates/{name}.json"
+        if not path.is_file():
+            continue
+        template = datajson.load(path, schema)
+        if template["role"] != "room":
+            error(where, f"a template's role is room, not {template['role']}")
+        if template.get("type", kind) != kind:
+            error(where, f"its type is {kind}, not {template['type']}")
+        check_room(directory, where, template)
+        templates[name] = template
+    return templates
+
+
+def round_weights(round_: dict) -> dict[str, int]:
+    """A round's room types' weights, the defaults for those it leaves out."""
+    return {**DEFAULT_TYPE_WEIGHTS, **round_.get("type_weights", {})}
+
+
+def template_problems(run: dict, templates: dict[str, dict]) -> list[tuple[str, str]]:
+    """The missing templates, as the editor's Entree page says them: pre_boss_rest's, which every run plays, and a
+    rest, item, buff or shop template a round's weights draw (above 0) are errors; one no round draws is a warning
+    (the game skips the type), and event's is optional (event rooms come from rooms/)."""
+    problems = []
+    for name, kind in TEMPLATES.items():
+        if name in templates or name in OPTIONAL_TEMPLATES:
+            continue
+        drawn = name == "pre_boss_rest" or any(round_weights(r)[kind] for r in run["rounds"])
+        problems.append(("error" if drawn else "warning",
+                         f"templates/{name}.json is missing" + (": the run draws it" if drawn else
+                                                                ", but no round draws a " + kind + " room")))
+    return problems
+
+
+def check_room(directory: Path, where: str, room: dict):
+    """The rules of a room or template that the schema can't say."""
+    constants = datajson.constants()
+    battles = {}
+    for i, battle in enumerate(room["battles"]):
+        if battle["id"] in battles:
+            error(where, f"two battles are called {battle['id']!r}")
+        battles[battle["id"]] = battle
+        low, high = ENEMY_COUNTS[battle["format"]]
+        count = len(battle["enemies"])
+        if not low <= count <= high:
+            error(where, f"battles[{i}]: a {battle['format']} battle takes {low} to {high} enemies, not {count}")
+        for j, enemy in enumerate(battle["enemies"]):
+            ability = enemy.get("ability")
+            if ability is not None and ability != "hidden" and not (
+                    ability.startswith("ABILITY_") and ability in constants):
+                error(where, f"battles[{i}].enemies[{j}].ability {ability!r} is not \"hidden\" or a known "
+                      "ABILITY_* constant")
+    for i, npc in enumerate(room["npcs"]):
+        at = f"npcs[{i}]"
+        if npc["type"] == "battle":
+            if npc.get("battle") not in battles:
+                error(where, f"{at} starts battle {npc.get('battle')!r}, which the room doesn't have")
+            if npc.get("enemy", 0) >= len(battles[npc["battle"]]["enemies"]):
+                error(where, f"{at} shows enemy {npc['enemy']}, which its battle doesn't have")
+        elif npc["type"] == "item" and "item" not in npc:
+            error(where, f"{at} is an item NPC without an item")
+        if "marker" in npc and npc["marker"] not in npc_marker_names(directory):
+            error(where, f"{at}'s marker {npc['marker']!r} has no npc_markers/{npc['marker']}.png")
+
+
+def load_items(directory: Path) -> list[dict]:
+    """The item table's entries (items.json), checked against its schema."""
+    return datajson.load(directory / "items.json", datajson.load_schema(directory / "items.schema.json"))["items"]
+
+
+def load_flowers(directory: Path) -> dict[str, list[list[int]]]:
+    """The clearings' flower tiles by zone (flower_tiles.json, tools/paperwhite2/entralink_flowers.py), or none."""
+    path = directory / "flower_tiles.json"
+    if not path.is_file():
+        return {}
+    data = datajson.load(path, datajson.load_schema(directory / "flower_tiles.schema.json"))
+    return {zone: tiles for zone, tiles in data.items() if zone != "$schema"}
 
 
 def npc_marker_names(directory: Path = SOURCE) -> list[str]:
@@ -159,22 +242,72 @@ def marker_texture(path: Path, size: int, flat: bool = False) -> bytes:
 
 
 def marker_members(directory: Path = SOURCE) -> list[bytes]:
-    """The model table's members from MARKER_FIRST_MEMBER: the ground markers in MARKER_TYPES' order, then the NPC
-    markers in npc_marker_names()' order."""
+    """The model table's members from MARKER_FIRST_MEMBER: the ground markers in MARKER_TYPES' order, the NPC markers
+    in npc_marker_names()' order, then the item room's items' bag icons in icon_items()' order."""
     names = npc_marker_names(directory)
     if len(names) > NPC_MARKERS_MAX:
         raise datajson.DataError(f"{datajson.label(directory / 'npc_markers')}: {len(names)} markers, more than "
                                  f"{NPC_MARKERS_MAX}")
     return ([marker_texture(directory / "markers" / f"{kind}.png", MARKER_SIZE, flat=True) for kind in MARKER_TYPES]
-            + [marker_texture(directory / "npc_markers" / f"{name}.png", NPC_MARKER_SIZE) for name in names])
+            + [marker_texture(directory / "npc_markers" / f"{name}.png", NPC_MARKER_SIZE) for name in names]
+            + [icon_texture(item) for item in icon_items(directory)])
 
 
-def check_progress(directory: Path, rooms: dict[str, dict]):
-    """Every battle and every catchable enemy has its own progress id, below progress_ids.json's next ones."""
+def icon_items(directory: Path = SOURCE) -> list[str]:
+    """The items whose bag icons float over an item room's balls: the item_room pool's, each once, in the table's
+    order."""
+    items = []
+    for entry in load_items(directory):
+        if "item_room" in entry["pools"] and entry["item"] not in items:
+            items.append(entry["item"])
+    if len(items) > ICONS_MAX:
+        raise datajson.DataError(f"items.json: {len(items)} items in the item_room pool, more than {ICONS_MAX}")
+    return items
+
+
+def item_icon_files(item: str) -> tuple[Path, Path]:
+    """An item's bag icon and the palette the bag shows it with, as src/system/pml_item.c's
+    ITEM_GRAPHICS_CHARS_AND_PALETTES gives them (the first entry of an item, the hack's where it has one), in
+    res/items (tools/data/item_icon_data.py)."""
+    import re
+    from tools.data.item_icon_data import member_path
+    source = (ROOT / "src" / "system" / "pml_item.c").read_text()
+    body = re.search(r"ITEM_GRAPHICS_CHARS_AND_PALETTES\[\]\[2\] = \{(.*?)\n\};", source, re.S).group(1)
+    for name, icon, palette in re.findall(r"\[(ITEM_\w+)\] = \{ *(\w+), *(\w+) *\}", body):
+        if name == item:
+            return member_path(ROOT / "res" / "items", icon), member_path(ROOT / "res" / "items", palette)
+    raise datajson.DataError(f"items.json: {item} has no bag icon in src/system/pml_item.c")
+
+
+def icon_texture(item: str) -> bytes:
+    """An item's bag icon as a BTX0 of one 32 by 32 GX_TEXFMT_PLTT16 texture with the bag's palette, index 0 clear."""
+    sys.path.insert(0, str(ROOT / "tools" / "data"))
+    from tools.data.nitro_2d import read_palette
+    from tools.data.nitro_btx import texture_set
+    icon, palette_path = item_icon_files(item)
+    try:
+        width, height, pixels, _ = read_indexed_png(icon)
+        colors = read_palette(palette_path)
+    except (OSError, ValueError) as error_:
+        raise datajson.DataError(f"{datajson.label(icon)}: {error_}") from error_
+    if (width, height) != (MARKER_SIZE, MARKER_SIZE) or (pixels and max(pixels) >= MARKER_COLORS):
+        raise datajson.DataError(f"{datajson.label(icon)}: not a 32 by 32 icon of 16 colors")
+    colors = (list(colors) + [(0, 0, 0)] * MARKER_COLORS)[:MARKER_COLORS]
+    palette = b"".join(struct.pack("<H", r | g << 5 | b << 10) for r, g, b in map(color5, colors))
+    name = item.removeprefix("ITEM_").lower()[:12]
+    return texture_set([(name, MARKER_SIZE, MARKER_SIZE, GX_TEXFMT_PLTT16, True,
+                         encode_characters(MARKER_SIZE, MARKER_SIZE, pixels, linear=True))], [(f"{name}_pl", palette)])
+
+
+def check_progress(directory: Path, rooms: dict[str, dict], templates: dict[str, dict] | None = None):
+    """Every battle and every catchable enemy, of the rooms and the templates, has its own progress id, below
+    progress_ids.json's next ones."""
     path = directory / "progress_ids.json"
     issued = json.loads(path.read_text()) if path.is_file() else {"next_battle": BATTLES_MAX, "next_catch": CATCHES_MAX}
     seen = {"battle": {}, "catch": {}}
-    for name, room in rooms.items():
+    places = [(f"rooms/{name}.json", name, room) for name, room in rooms.items()]
+    places += [(f"templates/{name}.json", f"templates/{name}", room) for name, room in (templates or {}).items()]
+    for where, name, room in places:
         for battle in room["battles"]:
             key = f"{name}/{battle['id']}"
             claims = [("battle", battle.get("progress_id"), key, BATTLES_MAX, issued["next_battle"])]
@@ -182,15 +315,15 @@ def check_progress(directory: Path, rooms: dict[str, dict]):
                         issued["next_catch"]) for enemy in battle["enemies"] if "catch" in enemy]
             for kind, number, label, limit, next_number in claims:
                 if number is None:
-                    error(f"rooms/{name}.json", f"{label} has no progress_id: the editor gives one on save "
+                    error(where, f"{label} has no progress_id: the editor gives one on save "
                           f"(the next of progress_ids.json); a {kind} needs one for the save")
                 if number >= limit:
-                    error(f"rooms/{name}.json", f"{label}'s progress_id {number} is past the save's {limit}")
+                    error(where, f"{label}'s progress_id {number} is past the save's {limit}")
                 if number >= next_number:
-                    error(f"rooms/{name}.json", f"{label}'s progress_id {number} isn't below progress_ids.json's "
+                    error(where, f"{label}'s progress_id {number} isn't below progress_ids.json's "
                           f"next_{kind} ({next_number}), so it could be given again")
                 if number in seen[kind]:
-                    error(f"rooms/{name}.json", f"{label} has {kind} progress_id {number}, as {seen[kind][number]} "
+                    error(where, f"{label} has {kind} progress_id {number}, as {seen[kind][number]} "
                           "has: each needs its own, never changed once given")
                 seen[kind][number] = label
 
@@ -212,10 +345,10 @@ def text_line(text: str) -> str:
 
 
 def dialogue_lines(directory: Path = SOURCE) -> list[str]:
-    """The script text bank entralink_dialogue: every NPC's before and after lines, room by room, in tables()'s
-    order. Its first line is empty, so the bank is never empty and no NPC's message is 0."""
+    """The script text bank entralink_dialogue: every NPC's before and after lines, room by room, then template by
+    template, in tables()'s order. Its first line is empty, so the bank is never empty and no NPC's message is 0."""
     lines = [""]
-    for room in load_rooms(directory).values():
+    for room in [*load_rooms(directory).values(), *load_templates(directory).values()]:
         for npc in room["npcs"]:
             dialogue = npc.get("dialogue", {})
             for key in ("before", "after"):
@@ -235,12 +368,44 @@ def boss_pool(rooms: dict[str, dict], number: int) -> list[str]:
     return kept or [n for n, r in rooms.items() if r["role"] == "boss" and "rounds" not in r]
 
 
-def draw_problems(run: dict, rooms: dict[str, dict]) -> list[tuple[str, str]]:
+def type_pool(rooms: dict[str, dict], number: int, kind: str) -> list[str]:
+    """The rooms/ rooms of a type that can come up in round number."""
+    return [n for n in room_pool(rooms, number) if rooms[n].get("type", "enemy") == kind]
+
+
+def type_problems(round_: dict, number: int, rooms: dict[str, dict], templates: dict[str, dict]) -> \
+        list[tuple[str, str]]:
+    """A round's room types: its weights adding up to 0, no type with a weight that has a room (an error each), a type
+    with a weight and no room, which the game skips (a warning)."""
+    if not round_["rooms"]:
+        return []
+    weights = round_weights(round_)
+
+    def drawable(kind):
+        return bool(type_pool(rooms, number, kind)) or (kind in TEMPLATES and kind in templates)
+    skipped = [kind for kind in ROOM_TYPES if weights[kind] and not drawable(kind)]
+    if not any(weights.values()):
+        return [("error", f"round {number}'s room type weights add up to 0, so its doors can't draw a room")]
+    if not any(weights[kind] and drawable(kind) for kind in ROOM_TYPES):
+        return [("error", f"round {number} draws {round_['rooms']} rooms, but no type with a weight has a room or a "
+                 "template")]
+    if skipped:
+        return [("warning", f"round {number}: no {' or '.join(skipped)} room can come up, so "
+                 f"{'those types are' if len(skipped) > 1 else 'that type is'} skipped")]
+    return []
+
+
+def draw_problems(run: dict, rooms: dict[str, dict], templates: dict[str, dict] | None = None) -> \
+        list[tuple[str, str]]:
     """What is wrong with the run's draw, as ("error", message) or ("warning", message), as the editor's Run section
     says it (editor/src/modules/entree/model.ts, runProblems). The game draws each round's rooms from room_pool() and
     its boss from boss_pool(), each time one of the least used so far other than the room just before (so none comes
     up twice while some haven't), and the room just before again only when it is the only one. So too few rooms only
-    means repeats, a warning; a round with no room at all, or a boss round with no boss, can't be drawn."""
+    means repeats, a warning; a round with no room at all, or a boss round with no boss, can't be drawn.
+    With the templates (step 6) a round's doors draw room types by its weights, rest, item, buff and shop from their
+    templates too, a type with no room skipped: so the round can't be drawn only when no type with a weight has a room,
+    a type with a weight and no room is a warning, and the repeats count the types that need rooms/' rooms (enemy,
+    challenge and event)."""
     problems = []
     if not any(room["role"] == "final" for room in rooms.values()):
         problems.append(("error", "no room has the role final, which every run ends with"))
@@ -249,9 +414,14 @@ def draw_problems(run: dict, rooms: dict[str, dict]) -> list[tuple[str, str]]:
         if round_.get("boss") and number == 3:
             problems.append(("error", "round 3 can't end with a boss: the final room ends it"))
         pool = room_pool(rooms, number)
+        if templates is not None:
+            # With the templates, only the types that need rooms/' rooms count, and a round with none still draws
+            problems += type_problems(round_, number, rooms, templates)
+            pool = [n for kind in PREMADE_TYPES for n in type_pool(rooms, number, kind)]
         if round_["rooms"] and not pool:
-            problems.append(("error", f"round {number} draws {round_['rooms']} rooms, but no room can come up in it "
-                             "(role room, rounds left out or naming it)"))
+            if templates is None:
+                problems.append(("error", f"round {number} draws {round_['rooms']} rooms, but no room can come up in "
+                                 "it (role room, rounds left out or naming it)"))
         elif len(pool) == 1 and round_["rooms"] > 1:
             problems.append(("warning", f"round {number} draws {round_['rooms']} rooms, but only {pool[0]} can come "
                              "up in it, so it comes up each time, twice in a row"))
@@ -268,9 +438,10 @@ def draw_problems(run: dict, rooms: dict[str, dict]) -> list[tuple[str, str]]:
                                  "(role boss, kept to it or to no round)"))
             bosses += 1
             boss_names.update(pool)
-    total = sum(r["rooms"] + bool(r.get("boss")) for r in run["rounds"]) + 1
+    total = place_count(run)
     if total > RUN_ROOMS_MAX:
-        problems.append(("error", f"the rounds have {total} rooms with the final one, more than {RUN_ROOMS_MAX}"))
+        problems.append(("error", f"the rounds have {total} rooms with the pre-boss rests and the final one, more "
+                         f"than {RUN_ROOMS_MAX}"))
     if room_names and drawn > len(room_names):
         problems.append(("warning", f"the rounds draw {drawn} rooms from {len(room_names)}, so rooms come up more "
                          "than once in a run (the least used first, never twice in a row)"))
@@ -280,124 +451,215 @@ def draw_problems(run: dict, rooms: dict[str, dict]) -> list[tuple[str, str]]:
     return problems
 
 
+def place_count(run: dict) -> int:
+    """How many rooms a run has: each round's rooms, then the pre-boss rest and the boss for a round with one, and
+    after the last round the pre-boss rest and the final room."""
+    return sum(r["rooms"] + 2 * bool(r.get("boss")) for r in run["rounds"]) + 2
+
+
 def field_weathers() -> dict[str, int]:
     from tools.paperwhite2.conditions import weathers
     return weathers()
+
+
+def zone_models() -> dict[str, str]:
+    """Each Entree Forest clearing's zone and its chunk's map model (tools/paperwhite2/entralink_flowers.py)."""
+    from tools.paperwhite2.entralink_flowers import clearings
+    return clearings()
+
+
+def blocked_rows(model: str) -> list[int]:
+    """A clearing's blocked tiles, a 32-bit row per z with x's bit set where its tile can't be walked on: off the map,
+    an invalid tile, or one with the collision flag, as the editor's Entree page reads them (terrain_0.csv)."""
+    import csv
+    rows = [0xffffffff] * 32
+    path = ROOT / "res" / "field" / "maps" / "models" / model / "terrain_0.csv"
+    for row in csv.DictReader(path.open()):
+        x, z, tile = int(row["x"]), int(row["z"]), int(row["tile_type"])
+        if 0 <= x < 32 and 0 <= z < 32 and tile != 0xffffffff and tile & 0xffff != 0xff and not (tile >> 16) & 1:
+            rows[z] &= ~(1 << x)
+    return rows
+
+
+def room_row(name: str, room: dict, template: bool, rooms: dict[str, dict], tables_: dict, message: list[int],
+             npc_markers: dict[str, int]):
+    """Adds a room or template's battles, enemies, NPCs and requirements to the tables, and returns its row."""
+    constants = datajson.constants()
+    battles, enemies, npcs, requirements = (tables_[key] for key in ("battles", "enemies", "npcs", "requirements"))
+    where = f"templates/{name}.json" if template else f"rooms/{name}.json"
+    label = f"templates/{name}" if template else name
+    weather = room.get("weather")
+    battle_index = {}
+    first_battle = len(battles)
+    for battle in room["battles"]:
+        battle_index[battle["id"]] = len(battles) - first_battle
+        battles.append({"name": f"{label}/{battle['id']}", "format": FORMATS[battle["format"]],
+                        "enemyCount": len(battle["enemies"]), "firstEnemy": len(enemies),
+                        "progressId": battle["progress_id"]})
+        for enemy in battle["enemies"]:
+            moves = [constants[move] for move in enemy.get("moves", [])]
+            ability = enemy.get("ability")
+            catch = enemy.get("catch")
+            first_requirement = len(requirements)
+            if catch is not None:
+                requirements += [requirement(key, rooms, where) for key in catch.get("after", [])]
+            enemies.append({
+                "name": f"{label}/{battle['id']}: {enemy['species']}",
+                "species": constants[enemy["species"]],
+                "item": constants[enemy["item"]] if "item" in enemy else 0,
+                "moves": moves + [0] * (4 - len(moves)),
+                "ability": ABILITY_SPECIES if ability is None else ABILITY_HIDDEN if ability == "hidden"
+                else constants[ability],
+                "form": enemy.get("form", 0),
+                "level": enemy.get("level", DEFAULT_LEVEL),
+                "gender": GENDERS[enemy.get("gender")],
+                "shiny": int(enemy.get("shiny", False)),
+                "catchId": NONE16 if catch is None else enemy["progress_id"],
+                "catchOnce": int(catch is not None and catch.get("once", True)),
+                "firstRequirement": first_requirement,
+                "requirementCount": len(requirements) - first_requirement,
+            })
+    first_npc = len(npcs)
+    for npc in room["npcs"]:
+        first_requirement = len(requirements)
+        requirements += [requirement(key, rooms, where) for key in npc.get("requires", [])]
+        dialogue = npc.get("dialogue", {})
+        messages = []
+        for key in ("before", "after"):
+            if dialogue.get(key) and (key == "before" or npc["type"] == "battle"):
+                messages.append(message[0])
+                message[0] += 1
+            else:
+                messages.append(NONE16)
+        sprite = npc.get("sprite", DEFAULT_SPRITES.get(npc["type"]))
+        npcs.append({
+            "name": f"{label}: {npc['type']}",
+            "type": NPC_TYPES[npc["type"]],
+            "battle": battle_index.get(npc.get("battle"), 0),
+            "enemy": npc.get("enemy", 0),
+            "count": npc.get("count", 1),
+            "item": constants[npc["item"]] if "item" in npc and npc["type"] == "item" else 0,
+            "sprite": 0 if sprite is None else constants[sprite],
+            "chance": npc.get("chance", 100),
+            "x": npc["x"], "z": npc["z"], "direction": constants[npc["facing"]],
+            "firstRequirement": first_requirement,
+            "requirementCount": len(requirements) - first_requirement,
+            "before": messages[0], "after": messages[1],
+            "beforeStyle": STYLES[dialogue.get("before_style", "talk")],
+            "afterStyle": STYLES[dialogue.get("after_style", "talk")],
+            "marker": npc_markers[npc["marker"]] if "marker" in npc else NPC_MARKER_NONE,
+        })
+    rounds = 0
+    for number in room.get("rounds", []):
+        rounds |= 1 << (number - 1)
+    kind = TEMPLATES[name] if template else room.get("type", "enemy")
+    default_marker = TYPE_MARKERS[kind] if room["role"] == "room" else ROLE_MARKERS[room["role"]]
+    return {
+        "name": label, "role": ROLES[room["role"]], "rounds": rounds,
+        "weather": WEATHER_FIELD if weather is None else constants[weather],
+        "marker": MARKER_TYPES.index(room.get("marker", default_marker)),
+        "type": ROOM_TYPES[kind], "template": int(template),
+        "firstBattle": first_battle, "battleCount": len(battles) - first_battle,
+        "firstNpc": first_npc, "npcCount": len(npcs) - first_npc,
+    }
+
+
+def item_rows(directory: Path) -> list[dict]:
+    """The item table's entries for the header, each with its icon's number among icon_items() or ICON_NONE."""
+    constants = datajson.constants()
+    icons = icon_items(directory)
+    rows = []
+    for entry in load_items(directory):
+        rounds = 0
+        for number in entry.get("rounds", []):
+            rounds |= 1 << (number - 1)
+        pools = 0
+        for pool in entry["pools"]:
+            pools |= 1 << POOLS[pool]
+        rows.append({"name": entry["item"], "item": constants[entry["item"]], "weight": entry["weight"],
+                     "rounds": rounds, "pools": pools, "price": entry.get("price", 0),
+                     "icon": icons.index(entry["item"]) if "item_room" in entry["pools"] else ICON_NONE})
+    return rows
 
 
 def tables(directory: Path) -> dict:
     """The header's values, or a datajson.DataError that says what is wrong."""
     run = load_run(directory)
     rooms = load_rooms(directory)
-    check_progress(directory, rooms)
+    templates = load_templates(directory)
+    check_progress(directory, rooms, templates)
     constants = datajson.constants()
     weathers = field_weathers()
     default_weather = run.get("field_weather")
     if default_weather is not None and default_weather not in weathers:
         error("run.json", f"field_weather {default_weather!r} is not a WEATHER_* of include/system/zone_weather.h")
-    round_weathers = []
+    round_rows = []
     for number, round_ in enumerate(run["rounds"], 1):
         weather = round_.get("field_weather", default_weather)
         if weather is not None and weather not in weathers:
             error("run.json", f"round {number}'s field_weather {weather!r} is not a WEATHER_* of "
                   "include/system/zone_weather.h")
-        round_weathers.append(FIELD_WEATHER_ZONE if weather is None else weathers[weather])
+        weights = {**DEFAULT_TYPE_WEIGHTS, **round_.get("type_weights", {})}
+        round_rows.append((round_["rooms"], int(round_.get("boss", False)),
+                           FIELD_WEATHER_ZONE if weather is None else weathers[weather],
+                           [weights[kind] for kind in ROOM_TYPES]))
     spots = {**DEFAULT_MARKER_SPOTS, **run.get("marker_spots", {})}
     npc_markers = {name: i for i, name in enumerate(npc_marker_names(directory))}
-    errors = [message for level, message in draw_problems(run, rooms) if level == "error"]
+    errors = [message for level, message in draw_problems(run, rooms, templates) if level == "error"]
     if errors:
         error("run.json", errors[0])
+    errors = [message for level, message in template_problems(run, templates) if level == "error"]
+    if errors:
+        error("templates", errors[0])
 
-    room_rows, battles, enemies, npcs, requirements = [], [], [], [], []
-    message = 1
-    for name, room in rooms.items():
-        weather = room.get("weather")
-        battle_index = {}
-        first_battle = len(battles)
-        for battle in room["battles"]:
-            battle_index[battle["id"]] = len(battles) - first_battle
-            battles.append({"name": f"{name}/{battle['id']}", "format": FORMATS[battle["format"]],
-                            "enemyCount": len(battle["enemies"]), "firstEnemy": len(enemies),
-                            "progressId": battle["progress_id"]})
-            for enemy in battle["enemies"]:
-                moves = [constants[move] for move in enemy.get("moves", [])]
-                ability = enemy.get("ability")
-                catch = enemy.get("catch")
-                first_requirement = len(requirements)
-                if catch is not None:
-                    requirements += [requirement(key, rooms, f"rooms/{name}.json") for key in catch.get("after", [])]
-                enemies.append({
-                    "name": f"{name}/{battle['id']}: {enemy['species']}",
-                    "species": constants[enemy["species"]],
-                    "item": constants[enemy["item"]] if "item" in enemy else 0,
-                    "moves": moves + [0] * (4 - len(moves)),
-                    "ability": ABILITY_SPECIES if ability is None else ABILITY_HIDDEN if ability == "hidden"
-                    else constants[ability],
-                    "form": enemy.get("form", 0),
-                    "level": enemy.get("level", DEFAULT_LEVEL),
-                    "gender": GENDERS[enemy.get("gender")],
-                    "shiny": int(enemy.get("shiny", False)),
-                    "catchId": NONE16 if catch is None else enemy["progress_id"],
-                    "catchOnce": int(catch is not None and catch.get("once", True)),
-                    "firstRequirement": first_requirement,
-                    "requirementCount": len(requirements) - first_requirement,
-                })
-        first_npc = len(npcs)
-        for npc in room["npcs"]:
-            first_requirement = len(requirements)
-            requirements += [requirement(key, rooms, f"rooms/{name}.json") for key in npc.get("requires", [])]
-            dialogue = npc.get("dialogue", {})
-            messages = []
-            for key in ("before", "after"):
-                if dialogue.get(key) and (key == "before" or npc["type"] == "battle"):
-                    messages.append(message)
-                    message += 1
-                else:
-                    messages.append(NONE16)
-            sprite = npc.get("sprite", DEFAULT_SPRITES.get(npc["type"]))
-            npcs.append({
-                "name": f"{name}: {npc['type']}",
-                "type": NPC_TYPES[npc["type"]],
-                "battle": battle_index.get(npc.get("battle"), 0),
-                "enemy": npc.get("enemy", 0),
-                "count": npc.get("count", 1),
-                "item": constants[npc["item"]] if "item" in npc else 0,
-                "sprite": 0 if sprite is None else constants[sprite],
-                "chance": npc.get("chance", 100),
-                "x": npc["x"], "z": npc["z"], "direction": constants[npc["facing"]],
-                "firstRequirement": first_requirement,
-                "requirementCount": len(requirements) - first_requirement,
-                "before": messages[0], "after": messages[1],
-                "beforeStyle": STYLES[dialogue.get("before_style", "talk")],
-                "afterStyle": STYLES[dialogue.get("after_style", "talk")],
-                "marker": npc_markers[npc["marker"]] if "marker" in npc else NPC_MARKER_NONE,
-            })
-        rounds = 0
-        for number in room.get("rounds", []):
-            rounds |= 1 << (number - 1)
-        room_rows.append({
-            "name": name, "role": ROLES[room["role"]], "rounds": rounds,
-            "weather": WEATHER_FIELD if weather is None else constants[weather],
-            "marker": MARKER_TYPES.index(room.get("marker", ROLE_MARKERS[room["role"]])),
-            "firstBattle": first_battle, "battleCount": len(battles) - first_battle,
-            "firstNpc": first_npc, "npcCount": len(npcs) - first_npc,
-        })
+    tables_ = {"battles": [], "enemies": [], "npcs": [], "requirements": []}
+    message = [1]
+    room_rows = [room_row(name, room, False, rooms, tables_, message, npc_markers) for name, room in rooms.items()]
+    template_index = {}
+    for name, template in templates.items():
+        template_index[name] = len(room_rows)
+        room_rows.append(room_row(name, template, True, rooms, tables_, message, npc_markers))
+    if len(room_rows) >= TEMPLATE_NONE:
+        error("rooms", f"{len(room_rows)} rooms and templates, more than {TEMPLATE_NONE - 1}")
+    # The template a door of each type takes when no premade room comes up (enemy and challenge have none)
+    type_templates = [template_index.get(kind, TEMPLATE_NONE) if kind in TEMPLATES else TEMPLATE_NONE
+                      for kind in ROOM_TYPES]
+
+    # The clearings a run's rooms are in: their blocked tiles and flower tiles
+    models = zone_models()
+    flowers = load_flowers(directory)
+    for zone in flowers:
+        if zone not in models:
+            error("flower_tiles.json", f"{zone} is not an Entree Forest clearing")
+    zones = list(dict.fromkeys([*run["room_maps"], *([run["pre_boss_map"]] if "pre_boss_map" in run else []),
+                                run["final_map"]]))
+    clearings, flower_tiles = [], []
+    for zone in zones:
+        tiles = flowers.get(zone, [])
+        clearings.append({"name": zone, "zone": constants[zone], "firstFlower": len(flower_tiles),
+                          "flowerCount": len(tiles), "blocked": blocked_rows(models[zone])})
+        flower_tiles += [tuple(tile) for tile in tiles]
     return {
         "ids": list(rooms),
+        "templates": template_index,
         "rooms": room_rows,
-        "battles": battles,
-        "enemies": enemies,
-        "npcs": npcs,
-        "requirements": requirements,
-        "rounds": [(r["rooms"], int(r.get("boss", False)), weather)
-                   for r, weather in zip(run["rounds"], round_weathers)],
+        **tables_,
+        "rounds": round_rows,
         "room_zones": [(zone, constants[zone]) for zone in run["room_maps"]],
         "final_zone": (run["final_map"], constants[run["final_map"]]),
         "pre_boss_zone": (run["pre_boss_map"], constants[run["pre_boss_map"]]) if "pre_boss_map" in run
         else ("none: the room maps, north door only", PRE_BOSS_ZONE_NONE),
         "unknown_chance": run.get("unknown_chance", DEFAULT_UNKNOWN_CHANCE),
+        "custom_chance": run.get("custom_chance", DEFAULT_CUSTOM_CHANCE),
+        "ground_item_chance": run.get("ground_item_chance", DEFAULT_GROUND_ITEM_CHANCE),
+        "hidden_item_chance": run.get("hidden_item_chance", DEFAULT_HIDDEN_ITEM_CHANCE),
+        "type_templates": type_templates,
         "marker_spots": [tuple(spots[door]) for door in DOORS],
         "npc_markers": list(npc_markers),
+        "items": item_rows(directory),
+        "icon_count": len(icon_items(directory)),
+        "clearings": clearings,
+        "flower_tiles": flower_tiles,
     }
 
 
@@ -408,7 +670,8 @@ def initializer(rows: list[str]) -> str:
 def header(directory: Path) -> str:
     data = tables(directory)
     rooms = [f"/* {r['name']} */ {{ {r['role']}, 0x{r['rounds']:x}, 0x{r['weather']:02x}, {r['marker']}, "
-             f"{r['firstBattle']}, {r['battleCount']}, {r['firstNpc']}, {r['npcCount']} }}" for r in data["rooms"]]
+             f"{r['type']}, {r['template']}, {r['firstBattle']}, {r['battleCount']}, {r['firstNpc']}, "
+             f"{r['npcCount']} }}" for r in data["rooms"]]
     battles = [f"/* {b['name']} */ {{ {b['format']}, {b['enemyCount']}, {b['firstEnemy']}, {b['progressId']} }}"
                for b in data["battles"]]
     enemies = [f"/* {e['name']} */ {{ {e['species']}, {e['item']}, {{ {', '.join(map(str, e['moves']))} }}, "
@@ -418,15 +681,24 @@ def header(directory: Path) -> str:
             f"0x{n['before']:x}, 0x{n['after']:x}, {n['type']}, {n['battle']}, {n['enemy']}, {n['count']}, "
             f"{n['chance']}, {n['x']}, {n['z']}, {n['direction']}, {n['requirementCount']}, {n['beforeStyle']}, "
             f"{n['afterStyle']}, 0x{n['marker']:02x} }}" for n in data["npcs"]]
-    rounds = [f"{{ {rooms_}, {boss}, 0x{weather:02x} }}" for rooms_, boss, weather in data["rounds"]]
+    rounds = [f"{{ {rooms_}, {boss}, 0x{weather:02x}, {{ {', '.join(map(str, weights))} }} }}"
+              for rooms_, boss, weather, weights in data["rounds"]]
+    items = [f"/* {i['name']} */ {{ {i['item']}, {i['price']}, {i['weight']}, 0x{i['rounds']:x}, 0x{i['pools']:x}, "
+             f"0x{i['icon']:02x} }}" for i in data["items"]]
+    clearings = [f"/* {c['name']} */ {{ {c['zone']}, {c['firstFlower']}, {c['flowerCount']}, "
+                 f"{{ {', '.join(f'0x{row:08x}' for row in c['blocked'])} }} }}" for c in data["clearings"]]
+    flowers = [f"{{ {x}, {z} }}" for x, z in data["flower_tiles"]] or ["{ 0, 0 }"]
     spots = [f"{{ {x}, {z} }}" for x, z in data["marker_spots"]]
     zones = [f"{value} /* {name} */" for name, value in data["room_zones"]]
     requirements = [f"0x{value:x}" for value in data["requirements"]]
+    pre_boss_rest = data["templates"]["pre_boss_rest"]
     return "\n".join([
         f"#ifndef {GUARD}", f"#define {GUARD}", "",
         f"// Generated by tools/paperwhite2/entralink_run.py from {datajson.label(directory)}, edit that instead",
         "",
         *(f"#define ENTRALINK_ROOM_{name.upper()} {i}" for i, name in enumerate(data["ids"])),
+        "// The templates, after the rooms in the room table",
+        *(f"#define ENTRALINK_TEMPLATE_{name.upper()} {index}" for name, index in data["templates"].items()),
         "",
         f"#define ENTRALINK_RUN_ROOM_COUNT {len(data['rooms'])}",
         f"#define ENTRALINK_RUN_BATTLE_COUNT {max(len(data['battles']), 1)}",
@@ -437,16 +709,25 @@ def header(directory: Path) -> str:
         f"#define ENTRALINK_RUN_ROOM_ZONE_COUNT {len(zones)}",
         f"#define ENTRALINK_RUN_FINAL_ZONE {data['final_zone'][1]} // {data['final_zone'][0]}",
         f"#define ENTRALINK_RUN_PRE_BOSS_ZONE 0x{data['pre_boss_zone'][1]:x} // {data['pre_boss_zone'][0]}",
+        f"#define ENTRALINK_RUN_PRE_BOSS_REST {pre_boss_rest}",
         f"#define ENTRALINK_RUN_UNKNOWN_CHANCE {data['unknown_chance']}",
+        f"#define ENTRALINK_RUN_CUSTOM_CHANCE {data['custom_chance']}",
+        f"#define ENTRALINK_RUN_GROUND_ITEM_CHANCE {data['ground_item_chance']}",
+        f"#define ENTRALINK_RUN_HIDDEN_ITEM_CHANCE {data['hidden_item_chance']}",
+        "// Each room type's template (ENTRALINK_TYPE_* order), or ENTRALINK_RUN_ROOM_NONE",
+        f"#define ENTRALINK_RUN_TYPE_TEMPLATES {{ {', '.join(f'0x{t:02x}' for t in data['type_templates'])} }}",
         "// The ground markers' spots, the top-left tiles of 2 by 2, in ENTRALINK_DOOR_* order (north, east, west)",
         f"#define ENTRALINK_RUN_MARKER_SPOTS {{ {', '.join(spots)} }}",
         "// The markers' art in the model table (ARCID_MMODEL_TBL): the ground markers from the first, in",
-        "// ENTRALINK_MARKER_* order, then the NPC markers",
+        "// ENTRALINK_MARKER_* order, then the NPC markers, then the item room's items' bag icons",
         f"#define ENTRALINK_RUN_MARKER_FILE {MARKER_FIRST_MEMBER}",
         f"#define ENTRALINK_RUN_NPC_MARKER_FILE {MARKER_FIRST_MEMBER + len(MARKER_TYPES)}",
         f"#define ENTRALINK_RUN_NPC_MARKER_COUNT {len(data['npc_markers'])}",
+        f"#define ENTRALINK_RUN_ITEM_ICON_FILE {MARKER_FIRST_MEMBER + len(MARKER_TYPES) + len(data['npc_markers'])}",
+        f"#define ENTRALINK_RUN_ITEM_ICON_COUNT {data['icon_count']}",
         *(f"#define ENTRALINK_NPC_MARKER_{name.upper()} {i}" for i, name in enumerate(data["npc_markers"])),
-        "// EntralinkRoom: role, rounds, weather, marker, first battle, battle count, first NPC, NPC count",
+        "// EntralinkRoom: role, rounds, weather, marker, type, template, first battle, battle count, first NPC,",
+        "// NPC count",
         f"#define ENTRALINK_RUN_ROOMS {initializer(rooms)}",
         "// EntralinkBattle: format, enemy count, first enemy, progress id",
         f"#define ENTRALINK_RUN_BATTLES {initializer(battles)}",
@@ -458,9 +739,17 @@ def header(directory: Path) -> str:
         f"#define ENTRALINK_RUN_NPCS {initializer(npcs)}",
         "// The NPCs' and catches' requirements: battles' progress ids, or ENTRALINK_REQUIRE_RUN_COMPLETED",
         f"#define ENTRALINK_RUN_REQUIREMENTS {{ {', '.join(requirements) or '0'} }}",
-        "// EntralinkRound: rooms, boss, field weather",
+        "// EntralinkRound: rooms, boss, field weather, type weights (ENTRALINK_TYPE_* order)",
         f"#define ENTRALINK_RUN_ROUNDS {{ {', '.join(rounds)} }}",
         f"#define ENTRALINK_RUN_ROOM_ZONES {{ {', '.join(zones)} }}",
+        f"#define ENTRALINK_RUN_ITEM_COUNT {max(len(items), 1)}",
+        "// EntralinkItem: item, price, weight, rounds, pools (ENTRALINK_POOL_* bits), icon",
+        f"#define ENTRALINK_RUN_ITEMS {initializer(items)}",
+        f"#define ENTRALINK_RUN_CLEARING_COUNT {len(clearings)}",
+        "// EntralinkClearing: zone, first flower tile, flower tile count, blocked tiles (a row per z, a bit per x)",
+        f"#define ENTRALINK_RUN_CLEARINGS {initializer(clearings)}",
+        f"#define ENTRALINK_RUN_FLOWER_TILE_COUNT {len(flowers)}",
+        f"#define ENTRALINK_RUN_FLOWER_TILES {{ {', '.join(flowers)} }}",
         "", f"#endif // {GUARD}", "",
     ])
 
@@ -475,9 +764,13 @@ def main():
         if args.check:
             tables(args.source)
             print(f"{datajson.label(args.source)} is fine")
-        for level, message in draw_problems(load_run(args.source), load_rooms(args.source)):
+        run, templates = load_run(args.source), load_templates(args.source)
+        for level, message in draw_problems(run, load_rooms(args.source), templates):
             if level == "warning":
                 print(f"warning: run.json: {message}", file=sys.stderr)
+        for level, message in template_problems(run, templates):
+            if level == "warning":
+                print(f"warning: {message}", file=sys.stderr)
         if args.check:
             return
         if args.output is None:

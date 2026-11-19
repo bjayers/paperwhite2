@@ -22,7 +22,8 @@
 // Ends the run and warps to the hub's entrance; the script waits for the warp
 #define ENTRALINK_RUN_ACTION_WARP_HUB 4
 // Takes the talked-to NPC as the one the next actions are about, and returns its type (ENTRALINK_NPC_*,
-// paperwhite2/entralink_run.h): ENTRALINK_RUN_NPC_BATTLE, _ITEM, _REST or _BUFF
+// paperwhite2/entralink_run.h, ENTRALINK_RUN_NPC_* here), ENTRALINK_RUN_NPC_GROUND for the room's ball on the ground,
+// or ENTRALINK_RUN_NPC_DONE for a choice NPC whose choice was made
 #define ENTRALINK_RUN_ACTION_TALK 5
 // arg1 0 for its before message, 1 for its after one: returns the message's number in the text bank
 // SCRIPT_TEXT_ENTRALINK_DIALOGUE, or ENTRALINK_RUN_NO_MESSAGE
@@ -30,9 +31,10 @@
 // After a won battle's after message: the room's battle NPCs go away, and the room is done: its exits open and the
 // markers in front of them show
 #define ENTRALINK_RUN_ACTION_CLEAR_ROOM 7
-// An item NPC: returns its item
+// An item NPC, an item room's ball or the ball on the ground: returns its item
 #define ENTRALINK_RUN_ACTION_GET_ITEM 8
-// An item NPC: puts its item in the run's bag and takes the NPC away; returns 0 if the bag had no room, which leaves it
+// An item NPC, an item room's ball or the ball on the ground: puts its item in the run's bag and takes the NPC away;
+// returns 0 if the bag had no room, which leaves it
 #define ENTRALINK_RUN_ACTION_GIVE_ITEM 9
 // Returns the actor of the NPC talked to, for its messages
 #define ENTRALINK_RUN_ACTION_GET_ACTOR 10
@@ -45,6 +47,24 @@
 // A rest or buff NPC after it has been talked to: it counts as used, and a room with no battle is done once every NPC
 // that came up in it is used
 #define ENTRALINK_RUN_ACTION_NPC_USED 13
+// A heal NPC: heals every Pokémon of the party that hasn't fainted (HP, status and PP)
+#define ENTRALINK_RUN_ACTION_HEAL 14
+// A revive NPC: returns whether a Pokémon of the party has fainted
+#define ENTRALINK_RUN_ACTION_CAN_REVIVE 15
+// A revive NPC, arg1 a party slot: revives the Pokémon there to full HP, its status cleared, and returns 1, or 0 if it
+// hasn't fainted (or is an egg)
+#define ENTRALINK_RUN_ACTION_REVIVE 16
+// A gift NPC, arg1 0 to 2: returns the item of its choice of 3 (drawn as the room was entered), or 0
+#define ENTRALINK_RUN_ACTION_GET_GIFT_ITEM 17
+// A gift NPC, arg1 0 to 2: puts that item in the run's bag, and returns 0 if the bag had no room
+#define ENTRALINK_RUN_ACTION_GIVE_GIFT 18
+// A choice NPC used (healed, revived, gave, taken): the room's choice is made, its other choice NPCs go and it is done
+#define ENTRALINK_RUN_ACTION_MAKE_CHOICE 19
+// The room's hidden item (script 10499, found with A): returns it
+#define ENTRALINK_RUN_ACTION_GET_HIDDEN_ITEM 20
+// Puts the hidden item in the run's bag, which takes it from the room; returns 0 if the bag had no room, which leaves
+// it
+#define ENTRALINK_RUN_ACTION_TAKE_HIDDEN_ITEM 21
 
 #define ENTRALINK_RUN_RESULT_LOST 0
 #define ENTRALINK_RUN_RESULT_CLEARED 1
@@ -56,6 +76,15 @@
 #define ENTRALINK_RUN_NPC_ITEM 1
 #define ENTRALINK_RUN_NPC_REST 2
 #define ENTRALINK_RUN_NPC_BUFF 3
+#define ENTRALINK_RUN_NPC_HEAL 4
+#define ENTRALINK_RUN_NPC_REVIVE 5
+#define ENTRALINK_RUN_NPC_GIFT 6
+#define ENTRALINK_RUN_NPC_SHOP 7
+#define ENTRALINK_RUN_NPC_ITEM_CHOICE 8
+#define ENTRALINK_RUN_NPC_BUFF_CHOICE 9
+// The room's ball on the ground (run.json's ground_item_chance), and a choice NPC whose choice was made
+#define ENTRALINK_RUN_NPC_GROUND 10
+#define ENTRALINK_RUN_NPC_DONE 11
 
 #define ENTRALINK_RUN_EXIT_BLOCKED 0
 #define ENTRALINK_RUN_EXIT_OPEN 1

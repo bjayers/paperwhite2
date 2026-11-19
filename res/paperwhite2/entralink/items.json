@@ -1,0 +1,141 @@
+{
+    "$schema": "items.schema.json",
+    "items": [
+        {
+            "item": "ITEM_POTION",
+            "weight": 30,
+            "price": 20,
+            "pools": [ "gift", "shop", "ground" ]
+        },
+        {
+            "item": "ITEM_SUPER_POTION",
+            "weight": 25,
+            "price": 40,
+            "pools": [ "item_room", "gift", "shop", "ground" ]
+        },
+        {
+            "item": "ITEM_HYPER_POTION",
+            "weight": 15,
+            "rounds": [ 2, 3 ],
+            "price": 80,
+            "pools": [ "item_room", "gift", "shop", "ground" ]
+        },
+        {
+            "item": "ITEM_FULL_RESTORE",
+            "weight": 5,
+            "rounds": [ 3 ],
+            "price": 200,
+            "pools": [ "item_room", "gift", "shop" ]
+        },
+        {
+            "item": "ITEM_REVIVE",
+            "weight": 15,
+            "price": 100,
+            "pools": [ "item_room", "gift", "shop", "ground" ]
+        },
+        {
+            "item": "ITEM_MAX_REVIVE",
+            "weight": 4,
+            "rounds": [ 2, 3 ],
+            "price": 250,
+            "pools": [ "item_room", "gift", "shop" ]
+        },
+        {
+            "item": "ITEM_ETHER",
+            "weight": 12,
+            "price": 60,
+            "pools": [ "item_room", "gift", "shop", "ground" ]
+        },
+        {
+            "item": "ITEM_ELIXIR",
+            "weight": 5,
+            "rounds": [ 2, 3 ],
+            "price": 150,
+            "pools": [ "item_room", "gift", "shop" ]
+        },
+        {
+            "item": "ITEM_FULL_HEAL",
+            "weight": 15,
+            "price": 40,
+            "pools": [ "item_room", "gift", "shop", "ground" ]
+        },
+        {
+            "item": "ITEM_CHERI_BERRY",
+            "weight": 10,
+            "price": 20,
+            "pools": [ "gift", "shop", "ground" ]
+        },
+        {
+            "item": "ITEM_CHESTO_BERRY",
+            "weight": 10,
+            "price": 20,
+            "pools": [ "gift", "shop", "ground" ]
+        },
+        {
+            "item": "ITEM_PECHA_BERRY",
+            "weight": 10,
+            "price": 20,
+            "pools": [ "gift", "shop", "ground" ]
+        },
+        {
+            "item": "ITEM_RAWST_BERRY",
+            "weight": 10,
+            "price": 20,
+            "pools": [ "gift", "shop", "ground" ]
+        },
+        {
+            "item": "ITEM_ASPEAR_BERRY",
+            "weight": 10,
+            "price": 20,
+            "pools": [ "gift", "shop", "ground" ]
+        },
+        {
+            "item": "ITEM_LUM_BERRY",
+            "weight": 8,
+            "price": 60,
+            "pools": [ "item_room", "gift", "shop", "ground" ]
+        },
+        {
+            "item": "ITEM_SITRUS_BERRY",
+            "weight": 12,
+            "price": 50,
+            "pools": [ "item_room", "gift", "shop", "ground" ]
+        },
+        {
+            "item": "ITEM_X_ATTACK",
+            "weight": 8,
+            "price": 50,
+            "pools": [ "item_room", "gift", "shop" ]
+        },
+        {
+            "item": "ITEM_X_DEFEND",
+            "weight": 8,
+            "price": 50,
+            "pools": [ "item_room", "gift", "shop" ]
+        },
+        {
+            "item": "ITEM_X_SPEED",
+            "weight": 8,
+            "price": 50,
+            "pools": [ "item_room", "gift", "shop" ]
+        },
+        {
+            "item": "ITEM_X_SPECIAL",
+            "weight": 8,
+            "price": 50,
+            "pools": [ "item_room", "gift", "shop" ]
+        },
+        {
+            "item": "ITEM_X_SP_DEF",
+            "weight": 8,
+            "price": 50,
+            "pools": [ "item_room", "gift", "shop" ]
+        },
+        {
+            "item": "ITEM_NIGHTMARE_BALL",
+            "weight": 10,
+            "price": 100,
+            "pools": [ "item_room", "gift", "shop" ]
+        }
+    ]
+}

@@ -293,9 +293,11 @@ DATA_PACKS = [
     ("tools/data/item_icon_data.py", "res/items", ["a/0/2/5"], True),  # Item icons
     # The field actors' models: their table and their sprites' and 3D models' graphics
     # Paper White 2: with followers, a/0/4/7 also has the follower's data from res/paperwhite2/following/, then the
-    # Entralink run's markers (tools/paperwhite2/entralink_run.py)
+    # Entralink run's markers and item icons (tools/paperwhite2/entralink_run.py)
     ("tools/data/field_actor_data.py", "res/field/actors", ["a/0/4/7", "a/0/4/8"], False,
-     ["res/paperwhite2/following", "res/paperwhite2/entralink/markers", "res/paperwhite2/entralink/npc_markers"]),
+     ["res/paperwhite2/following", "res/paperwhite2/entralink/markers", "res/paperwhite2/entralink/npc_markers",
+      # Step 6: the item room's items' bag icons, by the item table, from the items' icons and pml_item.c's table
+      "res/paperwhite2/entralink/items.json", "src/system/pml_item.c", "res/items"]),
     # Trainers, their parties, and the table of their messages with its offsets
     ("tools/data/trainer_data.py", "res/trainers/data", ["a/0/9/1", "a/0/9/2", "a/0/8/9", "a/0/9/0"], False),
     # Trainer sprites, front and back, and a/0/6/3, a copy of the back sprites
@@ -1272,8 +1274,16 @@ def main():
                  "res/paperwhite2/entralink/room.schema.json", "res/paperwhite2/entralink/progress_ids.json",
                  source_list(Path("build"), "entralink_rooms",
                              sorted(str(path) for path in Path("res/paperwhite2/entralink/rooms").glob("*.json"))),
-                 *sorted(str(path) for path in Path("res/paperwhite2/entralink/rooms").glob("*.json"))],
+                 *sorted(str(path) for path in Path("res/paperwhite2/entralink/rooms").glob("*.json")),
+                 # Step 6: the templates, the item table, the clearings' flower tiles and blocked tiles
+                 *sorted(str(path) for path in Path("res/paperwhite2/entralink/templates").glob("*.json")),
+                 "res/paperwhite2/entralink/items.json", "res/paperwhite2/entralink/items.schema.json",
+                 "res/paperwhite2/entralink/flower_tiles.json", "res/paperwhite2/entralink/flower_tiles.schema.json",
+                 *sorted(str(path) for path in Path("res/field/maps/models").glob("entree_forest*/terrain_0.csv")),
+                 *sorted(str(path) for path in Path("res/field/zones").glob("entree_forest*.json")),
+                 *sorted(str(path) for path in Path("res/field/matrices").glob("entree_forest*.json"))],
                 implicit=["tools/paperwhite2/entralink_run.py", *script_imports("tools/paperwhite2/entralink_run.py"),
+                          "tools/paperwhite2/entralink_flowers.py", "tools/data/item_icon_data.py",
                           "tools/paperwhite2/conditions.py", "include/system/zone_weather.h",
                           "tools/data/datajson.py", "generated/species.txt", "generated/moves.txt",
                           "generated/items.txt", "generated/abilities.txt", "generated/zones.txt",

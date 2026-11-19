@@ -24,16 +24,51 @@
 #define ENTRALINK_FORMAT_TRIPLE 2
 #define ENTRALINK_FORMAT_RAID 3
 
-// A room's role: one of a round's rooms, a round's boss, or the run's final room
+// A room's role: one of a round's rooms, a round's boss, or the run's final room. A place of the run can also be the
+// pre-boss rest before a boss or the final room (the template ENTRALINK_RUN_PRE_BOSS_REST), which no room's role is
 #define ENTRALINK_ROLE_ROOM 0
 #define ENTRALINK_ROLE_BOSS 1
 #define ENTRALINK_ROLE_FINAL 2
+#define ENTRALINK_ROLE_PRE_BOSS 3
 
-// What talking to an NPC does: its battle, an item into the run's bag, or (for now only its dialogue) a rest or a buff
+// A room of role room's type, which its round's weights draw for a door (EntralinkRound's typeWeights, in this order):
+// enemy, challenge and event rooms are rooms/'s, rest, item, buff and shop rooms rooms/'s at run.json's custom chance
+// and else their type's template
+#define ENTRALINK_TYPE_ENEMY 0
+#define ENTRALINK_TYPE_CHALLENGE 1
+#define ENTRALINK_TYPE_REST 2
+#define ENTRALINK_TYPE_ITEM 3
+#define ENTRALINK_TYPE_BUFF 4
+#define ENTRALINK_TYPE_SHOP 5
+#define ENTRALINK_TYPE_EVENT 6
+#define ENTRALINK_TYPE_COUNT 7
+// Any type: a boss or final room's draw
+#define ENTRALINK_TYPE_ANY 0xff
+
+// What talking to an NPC does: its battle, an item into the run's bag, (for now only its dialogue) a rest or a buff,
+// healing the Pokémon that haven't fainted, reviving a fainted one, a choice of 3 items, a shop (a line for now), an
+// item room's ball, whose item is drawn as the room is entered, and a buff ball (a line for now). Using one of the
+// choice NPCs (ENTRALINK_NPC_HEAL to ENTRALINK_NPC_BUFF_CHOICE but the shop) is the room's choice: the room's other
+// choice NPCs go and it is done
 #define ENTRALINK_NPC_BATTLE 0
 #define ENTRALINK_NPC_ITEM 1
 #define ENTRALINK_NPC_REST 2
 #define ENTRALINK_NPC_BUFF 3
+#define ENTRALINK_NPC_HEAL 4
+#define ENTRALINK_NPC_REVIVE 5
+#define ENTRALINK_NPC_GIFT 6
+#define ENTRALINK_NPC_SHOP 7
+#define ENTRALINK_NPC_ITEM_CHOICE 8
+#define ENTRALINK_NPC_BUFF_CHOICE 9
+
+// The item table's pools, bits of EntralinkItem's pools: an item room's balls, a gift NPC's choice, a shop's goods
+// (step 7), and the items on the ground and hidden in a room
+#define ENTRALINK_POOL_ITEM_ROOM 0
+#define ENTRALINK_POOL_GIFT 1
+#define ENTRALINK_POOL_SHOP 2
+#define ENTRALINK_POOL_GROUND 3
+// An item without a bag icon over an item room's ball
+#define ENTRALINK_ICON_NONE 0xff
 
 // The window an NPC's message shows in: the talk balloon with its tail at the NPC (ActorMsg), the tailless balloon
 // across the bottom of the screen (InfoMsg), the spiky balloon at the NPC (ActorMsg's spiky frame), or the system
@@ -73,6 +108,9 @@
 // No marker, on the ground or over an NPC
 #define ENTRALINK_MARKER_NONE 0xff
 #define ENTRALINK_NPC_MARKER_NONE 0xff
+// An NPC "marker" that is an item's bag icon, ENTRALINK_NPC_MARKER_ICON | its icon (EntralinkItem's), over an item
+// room's ball
+#define ENTRALINK_NPC_MARKER_ICON 0x80
 
 // A room's forward doors (south is the back door), each with a room behind it once the player is in the room
 #define ENTRALINK_DOOR_NORTH 0
@@ -153,6 +191,9 @@ typedef struct {
     u8 weather;
     // The marker in front of a door leading to it, ENTRALINK_MARKER_*
     u8 marker;
+    // Its type, ENTRALINK_TYPE_*, and whether it is a template (templates/), which is never in a pool
+    u8 type;
+    u8 isTemplate;
     // Its battles and NPCs in their tables
     u16 firstBattle;
     u8 battleCount;
@@ -167,7 +208,32 @@ typedef struct {
     // The field weather (a fog) of its rooms, a WEATHER_*, or ENTRALINK_FIELD_WEATHER_ZONE
     // (paperwhite2/entralink_run_state.h)
     u8 fieldWeather;
+    // The weight of each room type (ENTRALINK_TYPE_*) its doors draw
+    u8 typeWeights[ENTRALINK_TYPE_COUNT];
 } EntralinkRound;
+
+// An entry of the item table (items.json)
+typedef struct {
+    u16 item;
+    // Its price in Dream Dust (step 7)
+    u16 price;
+    // Its weight in a pool's draw, a bit for each round it is drawn in (round 1 the lowest; 0 for any), a bit for each
+    // pool (ENTRALINK_POOL_*), and its bag icon among the model table's from ENTRALINK_RUN_ITEM_ICON_FILE, or
+    // ENTRALINK_ICON_NONE
+    u8 weight;
+    u8 rounds;
+    u8 pools;
+    u8 icon;
+} EntralinkItem;
+
+// A forest clearing a run's rooms are in: its zone, its flower tiles in the flower table (where a hidden item can
+// lie), and its blocked tiles, a row per z with a bit per x
+typedef struct {
+    u16 zone;
+    u16 firstFlower;
+    u16 flowerCount;
+    u32 blocked[32];
+} EntralinkClearing;
 
 // Starts a run as the player walks into the forest from the hub (CheckEntralinkForestFirstWarpEvent)
 void EntralinkRun_Start(GameData *gameData);
@@ -188,8 +254,12 @@ void EntralinkRun_OnFieldLoad(GameData *gameData, u16 zoneId);
 // tile on the clearings' grid in x and z
 u32 EntralinkRun_GetDoorMarker(GameData *gameData, u32 door);
 void EntralinkRun_GetMarkerSpot(u32 door, u32 *x, u32 *z);
-// The marker over the room's NPC of an index (its actor's ID), ENTRALINK_NPC_MARKER_NONE if it has none or isn't there
+// The marker over the room's NPC of an index (its actor's ID), ENTRALINK_NPC_MARKER_NONE if it has none or isn't there;
+// over an item room's ball, its item's bag icon (ENTRALINK_NPC_MARKER_ICON)
 u32 EntralinkRun_GetNpcMarker(u32 index);
+// The script of the run's hidden item, if it lies on the tile at a position (the tile in front of the player, as A
+// is pressed: FieldEventProvider_Grid_CheckForEvent), else SCRID_NONE
+u16 EntralinkRun_CheckHiddenItem(u16 zoneId, const VecFx32 *pos);
 
 // Command 0x2f8, EntralinkRun action, arg1, arg2, result: runs one of the run's actions
 // (ENTRALINK_RUN_ACTION_*, paperwhite2/entralink_run_actions.h), and puts what it returns in the variable result
