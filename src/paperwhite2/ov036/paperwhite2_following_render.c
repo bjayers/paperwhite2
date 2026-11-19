@@ -800,6 +800,50 @@ void FollowingRender_PlaceOval(VecFx32 *pos, s16 *scale) {
     }
 }
 
+void FollowingRender_AdjustCamera(u32 index, FieldCameraDefaults *defaults) {
+    u32 variant = FollowingRender_GetShadowVariant();
+
+    if (index == FOLLOWING_CAMERA_FOREST &&
+        (variant == FOLLOWING_SHADOW_CAMERA_NEAR_1 || variant == FOLLOWING_SHADOW_CAMERA_BOTH)) {
+        // The ordinary cameras' near plane, a unit; the far plane stays
+        defaults->zNear = FX32_ONE;
+    }
+    if (index == FOLLOWING_CAMERA_CENTER &&
+        (variant == FOLLOWING_SHADOW_CAMERA_Z_BUFFER || variant == FOLLOWING_SHADOW_CAMERA_BOTH)) {
+        defaults->swapMode = GX_BUFFERMODE_Z;
+    }
+}
+
+void FollowingRender_ApplyCamera(FieldCamera *camera) {
+    FieldCameraDefaults defaults;
+
+    // FieldCamera_CoordsLoadDefaults's planes and buffering, without its zoom, angles and target
+    FieldCamera_ReadDefaults(camera, &defaults);
+    GFL_G3DCameraSetProjectionZFar(camera->g3dCamera, &defaults.zFar);
+    GFL_G3DCameraSetProjectionZNear(camera->g3dCamera, &defaults.zNear);
+    if (defaults.swapMode == GX_BUFFERMODE_W) {
+        GFL_G3DSysSetSwapBufferParams(GX_SORTMODE_AUTO, GX_BUFFERMODE_W);
+    } else {
+        GFL_G3DSysSetSwapBufferParams(GX_SORTMODE_AUTO, GX_BUFFERMODE_Z);
+    }
+}
+
+fx32 FollowingRender_ClipOffset(G3DCamera *camera, fx32 offset) {
+    fx32 zNear;
+
+    if (FollowingRender_GetShadowVariant() != FOLLOWING_SHADOW_CAMERA_SCALED_OFFSET) {
+        return offset;
+    }
+    // A clip Z offset k moves a point about k * distance * (far + near) / (2 * far * near) units of depth, k * distance
+    // / 2 at the ordinary near plane of a unit: k * near keeps that depth wherever the far plane is well beyond the
+    // near
+    GFL_G3DCameraGetProjectionZNear(camera, &zNear);
+    if (zNear <= FX32_ONE) {
+        return offset;
+    }
+    return FX_Mul(offset, zNear);
+}
+
 void FollowingRender_Draw(BillboardActorSys *system, G3DCamera *camera, G3DLight *lights, FieldActor *follower,
                           FieldActor *player, s32 spriteY, BOOL shaded, BOOL covered) {
     BillboardActor *quad = NULL;

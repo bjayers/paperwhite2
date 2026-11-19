@@ -2,6 +2,22 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-19: follower shadow, camera-side variants 8 to 11 (ROM session, on a branch)
+
+- **Debug menu, Follower... > `Follower shadow`** cycles on to 8 Forest near 1, 9 Center Z-buffer, 10 Both cameras and
+  11 Offset x near, live (A sets the camera's planes and buffering again; no map load). The follower is drawn as 0 in
+  all of them; only camera setups 3 (the centers) and 35 (the Entree Forest) change, only while the RAM override is
+  set. The camera table in `res/` is unchanged.
+- **Findings:** vanilla partners (`ActorPair*`, `MOVE_CODE_FOLLOW_PLAYER`) are ordinary NPCs, drawn with no priority
+  or offset of their own. 8 breaks the forest's zone fog (the whole screen pink): not a candidate. 9 shows the
+  follower's toes over its oval in the centers, overlap with the player unchanged; the cost is NPCs pulled a little
+  through the ledge and the counter (a few pixels). 11 (scale the actors' clip Z offset by the near plane) fixes the
+  forest with its fog and precision intact.
+- Details, depth maths, zones sharing the setups: `following-pokemon.md`, "Camera-side fixes". Sheets in the
+  scratchpad's `shadow2/`. Build clean, `verify_dsi_rom.py` intact, editor tests 251 pass.
+- **For the user:** check 9 in a Pokémon Center and 11 in the Entree Forest in melonDS (standing, walking down, beside
+  the player); then they become fixed and the switch goes.
+
 ## 2026-11-18: follower shadow variants, a debug switch (ROM session, on a branch)
 
 - **Debug menu, Follower... > `Follower shadow: <name>`**: A cycles 8 candidate fixes of the oval over the follower's

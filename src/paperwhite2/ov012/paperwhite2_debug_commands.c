@@ -201,9 +201,12 @@ static const u16 sDebugWeatherNames[WEATHER_MAX] = {
 
 // The follower's shadow variants' names, by FOLLOWING_SHADOW_*
 static const u16 sDebugShadowNames[FOLLOWING_SHADOW_VARIANT_COUNT] = {
-    Global10200_Text_DebugShadowCurrent, Global10200_Text_DebugShadowBack2,      Global10200_Text_DebugShadowBack4,
-    Global10200_Text_DebugShadowSize80,  Global10200_Text_DebugShadowSize65,     Global10200_Text_DebugShadowNoLift,
-    Global10200_Text_DebugShadowLow,     Global10200_Text_DebugShadowScreenLift,
+    Global10200_Text_DebugShadowCurrent,     Global10200_Text_DebugShadowBack2,
+    Global10200_Text_DebugShadowBack4,       Global10200_Text_DebugShadowSize80,
+    Global10200_Text_DebugShadowSize65,      Global10200_Text_DebugShadowNoLift,
+    Global10200_Text_DebugShadowLow,         Global10200_Text_DebugShadowScreenLift,
+    Global10200_Text_DebugShadowCameraNear1, Global10200_Text_DebugShadowCameraZBuffer,
+    Global10200_Text_DebugShadowCameraBoth,  Global10200_Text_DebugShadowCameraScaledOffset,
 };
 
 // The key items that Give key items adds: the tools and the forme items, which no story event checks for. The rest of
@@ -408,6 +411,8 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
     case DEBUG_ACTION_FOLLOWER_SHADOW_NEXT:
         value = (FollowingRender_GetShadowVariant() + 1) % FOLLOWING_SHADOW_VARIANT_COUNT;
         PaperWhite2_Debug_SetOverride(DEBUG_OVERRIDE_FOLLOWER_SHADOW, value);
+        // The camera-side variants change the camera's planes and buffering, set again here so they show at once
+        FollowingRender_ApplyCamera(Field_GetCameraSystem(GSYS_GetField(gsys)));
         return value;
     case DEBUG_ACTION_FORM_COUNT:
         return DebugCommands_GetFormCount(arg1);

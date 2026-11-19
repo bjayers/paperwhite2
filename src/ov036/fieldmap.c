@@ -97,6 +97,7 @@
 #include "paperwhite2/entralink_markers.h"
 #include "paperwhite2/field.h"
 #include "paperwhite2/following_field.h"
+#include "paperwhite2/following_render.h"
 #include "paperwhite2/sprites.h"
 #include "paperwhite2/wanderers.h"
 #include "paperwhite2/weather_fog.h"
@@ -1464,7 +1465,13 @@ void FieldRenderPhase2_Fieldmap(Field *field) {
     FieldSkillMapEff_Draw(field->skillMapEff);
     saved = NNS_G3dGlb.projMtx;
     mtx = saved;
+#ifdef PAPERWHITE2
+    // Paper White 2: the offset for the near plane under the debug menu's camera-side shadow variant
+    mtx.m[3][2] +=
+        FX_Mul(mtx.m[2][2], FollowingRender_ClipOffset(field->g3dCamera, field->objectProjectionMatrixOffset));
+#else
     mtx.m[3][2] += FX_Mul(mtx.m[2][2], field->objectProjectionMatrixOffset);
+#endif
     NNS_G3dGlbSetProjectionMtx(&mtx);
     NNS_G3dGlbFlushP();
     NNS_G3dGeFlushBuffer();
@@ -1483,7 +1490,13 @@ void FieldRenderPhase2_Fieldmap(Field *field) {
         UnionEff_Draw(field->unionEffect);
     }
     mtx = saved;
+#ifdef PAPERWHITE2
+    // Paper White 2: as for the actors
+    mtx.m[3][2] +=
+        FX_Mul(mtx.m[2][2], FollowingRender_ClipOffset(field->g3dCamera, field->objectProjectionMatrixOffset / 2));
+#else
     mtx.m[3][2] += FX_Mul(mtx.m[2][2], field->objectProjectionMatrixOffset / 2);
+#endif
     NNS_G3dGlbSetProjectionMtx(&mtx);
     NNS_G3dGlbFlushP();
     NNS_G3dGeFlushBuffer();

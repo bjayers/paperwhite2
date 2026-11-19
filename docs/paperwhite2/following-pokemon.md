@@ -725,6 +725,64 @@ about 1.3 units nearer than now in a center and 1.6 in the forest).
   forest 7 differs from 0 by 7 to 11 pixels at the feet, standing and on one walk frame. 1 to 4 and 6 change only the oval. melonDS and the
   hardware may differ: the choice is the user's, by eye.
 
+**Camera-side fixes (2026-11-19, variants 8 to 11 of the same switch).** The user's rule: the follower's and the
+player's geometry stay as they are (the lift keeps the follower 1.3 to 1.6 units behind the player, and the player isn't
+moved); the cameras change instead, so the engine's own clip Z offset does in the centers and the forest what it does
+on the ordinary maps, where the follower looks right. The follower is drawn as in variant 0 in all four.
+
+- **Vanilla partners have nothing special.** A partner walking with the player (Hugh in the Castelia Sewers,
+  `ActorPairSet` and the other `ActorPair*` commands, src/ov012/pair_sys.c) is an ordinary NPC with move code
+  `MOVE_CODE_FOLLOW_PLAYER` (field_actor_movecode_pair.c), which steps into the player's last tile. Only its task runs
+  after the player's (`FldAct_AddTask`, priority + 1); its billboard is drawn with every other actor, at its true
+  position, with the same clip Z offset and polygon ID, and no lowering.
+- **The depth the offset buys.** The actors' pass adds k = `objectProjectionMatrixOffset` (0x1ee with projection
+  type 1, 0x136 with type 0) to clip Z, the effects' (the ovals) k / 2. At distance d that is k d (far + near) /
+  (2 far near) units of Z-buffer depth, and the body beats its oval by half of it, G. Lowered by L (2) at pitch p, the
+  oval covers the body's rows where 1 - y > G sin p (y the row's height, -L at the bottom), so none once G sin p > 1 +
+  L = 3: the ordinary camera (setup 0: near 1, far 1024, 237 units, 53 degrees, type 1) has G 7.2; the forest (setup
+  35, near 112, far 512, type 1) 0.08, so the oval covers 4.9 units (5.6 pixels) of the quad as in a W-buffered room;
+  the centers (setup 3, type 0, 229 units, 39 degrees) W-buffered 0, the oval covering 3.9 units (4.4 pixels).
+  Z-buffered there, G is 4.3: 4.3 sin 39 = 2.7, so it covers only the lowest 0.35 units (under half a pixel).
+- **8 Forest near 1**: setup 35 with the near plane of a unit (the far plane stays 512). G 7.2, but **the forest's
+  fog breaks**: the zone's fog (its own file, not a weather's) is set for the depths of near 112, and at near 1 every
+  depth of the scene falls past its end: the whole screen is the fog's pink (`forest_full_v0_v8_v11.png`). The precision
+  falls too: a step of the 15-bit depth is about 0.01 units at near 112 and 1.7 at near 1 (the ordinary maps' value),
+  which the forest's model was perhaps made for; the fog hides whether anything fights. Remapping the fog would leave
+  about 50 depth steps for the whole scene. Not a candidate.
+- **9 Center Z-buffer**: setup 3 Z-buffered (`swapMode` 0, as nearly every other setup is). In DeSmuME the oval no
+  longer covers the follower's toes, standing, beside the player and on the walk's down frames, and the player and the
+  follower overlap as before (the offset moves both by the same depth). The rest of the room changes in about 120
+  pixels: NPCs' toes over their ovals as the follower's; the nurse's waist a pixel or two lower over the counter's top;
+  an NPC upstairs by the ledge shows his legs over its edge (`center_zbuffer_ledge_npc.png`); a few single pixels on
+  edges. The floor, the stairs and the counter's floor shadow `in02_kage` don't flicker or fight. Why the centers are
+  W-buffered isn't written anywhere; the likely reason is the W-buffer's even precision (the floor shadow sits 1.5
+  units over the floor, about one Z step at 229 units), and the ledge and counter, which W keeps the offset from
+  pulling NPCs through.
+- **10 Both cameras**: 8 and 9 together (each only changes its own setup, so in a center it is 9, in the forest 8).
+- **11 Offset x near** (not asked for, added for the forest's fog): the camera stays and the actors' offset (and the
+  effects' half) is multiplied by the near plane in units when it is over 1 (`FollowingRender_ClipOffset` in
+  `FieldRenderPhase2_Fieldmap`), which gives the ordinary maps' depth at any near plane: G 8.7 in the forest. The fog
+  and the precision stay; the follower's toes show over the oval, as in 9; the actors take about 8.7 units less fog,
+  as the ordinary offset gives them on other maps (200 to 340 pixels change around the actors, none elsewhere). Of the
+  setups, 7 (`castelia_city_2`, near 5) is the other Z-buffered one with a near plane over 1; W-buffered ones aren't
+  changed by it.
+- **Who shares the setups.** Setup 3: the 18 Pokémon Centers' zones plus `pokemon_league_11` and `victory_road_27`
+  (the League's and Victory Road's centers), all projection type 0. Setup 35: the ten `entree_forest*` zones alone.
+  A change to either setup's row in `res/field/cameras/defaults.json` touches only those zones. The other W-buffered
+  setups (1, 2, 4, 10, 11, 24, 39: Skyarrow Bridge, Castelia's street, the bridge gates, the Tubeline Bridge, Victory
+  Road's 2, Black City and White Forest, the Marine Tube) have the centers' problem too; they aren't changed.
+- **How.** `FieldCamera_ReadDefaults` passes its setup to `FollowingRender_AdjustCamera` (only setups 3 and 35, only
+  under the RAM override), and the menu's A calls `FollowingRender_ApplyCamera`, which sets the planes and the
+  buffering again from the setup without touching the camera's position: the variants show at once, with no map load.
+  The weather fog's cache (`paperwhite2_weather_fog.c`) reads the planes once per setup, so a weather in those zones
+  would keep the old planes until the next map; neither has weather.
+- **Shown** (DeSmuME, scratchpad `shadow2/`): `center_sheet.png` and `forest_sheet.png` (rows 0, 8, 9, 10, 11; the
+  follower stepping down into the player's old tile, standing beside on the right, walking up toward the player,
+  standing beside on the left), `center_zbuffer_diff.png` (the room's changed pixels), `center_zbuffer_nurse.png`.
+  The geometry above and the shots agree.
+- **Recommendation**: 9 for the centers and 11 for the forest (as a fixed change: setup 3's `swap_mode` 0 in the
+  camera table, and the offset times the near plane, or setup 35's zones alone). The user picks by eye in melonDS.
+
 ## Small followers in front of counters
 
 **The clipping.** In a Pokémon Center a 32-pixel follower's middle rows went into the counter on the walk's down

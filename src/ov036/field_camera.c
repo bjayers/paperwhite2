@@ -10,6 +10,9 @@
 #include "gfl/std.h"
 #include "nitro/fx.h"
 #include "nitro/math.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/following_render.h"
+#endif
 
 // The field's camera (field_camera.c, after the file name that its allocations pass): where its target and eye are,
 // how it follows what it is bound to, the zone's boundaries it keeps to, and the delay of its following. The layouts
@@ -222,6 +225,11 @@ void FieldCamera_ReadDefaults(FieldCamera *camera, FieldCameraDefaults *defaults
     GFL_ArcToolGetDataLength(camera->defaultsArc, 0);
     GFL_ArcToolReadRange(camera->defaultsArc, 0, camera->defaultsIndex * sizeof(FieldCameraDefaults),
                          sizeof(FieldCameraDefaults), defaults);
+#ifdef PAPERWHITE2
+    // Paper White 2: the debug menu's camera-side shadow variants change the forest's near plane or the centers'
+    // buffering (paperwhite2_following_render.c)
+    FollowingRender_AdjustCamera(camera->defaultsIndex, defaults);
+#endif
 }
 
 static void FieldCameraApply_SetInitTgtBase(FieldCamera *camera) {

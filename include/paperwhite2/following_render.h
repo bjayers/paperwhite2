@@ -2,6 +2,7 @@
 #define PAPERWHITE2_FOLLOWING_RENDER_H
 
 #include "types.h"
+#include "field/field_camera.h"
 #include "gfl/billboard_actor.h"
 #include "nitro/fx.h"
 #include "nitro/gx.h"
@@ -39,13 +40,35 @@ enum {
     FOLLOWING_SHADOW_LOW,
     // The quad lowered on the screen only: the same picture, at the depth of a quad that isn't lowered
     FOLLOWING_SHADOW_SCREEN_LIFT,
+    // The camera-side fixes: the follower as FOLLOWING_SHADOW_CURRENT, the camera changed instead. The forest's camera
+    // setup with the ordinary near plane, so the actors' clip Z offset has its ordinary strength
+    FOLLOWING_SHADOW_CAMERA_NEAR_1,
+    // The centers' camera setup Z-buffered, so the clip Z offset counts there at all
+    FOLLOWING_SHADOW_CAMERA_Z_BUFFER,
+    // Both of the two above
+    FOLLOWING_SHADOW_CAMERA_BOTH,
+    // The near plane kept and the clip Z offset scaled by it instead: the ordinary offset's depth at any near plane
+    FOLLOWING_SHADOW_CAMERA_SCALED_OFFSET,
     FOLLOWING_SHADOW_VARIANT_COUNT,
 };
+
+// The camera setups that the camera-side variants change: the Entree Forest's (near 112) and the Pokémon Centers'
+// (W-buffered)
+#define FOLLOWING_CAMERA_FOREST 35
+#define FOLLOWING_CAMERA_CENTER 3
 
 // The variant in use: the debug menu's, FOLLOWING_SHADOW_CURRENT without one
 u32 FollowingRender_GetShadowVariant(void);
 // FldeffShadow_Draw's oval for the follower: moves pos and sets scale (fx32 of the oval's size) by the variant
 void FollowingRender_PlaceOval(VecFx32 *pos, s16 *scale);
+// FieldCamera_ReadDefaults's setup index of archive 0x3b changed by the camera-side variant: the forest's near plane
+// or the centers' buffering
+void FollowingRender_AdjustCamera(u32 index, FieldCameraDefaults *defaults);
+// The camera's planes and buffering set again from its setup, as a map load does, so a new variant shows at once
+void FollowingRender_ApplyCamera(FieldCamera *camera);
+// The actors' clip Z offset (objectProjectionMatrixOffset, or half of it for the effects) for the camera's near plane:
+// unchanged but with FOLLOWING_SHADOW_CAMERA_SCALED_OFFSET, which multiplies it by the near plane in units
+fx32 FollowingRender_ClipOffset(G3DCamera *camera, fx32 offset);
 
 // The descriptor's Z offset moves the model and its shadow together, and stays the same whatever the facing, so
 // turning snaps neither
