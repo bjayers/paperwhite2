@@ -61,6 +61,8 @@ export interface MapViewProps {
   drawRect: Entity | null;
   /** A rail point dragged to a spot, in units, at its own height. */
   onMoveRailPoint(index: number, x: number, z: number): void;
+  /** Tiles washed in a color over the ground, under the entities (the Entree page's flower tiles); none if left out. */
+  tileMarks?: { tiles: { x: number; z: number }[]; color: number; opacity?: number };
 }
 
 export interface TileRect { x: number; z: number; width: number; depth: number }
@@ -363,7 +365,7 @@ class MapScene {
     // Only what changed: the overlay with the terrain or its look, the marks with the entities or the selection
     const overlayKey = [props.map, props.layer, props.overlay, props.rails, props.railLevel, props.ground];
     if (!same(overlayKey, this.overlayKey)) this.buildOverlay();
-    const marksKey = [props.map, props.entities, props.selected, props.layer, props.showModels, props.rails, props.railLevel, props.cameraAreas];
+    const marksKey = [props.map, props.entities, props.selected, props.layer, props.showModels, props.rails, props.railLevel, props.cameraAreas, props.tileMarks];
     if (!same(marksKey, this.marksKey)) this.buildMarks();
     this.overlayKey = overlayKey;
     this.marksKey = marksKey;
@@ -570,6 +572,16 @@ class MapScene {
     this.handles = [];
     this.rectPreview = null;
     if (selected && hasRect(selected, this.props.cameraAreas)) this.addHandles(selected);
+    const washed = this.props.tileMarks;
+    if (washed?.tiles.length) {
+      const material = new THREE.MeshBasicMaterial({ color: washed.color, transparent: true, opacity: washed.opacity ?? 0.4, depthTest: false });
+      for (const t of washed.tiles) {
+        const quad = new THREE.Mesh(new THREE.PlaneGeometry(TILE - 2, TILE - 2).rotateX(-Math.PI / 2), material);
+        quad.position.set((t.x + 0.5) * TILE, (standingOn(map, t.x, t.z, 0)?.height ?? 0) + 1, (t.z + 0.5) * TILE);
+        quad.renderOrder = 2;
+        this.marks.add(quad);
+      }
+    }
     for (const e of entities) {
       const isSelected = selected?.kind === e.kind && selected.index === e.index;
       if (e.railPart) {

@@ -1,6 +1,6 @@
 // The schemas' keywords, checked the way tools/data/datajson.py's validate() checks them, so the editor reports what
 // the build would. The build's own Python check still runs on every save; this one is for feedback while editing.
-// Keywords: type, properties, required, additionalProperties, items, prefixItems, minItems, maxItems, minimum,
+// Keywords: type, properties, patternProperties (the first pattern found anywhere in a key, as re.search), required, additionalProperties, items, prefixItems, minItems, maxItems, minimum,
 // maximum, pattern, enum, anyOf, $ref to $defs, and the project's own x-constant (a string that must be a known
 // constant with that prefix) and x-hex (a hex ID such as "0x03d0" is accepted too).
 
@@ -13,6 +13,7 @@ export interface Schema {
   description?: string;
   type?: string | string[];
   properties?: Record<string, Schema>;
+  patternProperties?: Record<string, Schema>;
   required?: string[];
   additionalProperties?: boolean | Schema;
   items?: Schema;
@@ -132,8 +133,11 @@ export function validate(data: JsonValue, schema: Schema, constants: Constants, 
   if (data instanceof Map) {
     const properties = s.properties ?? {};
     for (const key of s.required ?? []) if (!data.has(key)) fail(`${key} is missing`);
+    const patterns = Object.entries(s.patternProperties ?? {});
     for (const [key, item] of data) {
+      const matched = patterns.find(([pattern]) => pythonRegex(pattern).test(key))?.[1];
       if (key in properties) errors.push(...validate(item, properties[key], constants, root, [...path, key]));
+      else if (matched) errors.push(...validate(item, matched, constants, root, [...path, key]));
       else if (s.additionalProperties === false) fail(`${key} is not a field here`, [...path, key]);
     }
   }
