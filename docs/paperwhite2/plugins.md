@@ -896,8 +896,10 @@ no Geonet. It is Geonet's process slot and overlay with Geonet's parts, without 
   City, Farmland / Greenhouses, Fiery Caves / Damp Caves), each row's current one in the current colors. A pick sets
   the place's flag; the place changes at the next map change there (`FieldMapControl_LoadZone` sets the city and the
   zones from the flags at every map change). The place the player is in changes too: Black City's and White
-  Forest's Pokémon Centers each have an exit to both cities, and their level scripts (type 2 and 3, `Script_4`) move
-  the one the flag doesn't pick off the doorway; Opelucid City's Center leads to the same zone in both versions. The
+  Forest's Pokémon Centers each have an exit to both cities, and their level scripts (type 2 and 3, `Script_4`) put
+  the one the flag picks on the doorway (tiles 6-8, 19) and the other off it. Both are set each time, since the
+  type 3 run after the app works on the warps as the last run left them (the field reloads a zone's warps only at a
+  map change); Opelucid City's Center leads to the same zone in both versions. The
   preview shows the place under the cursor as that button has it, in the season the app shows, without the season's
   banner or the shadow behind it (`SeasonApp_IsBannerShown`, `SeasonPreview_SetShadowHidden`). The spots (2026-11-05,
   the user's): Route 4 at tile 428, 553; Opelucid at 418, 156 (distance 360); White Forest at 28, 30 and Black City

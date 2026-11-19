@@ -21,6 +21,24 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 - **For the user:** in melonDS, Castelia's street and Skyarrow Bridge first, 14a against 14b against 0: the feet,
   the railing and parapets, the player and the follower crossing.
 
+## 2026-11-19: trapped in Black City's or White Forest's Center after the globe's switch, fixed (ROM session, on a branch)
+
+- **Cause, proven in the emulator** (user's save, debug warp to White Forest's Center, the globe's Alter Unova): each
+  Center has two exits on the doorway, and its `Script_4` (init types 2 and 3) moved the one the flag doesn't pick to
+  tile 0, 0. The field loads a zone's warps only at a map change (`FieldMapControl_LoadZone`), so after the Season app
+  the type 3 run worked on the warps as entry left them and moved the other one too. Read from `EventData`: before,
+  warp 0 (White Forest) at 104, 312 and warp 1 (Black City) at 8, 8; after picking Black City, both at 8, 8, so no exit,
+  and switching back only moved one again. Not a later regression: the feature's own commit, 63ff9cd6de, built and run
+  the same way, traps the player the same. (A switch made outside the Center, or with the Version Key, which loads the
+  map again, never showed it.)
+- **Fix** (`res/field/scripts/{white_forest,black_city}_pokemon_center.s`): `Script_4` puts the picked city's exit on
+  the doorway (`ObjInitWarpGPos n, 6, 0, 19`) and the other off it, every run (plugins.md, Season app).
+- **Tested** in the emulator: in White Forest's Center, Black City; Black City then White Forest; three and four
+  switches in one visit; in Black City's Center the same both ways: each time the exit led to the last pick's city
+  (zone 0 or 424). Opelucid City's Center has one exit that never moves (its city's pieces follow the flag at the map
+  change): Modern City then Old Town there, and the exit leads to Opelucid City. `verify_dsi_rom.py` intact, editor
+  tests pass. To test on hardware: switch at the globe in either Center, both ways, and walk out each time.
+
 ## 2026-11-19: follower shadow, camera fixes across the game (ROM session, on a branch)
 
 - **Camera fixes are data now:** `res/paperwhite2/follower_camera_fixes.json` (a camera setup each: Z-buffer, near
