@@ -18,6 +18,7 @@
                 },
                 {
                     "species": "SPECIES_LUGIA",
+                    "form": 1,
                     "level": 70,
                     "moves": [ "MOVE_WEATHER_BALL", "MOVE_AEROBLAST", "MOVE_RAIN_DANCE", "MOVE_RECOVER" ],
                     "ability": "ABILITY_MULTISCALE"
@@ -37,6 +38,7 @@
             "type": "battle",
             "battle": "ho_oh",
             "enemy": 1,
+            "sprite": "OBJ_CODE_POKEMON_LUGIA_FORM_1",
             "x": 15,
             "z": 14,
             "facing": "DIR_DOWN"
