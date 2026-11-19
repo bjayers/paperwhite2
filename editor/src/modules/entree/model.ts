@@ -461,8 +461,8 @@ export const inRound = (room: Room, round: Round) => !room.rounds.length || room
 
 // ---- The run: run.json's rounds and how the game draws their rooms --------------------------------------------------
 
-/** The rooms of a run, the final's included (the game's ENTRALINK_RUN_ROOMS_MAX). */
-export const RUN_ROOMS_MAX = 15;
+/** The rooms of a run, the pre-boss rests and the final's included (the game's ENTRALINK_RUN_ROOMS_MAX). */
+export const RUN_ROOMS_MAX = 20;
 
 export interface RunRound {
   rooms: number; boss: boolean; fieldWeather?: string;
@@ -598,8 +598,10 @@ export function runProblems(run: Pick<RunLayout, "rounds">, rooms: { id: string;
     const which = rounds.length > 1 ? `Rounds ${rounds.slice(0, -1).join(", ")} and ${rounds.at(-1)}` : `Round ${rounds[0]}`;
     add("warning", `${which}: no ${types} room can come up, so ${types.includes(" or ") ? "those types are" : "that type is"} skipped (the other types' chances rise).`);
   }
-  const total = run.rounds.reduce((n, r) => n + r.rooms + (r.boss ? 1 : 0), 0) + 1;
-  if (total > RUN_ROOMS_MAX) add("error", `The rounds have ${total} rooms with the final one, more than ${RUN_ROOMS_MAX}.`);
+  // (each round's rooms, then a pre-boss rest and the boss for a round with one, and after the last the pre-boss rest
+  // and the final: tools/paperwhite2/entralink_run.py's place_count)
+  const total = run.rounds.reduce((n, r) => n + r.rooms + (r.boss ? 2 : 0), 0) + 2;
+  if (total > RUN_ROOMS_MAX) add("error", `The rounds have ${total} rooms with the pre-boss rests and the final one, more than ${RUN_ROOMS_MAX}.`);
   if (roomNames.size && drawn > roomNames.size) add("warning", `The rounds draw ${drawn} rooms from ${roomNames.size}, so rooms come up more than once in a run (the least used first, never twice in a row).`);
   if (bossNames.size && bosses > bossNames.size) add("warning", `The run has ${bosses} bosses from ${plural(bossNames.size, "boss room")}, so a boss comes up twice.`);
   return out;
