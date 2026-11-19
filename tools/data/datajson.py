@@ -121,9 +121,9 @@ def load_schema(path: Path) -> dict:
 
 
 def validate(data, schema: dict, where: str, root: dict | None = None):
-    """Checks data against a schema, using the keywords the data's schemas use: type, properties, required,
-    additionalProperties, items, prefixItems, minItems, maxItems, minimum, maximum, pattern, enum, anyOf and $ref to
-    $defs.
+    """Checks data against a schema, using the keywords the data's schemas use: type, properties, patternProperties,
+    required, additionalProperties, items, prefixItems, minItems, maxItems, minimum, maximum, pattern, enum, anyOf
+    and $ref to $defs.
     "x-constant" names the prefix of the constants a string may be."""
     root = root or schema
     at = f"{where}: " if where else ""
@@ -153,9 +153,13 @@ def validate(data, schema: dict, where: str, root: dict | None = None):
         for key in schema.get("required", []):
             if key not in data:
                 raise DataError(f"{at}{key} is missing")
+        patterns = schema.get("patternProperties", {})
         for key, item in data.items():
+            matched = next((sub for pattern, sub in patterns.items() if re.search(pattern, key)), None)
             if key in properties:
                 validate(item, properties[key], f"{where}.{key}" if where else key, root)
+            elif matched is not None:
+                validate(item, matched, f"{where}.{key}" if where else key, root)
             elif schema.get("additionalProperties") is False:
                 raise DataError(f"{at}{key} is not a field here")
     if isinstance(data, list):

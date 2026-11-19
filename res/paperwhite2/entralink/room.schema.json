@@ -17,13 +17,17 @@
       "enum": [ "room", "boss", "final" ],
       "description": "room: a room of a round. boss: the room ending round 1 or 2, from the bosses' own pool. final: the run's last room"
     },
+    "type": {
+      "enum": [ "enemy", "challenge", "rest", "item", "buff", "shop", "event" ],
+      "description": "A room of role room: what kind of room it is, which a door draws by its round's type_weights (run.json) and whose marker the door shows (enemy, challenge, rest, gift for item and buff, shop, event); enemy if left out. A premade rest, item, buff or shop room comes up instead of its type's template (templates/<type>.json) at run.json's custom_chance. A template's type is its file's (pre_boss_rest's rest). Boss and final rooms ignore it"
+    },
     "weather": {
       "type": "string", "x-constant": "BTL_WEATHER_",
       "description": "Its battles' weather from their start (constants/battle.h; BTL_WEATHER_NONE for clear); the field keeps its round's fog (run.json). Left out, the battles take the field's"
     },
     "marker": {
       "enum": [ "enemy", "challenge", "boss", "rest", "gift", "event", "shop", "unknown", "final" ],
-      "description": "The marker on the ground in front of any door leading to it (markers/<marker>.png); left out, by its role: enemy for a room, boss, final. unknown always shows ???. The game shows catch instead of enemy, challenge or boss while one of its enemies can be caught and the run's bag holds a Nightmare Ball"
+      "description": "The marker on the ground in front of any door leading to it (markers/<marker>.png); left out, a room's by its type (enemy, challenge, rest, gift for item and buff, shop, event), a boss or final room's by its role (boss, final). unknown always shows ???. The game shows catch instead of enemy, challenge or boss while one of its enemies can be caught and the run's bag holds a Nightmare Ball"
     },
     "battles": {
       "type": "array", "maxItems": 8, "items": { "$ref": "#/$defs/battle" },
@@ -100,19 +104,19 @@
       "required": [ "type", "x", "z", "facing" ],
       "properties": {
         "type": {
-          "enum": [ "battle", "item", "rest", "buff" ],
-          "description": "battle: starts the battle it names. item: gives an item. rest: opens the rest menu. buff: opens the buff menu (both built later)"
+          "enum": [ "battle", "item", "rest", "buff", "heal", "revive", "gift", "shop", "item_choice", "buff_choice" ],
+          "description": "battle: starts the battle it names. item: gives a fixed item. heal: heals every Pokémon that hasn't fainted (HP, status, PP). revive: revives a fainted Pokémon the player chooses, to full HP. gift: a choice of 3 random items of items.json's gift pool. shop: a shop (a placeholder line for now). item_choice: an item ball whose item is drawn from items.json's item_room pool as the room is entered, its bag icon floating above it. buff_choice: a buff ball (a placeholder line for now). rest and buff: their before dialogue only (the old placeholders). Using one heal, revive, gift, shop or item_choice NPC is the room's choice: the room's other NPCs of those types go and the room is done; its battle NPCs stay, optional"
         },
         "battle": { "type": "string", "pattern": "^[a-z0-9_]+$", "description": "A battle NPC's battle, by its id; several NPCs may start the same one" },
         "enemy": {
           "type": "integer", "minimum": 0, "maximum": 2,
           "description": "A battle NPC: the enemy of its battle (0 the first) whose overworld sprite it shows and whose cry it plays; 0 if left out"
         },
-        "item": { "type": "string", "x-constant": "ITEM_", "description": "An item NPC's item" },
+        "item": { "type": "string", "x-constant": "ITEM_", "description": "An item NPC's item; an item_choice NPC's is drawn, never set" },
         "count": { "type": "integer", "minimum": 1, "maximum": 99, "description": "How many of its item it gives; 1 if left out" },
         "sprite": {
           "type": "string", "x-constant": "OBJ_CODE_",
-          "description": "Its overworld sprite. Without it a battle NPC shows its enemy's walking Pokémon and an item NPC the item ball (OBJ_CODE_110); rest and buff NPCs need one"
+          "description": "Its overworld sprite. Without it a battle NPC shows its enemy's walking Pokémon, item and item_choice NPCs the item ball (OBJ_CODE_110), a buff_choice NPC the buff ball, the others the Lady (OBJ_CODE_LADY)"
         },
         "requires": {
           "type": "array", "items": { "type": "string", "pattern": "^([a-z0-9_]+/[a-z0-9_]+|run/completed)$" },

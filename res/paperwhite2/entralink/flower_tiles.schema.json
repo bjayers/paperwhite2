@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Entralink flower tiles",
+  "description": "The flower tiles of each Entree Forest clearing, where a run's hidden item may lie (run.json's hidden_item_chance; docs/paperwhite2/design/entralink-roguelike-prototype.md, Step 6). Generated from the clearings' map models by tools/paperwhite2/entralink_flowers.py (the faces with a flower texture) and editable: the editor shows them on the room grid and toggles them. tools/paperwhite2/entralink_run.py packs it for the game.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" }
+  },
+  "patternProperties": {
+    "^ZONE_ENTREE_FOREST(_[0-9]+)?$": {
+      "type": "array", "maxItems": 64, "uniqueItems": true,
+      "items": {
+        "type": "array", "minItems": 2, "maxItems": 2,
+        "items": { "type": "integer", "minimum": 0, "maximum": 31 },
+        "description": "x, z: a flower tile on the clearings' shared 32 by 32 grid"
+      },
+      "description": "A clearing's flower tiles, by its zone"
+    }
+  }
+}

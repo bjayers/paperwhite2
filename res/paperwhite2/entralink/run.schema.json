@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Entralink run",
-  "description": "How a run of the Entralink roguelike is laid out (docs/paperwhite2/design/entralink-roguelike-prototype.md): its rounds, each a number of rooms drawn at random from rooms/ (role room, kept to that round or to none) and, for the first two, an optional boss (role boss), then the final room (role final). Rooms are drawn without repeats while unused ones fit; then the least used come up again, never one twice in a row. tools/paperwhite2/entralink_run.py checks it and writes it into paperwhite2/entralink_run_config.h.",
+  "description": "How a run of the Entralink roguelike is laid out (docs/paperwhite2/design/entralink-roguelike-prototype.md): its rounds, each a number of rooms whose types its doors draw by the round's type_weights, from rooms/ (role room, kept to that round or to none) or templates/, then for the first two an optional boss (role boss) and for the last the final room (role final), each after the pre-boss rest. Rooms are drawn without repeats while unused ones fit; then the least used come up again, never one twice in a row. tools/paperwhite2/entralink_run.py checks it and writes it into paperwhite2/entralink_run_config.h.",
   "type": "object",
   "additionalProperties": false,
   "required": [ "rounds", "room_maps", "final_map" ],
@@ -36,6 +36,18 @@
         "west": { "$ref": "#/$defs/spot" }
       }
     },
+    "custom_chance": {
+      "type": "integer", "minimum": 0, "maximum": 100,
+      "description": "The chance, in percent, that a door whose type is rest, item, buff or shop leads to a premade room of that type (rooms/, if one fits) instead of the type's template (templates/<type>.json); 25 if left out"
+    },
+    "ground_item_chance": {
+      "type": "integer", "minimum": 0, "maximum": 100,
+      "description": "The chance, in percent, that a room with no item or item_choice NPC has a ball on the ground holding an item of items.json's ground pool, on a random free tile; 30 if left out"
+    },
+    "hidden_item_chance": {
+      "type": "integer", "minimum": 0, "maximum": 100,
+      "description": "The chance, in percent, that a room has a hidden item of items.json's ground pool on one of its clearing's flower tiles (flower_tiles.json), found by pressing A facing it; 20 if left out"
+    },
     "field_weather": {
       "$ref": "#/$defs/field_weather",
       "description": "The forest's field weather (include/system/zone_weather.h) in the rounds with no field_weather of their own, the hack's tints (WEATHER_CUSTOM_TINT_*, res/paperwhite2/field_tints/tints.json) among them; the forest's own if left out"
@@ -60,13 +72,29 @@
       "required": [ "rooms" ],
       "properties": {
         "rooms": { "type": "integer", "minimum": 0, "maximum": 8, "description": "How many rooms of role room are drawn for it, from those kept to it and the generic ones; when unused ones run out, rooms come up again" },
-        "boss": { "type": "boolean", "description": "Rounds 1 and 2: whether a boss room ends it, drawn from the boss rooms kept to it, else from the generic ones; false if left out" },
+        "boss": { "type": "boolean", "description": "Rounds 1 and 2: whether a boss room ends it, drawn from the boss rooms kept to it, else from the generic ones; false if left out. A boss, and the final room, come after the pre-boss rest (templates/pre_boss_rest.json)" },
+        "type_weights": { "$ref": "#/$defs/type_weights" },
         "field_weather": {
           "$ref": "#/$defs/field_weather",
           "description": "The field weather (a fog) of the round's rooms, its boss's and, for the last round, the final room's; left out, the run's field_weather"
         }
       }
     },
+    "type_weights": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The weight of each room type a forward door of the round draws (never two rest rooms in a row, no rest or shop just before the pre-boss rest, a type with no room skipped); a type left out takes its default: enemy 50, challenge 12, item 10, buff 10, rest 10, event 5, shop 3",
+      "properties": {
+        "enemy": { "$ref": "#/$defs/weight" },
+        "challenge": { "$ref": "#/$defs/weight" },
+        "item": { "$ref": "#/$defs/weight" },
+        "buff": { "$ref": "#/$defs/weight" },
+        "rest": { "$ref": "#/$defs/weight" },
+        "event": { "$ref": "#/$defs/weight" },
+        "shop": { "$ref": "#/$defs/weight" }
+      }
+    },
+    "weight": { "type": "integer", "minimum": 0, "maximum": 255 },
     "spot": {
       "type": "array", "minItems": 2, "maxItems": 2,
       "items": { "type": "integer", "minimum": 0, "maximum": 30 },

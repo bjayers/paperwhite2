@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Entralink item table",
+  "description": "The items a run of the Entralink roguelike hands out (docs/paperwhite2/design/entralink-roguelike-prototype.md, Step 6): each entry's item, its weight in the draw, the rounds it is kept to and the pools it is drawn in. The Nightmare Ball is drawn only while some enemy of the run's rooms can be caught. tools/paperwhite2/entralink_run.py checks it and packs it for the game.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [ "items" ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "items": {
+      "type": "array", "minItems": 1, "maxItems": 128,
+      "items": { "$ref": "#/$defs/entry" },
+      "description": "The table's entries; an item may have several (one per set of rounds, say)"
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "item", "weight", "pools" ],
+      "properties": {
+        "item": { "type": "string", "x-constant": "ITEM_", "description": "The item" },
+        "weight": {
+          "type": "integer", "minimum": 1, "maximum": 255,
+          "description": "Its weight in each pool's draw: its chance is its weight over the sum of the weights of the pool's entries that fit"
+        },
+        "rounds": {
+          "type": "array", "minItems": 1, "maxItems": 3,
+          "items": { "enum": [ 1, 2, 3 ] },
+          "description": "The rounds it is drawn in, as a room's rounds (3 includes the final room); left out, every round"
+        },
+        "price": {
+          "type": "integer", "minimum": 0, "maximum": 9999,
+          "description": "Its price in Dream Dust in a shop (step 7); 0 if left out"
+        },
+        "pools": {
+          "type": "array", "minItems": 1, "maxItems": 4, "uniqueItems": true,
+          "items": { "enum": [ "item_room", "gift", "shop", "ground" ] },
+          "description": "Where it is drawn: item_room, an item room's balls (item_choice NPCs); gift, a gift NPC's choice of 3; shop, a shop's goods (step 7); ground, the items lying in rooms and the hidden ones"
+        }
+      }
+    }
+  }
+}
