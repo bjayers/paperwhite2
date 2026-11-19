@@ -38,7 +38,10 @@ function clearings(blocked: [number, number][] = []): MapInfo[] {
 }
 
 test("the real rooms are written back as they are, and valid", () => {
-  assert.deepEqual(files.map((f) => f.replace(/^.*\//, "")), ["darkrai.json", "dialga.json", "ho_oh.json", "prince_or_princess.json", "rayquaza_raid.json", "time_and_space.json"]);
+  // (the user's own rooms: whatever is there, each written back unchanged, passing the build's checks with no errors;
+  // the exact messages are the fixtures' tests, below and in entree-step6.test.ts)
+  assert.ok(files.length > 0);
+  const errorsOf = (problems: { severity: string; message: string }[]) => problems.filter((p) => p.severity === "error").map((p) => p.message);
   for (const file of files) {
     const text = readFileSync(join(ROOT, file), "utf8");
     const data = parseJson(text);
@@ -47,20 +50,16 @@ test("the real rooms are written back as they are, and valid", () => {
     assert.equal(fileText(data, layout), text, file);
     assert.deepEqual(errors(data), [], file);
     assert.deepEqual(buildCheck(join(ROOT, file)), { ok: true }, file);
-    assert.deepEqual(checkRoom(readRoom(data), constants, clearings()), [], file);
+    assert.deepEqual(errorsOf(checkRoom(readRoom(data), constants, clearings())), [], file);
   }
   const rooms = files.map((f) => ({ id: f.replace(/^.*\//, "").replace(/\.json$/, ""), room: readRoom(parseJson(readFileSync(join(ROOT, f), "utf8"))) }));
   assert.equal(rooms.filter((r) => r.room.role === "final").length, 1);
   assert.deepEqual(checkRooms(rooms), []);
-  // The run: 3 rounds of 3 rooms from 3 generic ones, so rooms repeat (a warning, as the build prints it)
   const run = readRun(parseJson(readFileSync(join(ROOT, "res/paperwhite2/entralink/run.json"), "utf8")));
-  assert.deepEqual(runProblems(run, rooms), [{ severity: "warning",
-    message: "The rounds draw 9 rooms from 3, so rooms come up more than once in a run (the least used first, never twice in a row)." }]);
-  assert.equal(roundSummary(rooms, 1, run.rounds[0], false),
-    "Round 1: 3 rooms, then a boss (1 round-1 boss room) - 3 generic rooms + 0 round-1 rooms can be drawn");
-  assert.equal(roundSummary(rooms, 3, run.rounds[2], true),
-    "Round 3: 3 rooms, then the final room (1 final room) - 3 generic rooms + 0 round-3 rooms can be drawn");
+  assert.deepEqual(errorsOf(runProblems(run, rooms)), []);
+  assert.match(roundSummary(rooms, 1, run.rounds[0], false), /^Round 1: /);
 });
+
 
 test("a new room, edited, saves in the data tools' layout and passes the build's check", () => {
   let data = newRoomData("Kyogre and Groudon");
