@@ -150,5 +150,12 @@ BOOL FollowingRender_PlaneKeep(const VecFx32 *feet, const FollowingCamera *camer
 BOOL FollowingRender_Strips(const FollowingPose *body, const FollowingCamera *camera, s32 half, s32 top, s32 strip,
                             u32 count, const FollowingStripStack *stack, s32 stripScaleY, FollowingPose *output);
 BOOL FollowingRender_Basis(const FollowingCamera *camera, FollowingCameraBasis *output);
+// Moves point distance world units along the ground away from the camera (its horizontal forward), with its height
+// kept. FALSE, with the point kept, for an unknown projection or a camera looking straight down
+BOOL FollowingRender_GroundBack(const VecFx32 *point, const FollowingCamera *camera, fx32 distance, VecFx32 *output);
+// A quad lowered by lift (negative, 20.12 world units of Y) moved back to the depth it had before, along its eye ray,
+// so that its picture stays the lowered one
+BOOL FollowingRender_LiftOnScreen(const FollowingPose *lowered, const FollowingCamera *camera, fx32 lift,
+                                  FollowingPose *output);
 
 #endif // PAPERWHITE2_FOLLOWING_RENDER_MATH_H

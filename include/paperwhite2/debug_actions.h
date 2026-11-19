@@ -172,6 +172,12 @@
 // Sets the wild form override to the number: the form a forced species' encounters take where it has that form
 #define DEBUG_ACTION_SET_WILD_FORM 56
 
+// The follower's shadow variant (FOLLOWING_SHADOW_*, paperwhite2/following_render.h, a candidate fix of its oval over
+// its feet): puts its name in word arg1
+#define DEBUG_ACTION_FOLLOWER_SHADOW_WORD 57
+// Changes to the next variant, after the last the first, at once, and returns it
+#define DEBUG_ACTION_FOLLOWER_SHADOW_NEXT 58
+
 // The kinds of number entry: their ranges and messages are sDebugNumberKinds (paperwhite2_debug_commands.c)
 #define DEBUG_NUMBER_LEVEL 0
 #define DEBUG_NUMBER_NATURE 1

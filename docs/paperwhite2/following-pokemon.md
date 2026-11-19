@@ -692,6 +692,39 @@ on the frame after. In a Pokémon Center and outdoors, with a 32-pixel follower 
 (a 64-pixel follower stays in its ball indoors), in the sun and in the shade, standing and walking each way: the oval
 under the feet, never over them.
 
+**The shadow variants (2026-11-18, to pick by eye).** The debug menu's Follower... list has `Follower shadow: <name>`:
+A moves to the next variant at once, with no map reload, and the list comes back on that row. It is a RAM override
+(`DEBUG_OVERRIDE_FOLLOWER_SHADOW`, off after a reset, which is 0); `FldeffShadow_Draw` asks
+`PaperWhite2_FollowingPlaceShadow` for the follower's actor alone, and `FollowingRender_Draw` reads it for the body,
+so NPCs, the player and the wanderers never change. 0 Current; 1 and 2 the oval 2 or 4 units back along the ground
+(the camera's horizontal forward, `FollowingRender_GroundBack`); 3 and 4 the oval at 80% or 65%, a unit back; 5 no
+lowering (the quad without `FOLLOWING_SPRITE_LIFT`, the oval as now); 6 the oval at ground + 0.25 instead of + 1;
+7 the lift on the screen only (`FollowingRender_LiftOnScreen`: the lowered quad moved back along its eye ray to the
+depth it had unlowered, scaled so its pixels stay: the picture of 0 at the depth of 5, which is a native NPC's depth,
+about 1.3 units nearer than now in a center and 1.6 in the forest).
+
+- **Which maps buffer how.** The Pokémon Centers are camera setup 3, W-buffered, so the actors' clip Z offset does
+  nothing there. The Entree Forest (every `entree_forest*` zone, the run's clearings too) is camera setup 35:
+  Z-buffered, 237 units at 53 degrees, projection type 1 (the 0x1ee offset), but its near plane is 112 units (far 512)
+  where the ordinary cameras' is 1, so the same clip Z offset is worth about 60 times less depth: about 0.08 units
+  between body and oval instead of 4.5 to 7. The forest behaves as a W-buffered room.
+- **The depth maths** (the body is a camera-facing quad, the oval flat at ground + 1, pitch p): lowered by L, the body
+  is L sin p deeper than its feet, and the oval wins over every body row up to (1 + L) / cos p units up the quad: 3.9
+  in a center, 5.0 in the forest, against the 3.5 (4 pixels) of empty rows under a sheet's feet at rest, fewer on the
+  walk's down frames. That height comes from where the oval's plane crosses the body's, so moving the oval along the
+  ground or shrinking it (1 to 4) only changes how wide the covered rows are, unless it moves past that line (8 units
+  back in a center). Raising the body (5) or keeping its unlowered depth (7) brings it to 1 / cos p (1.3, 1.7); the
+  low oval (6) to (0.25 + L) / cos p (2.9, 3.75).
+- **Not a variant: keeping the oval off the body by the hardware.** A polygon ID can't do it: the DS skips a
+  translucent pixel over a translucent one of the same ID, not over an opaque body. The shadow polygons' stencil (a
+  mask polygon, ID 0, then the shadow with the body's ID, which isn't drawn on the body) would, but the field sorts
+  translucent polygons automatically by their screen Y, so the mask can't be made to draw before the oval reliably
+  without switching the whole field to manual sorting.
+- In DeSmuME (scratchpad `shadow/`), with a 32-pixel Pignite: in a center at rest no variant changes the body's
+  pixels, and on the walk's frames 7 differs from 0 only on the feet's bottom row, the oval no longer over it; in the
+  forest 7 differs from 0 by 7 to 11 pixels at the feet, standing and on one walk frame. 1 to 4 and 6 change only the oval. melonDS and the
+  hardware may differ: the choice is the user's, by eye.
+
 ## Small followers in front of counters
 
 **The clipping.** In a Pokémon Center a 32-pixel follower's middle rows went into the counter on the walk's down

@@ -61,6 +61,10 @@ GameEvent *PaperWhite2_FollowingRailEvent(GameSystem *gsys, Field *field, GameEv
 // wanderers (paperwhite2_wanderers.c)
 u16 PaperWhite2_FollowingCodeFor(MMSys *system, u16 species, u8 form, u8 gender, u8 shiny);
 
+// FldeffShadow_Draw's oval: for the follower's actor, moves pos and gives the oval's scale by the shadow variant
+// (FollowingRender_PlaceOval) and returns TRUE; FALSE, with nothing changed, for any other actor
+BOOL PaperWhite2_FollowingPlaceShadow(FieldActor *actor, VecFx32 *pos, s16 *scale);
+
 // Whether the follower's tile is in the shade, for its light
 BOOL FollowingField_IsShaded(void);
 // Whether this frame is the first that draws the follower's body, which the effects wait out

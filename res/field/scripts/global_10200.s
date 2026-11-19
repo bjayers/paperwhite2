@@ -1013,15 +1013,24 @@ L_DebugFollower:
     Debug DEBUG_ACTION_FOLLOWER_WORDS, 0, 0, 0x8025
     WorkCmpConst 0x8025, 0
     VMJumpIf CMP_EQ, L_DebugFollowerAbsent
+    WorkSetConst 0x8027, 0
+
+L_DebugFollowerList:
+    // The list's cursor starts on 0x8027's row: the first, or Follower shadow's after it cycles. Follower shadow's
+    // name is word 5, which no other word of this menu takes
+    Debug DEBUG_ACTION_FOLLOWER_SHADOW_WORD, 5, 0, 0x8025
     SystemMsg Global10200_Text_DebugFollowerTitle, 2
-    ListMenuAnchorTopRight 31, 1, 0, 1, 0x8020
+    ListMenuAnchorTopRight 31, 1, 0x8027, 1, 0x8020
     ListMenuAdd Global10200_Text_DebugFollowerShow, 65535, 0
     ListMenuAdd Global10200_Text_DebugFollowerSetSteps, 65535, 1
     ListMenuAdd Global10200_Text_DebugFollowerPickup, 65535, 2
     ListMenuAdd Global10200_Text_DebugFollowerClearItem, 65535, 3
     ListMenuAdd Global10200_Text_DebugFollowerRules, 65535, 4
+    ListMenuAdd Global10200_Text_DebugFollowerShadow, 65535, 5
     ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
     ListMenuShow
+    WorkCmpConst 0x8020, 5
+    VMJumpIf CMP_EQ, L_DebugFollowerShadow
     WorkCmpConst 0x8020, 0
     VMJumpIf CMP_EQ, L_DebugFollowerShow
     WorkCmpConst 0x8020, 1
@@ -1082,4 +1091,11 @@ L_DebugFollowerRules:
     SystemMsg Global10200_Text_DebugFollowerRule, 2
     LastKeyWait
     VMJump L_DebugFollower
+
+L_DebugFollowerShadow:
+    // The next candidate fix of the oval over the follower's feet, at once; the list comes back on this row
+    Debug DEBUG_ACTION_FOLLOWER_SHADOW_NEXT, 0, 0, 0x8025
+    SEPlay SEQ_SE_SELECT1
+    WorkSetConst 0x8027, 5
+    VMJump L_DebugFollowerList
 #endif

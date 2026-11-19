@@ -9,6 +9,7 @@
 #include "limits.h"
 #include "nitro/fx.h"
 #include "nitro/os.h"
+#include "paperwhite2/debug.h"
 #include "paperwhite2/following.h"
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/following_render.h"
@@ -117,6 +118,13 @@ typedef struct {
 #define HANDLE_LIMIT 256
 #define GRASS_LIMIT 8
 
+// The shadow variants' oval: its sizes (FOLLOWING_SHADOW_SIZE_80 and _65), the unit back they and the two moves back
+// take, and how much lower FOLLOWING_SHADOW_LOW puts it than the engine's unit over the ground
+#define OVAL_SCALE_80 (FX32_ONE * 4 / 5)
+#define OVAL_SCALE_65 (FX32_ONE * 13 / 20)
+#define OVAL_SIZE_BACK FX32_ONE
+#define OVAL_LOW_DROP FX32_CONST(0.75)
+
 // The follower's upper strips and the material that shows them
 typedef struct {
     BillboardActorScene scene;
@@ -136,6 +144,9 @@ static FollowingWallBehind sBehind;
 static s32 sLine = LINE_NATIVE;
 static s32 sSmallLine = SMALL_LINE_NATIVE;
 static FollowingUpper sUpper;
+// The camera of the last actors' pass, for the oval's moves back, which the effects' tasks place before that pass
+static FollowingCamera sOvalCamera;
+static BOOL sOvalCameraValid;
 
 static void GetCamera(G3DCamera *camera, FollowingCamera *view) {
     GFL_G3DCameraGetLookatPos(camera, &view->eye);
@@ -750,6 +761,45 @@ static BOOL SplitSmallBody(BillboardActorSys *system, BillboardActor *quad, Fiel
     return TRUE;
 }
 
+u32 FollowingRender_GetShadowVariant(void) {
+#ifdef PAPERWHITE2_DEBUG_MENU
+    u16 variant = PaperWhite2_Debug_GetOverride(DEBUG_OVERRIDE_FOLLOWER_SHADOW);
+
+    if (variant < FOLLOWING_SHADOW_VARIANT_COUNT) {
+        return variant;
+    }
+#endif
+    return FOLLOWING_SHADOW_CURRENT;
+}
+
+void FollowingRender_PlaceOval(VecFx32 *pos, s16 *scale) {
+    fx32 back = 0;
+
+    *scale = FX32_ONE;
+    switch (FollowingRender_GetShadowVariant()) {
+    case FOLLOWING_SHADOW_BACK_2:
+        back = 2 * FX32_ONE;
+        break;
+    case FOLLOWING_SHADOW_BACK_4:
+        back = 4 * FX32_ONE;
+        break;
+    case FOLLOWING_SHADOW_SIZE_80:
+        back = OVAL_SIZE_BACK;
+        *scale = OVAL_SCALE_80;
+        break;
+    case FOLLOWING_SHADOW_SIZE_65:
+        back = OVAL_SIZE_BACK;
+        *scale = OVAL_SCALE_65;
+        break;
+    case FOLLOWING_SHADOW_LOW:
+        pos->y -= OVAL_LOW_DROP;
+        break;
+    }
+    if (back != 0 && sOvalCameraValid) {
+        FollowingRender_GroundBack(pos, &sOvalCamera, back, pos);
+    }
+}
+
 void FollowingRender_Draw(BillboardActorSys *system, G3DCamera *camera, G3DLight *lights, FieldActor *follower,
                           FieldActor *player, s32 spriteY, BOOL shaded, BOOL covered) {
     BillboardActor *quad = NULL;
@@ -761,6 +811,8 @@ void FollowingRender_Draw(BillboardActorSys *system, G3DCamera *camera, G3DLight
     BOOL lightingChanged = FALSE;
     BOOL hidden = FALSE;
     u16 originalLights = 0;
+    u32 variant = FollowingRender_GetShadowVariant();
+    s32 lift;
 
     sSubmitted.actor = sSubmitted.player = NULL;
     if (system != NULL && camera != NULL && follower != NULL && player != NULL && follower != player &&
@@ -789,16 +841,25 @@ void FollowingRender_Draw(BillboardActorSys *system, G3DCamera *camera, G3DLight
                 lightingChanged = quad->lights != originalLights;
             }
             GetCamera(camera, &view);
+            sOvalCamera = view;
+            sOvalCameraValid = TRUE;
             // The registry's Y replaces the config's on this quad only. Every facing uses that one offset, then
-            // FOLLOWING_SPRITE_LIFT. The engine's hop stays in the field's billboard. No facing adds Z, and the actor
-            // and its oval aren't written
-            delta = spriteY - follower->config.wPosOffsetY + FOLLOWING_SPRITE_LIFT;
+            // FOLLOWING_SPRITE_LIFT, which the shadow variant FOLLOWING_SHADOW_NO_LIFT leaves out. The engine's hop
+            // stays in the field's billboard. No facing adds Z, and the actor and its oval aren't written
+            lift = variant == FOLLOWING_SHADOW_NO_LIFT ? 0 : FOLLOWING_SPRITE_LIFT;
+            delta = spriteY - follower->config.wPosOffsetY + lift;
             y = (s64)adjusted.position.y + (s64)delta * FX32_ONE;
             if (delta != 0 && y >= LONG_MIN && y <= LONG_MAX) {
                 adjusted.position.y = (fx32)y;
                 changed = TRUE;
             }
             drawn = adjusted;
+            // FOLLOWING_SHADOW_SCREEN_LIFT: the lift's picture at the depth the quad had before it. The strips are cut
+            // from the lowered quad, and the base window takes this pose
+            if (variant == FOLLOWING_SHADOW_SCREEN_LIFT &&
+                FollowingRender_LiftOnScreen(&adjusted, &view, lift * FX32_ONE, &drawn)) {
+                changed = TRUE;
+            }
             sSubmitted.world = follower->wPos;
             sSubmitted.native = original.position;
             sSubmitted.resource = follower->config.rscIndices.res1;
