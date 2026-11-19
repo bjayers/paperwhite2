@@ -7,7 +7,8 @@
             "z_buffer": true,
             "near": 64,
             "scale_offset": true,
-            "note": "Variant 12c, tested on melonDS and a 3DS: near 64 keeps the back wall's window 22 to 47 steps behind the wall"
+            "offset_scale": 0.85,
+            "note": "Variant 12c, tested on melonDS and a 3DS: near 64 keeps the back wall's window 22 to 47 steps behind the wall; the offset times 0.85, the smallest that keeps the follower's oval off its body (0.8 fails on a down frame), which leaves the NPC by the ledge's edge 2 pixels over it instead of 44"
         },
         {
             "setup": 7,
@@ -41,9 +42,10 @@
             "z_buffer": false,
             "near": null,
             "scale_offset": false,
-            "w_pull": 0.024,
-            "low_oval_pull": 0.009,
-            "note": "W-buffered, the weather fog tuned for it: the debug menu's 14a only, the actors 6.9 units nearer at 288 (railings and streetlights in front lose rows to them in melonDS); variant 15 lowers the follower's oval and pulls less"
+            "w_pull": 0.009,
+            "w_pull_built_in": true,
+            "low_oval": true,
+            "note": "W-buffered, the weather fog tuned for it: variant 15 built in (tested in melonDS), the follower's oval lowered to a quarter of a unit over the ground and the actors 2.6 units nearer at 288 (14a's 6.9 let the railings and streetlights in front lose rows to them)"
         },
         {
             "setup": 4,
@@ -72,7 +74,8 @@
             "near": null,
             "scale_offset": false,
             "w_pull": 0.026,
-            "note": "W-buffered with a fog of its own: the debug menu's 14a only, the actors 6.2 units nearer at 237"
+            "w_pull_built_in": true,
+            "note": "W-buffered with a fog of its own: 14a built in (tested in melonDS), the actors 6.2 units nearer at 237"
         },
         {
             "setup": 39,

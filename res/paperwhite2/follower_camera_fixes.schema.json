@@ -20,9 +20,10 @@
           "z_buffer": { "type": "boolean", "description": "Z-buffer a W-buffered setup, so the actors' clip Z offset counts there" },
           "near": { "type": [ "integer", "null" ], "minimum": 1, "maximum": 1024, "description": "The near plane in units, replacing the setup's, for the Z-buffer's precision; null keeps the setup's" },
           "scale_offset": { "type": "boolean", "description": "Multiply the actors' clip Z offset (and the effects' half) by the near plane in units, which gives the ordinary maps' depth between a body and its oval at any near plane" },
-          "w_pull": { "type": [ "number", "null" ], "minimum": 0, "maximum": 0.2, "description": "For a setup that stays W-buffered, variant 14a: the actors' pass (every field actor's body, as the clip Z offset reaches on ordinary maps) moved nearer the camera along the eye rays by this fraction of their distance, their pictures unchanged; the effects stay. Built in with w_pull_built_in, else the debug menu's 14a only. Absent or null for none" },
+          "w_pull": { "type": [ "number", "null" ], "minimum": 0, "maximum": 0.2, "description": "For a setup that stays W-buffered, variant 14a: the actors' pass (every field actor's body, as the clip Z offset reaches on ordinary maps) moved nearer the camera along the eye rays by this fraction of their distance, their pictures unchanged; the effects stay. Built in with w_pull_built_in, else the debug menu's 14a only (every setup's is built in now). Absent or null for none" },
           "w_pull_built_in": { "type": "boolean", "description": "The w_pull always on (tested), rather than the debug menu's 14a only. Absent for false" },
-          "low_oval_pull": { "type": [ "number", "null" ], "minimum": 0, "maximum": 0.2, "description": "The debug menu's variant 15 only: the follower's oval lowered to a quarter of a unit over the ground and the actors' pass pulled nearer by this fraction of their distance instead of w_pull. Absent or null for none" },
+          "low_oval": { "type": "boolean", "description": "The follower's oval lowered to a quarter of a unit over the ground (the engine's is a unit), which needs a smaller w_pull. Absent for false" },
+          "offset_scale": { "type": "number", "exclusiveMinimum": 0, "maximum": 1, "description": "For a Z-buffered setup with scale_offset: the factor on the scaled clip Z offset (near plane times it), the smallest that keeps the follower's oval off its body. Absent for 1" },
           "note": { "type": "string", "description": "Why, for the reader" }
         }
       }

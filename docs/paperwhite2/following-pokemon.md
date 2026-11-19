@@ -1046,6 +1046,47 @@ depth what the clip Z offset does on a Z-buffered map.
 - **Recommendation:** 15 for Castelia if the user's melonDS test of the railings, the streetlights and the oval on
   the street is clean; then setup 2 gets it built in. If it isn't, leave setup 2 alone.
 
+**Final tuning (2026-11-19, after the user's melonDS tests of 14a on Victory Road and 15 on Castelia's streets).**
+
+- **Built in:** setup 11 (Victory Road's outside) takes 14a always (`w_pull_built_in`), and setup 2 (Castelia's
+  streets) takes variant 15 always: `"low_oval": true` in the table (the header's `lowOval`) lowers the follower's
+  oval to the ground + 0.25 whenever the actors' pass is in that setup (`sLowOval` in `FollowingRender_NearerInW`,
+  read by `FollowingRender_PlaceOval`), with its `w_pull` now 0.009. `low_oval_pull` is gone. The debug rows stay,
+  numbers and word slots unchanged, and draw as 0: `14a Nearer in W: now 0` and `15 Low oval: now 0` (14b stays an
+  experiment). The enum is the list id (14a is 16, 14b 17, 15 18; `13 Camera fixes off` is 15).
+- **The centers' offset (setup 3, 12c): `offset_scale` 0.85.** The user saw NPCs at the upper floor's ledge show their
+  feet over its edge: the full normal-map depth offset (the near plane of 64 times the engine's offset) pulls an actor
+  in front of the ledge's rim, which hides its lowest rows in the original. `FollowingRender_ClipOffset` now
+  multiplies the scaled offset by the fix's `offset_scale` (`FX_Mul(offset, FX_Mul(near, offsetScale))`, 1 for every
+  other setup). Measured in DeSmuME (scratchpad `shadow7/work/oval3.py`, the Castelia center, k poked into the table
+  and the walk recorded three times as in the table above: as is, the follower's oval sent under the floor, and its
+  body hidden too; the covered pixels are those of the oval over the body): 12c's k = 1 and any larger k share a
+  floor of frames that no k changes (41 of 628 on the upper floor's walk, at most 4 pixels, the follower beside the
+  player and an NPC; none on the lower floor), and the extra frames that a smaller k adds appear at:
+
+  | k | upper floor (628 frames: down, up, left and right, 12 down frames) | lower floor (408 frames) |
+  | --- | --- | --- |
+  | 1 to 0.82 | the floor of 41 frames, 72 pixels | none |
+  | 0.80 | + 4 frames of 4 pixels (a down frame) | none |
+  | 0.75 | + 2 frames | not run |
+  | 0.70 | + 6 frames in all | 14 frames, 4 pixels at most |
+
+  So the smallest k is about 0.81; **0.85** is the built-in value (a margin of 0.04: the 3DS and melonDS round the
+  depth differently). With the table's k = 0 the center is pixel for pixel the original's (a Z-buffer at near 64 draws
+  the same picture as the original's W-buffer at near 1 when the offset is 0, which also checks the harness).
+- **The ledge, in pixels** (the pixels of the top screen that differ from the original game's, `13 Camera fixes off`,
+  with the same walk; `shadow7/ledge_npc_vanilla_before_after.png`, left to right: the original, k = 1, k = 0.85):
+  the upper floor's NPC at the stairwell's ledge (the man in the black suit, over the stairs): **44 pixels at k = 1,
+  2 at 0.85** (his legs and feet no longer hang over the rim; the 2 are single pixels of his shoe edge). The player
+  standing along the ledge's row (the player is drawn like any NPC; six spots, 10.5, 7.5 to 6.5, 6.5, `shadow7/shots/
+  ledge_k*.png`): 51, 57, 31, 19, 18 and 18 pixels at k = 1 (194 in all), 29, 52, 9, 1, 0 and 0 at 0.85 (91). The first
+  two spots are the notch where the floor goes on past the rim: its corner still draws 29 and 52 pixels (they are 22 and 30
+  at k = 0.5, and the box takes in the player's oval, which the offset moves too). The nurse and the counter: 3 pixels of the
+  nurse's waist at k = 1, none at 0.85 (the whole screen: 88 pixels differ from the original at k = 1, 43 at 0.85,
+  and the 43 are the follower and the player's feet, which is the fix; `shadow7/counter_*.png`).
+- **The follower's feet stay clear** (the table above: no covered frame beyond the floor on either floor, down frames
+  included); the effects' half offset (the ovals) is scaled by the same k.
+
 **The gate's floor flicker (setup 4): the map's own, not variant 14.** The user saw, with 14 on, the floor flicker at
 one spot by the red mat by the gate building's door. 14 can't reach the floor: `FieldRenderPhase2_Fieldmap` draws the
 map's two passes (`FieldG3D_RenderFieldmap`, phase 1 before it and pass 1 at its start) with the camera's projection,
@@ -1060,6 +1101,25 @@ by the mat's far-left corner and in front of the steps) and walls' trims 0.06 to
 translucent faces are where the DS's per-pixel interpolation flickers, which melonDS shows and DeSmuME doesn't. So it
 is vanilla: to confirm, the same spot under `13 Camera fixes off`. A cheap fix, if it is those shadows: in the gate's
 model, drop the overlap from one of the two or raise `kage_out` a quarter of a unit (a map model edit, not made).
+
+### Where each camera setup stands (the final table, 2026-11-19)
+
+Every fix is built in; `13 Camera fixes off` turns them all off, and the debug rows 8 to 12b and 14b are experiments
+(11, 12c, 14a and 15 are `now 0`). `res/paperwhite2/follower_camera_fixes.json` is the table.
+
+| Setup | Where | What it uses |
+| --- | --- | --- |
+| 1 | Skyarrow Bridge | W-buffered, actors 3.2% nearer (14a) |
+| 2 | Castelia's streets | W-buffered, actors 0.9% nearer, the follower's oval at the ground + 0.25 (15) |
+| 3 | the 18 Pokémon Centers, the League's, Victory Road's | Z-buffered, near 64, offset x near x 0.85 (12c) |
+| 4 | the gate by Skyarrow | W-buffered, actors 2.6% nearer (14a) |
+| 7 | Castelia's Central Plaza | Z-buffered already, offset x near plane (5) |
+| 10 | the Tubeline Bridge and its gate | W-buffered, actors 2.9% nearer (14a) |
+| 11 | Victory Road's outside | W-buffered, actors 2.6% nearer (14a) |
+| 24 | White Forest, Black City and their gates | Z-buffered, near 32, offset x near |
+| 35 | the Entree Forest | Z-buffered already, offset x near plane (112) |
+| 39 | the Marine Tube | W-buffered, actors 2.8% nearer (14a) |
+| every other | | the original's camera and offset |
 
 ## Small followers in front of counters
 

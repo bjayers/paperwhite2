@@ -59,13 +59,11 @@ enum {
     FOLLOWING_SHADOW_CAMERA_FIXES_OFF,
     // In the W-buffered setups that keep their planes and fog (the camera fixes' w_pull), the actors' pass moved
     // nearer the camera in true depth, their pictures unchanged: by the setup's w_pull with the effects in place, or by
-    // the ordinary maps' depth with the effects at half of it, as the clip Z offset gives on a Z-buffered map. The
-    // setups whose w_pull is built in have the first always; the debug row adds the others (Castelia's streets and
-    // Victory Road's outside)
+    // the ordinary maps' depth with the effects at half of it, as the clip Z offset gives on a Z-buffered map. Every
+    // setup's w_pull is built in now, so the first is the same as FOLLOWING_SHADOW_CURRENT
     FOLLOWING_SHADOW_NEARER_IN_W,
     FOLLOWING_SHADOW_NEARER_IN_W_FULL,
-    // In the setups with a low_oval_pull (Castelia's streets): the follower's oval as FOLLOWING_SHADOW_LOW and the
-    // actors' pass pulled nearer by that smaller pull
+    // Castelia's streets' low oval, now always on: the same as FOLLOWING_SHADOW_CURRENT
     FOLLOWING_SHADOW_LOW_OVAL_NEARER,
     FOLLOWING_SHADOW_VARIANT_COUNT,
 };
@@ -86,8 +84,8 @@ void FollowingRender_ApplyCamera(FieldCamera *camera);
 // The actors' clip Z offset (objectProjectionMatrixOffset, or half of it for the effects) for the camera's near plane:
 // multiplied by the near plane in units where the setup's camera fix scales it, unchanged elsewhere
 fx32 FollowingRender_ClipOffset(FieldCamera *camera, fx32 offset);
-// The W-buffer's version of that offset, built in where the setup's fix says and for FOLLOWING_SHADOW_NEARER_IN_W,
-// _FULL and FOLLOWING_SHADOW_LOW_OVAL_NEARER: the projection mtx scaled so everything it draws comes nearer the eye
+// The W-buffer's version of that offset, built in where the setup's fix says and for FOLLOWING_SHADOW_NEARER_IN_W_FULL:
+// the projection mtx scaled so everything it draws comes nearer the eye
 // along its ray, in the W-buffered setups listed for it. offset is the pass's
 // vanilla clip Z offset (the actors', or the effects' half of it), and actors whether it is the actors' pass
 void FollowingRender_NearerInW(FieldCamera *camera, MtxFx44 *mtx, fx32 offset, BOOL actors);

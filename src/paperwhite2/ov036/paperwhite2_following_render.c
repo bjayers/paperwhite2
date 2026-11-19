@@ -149,7 +149,7 @@ static FollowingUpper sUpper;
 // The camera of the last actors' pass, for the oval's moves back, which the effects' tasks place before that pass
 static FollowingCamera sOvalCamera;
 static BOOL sOvalCameraValid;
-// Whether the last actors' pass was FOLLOWING_SHADOW_LOW_OVAL_NEARER's in a setup with its pull, for the oval, which
+// Whether the last actors' pass was in a setup that lowers the follower's oval (the fix's lowOval), for the oval, which
 // the effects' tasks place before that pass
 static BOOL sLowOval;
 
@@ -799,11 +799,11 @@ void FollowingRender_PlaceOval(VecFx32 *pos, s16 *scale) {
     case FOLLOWING_SHADOW_LOW:
         pos->y -= OVAL_LOW_DROP;
         break;
-    case FOLLOWING_SHADOW_LOW_OVAL_NEARER:
-        if (sLowOval) {
-            pos->y -= OVAL_LOW_DROP;
-        }
-        break;
+    }
+    // Paper White 2: Castelia's streets lower the follower's oval (a quarter of a unit over the ground), so the actors
+    // need a smaller pull nearer
+    if (sLowOval && FollowingRender_GetShadowVariant() != FOLLOWING_SHADOW_LOW) {
+        pos->y -= OVAL_LOW_DROP;
     }
     if (back != 0 && sOvalCameraValid) {
         FollowingRender_GroundBack(pos, &sOvalCamera, back, pos);
@@ -822,12 +822,14 @@ typedef struct {
     BOOL scaleOffset;
     // 0 keeps the setup's own
     fx32 zNear;
-    // FOLLOWING_SHADOW_NEARER_IN_W: the fraction of their distance that the actors come nearer in a setup that stays
-    // W-buffered, 0 for none; always, where wPullBuiltIn, else with the debug row alone
+    // The fraction of their distance that the actors come nearer in a setup that stays W-buffered, 0 for none;
+    // always, where wPullBuiltIn, else with the debug row alone (every setup's is built in now)
     fx32 wPull;
     BOOL wPullBuiltIn;
-    // FOLLOWING_SHADOW_LOW_OVAL_NEARER's pull, with the follower's oval lowered; 0 for none
-    fx32 lowOvalPull;
+    // Whether the follower's oval is lowered with it
+    BOOL lowOval;
+    // The factor on the scaled clip Z offset, FX32_ONE for the near plane's full ordinary depth
+    fx32 offsetScale;
 } FollowingCameraFix;
 
 static const FollowingCameraFix sCameraFixes[PAPERWHITE2_FOLLOWING_CAMERA_FIX_COUNT] =
@@ -908,7 +910,7 @@ fx32 FollowingRender_ClipOffset(FieldCamera *camera, fx32 offset) {
     if (zNear <= FX32_ONE) {
         return offset;
     }
-    return FX_Mul(offset, zNear);
+    return FX_Mul(offset, FX_Mul(zNear, fix->offsetScale));
 }
 
 void FollowingRender_NearerInW(FieldCamera *camera, MtxFx44 *mtx, fx32 offset, BOOL actors) {
@@ -920,7 +922,7 @@ void FollowingRender_NearerInW(FieldCamera *camera, MtxFx44 *mtx, fx32 offset, B
     u32 col;
 
     if (actors) {
-        sLowOval = FALSE;
+        sLowOval = fix != NULL && fix->lowOval;
     }
     if (fix == NULL || fix->wPull == 0) {
         return;
@@ -935,10 +937,6 @@ void FollowingRender_NearerInW(FieldCamera *camera, MtxFx44 *mtx, fx32 offset, B
         pull = offset / 2;
     } else if (!actors) {
         return;
-    } else if (variant == FOLLOWING_SHADOW_LOW_OVAL_NEARER && fix->lowOvalPull != 0) {
-        // The follower's oval lowered (FollowingRender_PlaceOval) needs less
-        sLowOval = TRUE;
-        pull = fix->lowOvalPull;
     } else if (variant == FOLLOWING_SHADOW_NEARER_IN_W || fix->wPullBuiltIn) {
         pull = fix->wPull;
     } else {

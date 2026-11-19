@@ -2,6 +2,24 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-19: follower shadow, final tuning: 15 and 14a built in, the centers' offset x 0.85 (ROM session, on a branch)
+
+- **Built in** after the user's melonDS tests: variant 15 for Castelia's streets (setup 2: the follower's oval low, the
+  actors 0.9% nearer; `"low_oval": true`, `low_oval_pull` is gone) and 14a for Victory Road's outside (setup 11).
+  The debug rows are `14a Nearer in W: now 0` and `15 Low oval: now 0`, list id and word slots kept.
+- **Pokémon Centers (setup 3, 12c): `offset_scale` 0.85** (new optional field: the factor on the offset times the near
+  plane; `following_camera_fixes.py`, the schema and `FollowingRender_ClipOffset`). Smallest k that keeps the
+  follower's oval off its body over every frame of long walks on both floors (down frames included, in DeSmuME): about
+  0.81 (0.80 fails on a down frame); 0.85 built in. The NPC by the upper floor's ledge (the man at the stairwell):
+  **44 pixels over the ledge's rim at k = 1, 2 at 0.85** (against the original game); the player along the ledge's
+  row 194 pixels in all against 91; the nurse's waist 3 against 0. The notch corner by the stairs still draws 29 and
+  52 pixels (the oval's share included). k = 0 is pixel for pixel the original.
+- The final per-setup table is in `following-pokemon.md` ("Where each camera setup stands"); shots in the scratchpad's
+  `shadow7/`. Build clean, `verify_dsi_rom.py` intact, editor tests pass (251).
+- **For the user:** in melonDS, a Center's upper floor (the NPC at the stairwell's ledge, the player along its row)
+  and the follower's feet while walking there; Castelia's street and Victory Road's outside are unchanged from what
+  you tested.
+
 ## 2026-11-19: follower shadow, 14a built in on the bridges and the gate; variant 15 for Castelia (ROM session, on a branch)
 
 - **Built in** (`"w_pull_built_in": true` in `follower_camera_fixes.json`): 14a's pull for setups 1 (Skyarrow

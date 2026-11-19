@@ -9,10 +9,10 @@ SOURCE is res/paperwhite2/follower_camera_fixes.json (follower_camera_fixes.sche
 res/field/cameras/defaults.json each, with whether to Z-buffer it, its near plane in units (null keeps the setup's),
 whether to scale the actors' clip Z offset by the near plane, and for a setup that stays W-buffered the actors' pull
 nearer in W (w_pull, a fraction of their distance; absent or null for none), whether that pull is built in or only the
-debug menu's variant 14a (w_pull_built_in), and the pull of the debug menu's variant 15, with the follower's oval
-lowered (low_oval_pull, absent or null for none). The header's PAPERWHITE2_FOLLOWING_CAMERA_FIXES initializer has one
-{ setup, zBuffer, scaleOffset, zNear, wPull, wPullBuiltIn, lowOvalPull } a fix, zNear in fx32 or 0 for the setup's own
-and the pulls in fx32 or 0, which src/paperwhite2/ov036/paperwhite2_following_render.c reads. tools/paperwhite2/camera_audit.py derives the fixes. Only
+debug menu's variant 14a (w_pull_built_in), whether the follower's oval is lowered with it (low_oval), and for a Z-buffered
+setup the factor on its scaled offset (offset_scale, absent for 1). The header's PAPERWHITE2_FOLLOWING_CAMERA_FIXES
+initializer has one { setup, zBuffer, scaleOffset, zNear, wPull, wPullBuiltIn, lowOval, offsetScale } a fix, zNear in
+fx32 or 0 for the setup's own, the pull in fx32 or 0 and offsetScale in fx32, which src/paperwhite2/ov036/paperwhite2_following_render.c reads. tools/paperwhite2/camera_audit.py derives the fixes. Only
 the hack's build runs this (configure.py --hack).
 """
 import argparse
@@ -53,9 +53,11 @@ def fixes(path: Path) -> list[dict]:
                                      "W-buffered: a Z-buffer has the clip Z offset")
         if fix.get("w_pull_built_in") and fix.get("w_pull") is None:
             raise datajson.DataError(f"{datajson.label(path)}: setup {setup}'s w_pull_built_in needs a w_pull")
-        if fix.get("low_oval_pull") is not None and fix.get("w_pull") is None:
-            raise datajson.DataError(f"{datajson.label(path)}: setup {setup}'s low_oval_pull needs a w_pull (a setup "
+        if fix.get("low_oval") and fix.get("w_pull") is None:
+            raise datajson.DataError(f"{datajson.label(path)}: setup {setup}'s low_oval needs a w_pull (a setup "
                                      "that stays W-buffered)")
+        if fix.get("offset_scale") is not None and not fix["scale_offset"]:
+            raise datajson.DataError(f"{datajson.label(path)}: setup {setup}'s offset_scale needs scale_offset")
     return sorted(data["fixes"], key=lambda fix: fix["setup"])
 
 
@@ -65,9 +67,10 @@ def header(path: Path) -> str:
         near = f"FX32_CONST({fix['near']})" if fix["near"] is not None else "0"
         pull = f"FX32_CONST({fix['w_pull']})" if fix.get("w_pull") is not None else "0"
         built_in = "TRUE" if fix.get("w_pull_built_in") else "FALSE"
-        low = f"FX32_CONST({fix['low_oval_pull']})" if fix.get("low_oval_pull") is not None else "0"
+        low = "TRUE" if fix.get("low_oval") else "FALSE"
+        scale = f"FX32_CONST({fix.get('offset_scale', 1)})"
         rows.append(f"    {{ {fix['setup']}, {'TRUE' if fix['z_buffer'] else 'FALSE'}, "
-                    f"{'TRUE' if fix['scale_offset'] else 'FALSE'}, {near}, {pull}, {built_in}, {low} }}, "
+                    f"{'TRUE' if fix['scale_offset'] else 'FALSE'}, {near}, {pull}, {built_in}, {low}, {scale} }}, "
                     f"/* {fix['zones']} */ \\")
     return "\n".join([
         f"#ifndef {GUARD}", f"#define {GUARD}", "",
@@ -76,8 +79,8 @@ def header(path: Path) -> str:
         f"#define PAPERWHITE2_FOLLOWING_CAMERA_FIX_COUNT {len(rows)}",
         "// Each fix's camera setup, whether it is Z-buffered, whether the actors' clip Z offset is scaled by the near",
         "// plane, its near plane (fx32, 0 for the setup's own), the actors' pull nearer in W (fx32, a fraction of their",
-        "// distance; 0 for none), whether that pull is built in (else the debug menu's variant 14a alone), and the pull",
-        "// of the debug menu's variant 15, with the follower's oval lowered (fx32; 0 for none)",
+        "// distance; 0 for none), whether that pull is built in (else the debug menu's variant 14a alone), whether the",
+        "// follower's oval is lowered with it, and the factor on the scaled clip Z offset (fx32)",
         "#define PAPERWHITE2_FOLLOWING_CAMERA_FIXES { \\",
         *rows,
         "}",
