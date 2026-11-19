@@ -41,7 +41,9 @@
             "z": 14,
             "facing": "DIR_DOWN",
             "dialogue": {
-                "before": "The Fairy Princess attacks!"
+                "before": "The Fairy Princess attacks!",
+                "before_style": "bubble",
+                "after_style": "bubble"
             }
         },
         {
@@ -51,7 +53,8 @@
             "z": 14,
             "facing": "DIR_DOWN",
             "dialogue": {
-                "before": "The Armored Prince attacks!"
+                "before": "The Armored Prince attacks!",
+                "before_style": "bubble"
             }
         }
     ]

@@ -7,6 +7,7 @@
     "npcs": [
         {
             "type": "buff_choice",
+            "sprite": "OBJ_CODE_208",
             "x": 12,
             "z": 14,
             "facing": "DIR_DOWN",
@@ -14,6 +15,7 @@
         },
         {
             "type": "buff_choice",
+            "sprite": "OBJ_CODE_208",
             "x": 15,
             "z": 14,
             "facing": "DIR_DOWN",
@@ -21,6 +23,7 @@
         },
         {
             "type": "buff_choice",
+            "sprite": "OBJ_CODE_208",
             "x": 18,
             "z": 14,
             "facing": "DIR_DOWN",

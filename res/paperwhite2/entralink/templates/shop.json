@@ -7,6 +7,7 @@
     "npcs": [
         {
             "type": "shop",
+            "sprite": "OBJ_CODE_82",
             "x": 15,
             "z": 14,
             "facing": "DIR_DOWN",
