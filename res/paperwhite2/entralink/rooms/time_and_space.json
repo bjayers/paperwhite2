@@ -47,8 +47,8 @@
         {
             "type": "battle",
             "battle": "battle",
-            "x": 14,
-            "z": 14,
+            "x": 16,
+            "z": 13,
             "facing": "DIR_DOWN"
         },
         {
@@ -64,8 +64,8 @@
             "type": "battle",
             "battle": "battle",
             "enemy": 2,
-            "x": 16,
-            "z": 14,
+            "x": 14,
+            "z": 13,
             "facing": "DIR_DOWN"
         }
     ]
