@@ -7,6 +7,16 @@
         "height": "17'01\"",
         "weight": "476.2 lbs.",
         "shape": 11,
+        "form_name": "Lugia",
+        "forms": [
+            {
+                "name": "Shadow Lugia",
+                "entry": "It sleeps in a deep-sea trench.\nIf it flaps its wings, it is said to\ncause a 40-day storm.",
+                "height": "17'01\"",
+                "weight": "476.2 lbs.",
+                "shape": 11
+            }
+        ],
         "languages": {
             "en": {
                 "name": "Lugia",
@@ -93,8 +103,8 @@
     "hidden_ability": "ABILITY_MULTISCALE",
     "flee_rate": 0,
     "forms": {
-        "count": 1,
-        "sprite_offset": 0
+        "count": 2,
+        "sprite_offset": 68
     },
     "color": "COLOR_WHITE",
     "asymmetric": false,
