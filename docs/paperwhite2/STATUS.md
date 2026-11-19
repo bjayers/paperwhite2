@@ -2,6 +2,32 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-18: Entralink step 6, the editor side (ROM session, on a branch)
+
+- **Built on the game side's schemas** (commit f4ea610829, merged in): room `type`, the new NPC types, `type_weights`
+  and the run's chances, `items.json`, `flower_tiles.json` (patternProperties).
+- **Live validation:** `editor/shared/schema.ts` takes `patternProperties` as datajson does (the first pattern found in
+  a key, as `re.search`); `tests/entree-step6.test.ts` checks the editor and the build agree on flower tiles.
+- **Room:** a Type picker (enemy ... event, role room only; enemy is left out of the file), the door marker following
+  it unless set (`defaultMarker`); a Type filter in the room list; a type on a boss/final room is warned as unused.
+- **Templates:** a Templates group under the rooms (rest, item, buff, shop, pre_boss_rest, and event if it exists),
+  edited as rooms are, with a note that every generated room of the type is it; no rename, duplicate or delete; a
+  missing one is listed with Make (the spec's placeholder NPCs) and in Over all rooms. Templates get progress ids too.
+- **NPC types:** heal, revive, gift, shop, item_choice, buff_choice (notes, a grouped Add/Type select); people default
+  to the Lady and balls to the item ball (no sprite written; the old "rest/buff need a sprite" error is gone), and new
+  NPCs get a marker (heal/revive rest, gift item, shop shop, buff_choice buff) when `npc_markers/` has it. A room with
+  1-2 item_choice balls is warned.
+- **Run:** Premade rooms (`custom_chance`), Ground items, Hidden items; Room types: a weights table (types by rounds,
+  each cell its live %, a Sum row, Defaults). With templates known, `runProblems` errors on weights summing to 0 and
+  warns on types skipped for want of rooms. The Run section scrolls on its own now (sticky head).
+- **Items tab** (`ItemsPage.tsx`): the table (bag icon, item, weight, rounds, price, pools), Add/remove, checks (an
+  empty pool, fewer than 3 items for item room/gift, an item twice in a pool and round), each pool's chances per round
+  with or without something catchable, and the Nightmare Ball's rule.
+- **Flower tiles:** the grid's Edit switch (NPCs / Flower tiles) paints the shown clearing's tiles (click toggles, drag
+  paints, the first tile decides), drawn pink (`MapView`'s new optional `tileMarks`); saved by the page's Save.
+- tsc clean, `npm test` 249 passing. No data files committed: the game side makes items.json, flower_tiles.json and
+  the templates.
+
 ## 2026-11-18: field palettes read from the archive where no capture is kept (ROM session, on a branch)
 
 - **The gap:** a slot (wanderer or follower) whose sprite was still loaded but whose colours the capture store (8)

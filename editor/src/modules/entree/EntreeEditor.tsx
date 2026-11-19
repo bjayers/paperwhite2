@@ -3,12 +3,15 @@
 // grid, top down (the Overworld Editor's map view), with one clearing faint behind it for reference, its exits, and the
 // room's NPCs as their sprites, chosen, dragged and added there (a room has no map of its own: the game picks the
 // clearing by the door taken); and on the right the room's checks and its headed sections, laid out as the Ambients panel
-// is: Room, Battles, NPCs, with the run's own settings (run.json) above the list. Every room file is held in the
+// is: Room, Battles, NPCs, with the run's own settings (run.json) above the list. Step 6: the rooms' types, the
+// templates every generated room of a type is (templates/, a group under the rooms, edited as rooms are), the new NPC
+// types, the rounds' type weights and the run's chances, the clearings' flower tiles on the grid (flower_tiles.json) and
+// the Items tab (the item table, items.json: ItemsPage.tsx). Every room file is held in the
 // document store, so undo, the build's check on Save and changes on disk work as for any file. Save first gives the
 // new battles and catchable enemies their progress ids (model.ts, assignProgressIds; progress_ids.json); renaming a
 // battle or a room renames what every room's catches and spawn conditions name of it.
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../api.ts";
 import { documents, useDocuments } from "../../documents.ts";
 import { fromPlain, getIn, setIn, type JsonMap, type JsonPath, type JsonValue } from "../../../shared/json.ts";
@@ -24,13 +27,18 @@ import { DIALOGUE_INSERTS, DialogueField, type DialogueInsert } from "../text/Di
 import { weatherLabel, weatherNote } from "../weather/weathers.ts";
 import { useToolActive } from "../active.ts";
 import type { ToolProps } from "../types.ts";
+import { ItemsPage } from "./ItemsPage.tsx";
+import { NumberBox, Row, Section, Switch, cap } from "./parts.tsx";
 import {
   ARRIVAL, CLEARINGS_PREFIX, exitAt, ROUNDS, ROUND_NOTES, clearingName, inRound, DEFAULT_CHANCE, DEFAULT_COUNT, DEFAULT_LEVEL, EXIT_SCRIPTS, FACINGS, FORMAT_ENEMIES, FORMATS, ID_PATTERN,
-  ITEM_BALL_SPRITE, NPC_TYPES, ROLES, ROOMS_DIR, ROOM_SCHEMA, checkRoom, checkRooms, freeId, idFromName, newNpc,
+  ITEM_BALL_SPRITE, ROLES, ROOMS_DIR, ROOM_SCHEMA, checkRoom, checkRooms, freeId, idFromName, newNpc,
   newRoomData, npcSprite, readRoom, roomId, roomPath, shownEnemy, walkingSprite,
   DEFAULT_ONCE, PROGRESS_IDS, PROGRESS_IDS_SCHEMA, RUN_COMPLETED, assignProgressIds, battleKey, battleKeys, renameKeys, withoutProgressIds,
   MESSAGE_STYLES, MESSAGE_STYLE_NOTES, readRun, roundSummary, runProblems, type MessageStyle,
-  DOORS, MARKER_NOTES, MARKER_TYPES, NPC_MARKERS_DIR, ROLE_MARKERS, markerArt, npcMarkerArt, type Door,
+  DOORS, MARKER_NOTES, MARKER_TYPES, NPC_MARKERS_DIR, markerArt, npcMarkerArt, type Door,
+  BALL_TYPES, DEFAULT_ROOM_TYPE, DEFAULT_TYPE_WEIGHTS, FLOWER_TILES, FLOWER_TILES_SCHEMA, ITEMS, LADY_SPRITE, NPC_DEFAULT_MARKERS, NPC_TYPE_NOTES,
+  ROOM_TYPES, ROOM_TYPE_NOTES, TEMPLATES, TEMPLATES_DIR, TEMPLATE_NOTES, TEMPLATE_TYPES, WEIGHT_ORDER, checkTemplates, defaultMarker,
+  isTemplateFile, newTemplateData, percent, readFlowerTiles, setFlowerTiles, templatePath, typeChances, type RoomType,
   type Round, type Exit, type MapInfo, type NpcType, type Problem, type ProgressCounters, type Role, type Room,
 } from "./model.ts";
 
@@ -53,22 +61,34 @@ const FORMAT_NOTES: Record<string, string> = {
   triple: "Up to three enemies, three against three.",
   raid: "One enemy in the center against three of the player's Pokémon.",
 };
-const TYPE_NOTES: Record<NpcType, string> = {
-  battle: "Talking to it starts the battle it names.",
-  item: "Gives an item and goes.",
-  rest: "Opens the rest menu (built later).",
-  buff: "Opens the buff menu (built later).",
+const TYPE_NOTES = NPC_TYPE_NOTES;
+const TYPE_LABELS: Record<NpcType, string> = {
+  battle: "Battle", item: "Item", heal: "Heal", revive: "Revive", gift: "Gift", shop: "Shop", item_choice: "Item choice",
+  buff_choice: "Buff choice", rest: "Rest (old)", buff: "Buff (old)",
 };
+/** The NPC types in the Add and Type pickers, grouped. */
+const TYPE_GROUPS: [string, NpcType[]][] = [
+  ["Battles and items", ["battle", "item"]],
+  ["Rests and choices", ["heal", "revive", "gift", "shop", "item_choice", "buff_choice"]],
+  ["Old placeholders", ["rest", "buff"]],
+];
+/** What a message box asks for, by the NPC's type. */
+const TALK_PLACEHOLDERS: Partial<Record<NpcType, string>> = {
+  battle: "What it says before the battle starts", item: "What it says as it gives its item",
+  heal: "What it says before healing", revive: "What it says before reviving", gift: "What it says before the choice of 3",
+  shop: "What it says (the shop comes later)", item_choice: "Left empty: \"It's a <item>! Take it?\"", buff_choice: "What it says (buffs come later)",
+};
+const FLOWER_COLOR = 0xff3fb4;
 const RUN = "res/paperwhite2/entralink/run.json";
 const RUN_SCHEMA = "res/paperwhite2/entralink/run.schema.json";
 const TINTS = "res/paperwhite2/field_tints/tints.json";
+/** The files the page's Save saves: the rooms, the templates, the run, the item table and the flower tiles. */
+const isPageFile = (p: string) => p.startsWith(`${ROOMS_DIR}/`) || isTemplateFile(p) || p === RUN || p === ITEMS || p === FLOWER_TILES;
 /** The schema's own complaint about a battle or catch with no progress id yet: Save gives it one. */
 const awaitsId = (e: { path: JsonPath; message: string }) => e.message === "progress_id is missing";
 const zoneFile = (zone: string) => zone.replace(/^ZONE_/, "").toLowerCase();
-const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 const asMap = (v: JsonValue | undefined): JsonMap => (v instanceof Map ? v : new Map());
 const asList = (v: JsonValue | undefined): JsonValue[] => (Array.isArray(v) ? v : []);
-const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 const label = (name: string | undefined, prefix: string) => (name ? constantLabel(name, prefix) : "");
 
 /** A record with a key set (or removed, for undefined), the keys kept in the schema's order. */
@@ -103,53 +123,29 @@ function loadRoomMap(zone: string, constants: Constants): Promise<{ map: ZoneMap
   return maps.get(zone)!;
 }
 
-// ---- Layout pieces, as the Ambients panel's ------------------------------------------------------------------------
-
-function Section({ title, summary, actions, children }: { title: string; summary?: ReactNode; actions?: ReactNode; children: ReactNode }) {
-  return (
-    <section className="ow-panel-box ow-section en-section">
-      <h5>{title} {summary !== undefined && <span className="muted">{summary}</span>}</h5>
-      {actions && <div className="ow-section-actions">{actions}</div>}
-      {children}
-    </section>
-  );
-}
-
-function Row({ label: text, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
-  return (
-    <>
-      <span className="ow-condition-label">{text}</span>
-      <span className="ow-xyz">
-        {children}
-        {hint && <span className="muted hint">{hint}</span>}
-      </span>
-    </>
-  );
-}
-
-function NumberBox({ value, min, max, onChange, width = 64 }: { value: number; min: number; max: number; onChange(n: number): void; width?: number }) {
-  return <input type="number" className="en-number" style={{ width }} min={min} max={max} value={value}
-                onChange={(e) => onChange(clamp(Math.round(Number(e.target.value) || 0), min, max))} />;
-}
-
-function Switch<T extends string>({ value, options, onChange, titles }: { value: T; options: readonly T[]; onChange(v: T): void; titles?: Record<string, string> }) {
-  return (
-    <span className="view-switch">
-      {options.map((o) => <button key={o} className={o === value ? "active" : ""} title={titles?.[o]} onClick={() => onChange(o)}>{cap(o)}</button>)}
-    </span>
-  );
-}
-
 // ---- The page --------------------------------------------------------------------------------------------------------
 
-interface Listed { id: string; path: string; room: Room; dirty: boolean; data: JsonValue | null }
+interface Listed { id: string; path: string; room: Room; dirty: boolean; data: JsonValue | null; template: boolean }
+
+/** The page's tab, remembered in this browser. */
+const VIEW_KEY = "entree.view";
+type View = "rooms" | "items";
+function readView(): View {
+  try { return localStorage.getItem(VIEW_KEY) === "items" ? "items" : "rooms"; } catch { return "rooms"; }
+}
 
 export function EntreeEditor({ constants }: ToolProps) {
   const { docs } = useDocuments();
   const toolActive = useToolActive();
   const [diskPaths, setDiskPaths] = useState<string[]>([]);
+  const [templatePaths, setTemplatePaths] = useState<string[] | null>(null);
   const [schema, setSchema] = useState<Schema | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [view, setViewState] = useState<View>(readView);
+  const setView = (v: View) => { setViewState(v); try { localStorage.setItem(VIEW_KEY, v); } catch { /* kept for this visit */ } };
+  const [typeFilter, setTypeFilter] = useState<RoomType | "all">("all");
+  const [mapMode, setMapMode] = useState<"npcs" | "flowers">("npcs");
+  const [showFlowers, setShowFlowers] = useState(true);
   const [npcIndex, setNpcIndex] = useState<number | null>(null);
   const [roundFilter, setRoundFilter] = useState<"all" | "1" | "2" | "3">("all");
   const [roleFilter, setRoleFilter] = useState<Role | "all">("all");
@@ -167,8 +163,12 @@ export function EntreeEditor({ constants }: ToolProps) {
 
   const refresh = useCallback(() => {
     api.list(`${ROOMS_DIR}/*.json`).then((paths) => setDiskPaths(paths), (e: Error) => setError(e.message));
+    api.list(`${TEMPLATES_DIR}/*.json`).then((paths) => setTemplatePaths(paths), () => setTemplatePaths([]));
   }, []);
-  useEffect(() => { refresh(); return documents.onFiles((paths) => { if (paths.some((p) => p.startsWith(`${ROOMS_DIR}/`))) refresh(); }); }, [refresh]);
+  useEffect(() => {
+    refresh();
+    return documents.onFiles((paths) => { if (paths.some((p) => p.startsWith(`${ROOMS_DIR}/`) || p.startsWith(`${TEMPLATES_DIR}/`))) refresh(); });
+  }, [refresh]);
   useEffect(() => { api.schema(ROOM_SCHEMA).then(setSchema, (e: Error) => setError(e.message)); }, []);
   // The NPC markers' art, by name (npc_markers/<name>.png)
   const [npcMarkers, setNpcMarkers] = useState<string[]>([]);
@@ -176,10 +176,11 @@ export function EntreeEditor({ constants }: ToolProps) {
     api.list(`${NPC_MARKERS_DIR}/*.png`).then((paths) => setNpcMarkers(paths.map((p) => p.slice(p.lastIndexOf("/") + 1).replace(/\.png$/, "")).sort()), () => undefined);
   }, []);
   // The doors' marker spots, from run.json (the Run section holds it), which NPCs should keep clear of
-  useEffect(() => { documents.hold(RUN).catch(() => undefined); }, []);
+  useEffect(() => { documents.hold(RUN).catch(() => undefined); documents.hold(FLOWER_TILES).catch(() => undefined); }, []);
   const runData = docs.get(RUN)?.data;
   const markerSpots = useMemo(() => readRun(runData instanceof Map ? runData : null).markerSpots, [runData]);
   const markerInfo = useMemo(() => ({ spots: markerSpots, npcMarkers: new Set(npcMarkers) }), [markerSpots, npcMarkers]);
+  const markerNames = markerInfo.npcMarkers;
 
   // Every room held, for the list and the checks over all of them; new ones are held unsaved until Save
   const paths = useMemo(() => {
@@ -187,18 +188,29 @@ export function EntreeEditor({ constants }: ToolProps) {
     return [...new Set([...diskPaths, ...held])].sort();
   }, [diskPaths, docs]);
   useEffect(() => {
-    for (const p of diskPaths) if (!documents.get(p)) documents.hold(p).catch(() => undefined);
-  }, [diskPaths]);
+    for (const p of [...diskPaths, ...(templatePaths ?? [])]) if (!documents.get(p)) documents.hold(p).catch(() => undefined);
+  }, [diskPaths, templatePaths]);
   const rooms: Listed[] = useMemo(() => paths.flatMap((path) => {
     const doc = docs.get(path);
     if (!doc) return [];
-    return [{ id: roomId(path), path, room: readRoom(doc.data), dirty: doc.dirty, data: doc.data }];
+    return [{ id: roomId(path), path, room: readRoom(doc.data), dirty: doc.dirty, data: doc.data, template: false }];
   }), [paths, docs]);
+  // The templates, held as the rooms are; a template's type is its file's
+  const templates: Listed[] = useMemo(() => {
+    const held = [...docs.keys()].filter(isTemplateFile);
+    return [...new Set([...(templatePaths ?? []), ...held])].sort().flatMap((path) => {
+      const doc = docs.get(path);
+      if (!doc) return [];
+      const id = roomId(path);
+      return [{ id, path, room: { ...readRoom(doc.data), type: TEMPLATE_TYPES[id] }, dirty: doc.dirty, data: doc.data, template: true }];
+    });
+  }, [templatePaths, docs]);
+  const everything = useMemo(() => [...rooms, ...templates], [rooms, templates]);
 
   useEffect(() => {
-    if (selectedId === null && rooms.length) setSelectedId(rooms[0].id);
-  }, [rooms, selectedId]);
-  const current = rooms.find((r) => r.id === selectedId) ?? null;
+    if (selectedPath === null && rooms.length) setSelectedPath(rooms[0].path);
+  }, [rooms, selectedPath]);
+  const current = everything.find((r) => r.path === selectedPath) ?? null;
   const path = current?.path ?? null;
   const room = current?.room ?? null;
 
@@ -233,7 +245,7 @@ export function EntreeEditor({ constants }: ToolProps) {
     let counters: ProgressCounters | null = null;
     const held = await documents.hold(PROGRESS_IDS).catch(() => null);
     if (held?.data instanceof Map) counters = { next_battle: Number(held.data.get("next_battle") ?? 0), next_catch: Number(held.data.get("next_catch") ?? 0) };
-    const result = assignProgressIds(rooms.flatMap((r) => (r.data ? [{ path: r.path, data: r.data }] : [])), counters,
+    const result = assignProgressIds(everything.flatMap((r) => (r.data ? [{ path: r.path, data: r.data }] : [])), counters,
       { battle: orderOf("battle"), enemy: orderOf("enemy") });
     if (result.error) { setNote(result.error); return false; }
     if (!result.changed.size && counters && counters.next_battle === result.counters.next_battle && counters.next_catch === result.counters.next_catch) return true;
@@ -246,10 +258,10 @@ export function EntreeEditor({ constants }: ToolProps) {
     }
     for (const [p, next] of result.changed) documents.replace(p, next);
     return true;
-  }, [rooms, schema]);
+  }, [everything, schema]);
   const save = useCallback(async () => {
     if (!(await giveProgressIds())) return;
-    for (const p of documents.dirtyPaths().filter((d) => d.startsWith(`${ROOMS_DIR}/`) || d === RUN)) await documents.save(p);
+    for (const p of documents.dirtyPaths().filter(isPageFile)) await documents.save(p);
     refresh();
   }, [refresh, giveProgressIds]);
   useEffect(() => {
@@ -271,31 +283,37 @@ export function EntreeEditor({ constants }: ToolProps) {
   const create = (name: string, data: JsonValue) => {
     const id = freeId(idFromName(name), taken);
     documents.create(roomPath(id), ROOM_SCHEMA, data);
-    setSelectedId(id);
+    setSelectedPath(roomPath(id));
+    setNpcIndex(null);
+  };
+  /** A missing template, made with the spec's placeholders. */
+  const createTemplate = (id: string) => {
+    documents.create(templatePath(id), ROOM_SCHEMA, newTemplateData(id, markerNames));
+    setSelectedPath(templatePath(id));
     setNpcIndex(null);
   };
   const duplicate = () => {
-    if (!current?.data) return;
+    if (!current?.data || current.template) return;
     const name = `${current.room.name} (copy)`;
     const id = freeId(`${current.id}_copy`, taken);
     // Its battles and catches are new ones, with progress ids of their own on save
     documents.create(roomPath(id), ROOM_SCHEMA, setIn(withoutProgressIds(current.data), ["name"], name));
-    setSelectedId(id);
+    setSelectedPath(roomPath(id));
   };
   const remove = async () => {
-    if (!current) return;
+    if (!current || current.template) return;
     setConfirmDelete(false);
     try {
       if (diskPaths.includes(current.path)) await api.removeFile(current.path);
       documents.close(current.path);
-      setSelectedId(rooms.find((r) => r.id !== current.id)?.id ?? null);
+      setSelectedPath(rooms.find((r) => r.id !== current.id)?.path ?? null);
       refresh();
     } catch (e) {
       setNote(`Couldn't delete ${current.path}: ${(e as Error).message}`);
     }
   };
   const rename = async (to: string) => {
-    if (!current?.data || to === current.id) return;
+    if (!current?.data || current.template || to === current.id) return;
     if (!ID_PATTERN.test(to)) { setNote("An ID is lower-case letters, digits and underscores."); return; }
     if (taken.has(to)) { setNote(`There is already a room ${to}.`); return; }
     const next = roomPath(to);
@@ -313,16 +331,17 @@ export function EntreeEditor({ constants }: ToolProps) {
     }
     if (diskPaths.includes(current.path)) await api.removeFile(current.path).catch(() => undefined);
     documents.close(current.path);
-    setSelectedId(to);
+    setSelectedPath(next);
     refresh();
   };
 
   const schemaErrors = useMemo(() => (current?.data && schema ? validate(current.data, schema, constants).filter((e) => !awaitsId(e)) : []), [current?.data, schema, constants]);
   const known = useMemo(() => battleKeys(rooms), [rooms]);
   const problems = useMemo(() => (room ? checkRoom(room, constants, infos, known, markerInfo) : []), [room, constants, infos, known, markerInfo]);
-  const overall = useMemo(() => checkRooms(rooms), [rooms]);
-  const roomProblems = useMemo(() => new Map(rooms.map((r): [string, number] =>
-    [r.id, checkRoom(r.room, constants, infos, known, markerInfo).filter((p) => p.severity === "error").length])), [rooms, constants, infos, known, markerInfo]);
+  const templateIds = useMemo(() => new Set(templates.map((t) => t.id)), [templates]);
+  const overall = useMemo(() => [...checkRooms(everything), ...(templatePaths ? checkTemplates(templateIds) : [])], [everything, templateIds, templatePaths]);
+  const roomProblems = useMemo(() => new Map(everything.map((r): [string, number] =>
+    [r.path, checkRoom(r.room, constants, infos, known, markerInfo).filter((p) => p.severity === "error").length])), [everything, constants, infos, known, markerInfo]);
   /** Every room's battles, for the catches' and spawn conditions' pickers. */
   const battleOptions: Option[] = useMemo(() => rooms.flatMap((r) => r.room.battles.map((b) => ({
     value: battleKey(r.id, b.id), label: `${r.room.name || r.id}: ${b.id}`, detail: battleKey(r.id, b.id),
@@ -336,8 +355,23 @@ export function EntreeEditor({ constants }: ToolProps) {
   };
 
   const listed = rooms.filter((r) => (roundFilter === "all" || inRound(r.room, Number(roundFilter) as Round)) && (roleFilter === "all" || r.room.role === roleFilter) &&
+    (typeFilter === "all" || (r.room.role === "room" && (r.room.type ?? DEFAULT_ROOM_TYPE) === typeFilter)) &&
     (!text.trim() || `${r.id} ${r.room.name}`.toLowerCase().includes(text.trim().toLowerCase())));
-  const unsaved = [...rooms.filter((r) => r.dirty).map((r) => r.path), ...(docs.get(RUN)?.dirty ? [RUN] : [])];
+  const unsaved = [...everything.filter((r) => r.dirty).map((r) => r.path), ...[RUN, ITEMS, FLOWER_TILES].filter((p) => docs.get(p)?.dirty)];
+
+  // The shown clearing's flower tiles (flower_tiles.json), drawn over the grid and toggled in the Flower tiles mode
+  const flowerDoc = docs.get(FLOWER_TILES);
+  const flowers = useMemo(() => readFlowerTiles(flowerDoc?.data, shownZone), [flowerDoc?.data, shownZone]);
+  const flowerMarks = useMemo(() => (showFlowers || mapMode === "flowers" ? { tiles: flowers.map(([x, z]) => ({ x, z })), color: FLOWER_COLOR, opacity: 0.75 } : undefined),
+    [flowers, showFlowers, mapMode]);
+  /** A click or a stroke in the Flower tiles mode: the tiles become flowers, or stop being, by the first one. */
+  const paintFlowers = (tiles: { x: number; z: number }[]) => {
+    if (!tiles.length) return;
+    const on = !flowers.some(([x, z]) => x === tiles[0].x && z === tiles[0].z);
+    const next = setFlowerTiles(flowerDoc?.data, shownZone, tiles, on);
+    if (flowerDoc) documents.replace(FLOWER_TILES, next);
+    else documents.create(FLOWER_TILES, FLOWER_TILES_SCHEMA, new Map([["$schema", "flower_tiles.schema.json"], ...[...next].filter(([k]) => k !== "$schema")]));
+  };
 
   // The map's entities: the NPCs, then the exits (as the triggers they are)
   const entities: Entity[] = useMemo(() => {
@@ -365,7 +399,7 @@ export function EntreeEditor({ constants }: ToolProps) {
   const addNpc = (type: NpcType, x: number, z: number) => {
     if (!room) return;
     const list = asList(get(["npcs"]));
-    set(["npcs"], [...list, newNpc(type, x, z, room)]);
+    set(["npcs"], [...list, newNpc(type, x, z, room, markerNames)]);
     setNpcIndex(list.length);
   };
   const freeTile = (): { x: number; z: number } => {
@@ -382,7 +416,11 @@ export function EntreeEditor({ constants }: ToolProps) {
     <div className="en-editor">
       <header className="en-header">
         <h2>Entree</h2>
-        <span className="muted en-lead">The Entralink roguelike's rooms: their battles, what stands in them and the markers in front of the doors leading to them.</span>
+        <Switch<View> value={view} options={["rooms", "items"]} onChange={setView}
+                      titles={{ rooms: "The rooms, the templates and the run", items: "The item table (items.json): what item rooms, gifts, shops and the ground hand out" }} />
+        <span className="muted en-lead">{view === "rooms"
+          ? "The Entralink roguelike's rooms: their battles, what stands in them and the markers in front of the doors leading to them."
+          : "The items a run hands out, by pool."}</span>
         <span className="spacer" />
         {unsaved.length > 0 && <span className="muted">{unsaved.length} unsaved</span>}
         <button onClick={() => unsaved.forEach((p) => void documents.reload(p))} disabled={!unsaved.length}>Revert</button>
@@ -390,16 +428,16 @@ export function EntreeEditor({ constants }: ToolProps) {
       </header>
       {error && <p className="ow-error ow-bar">{error}</p>}
       {unsaved.filter((p) => docs.get(p)?.saveError).map((p) => <p key={p} className="ow-error ow-bar">{p}: {docs.get(p)?.saveError}</p>)}
-      <div className="en-body">
+      {view === "items" ? <ItemsPage constants={constants} rooms={rooms} /> : <div className="en-body">
         <aside className="en-list">
-          <RunSection rooms={rooms} />
+          <RunSection rooms={rooms} templates={templateIds} />
           <div className="en-list-section">
             <h5>Rooms <span className="muted">{listed.length === rooms.length ? rooms.length : `${listed.length} of ${rooms.length}`}</span></h5>
             <div className="en-list-actions">
               <button onClick={() => setCreating(creating === null ? "" : null)} className={creating !== null ? "active" : ""} title="A new room with one battle">New</button>
-              <button onClick={duplicate} disabled={!current} title="A copy of the chosen room">Duplicate</button>
+              <button onClick={duplicate} disabled={!current || current.template} title={current?.template ? "A template can't be copied" : "A copy of the chosen room"}>Duplicate</button>
               {!confirmDelete
-                ? <button onClick={() => setConfirmDelete(true)} disabled={!current} title="Delete the chosen room's file">Delete</button>
+                ? <button onClick={() => setConfirmDelete(true)} disabled={!current || current.template} title={current?.template ? "A template can't be deleted" : "Delete the chosen room's file"}>Delete</button>
                 : <span className="en-confirm">Delete {current?.id}? <button className="danger" onClick={() => void remove()}>Yes</button><button onClick={() => setConfirmDelete(false)}>No</button></span>}
             </div>
             {creating !== null && (
@@ -416,20 +454,46 @@ export function EntreeEditor({ constants }: ToolProps) {
                       titles={{ all: "Every room", 1: "Rooms that can come up in round 1", 2: "… in round 2", 3: "… in round 3" }} />
               <span className="muted small">Role</span>
               <Switch<Role | "all"> value={roleFilter} options={["all", ...ROLES]} onChange={setRoleFilter} />
+              <span className="muted small">Type</span>
+              <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as RoomType | "all")} title="Rooms of role room of a type (enemy when not set)">
+                <option value="all">All</option>
+                {ROOM_TYPES.map((t) => <option key={t} value={t}>{cap(t)}</option>)}
+              </select>
             </div>
           </div>
           <div className="en-items">
             {listed.map((r) => (
-              <button key={r.id} className={`en-item ${r.id === selectedId ? "selected" : ""}`} onClick={() => { setSelectedId(r.id); setNpcIndex(null); setConfirmDelete(false); }}>
+              <button key={r.id} className={`en-item ${r.path === selectedPath ? "selected" : ""}`} onClick={() => { setSelectedPath(r.path); setNpcIndex(null); setConfirmDelete(false); }}>
                 <span className="en-item-name">{r.room.name || r.id}{r.dirty ? " •" : ""}</span>
                 <span className="muted en-item-detail">
-                  {r.room.role !== "room" && <span className={`en-role en-role-${r.room.role}`}>{r.room.role}</span>}
+                  {r.room.role !== "room" ? <span className={`en-role en-role-${r.room.role}`}>{r.room.role}</span>
+                    : <span className={`en-role en-type-${r.room.type ?? DEFAULT_ROOM_TYPE}`}>{r.room.type ?? DEFAULT_ROOM_TYPE}</span>}
                   {r.room.rounds.length ? `round ${r.room.rounds.join(", ")}` : "any round"}
-                  {(roomProblems.get(r.id) ?? 0) > 0 && <span className="en-bad" title="Errors to fix"> ⚠ {roomProblems.get(r.id)}</span>}
+                  {(roomProblems.get(r.path) ?? 0) > 0 && <span className="en-bad" title="Errors to fix"> ⚠ {roomProblems.get(r.path)}</span>}
                 </span>
               </button>
             ))}
             {!listed.length && <p className="muted en-empty">{rooms.length ? "No room matches the filters." : "No rooms yet."}</p>}
+            <h5 className="en-group-head">Templates <span className="muted">every generated room of a type is its template</span></h5>
+            {[...TEMPLATES, ...(templateIds.has("event") ? ["event"] : [])].map((id) => {
+              const t = templates.find((x) => x.id === id);
+              if (!t) return (
+                <div key={id} className="en-item en-item-missing">
+                  <span className="en-item-name">{cap(id.replace(/_/g, " "))} <span className="en-bad small">missing</span></span>
+                  <span className="muted en-item-detail">templates/{id}.json <button className="small" onClick={() => createTemplate(id)} title="Make it with the placeholder NPCs">Make</button></span>
+                </div>
+              );
+              return (
+                <button key={id} className={`en-item ${t.path === selectedPath ? "selected" : ""}`} onClick={() => { setSelectedPath(t.path); setNpcIndex(null); setConfirmDelete(false); }}>
+                  <span className="en-item-name">{t.room.name || t.id}{t.dirty ? " •" : ""}</span>
+                  <span className="muted en-item-detail">
+                    <span className={`en-role en-type-${TEMPLATE_TYPES[id]}`}>{TEMPLATE_TYPES[id]}</span>
+                    templates/{id}.json
+                    {(roomProblems.get(t.path) ?? 0) > 0 && <span className="en-bad" title="Errors to fix"> ⚠ {roomProblems.get(t.path)}</span>}
+                  </span>
+                </button>
+              );
+            })}
           </div>
           {overall.length > 0 && (
             <div className="en-overall">
@@ -448,17 +512,27 @@ export function EntreeEditor({ constants }: ToolProps) {
             </select>
             <label className="ow-check"><input type="checkbox" checked={faint} onChange={(e) => setFaint(e.target.checked)} /> Faint</label>
             <label className="ow-check"><input type="checkbox" checked={showBlocked} onChange={(e) => setShowBlocked(e.target.checked)} /> Blocked tiles</label>
+            <label className="ow-check" title="The shown clearing's flower tiles (flower_tiles.json), where a hidden item may lie">
+              <input type="checkbox" checked={showFlowers || mapMode === "flowers"} disabled={mapMode === "flowers"} onChange={(e) => setShowFlowers(e.target.checked)} /> Flowers
+            </label>
             <span className="spacer" />
-            <span className="muted small">Click an NPC to choose it, drag to move it, Shift+click a tile to add one</span>
+            <span className="muted small">Edit</span>
+            <Switch<"npcs" | "flowers"> value={mapMode} options={["npcs", "flowers"]} onChange={setMapMode} labels={{ npcs: "NPCs", flowers: "Flower tiles" }}
+                                        titles={{ npcs: "Choose, drag and add the room's NPCs", flowers: `Click or drag over tiles to make them ${clearingName(shownZone)}'s flower tiles, or not` }} />
+          </div>
+          <div className="en-map-hint muted small">
+            {mapMode === "npcs" ? "Click an NPC to choose it, drag to move it, Shift+click a tile to add one"
+              : <>{clearingName(shownZone)}: {flowers.length} flower tile{flowers.length === 1 ? "" : "s"} (every room in this clearing shares them; a hidden item lies on one). Click a tile to toggle it, drag to paint; the first tile decides on or off.</>}
+            {flowerDoc?.dirty ? " • flower tiles unsaved" : ""}
           </div>
           <div className="ow-map-wrap">
             {mapError ? <p className="ow-error en-pad">{mapError}</p> : shown && room ? (
               <MapView map={shown.map} modelOpacity={faint ? 0.35 : 1} entities={entities} selected={selectedEntity} layer={0} overlay={showBlocked ? "walk" : "off"}
-                       showModels painting={false} paintType={null} preview={false} overhead
+                       showModels painting={mapMode === "flowers"} paintType={null} preview={false} overhead tileMarks={flowerMarks}
                        onSelect={(e) => setNpcIndex(e?.kind === "npc" ? e.index : null)}
                        onMove={(e, x, z) => { if (e.kind === "npc") moveNpc(e.index, x, z); }}
-                       onAdd={(x, z) => addNpc(room.battles.length ? "battle" : "item", x, z)}
-                       onPaint={() => undefined} rails={null} railLevel={null} ground="grid"
+                       onAdd={(x, z) => { if (mapMode === "npcs") addNpc(room.battles.length ? "battle" : current?.template ? "heal" : "item", x, z); }}
+                       onPaint={paintFlowers} rails={null} railLevel={null} ground="grid"
                        onMoveRail={() => undefined} onAddRail={() => undefined} onPaintRail={() => undefined}
                        cameraAreas={null} viewCamera={null} onRect={() => undefined} drawRect={null} onMoveRailPoint={() => undefined} />
             ) : <p className="muted en-pad">{room ? "Loading the clearing…" : "Choose a room."}</p>}
@@ -471,7 +545,7 @@ export function EntreeEditor({ constants }: ToolProps) {
             <div className="ow-panel">
               <Checks problems={problems} schemaErrors={schemaErrors.map((e) => `${e.path.join(".") || "room"}: ${e.message}`)}
                       onNpc={setNpcIndex} />
-              <RoomSection id={current.id} room={room} constants={constants} saved={diskPaths.includes(current.path)}
+              <RoomSection id={current.id} room={room} constants={constants} saved={diskPaths.includes(current.path)} template={current.template}
                            setField={(key, v) => setField([], "", key, v)} rename={rename} />
               <BattlesSection room={room} constants={constants} get={get} set={set} setField={setField} roomId={current.id}
                               replace={(data) => path && documents.replace(path, data)} data={current.data} battleOptions={battleOptions}
@@ -483,7 +557,7 @@ export function EntreeEditor({ constants }: ToolProps) {
           ) : current?.data === null ? <p className="ow-error en-pad">{current.path} isn't in a layout the editor can write back; edit it as text.</p>
             : <p className="muted en-pad">Choose a room, or make one with New.</p>}
         </div>
-      </div>
+      </div>}
       {picking && room && npcIndex !== null && room.npcs[npcIndex] && (
         <ModelPicker constants={constants} value={room.npcs[npcIndex].sprite ?? npcSprite(room.npcs[npcIndex], room, constants) ?? ""}
                      onClose={() => setPicking(false)} onPick={(m) => { setField(["npcs", npcIndex], "npc", "sprite", m); setPicking(false); }} />
@@ -529,7 +603,7 @@ function readRunOpen(): boolean {
 /** run.json: the forest's field weather, the rounds (how many rooms each draws and whether a boss ends rounds 1 and
  * 2; the final room ends the last), with each round's pool and the draw's checks (model.ts, runProblems, as the build
  * makes them), and the maps the rooms are in, read only. */
-function RunSection({ rooms }: { rooms: { id: string; room: Room }[] }) {
+function RunSection({ rooms, templates }: { rooms: { id: string; room: Room }[]; templates: ReadonlySet<string> }) {
   const { docs } = useDocuments();
   const [schema, setSchema] = useState<Schema | null>(null);
   const [open, setOpen] = useState(readRunOpen);
@@ -548,7 +622,7 @@ function RunSection({ rooms }: { rooms: { id: string; room: Room }[] }) {
   const doc = docs.get(RUN);
   const data = doc?.data instanceof Map ? doc.data : null;
   const run = useMemo(() => readRun(data), [data]);
-  const problems = useMemo(() => runProblems(run, rooms), [run, rooms]);
+  const problems = useMemo(() => runProblems(run, rooms, templates), [run, rooms, templates]);
   const weather = typeof data?.get("field_weather") === "string" ? String(data.get("field_weather")) : "";
   const choices = (schema?.$defs?.field_weather?.enum ?? schema?.properties?.field_weather?.enum ?? []).map(String);
   const order = Object.keys(schema?.properties ?? {});
@@ -564,7 +638,7 @@ function RunSection({ rooms }: { rooms: { id: string; room: Room }[] }) {
   };
   const setKey = (key: string, v: JsonValue | undefined) => documents.replace(RUN, put(data, key, v, order));
   const rounds = asList(data.get("rounds"));
-  const setRound = (i: number, key: "rooms" | "boss" | "field_weather", v: JsonValue | undefined) =>
+  const setRound = (i: number, key: "rooms" | "boss" | "field_weather" | "type_weights", v: JsonValue | undefined) =>
     setKey("rounds", rounds.map((r, k) => (k === i ? put(asMap(r), key, v, roundOrder) : r)));
   const total = run.rounds.reduce((n, r, i) => n + r.rooms + (r.boss && i < 2 ? 1 : 0), 0) + 1;
   /** A door's spot, every door's written once one is changed. */
@@ -572,6 +646,12 @@ function RunSection({ rooms }: { rooms: { id: string; room: Room }[] }) {
     const spots = new Map<string, JsonValue>(DOORS.map((d) => [d, d === door ? run.markerSpots[d].map((v, k) => (k === axis ? n : v)) : [...run.markerSpots[d]]]));
     setKey("marker_spots", spots);
   };
+  /** A round's weight of a type, every type's written once one is changed, in the file's order. */
+  const setWeight = (i: number, type: RoomType, n: number) => {
+    const weights = run.rounds[i].typeWeights ?? DEFAULT_TYPE_WEIGHTS;
+    setRound(i, "type_weights", new Map<string, JsonValue>(WEIGHT_ORDER.map((t) => [t, t === type ? n : weights[t]])));
+  };
+  const weightsSet = rounds.some((r) => asMap(r).has("type_weights"));
   const errors = problems.filter((p) => p.severity === "error").length;
   const warnings = problems.length - errors;
   const state = [errors && `${errors} error${errors > 1 ? "s" : ""}`, warnings && `${warnings} warning${warnings > 1 ? "s" : ""}`].filter(Boolean).join(", ");
@@ -600,6 +680,30 @@ function RunSection({ rooms }: { rooms: { id: string; room: Room }[] }) {
           </span>
         </div>
         <span className="muted small">The chance that a door to a round's room shows ??? whatever is behind it</span>
+        <div className="en-run">
+          <span className="muted small">Premade rooms</span>
+          <span className="en-run-controls">
+            <NumberBox value={run.customChance} min={0} max={100} width={52} onChange={(n) => setKey("custom_chance", n)} />
+            <span className="small">%</span>
+          </span>
+        </div>
+        <span className="muted small">The chance that a rest, item, buff or shop door leads to a premade room of the type (if one fits) instead of its template</span>
+        <div className="en-run">
+          <span className="muted small">Ground items</span>
+          <span className="en-run-controls">
+            <NumberBox value={run.groundItemChance} min={0} max={100} width={52} onChange={(n) => setKey("ground_item_chance", n)} />
+            <span className="small">%</span>
+          </span>
+        </div>
+        <span className="muted small">A ball of the ground pool on a free tile, in a room with no item or item-choice NPC</span>
+        <div className="en-run">
+          <span className="muted small">Hidden items</span>
+          <span className="en-run-controls">
+            <NumberBox value={run.hiddenItemChance} min={0} max={100} width={52} onChange={(n) => setKey("hidden_item_chance", n)} />
+            <span className="small">%</span>
+          </span>
+        </div>
+        <span className="muted small">An item of the ground pool hidden on one of the clearing's flower tiles (the grid's Flower tiles)</span>
 
         <h6 className="en-sub en-run-head">Rounds <span className="muted">then the final room</span></h6>
         <div className="en-list-actions">
@@ -635,6 +739,26 @@ function RunSection({ rooms }: { rooms: { id: string; room: Room }[] }) {
           );
         })}
 
+        <h6 className="en-sub en-run-head">Room types <span className="muted">each door draws a type by its round's weights</span></h6>
+        <div className="en-list-actions">
+          <button onClick={() => setKey("rounds", rounds.map((r) => put(asMap(r), "type_weights", undefined, roundOrder)))} disabled={!weightsSet}
+                  title={`Every round back to the defaults: ${WEIGHT_ORDER.map((t) => `${t} ${DEFAULT_TYPE_WEIGHTS[t]}`).join(", ")}`}>Defaults</button>
+          <span className="muted small">{weightsSet ? "" : "the defaults"}</span>
+        </div>
+        <div className="en-weights" style={{ gridTemplateColumns: `72px repeat(${run.rounds.length}, 1fr)` }}>
+          <span />
+          {run.rounds.map((_, i) => <span key={i} className="muted small en-weights-head">Round {i + 1}</span>)}
+          {WEIGHT_ORDER.map((t) => (
+            <WeightRow key={t} type={t} rounds={run.rounds} onChange={setWeight} />
+          ))}
+          <span className="muted small">Sum</span>
+          {run.rounds.map((r, i) => {
+            const sum = WEIGHT_ORDER.reduce((n, t) => n + (r.typeWeights ?? DEFAULT_TYPE_WEIGHTS)[t], 0);
+            return <span key={i} className={`small en-weights-cell ${sum ? "" : "en-error"}`}>{sum}</span>;
+          })}
+        </div>
+        <span className="muted small">Never two rests in a row, no rest or shop just before the pre-boss rest, and a type with no room is skipped, so the chances shown are before those rules.</span>
+
         <h6 className="en-sub en-run-head">Maps <span className="muted">read only, run.json</span></h6>
         <div className="en-run">
           <span className="muted small">Rooms</span>
@@ -669,6 +793,24 @@ function RunSection({ rooms }: { rooms: { id: string; room: Room }[] }) {
   );
 }
 
+/** One room type's weights, a box per round with the chance it makes under it. */
+function WeightRow({ type, rounds, onChange }: { type: RoomType; rounds: { typeWeights?: Record<RoomType, number> }[]; onChange(i: number, type: RoomType, n: number): void }) {
+  return (
+    <>
+      <span className="small en-weights-type" title={ROOM_TYPE_NOTES[type]}>{cap(type)}</span>
+      {rounds.map((r, i) => {
+        const weights = r.typeWeights ?? DEFAULT_TYPE_WEIGHTS;
+        return (
+          <span key={i} className="en-weights-cell">
+            <NumberBox value={weights[type]} min={0} max={255} width={50} onChange={(n) => onChange(i, type, n)} title={`Round ${i + 1}'s weight of ${type} rooms (0-255)`} />
+            <span className="muted small">{percent(typeChances(weights)[type])}</span>
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
 /** A marker's icon, as its art draws it. */
 function MarkerIcon({ path, size = 24, title }: { path: string; size?: number; title?: string }) {
   return <img className="en-marker-icon" src={api.assetUrl(path)} width={size} height={size} alt="" title={title} />;
@@ -696,15 +838,37 @@ function Checks({ problems, schemaErrors, onNpc }: { problems: Problem[]; schema
 
 // ---- Room ------------------------------------------------------------------------------------------------------------
 
-function RoomSection({ id, room, constants, saved, setField, rename }: {
-  id: string; room: Room; constants: Constants; saved: boolean;
+const TEMPLATE_TYPE_SET = new Set<RoomType>(["rest", "item", "buff", "shop"]);
+const TYPE_MARKER_NAME: Record<RoomType, string> = { enemy: "enemy", challenge: "challenge", rest: "rest", item: "gift", buff: "gift", shop: "shop", event: "event" };
+
+function RoomSection({ id, room, constants, saved, template, setField, rename }: {
+  id: string; room: Room; constants: Constants; saved: boolean; template: boolean;
   setField(key: string, v: JsonValue | undefined): void; rename(to: string): Promise<void>;
 }) {
   const [newId, setNewId] = useState(id);
   useEffect(() => setNewId(id), [id]);
   const weathers: Option[] = [{ value: "", label: "Random", detail: "" }, ...constantOptions(constants, "BTL_WEATHER_")];
+  const type = room.type ?? DEFAULT_ROOM_TYPE;
+  const marker = room.marker ?? defaultMarker(room);
+  if (template) return (
+    <Section title="Template" summary={`${type}, templates/${id}.json`}>
+      <p className="en-template-note small">{TEMPLATE_NOTES[id] ?? "A template."} Every room the run makes from it has its NPCs, sprites, markers and dialogue as set here; the door in front shows the {TYPE_MARKER_NAME[type]} marker.</p>
+      <div className="ow-condition">
+        <Row label="Name" hint="For the editor">
+          <input className="en-wide" value={room.name} onChange={(e) => setField("name", e.target.value)} />
+        </Row>
+        <Row label="Type" hint="A template's type is its file's">
+          <span className="small">{cap(type)}</span>
+          <span className="muted small">{ROOM_TYPE_NOTES[type]}</span>
+        </Row>
+        <Row label="Weather" hint={room.weather ? "Its battles start in it" : "Its battles take the field's"}>
+          <SearchSelect value={room.weather ?? ""} options={weathers} placeholder="The field's / random" onChange={(v) => setField("weather", v || undefined)} />
+        </Row>
+      </div>
+    </Section>
+  );
   return (
-    <Section title="Room" summary={`${room.role}, ${room.rounds.length ? `round ${room.rounds.join(", ")}` : "any round"}`}>
+    <Section title="Room" summary={`${room.role === "room" ? type : room.role}, ${room.rounds.length ? `round ${room.rounds.join(", ")}` : "any round"}`}>
       <div className="ow-condition">
         <Row label="Name">
           <input className="en-wide" value={room.name} onChange={(e) => setField("name", e.target.value)} />
@@ -730,21 +894,33 @@ function RoomSection({ id, room, constants, saved, setField, rename }: {
         <Row label="Role" hint={ROLE_NOTES[room.role]}>
           <Switch value={room.role} options={ROLES} onChange={(v) => setField("role", v)} titles={ROLE_NOTES} />
         </Row>
+        {room.role === "room" ? (
+          <Row label="Type" hint={`${ROOM_TYPE_NOTES[type].replace(/\.$/, "")}${room.type ? "" : " (the default)"}. Doors draw a type by the round's weights (Run)${TEMPLATE_TYPE_SET.has(type) ? `; a premade ${type} room comes up instead of the template at the Premade rooms chance` : ""}.`}>
+            <span className="en-type-switch">
+              <Switch<RoomType> value={type} options={ROOM_TYPES} titles={ROOM_TYPE_NOTES} onChange={(v) => setField("type", v === DEFAULT_ROOM_TYPE ? undefined : v)} />
+            </span>
+          </Row>
+        ) : room.type ? (
+          <Row label="Type" hint={`A ${room.role} room's type isn't used`}>
+            <span className="small">{room.type}</span>
+            <button onClick={() => setField("type", undefined)}>Clear</button>
+          </Row>
+        ) : null}
         <Row label="Weather" hint={room.weather ? "Its battles start in it; the field keeps its round's fog (Run, above the rooms)"
           : "Its battles take the field's; in battle random (designed later)"}>
           <SearchSelect value={room.weather ?? ""} options={weathers} placeholder="The field's / random" onChange={(v) => setField("weather", v || undefined)} />
         </Row>
-        <Row label="Marker" hint={`In front of any door leading to it: ${MARKER_NOTES[room.marker ?? ROLE_MARKERS[room.role]].toLowerCase()}${room.marker ? "" : " (its role's)"}. `
+        <Row label="Marker" hint={`In front of any door leading to it: ${MARKER_NOTES[marker].toLowerCase()}${room.marker ? "" : room.role === "room" ? " (its type's)" : " (its role's)"}. `
           + "Enemy, challenge and boss show catch instead while one of its enemies can be caught and the run's bag holds a Nightmare Ball"}>
           <span className="en-markers">
             {MARKER_TYPES.map((m) => (
-              <button key={m} className={(room.marker ?? ROLE_MARKERS[room.role]) === m ? "active" : ""} title={`${MARKER_NOTES[m]}${!room.marker && ROLE_MARKERS[room.role] === m ? " (the role's)" : ""}`}
-                      onClick={() => setField("marker", m === ROLE_MARKERS[room.role] ? undefined : m)}>
+              <button key={m} className={marker === m ? "active" : ""} title={`${MARKER_NOTES[m]}${defaultMarker(room) === m ? " (the default)" : ""}`}
+                      onClick={() => setField("marker", m === defaultMarker(room) ? undefined : m)}>
                 <MarkerIcon path={markerArt(m)} size={24} />
               </button>
             ))}
           </span>
-          <span className="small">{cap(room.marker ?? ROLE_MARKERS[room.role])}{room.marker ? "" : <span className="muted"> (default)</span>}</span>
+          <span className="small">{cap(marker)}{room.marker ? "" : <span className="muted"> (default)</span>}</span>
         </Row>
       </div>
     </Section>
@@ -905,11 +1081,15 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
   const npc = selected !== null ? room.npcs[selected] : undefined;
   const at: JsonPath = ["npcs", selected ?? 0];
   const f = (key: string, v: JsonValue | undefined) => setField(at, "npc", key, v);
+  const markerSet = useMemo(() => new Set(npcMarkers), [npcMarkers]);
   const changeType = (type: NpcType) => {
     if (!npc || selected === null) return;
-    // Drops what the old type used, gives what the new one needs
-    let next = newNpc(type, npc.x, npc.z, room);
-    const kept = ["requires", "chance", "facing", "dialogue", ...(type === "rest" || type === "buff" ? ["sprite"] : [])];
+    // Drops what the old type used, gives what the new one needs; its own sprite stays while it is still a person or
+    // still a ball, its marker unless it was the old type's default
+    let next = newNpc(type, npc.x, npc.z, room, markerSet);
+    const look = (t: NpcType) => (t === "battle" ? "battle" : BALL_TYPES.includes(t) ? "ball" : "person");
+    const kept = ["requires", "chance", "facing", "dialogue", ...(look(type) === look(npc.type) && type !== "battle" ? ["sprite"] : []),
+      ...(npc.marker && npc.marker !== NPC_DEFAULT_MARKERS[npc.type] ? ["marker"] : [])];
     for (const [k, v] of asMap(get(at))) if (kept.includes(k)) next = put(next, k, v, npcOrder);
     set(at, next);
   };
@@ -935,17 +1115,22 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
     <Section title="NPCs" summary={room.npcs.length ? `${room.npcs.length} in the room` : "none: the room is free"}
              actions={<>
                <span className="muted">Add</span>
-               {NPC_TYPES.map((t) => <button key={t} onClick={() => add(t)} title={TYPE_NOTES[t]}>+ {cap(t)}</button>)}
+               {(["battle", "item", "heal", "item_choice"] as NpcType[]).map((t) => <button key={t} onClick={() => add(t)} title={TYPE_NOTES[t]}>+ {TYPE_LABELS[t]}</button>)}
+               <select value="" onChange={(e) => { if (e.target.value) add(e.target.value as NpcType); }} title="Add an NPC of another type">
+                 <option value="">+ Other…</option>
+                 <TypeOptions />
+               </select>
              </>}>
       <div className="en-npcs">
         {room.npcs.map((n, i) => {
           const s = npcSprite(n, room, constants);
           const what = n.type === "battle" ? `${n.battle ?? "?"}${shownEnemy(n, room) ? `, ${label(shownEnemy(n, room)!.species, "SPECIES_")}` : ""}`
-            : n.type === "item" ? `${label(n.item, "ITEM_")}${(n.count ?? 1) > 1 ? ` ×${n.count}` : ""}` : "";
+            : n.type === "item" ? `${label(n.item, "ITEM_")}${(n.count ?? 1) > 1 ? ` ×${n.count}` : ""}`
+            : n.type === "item_choice" ? "drawn from the item room pool" : n.type === "gift" ? "3 from the gift pool" : "";
           return (
             <button key={i} className={`en-npc ${i === selected ? "selected" : ""}`} onClick={() => select(i === selected ? null : i)}>
               {s ? <SpriteImage model={s} direction={n.facing} size={24} /> : <span className="en-nosprite">?</span>}
-              <span className="en-npc-name">{i + 1}. {cap(n.type)} <span className="muted">{what}</span></span>
+              <span className="en-npc-name">{i + 1}. {TYPE_LABELS[n.type]} <span className="muted">{what}</span></span>
               <span className="muted small">{n.x}, {n.z} {ARROWS[n.facing]}{(n.chance ?? 100) < 100 ? ` · ${n.chance}%` : ""}{n.requires.length ? " · after" : ""}{n.dialogue?.before || n.dialogue?.after ? " · 💬" : ""}</span>
             </button>
           );
@@ -960,8 +1145,10 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
             <button title="Remove the NPC" onClick={() => { set(["npcs"], asList(get(["npcs"])).filter((_, j) => j !== selected)); select(null); }}>Remove</button>
           </div>
           <div className="ow-condition">
-            <Row label="Type">
-              <Switch value={npc.type} options={NPC_TYPES} titles={TYPE_NOTES} onChange={changeType} />
+            <Row label="Type" hint={CHOICE_NOTE.has(npc.type) ? "Using it is the room's choice: the room's other heal, revive, gift, shop and item-choice NPCs go and the room is done (battle NPCs stay, optional)" : undefined}>
+              <select value={npc.type} onChange={(e) => changeType(e.target.value as NpcType)} title={TYPE_NOTES[npc.type]}>
+                <TypeOptions />
+              </select>
             </Row>
             {npc.type === "battle" && <>
               <Row label="Battle" hint={battle ? `${cap(battle.format)}: ${battle.enemies.map((e) => label(e.species, "SPECIES_")).join(", ")}` : "Choose the battle it starts"}>
@@ -985,12 +1172,12 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
                 <NumberBox value={npc.count ?? DEFAULT_COUNT} min={1} max={99} width={56} onChange={(n) => f("count", n === 1 ? undefined : n)} />
               </Row>
             )}
-            <Row label="Look" hint={npc.sprite ? "Its own sprite" : defaultSprite ? (npc.type === "item" ? "The item ball" : "Its enemy's walking Pokémon") : npc.type === "battle" ? "Its enemy has no overworld sprite: Browse for one" : "Choose a sprite with Browse"}>
+            <Row label="Look" hint={npc.sprite ? "Its own sprite" : defaultSprite === ITEM_BALL_SPRITE ? (npc.type === "buff_choice" ? "The item ball (a buff ball's own look comes later; its marker tells it apart)" : "The item ball") : defaultSprite === LADY_SPRITE ? "The Lady, the default for people" : defaultSprite ? "Its enemy's walking Pokémon" : "Its enemy has no overworld sprite: Browse for one"}>
               {sprite ? <SpriteImage model={sprite} direction={npc.facing} size={32} /> : <span className="en-nosprite">?</span>}
               <span className="small">{sprite ? label(sprite, "OBJ_CODE_") : "none"}</span>
               <button onClick={openPicker}>Browse…</button>
-              {npc.sprite && (npc.type === "battle" || npc.type === "item") && (
-                <button onClick={() => f("sprite", undefined)} title={npc.type === "item" ? `Back to the item ball (${ITEM_BALL_SPRITE})` : "Back to its enemy's walking sprite"}>Default</button>
+              {npc.sprite && (
+                <button onClick={() => f("sprite", undefined)} title={`Back to its type's sprite (${npcSprite({ ...npc, sprite: undefined }, room, constants) ?? "its enemy's"})`}>Default</button>
               )}
             </Row>
             <Row label="Marker" hint={npc.marker ? `Floats over its head: ${npcMarkerArt(npc.marker)}` : "An icon over its head, from npc_markers/ (16 by 16)"}>
@@ -1029,7 +1216,7 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
             <Row label={npc.type === "battle" ? "Before" : "On talking"}>
               <DialogueField value={npc.dialogue?.before ?? ""} onChange={(v) => setDialogue("before", v)} inserts={ROOM_INSERTS} words={ROOM_WORDS}
                              look={npc.dialogue?.beforeStyle ?? "talk"} actions={stylePicker("before", npc.dialogue?.beforeStyle ?? "talk")}
-                             placeholder={npc.type === "battle" ? "What it says before the battle starts" : (npc.type === "item" ? "What it says as it gives its item" : "What it says (its menu comes later)")} />
+                             placeholder={TALK_PLACEHOLDERS[npc.type] ?? "What it says"} />
             </Row>
             {npc.type === "battle" && (
               <Row label="After the battle">
@@ -1044,4 +1231,15 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
       {!npc && room.npcs.length > 0 && <p className="muted small">Choose an NPC here or on the map to edit it.</p>}
     </Section>
   );
+}
+
+const CHOICE_NOTE = new Set<NpcType>(["heal", "revive", "gift", "shop", "item_choice"]);
+
+/** The NPC types as a select's options, grouped. */
+function TypeOptions() {
+  return <>{TYPE_GROUPS.map(([group, types]) => (
+    <optgroup key={group} label={group}>
+      {types.map((t) => <option key={t} value={t} title={TYPE_NOTES[t]}>{TYPE_LABELS[t]}</option>)}
+    </optgroup>
+  ))}</>;
 }

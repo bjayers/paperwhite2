@@ -123,11 +123,10 @@ test("the checks", () => {
     "error: NPC 4 (battle) stands on the same tile as NPC 3 (3, 3).",
     "warning: NPC 4 (battle) stands on a blocked tile (3, 3) in every clearing.",
   ]);
-  // A rest NPC with no sprite; an item NPC with no item
+  // A rest NPC with no sprite shows the Lady (step 6); an item NPC with no item
   assert.deepEqual(messages({ ...base, npcs: [base.npcs[0], { type: "rest", x: 10, z: 10, facing: "DIR_DOWN", requires: [] }, { type: "item", x: 11, z: 10, facing: "DIR_DOWN", requires: [] }] }), [
     "error: NPC 3 (item) gives no item: choose one.",
-    "error: NPC 2 (rest) has no sprite: choose one.",
-  ].sort((a, b) => (a.includes("NPC 2") ? -1 : b.includes("NPC 2") ? 1 : 0)));
+  ]);
   // A species with no walking sprite needs one of its own
   const npc = { ...base.npcs[0] };
   const unsprited = { ...base, battles: [{ id: "battle", format: "single" as const, enemies: [{ species: "SPECIES_NONE" }] }], npcs: [npc] };
