@@ -32,8 +32,8 @@
 #define ENTRALINK_ROLE_PRE_BOSS 3
 
 // A room of role room's type, which its round's weights draw for a door (EntralinkRound's typeWeights, in this order):
-// enemy, challenge and event rooms are rooms/'s, rest, item, buff and shop rooms rooms/'s at run.json's custom chance
-// and else their type's template
+// enemy, enemy choice (several battles to choose from, step 7), challenge and event rooms are rooms/'s, rest, item,
+// buff and shop rooms rooms/'s at run.json's custom chance and else their type's template
 #define ENTRALINK_TYPE_ENEMY 0
 #define ENTRALINK_TYPE_CHALLENGE 1
 #define ENTRALINK_TYPE_REST 2
@@ -41,15 +41,16 @@
 #define ENTRALINK_TYPE_BUFF 4
 #define ENTRALINK_TYPE_SHOP 5
 #define ENTRALINK_TYPE_EVENT 6
-#define ENTRALINK_TYPE_COUNT 7
+#define ENTRALINK_TYPE_ENEMY_CHOICE 7
+#define ENTRALINK_TYPE_COUNT 8
 // Any type: a boss or final room's draw
 #define ENTRALINK_TYPE_ANY 0xff
 
 // What talking to an NPC does: its battle, an item into the run's bag, (for now only its dialogue) a rest or a buff,
-// healing the Pokémon that haven't fainted, reviving a fainted one, a choice of 3 items, a shop (a line for now), an
-// item room's ball, whose item is drawn as the room is entered, and a buff ball (a line for now). Using one of the
-// choice NPCs (ENTRALINK_NPC_HEAL to ENTRALINK_NPC_BUFF_CHOICE but the shop) is the room's choice: the room's other
-// choice NPCs go and it is done
+// healing the Pokémon that haven't fainted, reviving a fainted one, a choice of 3 items, a shop selling for Dream Dust
+// (step 7), an item room's ball, whose item is drawn as the room is entered, and a buff ball (a line for now). Using
+// one of the choice NPCs (ENTRALINK_NPC_HEAL to ENTRALINK_NPC_BUFF_CHOICE; the shop by talking to it) is the room's
+// choice: the room's other choice NPCs go and it is done
 #define ENTRALINK_NPC_BATTLE 0
 #define ENTRALINK_NPC_ITEM 1
 #define ENTRALINK_NPC_REST 2
@@ -61,14 +62,26 @@
 #define ENTRALINK_NPC_ITEM_CHOICE 8
 #define ENTRALINK_NPC_BUFF_CHOICE 9
 
-// The item table's pools, bits of EntralinkItem's pools: an item room's balls, a gift NPC's choice, a shop's goods
-// (step 7), and the items on the ground and hidden in a room
+// The item table's pools, bits of EntralinkItem's pools: an item room's balls, a gift NPC's choice, a shop's goods,
+// and the items on the ground and hidden in a room
 #define ENTRALINK_POOL_ITEM_ROOM 0
 #define ENTRALINK_POOL_GIFT 1
 #define ENTRALINK_POOL_SHOP 2
 #define ENTRALINK_POOL_GROUND 3
 // An item without a bag icon over an item room's ball
 #define ENTRALINK_ICON_NONE 0xff
+
+// Dream Dust, the run's currency (step 7): what winning a battle gives, by its room (run.json's dust, in this order:
+// ENTRALINK_RUN_DUST), times its round's percent (dust_round_percent). A battle of a room of any other type (a bonus
+// battle in a rest room) gives an enemy room's
+#define ENTRALINK_DUST_ENEMY 0
+#define ENTRALINK_DUST_ENEMY_CHOICE 1
+#define ENTRALINK_DUST_CHALLENGE 2
+#define ENTRALINK_DUST_BOSS 3
+#define ENTRALINK_DUST_FINAL 4
+#define ENTRALINK_DUST_KINDS 5
+// The most Dream Dust the run holds
+#define ENTRALINK_DUST_MAX 65535
 
 // The window an NPC's message shows in: the talk balloon with its tail at the NPC (ActorMsg), the tailless balloon
 // across the bottom of the screen (InfoMsg), the spiky balloon at the NPC (ActorMsg's spiky frame), or the system
@@ -93,8 +106,9 @@
 #define ENTRALINK_REQUIRE_RUN_COMPLETED 0xffff
 
 // The markers on the ground in front of a cleared room's forward doors, which say what is behind each: a room's own
-// (EntralinkRoom's marker), or catch instead of enemy, challenge or boss while one of its enemies can be caught and the
-// run's bag holds a Nightmare Ball. Their art is in the model table from ENTRALINK_RUN_MARKER_FILE, in this order
+// (EntralinkRoom's marker), or catch instead of enemy, enemy choice, challenge or boss while one of its enemies can be
+// caught and the run's bag holds a Nightmare Ball. Their art is in the model table from ENTRALINK_RUN_MARKER_FILE, in
+// this order
 #define ENTRALINK_MARKER_ENEMY 0
 #define ENTRALINK_MARKER_CHALLENGE 1
 #define ENTRALINK_MARKER_BOSS 2
@@ -105,6 +119,7 @@
 #define ENTRALINK_MARKER_UNKNOWN 7
 #define ENTRALINK_MARKER_FINAL 8
 #define ENTRALINK_MARKER_CATCH 9
+#define ENTRALINK_MARKER_ENEMY_CHOICE 10
 // No marker, on the ground or over an NPC
 #define ENTRALINK_MARKER_NONE 0xff
 #define ENTRALINK_NPC_MARKER_NONE 0xff
@@ -215,7 +230,7 @@ typedef struct {
 // An entry of the item table (items.json)
 typedef struct {
     u16 item;
-    // Its price in Dream Dust (step 7)
+    // Its price in Dream Dust, in a shop
     u16 price;
     // Its weight in a pool's draw, a bit for each round it is drawn in (round 1 the lowest; 0 for any), a bit for each
     // pool (ENTRALINK_POOL_*), and its bag icon among the model table's from ENTRALINK_RUN_ITEM_ICON_FILE, or

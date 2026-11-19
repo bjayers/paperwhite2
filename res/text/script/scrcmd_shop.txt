@@ -33,4 +33,10 @@ ScrcmdShop_Text_Shards = {0201:1} Shards
 ScrcmdShop_Text_DontHaveEnough = You don't have enough {0109:0}!{be01}
 ScrcmdShop_Text_PickPokemonWantLearn = Pick the Pokémon you\nwant to learn the move.{be01}
 ScrcmdShop_Text_X_2 = x {0202:0}
+ScrcmdShop_Text_DreamDust = Dream Dust
+ScrcmdShop_Text_DustPrice = {0201:1} Dust
+ScrcmdShop_Text_DustBalance = {0205:0} Dust
+ScrcmdShop_Text_DustAmount = {0205:0} Dust
+ScrcmdShop_Text_DontHaveEnoughDust = You don't have enough Dream Dust.{be01}
+ScrcmdShop_Text_WantWillDustOk = {0109:0}, and you want {0201:1}.\nThat will be {0205:2} Dream Dust. OK?
 \pad{fc}

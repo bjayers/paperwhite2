@@ -72,6 +72,8 @@ u32 EntralinkRun_GetRunBagPocketMax(u32 pocket) {
         return ENTRALINK_RUN_BAG_MEDICINE;
     case BAG_POCKET_BERRIES:
         return ENTRALINK_RUN_BAG_BERRIES;
+    case BAG_POCKET_KEY_ITEMS:
+        return ENTRALINK_RUN_BAG_KEY_ITEMS;
     default:
         return 0;
     }

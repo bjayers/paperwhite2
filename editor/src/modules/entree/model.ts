@@ -35,7 +35,7 @@ export const NPC_TYPE_NOTES: Record<NpcType, string> = {
   heal: "Heals every Pokémon that hasn't fainted: HP, status and PP.",
   revive: "Revives a fainted Pokémon the player chooses, to full HP (offered only with one fainted).",
   gift: "A choice of 3 random items from the item table's gift pool.",
-  shop: "A shop (a placeholder line until shops come).",
+  shop: "A shop: the Poké Mart's screen selling the run's shop items for Dream Dust. Talking to it is the room's choice.",
   item_choice: "An item ball whose item is drawn from the item room pool as the room is entered; its bag icon floats above it. Taking one makes the others go.",
   buff_choice: "A buff ball (a placeholder line until buffs come).",
   rest: "The old placeholder: says its dialogue only.",
@@ -47,7 +47,7 @@ export const BALL_TYPES: readonly NpcType[] = ["item", "item_choice", "buff_choi
 export const CHOICE_TYPES: readonly NpcType[] = ["heal", "revive", "gift", "shop", "item_choice"];
 /** The NPC marker a new NPC of a type gets, if npc_markers/ has it. */
 export const NPC_DEFAULT_MARKERS: Partial<Record<NpcType, string>> = {
-  heal: "rest", revive: "rest", gift: "item", shop: "shop", buff_choice: "buff", rest: "rest", buff: "buff",
+  heal: "heal", revive: "revive", gift: "item", shop: "shop", buff_choice: "buff", rest: "rest", buff: "buff",
 };
 /** The balls an item room is meant to offer. */
 export const ITEM_CHOICES = 3;
@@ -56,12 +56,12 @@ export const FACINGS = ["DIR_UP", "DIR_DOWN", "DIR_LEFT", "DIR_RIGHT"] as const;
 // ---- Markers (step 5): on the ground in front of a done room's forward doors, and over NPCs ----------------------------
 
 /** A room's marker (room.schema.json's marker), shown in front of any door leading to it: markers/<type>.png. The game
- * also has catch, which it shows instead of enemy, challenge or boss while one of the room's enemies can be caught and
- * the run's bag holds a Nightmare Ball; it is never set by hand. */
-export const MARKER_TYPES = ["enemy", "challenge", "boss", "rest", "gift", "event", "shop", "unknown", "final"] as const;
+ * also has catch, which it shows instead of enemy, enemy choice, challenge or boss while one of the room's enemies can be
+ * caught and the run's bag holds a Nightmare Ball; it is never set by hand. */
+export const MARKER_TYPES = ["enemy", "enemy_choice", "challenge", "boss", "rest", "gift", "event", "shop", "unknown", "final"] as const;
 export type MarkerType = (typeof MARKER_TYPES)[number];
 export const MARKER_NOTES: Record<MarkerType, string> = {
-  enemy: "An enemy", challenge: "A challenging enemy", boss: "A boss", rest: "A rest", gift: "A gift",
+  enemy: "An enemy", enemy_choice: "Enemies to choose from", challenge: "A challenging enemy", boss: "A boss", rest: "A rest", gift: "A gift",
   event: "An event", shop: "A shop", unknown: "??? (always, whatever is behind the door)", final: "Darkrai's, the final room",
 };
 /** A room's marker when it has none, by its role (the packer's ROLE_MARKERS). */
@@ -82,21 +82,22 @@ export const onSpot = (spot: [number, number], x: number, z: number) => x >= spo
 // ---- Room types (step 6): what a door draws by its round's type_weights, and the templates of the generated rooms ------
 
 /** A room's type (room.schema.json's type), for role room only; enemy when left out. */
-export const ROOM_TYPES = ["enemy", "challenge", "rest", "item", "buff", "shop", "event"] as const;
+export const ROOM_TYPES = ["enemy", "enemy_choice", "challenge", "rest", "item", "buff", "shop", "event"] as const;
 export type RoomType = (typeof ROOM_TYPES)[number];
 export const DEFAULT_ROOM_TYPE: RoomType = "enemy";
 export const ROOM_TYPE_NOTES: Record<RoomType, string> = {
-  enemy: "A battle room.",
+  enemy: "A battle room: one battle.",
+  enemy_choice: "A battle room with several battles to choose from, one NPC each: winning one opens the room.",
   challenge: "A harder battle room.",
   rest: "A rest: heal, revive and gift NPCs; using one is the room's choice.",
   item: "An item room: item-choice balls, one to take.",
   buff: "A buff room: buff balls (buffs come later).",
-  shop: "A shop (shops come later).",
+  shop: "A shop: its goods sell for Dream Dust, which battles give.",
   event: "An event room; with none, doors skip the type.",
 };
 /** The marker a door shows for a room of role room by its type (the packer's TYPE_MARKERS). */
 export const TYPE_MARKERS: Record<RoomType, MarkerType> = {
-  enemy: "enemy", challenge: "challenge", rest: "rest", item: "gift", buff: "gift", shop: "shop", event: "event",
+  enemy: "enemy", enemy_choice: "enemy_choice", challenge: "challenge", rest: "rest", item: "gift", buff: "gift", shop: "shop", event: "event",
 };
 /** The types a door draws from a template (templates/<type>.json) unless a premade room comes up, at run.json's
  * custom_chance; the others only from premade rooms. */
@@ -395,6 +396,12 @@ export function checkRoom(room: Room, constants: ReadonlyMap<string, number>, cl
   if (new Set(room.rounds).size !== room.rounds.length) add("error", { field: "rounds" }, "A round is listed twice.");
   if (room.role === "final" && room.rounds.length) add("warning", { field: "rounds" }, "The final room comes after the last round: its rounds aren't used.");
   if (room.role !== "room" && room.type) add("warning", { field: "type" }, `A ${room.role} room's type isn't used: only rooms of role room have one.`);
+  // Step 7: an enemy room has one battle, an enemy_choice room several to choose from (the packer's room_problems)
+  const roomType = room.type ?? DEFAULT_ROOM_TYPE;
+  if (room.role === "room" && roomType === "enemy_choice" && room.battles.length < 2)
+    add("warning", { field: "type" }, `An enemy-choice room has battles to choose from, but this one has ${room.battles.length}.`);
+  if (room.role === "room" && roomType === "enemy" && room.battles.length > 1)
+    add("warning", { field: "type" }, `An enemy room has one battle, but this one has ${room.battles.length}: several to choose from make it an enemy-choice room.`);
   const balls = room.npcs.filter((n) => n.type === "item_choice").length;
   if (balls && balls < ITEM_CHOICES) add("warning", { field: "npcs" }, `The room has ${balls} item-choice ball${balls > 1 ? "s" : ""}; an item room offers ${ITEM_CHOICES} to choose from.`);
   const ids = new Map<string, number>();
@@ -471,11 +478,23 @@ export interface RunRound {
 }
 
 /** The room types' weights in run.json's order (its type_weights), and their defaults (the packer's). */
-export const WEIGHT_ORDER: readonly RoomType[] = ["enemy", "challenge", "item", "buff", "rest", "event", "shop"];
-export const DEFAULT_TYPE_WEIGHTS: Record<RoomType, number> = { enemy: 50, challenge: 12, item: 10, buff: 10, rest: 10, event: 5, shop: 3 };
+export const WEIGHT_ORDER: readonly RoomType[] = ["enemy", "enemy_choice", "challenge", "item", "buff", "rest", "event", "shop"];
+export const DEFAULT_TYPE_WEIGHTS: Record<RoomType, number> = { enemy: 42, enemy_choice: 8, challenge: 12, item: 10, buff: 10, rest: 10, event: 5, shop: 3 };
 export const DEFAULT_CUSTOM_CHANCE = 25;
 export const DEFAULT_GROUND_ITEM_CHANCE = 30;
 export const DEFAULT_HIDDEN_ITEM_CHANCE = 20;
+/** Dream Dust (step 7): what a battle won gives by its room, times its round's percent (the packer's DEFAULT_DUST), and
+ * a shop's goods. */
+export const DUST_KINDS = ["enemy", "enemy_choice", "challenge", "boss", "final"] as const;
+export type DustKind = (typeof DUST_KINDS)[number];
+export const DUST_NOTES: Record<DustKind, string> = {
+  enemy: "An enemy room's battle (and a battle in a room of a type with none of its own)", enemy_choice: "An enemy-choice room's battle",
+  challenge: "A challenge room's battle", boss: "A boss's battle", final: "The final room's battle (the run ends there)",
+};
+export const DEFAULT_DUST: Record<DustKind, number> = { enemy: 40, enemy_choice: 50, challenge: 80, boss: 150, final: 0 };
+export const DEFAULT_DUST_ROUND_PERCENT = [100, 150, 200];
+export const DEFAULT_SHOP_ITEMS = 5;
+export const MAX_SHOP_ITEMS = 8;
 /** Each type's chance in percent from its weights (0 for all when they add up to 0). */
 export function typeChances(weights: Record<RoomType, number>): Record<RoomType, number> {
   const sum = WEIGHT_ORDER.reduce((n, t) => n + weights[t], 0);
@@ -498,6 +517,10 @@ export interface RunLayout {
   groundItemChance: number;
   hiddenItemChance: number;
   markerSpots: Record<Door, [number, number]>;
+  /** Dream Dust by kind and each round's percent (3, the last given for those left out), and a shop's goods. */
+  dust: Record<DustKind, number>;
+  dustRoundPercent: number[];
+  shopItems: number;
 }
 
 /** run.json's data as plain records. */
@@ -517,6 +540,13 @@ export function readRun(data: JsonValue | null | undefined): RunLayout {
     customChance: num(m.get("custom_chance")) ?? DEFAULT_CUSTOM_CHANCE,
     groundItemChance: num(m.get("ground_item_chance")) ?? DEFAULT_GROUND_ITEM_CHANCE,
     hiddenItemChance: num(m.get("hidden_item_chance")) ?? DEFAULT_HIDDEN_ITEM_CHANCE,
+    dust: Object.fromEntries(DUST_KINDS.map((k) => [k, num(asMap(m.get("dust")).get(k)) ?? DEFAULT_DUST[k]])) as Record<DustKind, number>,
+    dustRoundPercent: (() => {
+      const given = asList(m.get("dust_round_percent")).map((v) => num(v) ?? 0);
+      const list = given.length ? given : DEFAULT_DUST_ROUND_PERCENT;
+      return ROUNDS.map((_, i) => list[Math.min(i, list.length - 1)]);
+    })(),
+    shopItems: num(m.get("shop_items")) ?? DEFAULT_SHOP_ITEMS,
     markerSpots: Object.fromEntries(DOORS.map((d) => {
       const spot = asList(asMap(m.get("marker_spots")).get(d)).map((v) => num(v) ?? 0);
       return [d, spot.length === 2 ? [spot[0], spot[1]] : DEFAULT_MARKER_SPOTS[d]];
@@ -637,7 +667,7 @@ export const POOL_NAMES: Record<Pool, string> = { item_room: "Item room", gift: 
 export const POOL_NOTES: Record<Pool, string> = {
   item_room: "An item room's balls (item-choice NPCs): 3 different items drawn as the room is entered",
   gift: "A gift NPC's choice of 3",
-  shop: "A shop's goods (shops come in step 7)",
+  shop: "A shop's goods: run.json's shop items (5) different ones drawn as the room is entered, each at its price in Dream Dust",
   ground: "The ball lying in a room (Run: ground items) and the hidden item on a flower tile (Run: hidden items)",
 };
 /** The Nightmare Ball, drawn in any pool only while some enemy of the run's rooms can be caught. */

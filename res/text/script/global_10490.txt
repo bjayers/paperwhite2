@@ -27,7 +27,7 @@ Global10490_Text_RunGiftItem0 = {0109:0}
 Global10490_Text_RunGiftItem1 = {0109:1}
 Global10490_Text_RunGiftItem2 = {0109:2}
 Global10490_Text_RunReceivedItem = {0100:0} received {ff00:2}{0109:1}{ff00:0}!
-Global10490_Text_RunShopClosed = The shop isn't open yet...
 Global10490_Text_RunTakeItem = It's {ff00:2}{0109:1}{ff00:0}!\nWill you take it?
 Global10490_Text_RunChoiceDone = Go on. The nightmare awaits.
+Global10490_Text_RunGatheredDust = You gathered {0205:1} Dream Dust!\n(total {0205:2})
 \pad{d6}

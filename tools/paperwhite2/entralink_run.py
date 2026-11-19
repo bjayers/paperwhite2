@@ -37,13 +37,15 @@ ENEMY_COUNTS = {"single": (1, 1), "double": (1, 2), "triple": (1, 3), "raid": (1
 ROLES = {"room": 0, "boss": 1, "final": 2}
 NPC_TYPES = {"battle": 0, "item": 1, "rest": 2, "buff": 3, "heal": 4, "revive": 5, "gift": 6, "shop": 7,
              "item_choice": 8, "buff_choice": 9}
-# A room's type (ENTRALINK_TYPE_*), which its doors draw by the round's weights, and the marker it shows by default
-ROOM_TYPES = {"enemy": 0, "challenge": 1, "rest": 2, "item": 3, "buff": 4, "shop": 5, "event": 6}
+# A room's type (ENTRALINK_TYPE_*), which its doors draw by the round's weights, and the marker it shows by default.
+# enemy_choice (step 7) is an enemy room with several battles to choose from, one NPC each
+ROOM_TYPES = {"enemy": 0, "challenge": 1, "rest": 2, "item": 3, "buff": 4, "shop": 5, "event": 6, "enemy_choice": 7}
 TYPE_MARKERS = {"enemy": "enemy", "challenge": "challenge", "rest": "rest", "item": "gift", "buff": "gift",
-                "shop": "shop", "event": "event"}
+                "shop": "shop", "event": "event", "enemy_choice": "enemy_choice"}
 # The types a door draws from rooms/ only (event from its template too, if there is one)
-PREMADE_TYPES = ["enemy", "challenge", "event"]
-DEFAULT_TYPE_WEIGHTS = {"enemy": 50, "challenge": 12, "item": 10, "buff": 10, "rest": 10, "event": 5, "shop": 3}
+PREMADE_TYPES = ["enemy", "enemy_choice", "challenge", "event"]
+DEFAULT_TYPE_WEIGHTS = {"enemy": 42, "enemy_choice": 8, "challenge": 12, "item": 10, "buff": 10, "rest": 10,
+                        "event": 5, "shop": 3}
 # The templates (templates/<name>.json): each a room of role room, the generated room of its type, and the pre-boss
 # rest before a boss or the final room; event's is optional (with none, a door draws event only from rooms/)
 TEMPLATES = {"rest": "rest", "item": "item", "buff": "buff", "shop": "shop", "pre_boss_rest": "rest",
@@ -53,19 +55,30 @@ TEMPLATE_NONE = 0xff
 DEFAULT_CUSTOM_CHANCE = 25
 DEFAULT_GROUND_ITEM_CHANCE = 30
 DEFAULT_HIDDEN_ITEM_CHANCE = 20
+# Dream Dust (step 7): what a battle won gives by its room (ENTRALINK_DUST_* order), times its round's percent; and a
+# shop's goods
+DUST_KINDS = ["enemy", "enemy_choice", "challenge", "boss", "final"]
+DEFAULT_DUST = {"enemy": 40, "enemy_choice": 50, "challenge": 80, "boss": 150, "final": 0}
+DEFAULT_DUST_ROUND_PERCENT = [100, 150, 200]
+DEFAULT_SHOP_ITEMS = 5
 # The item table's pools (ENTRALINK_POOL_*, bits)
 POOLS = {"item_room": 0, "gift": 1, "shop": 2, "ground": 3}
 # An item without a bag icon in the model table
 ICON_NONE = 0xff
 ICONS_MAX = 127
+# Step 7: a bag icon's picture is in the top-left 24 by 24 of its 32 by 32 (the bag draws it so), so over an item room's
+# ball it sat left of the ball's middle and high above it: moved right 4 (centring the 24 in the 32) and down 8, onto
+# the ball, measured in py-desmume
+ICON_SHIFT = (4, 8)
 # A message's window (ENTRALINK_STYLE_*): talk is the default
 STYLES = {"talk": 0, "bubble": 1, "yell": 2, "event": 3}
 WEATHER_FIELD = 0xff
 FIELD_WEATHER_ZONE = 0xff
 # The ground markers' types (ENTRALINK_MARKER_*), in their members' order. catch is never set by hand: the game shows
-# it instead of enemy, challenge or boss when the room has an enemy the Nightmare Ball catches now and the run's bag
-# holds one
-MARKER_TYPES = ["enemy", "challenge", "boss", "rest", "gift", "event", "shop", "unknown", "final", "catch"]
+# it instead of enemy, enemy_choice, challenge or boss when the room has an enemy the Nightmare Ball catches now and the
+# run's bag holds one. enemy_choice (step 7) comes after catch, so the others keep their members
+MARKER_TYPES = ["enemy", "challenge", "boss", "rest", "gift", "event", "shop", "unknown", "final", "catch",
+                "enemy_choice"]
 # A room's marker by its role, when it has none
 ROLE_MARKERS = {"room": "enemy", "boss": "boss", "final": "final"}
 # An NPC without a marker (ENTRALINK_NPC_MARKER_NONE)
@@ -195,6 +208,24 @@ def check_room(directory: Path, where: str, room: dict):
             error(where, f"{at}'s marker {npc['marker']!r} has no npc_markers/{npc['marker']}.png")
 
 
+def room_problems(rooms: dict[str, dict]) -> list[tuple[str, str]]:
+    """Warnings about rooms' types and their battles, as the editor's Entree page says them: an enemy_choice room has
+    battles to choose from, so fewer than 2 is a warning, and an enemy room more than 1 (it is an enemy_choice
+    room)."""
+    problems = []
+    for name, room in rooms.items():
+        if room["role"] != "room":
+            continue
+        kind, count = room.get("type", "enemy"), len(room["battles"])
+        if kind == "enemy_choice" and count < 2:
+            problems.append(("warning", f"rooms/{name}.json: an enemy_choice room has battles to choose from, but it "
+                             f"has {count}"))
+        elif kind == "enemy" and count > 1:
+            problems.append(("warning", f"rooms/{name}.json: an enemy room has one battle, but it has {count}: "
+                             "several to choose from make it an enemy_choice room"))
+    return problems
+
+
 def load_items(directory: Path) -> list[dict]:
     """The item table's entries (items.json), checked against its schema."""
     return datajson.load(directory / "items.json", datajson.load_schema(directory / "items.schema.json"))["items"]
@@ -279,6 +310,16 @@ def item_icon_files(item: str) -> tuple[Path, Path]:
     raise datajson.DataError(f"items.json: {item} has no bag icon in src/system/pml_item.c")
 
 
+def shift_picture(pixels: bytes, size: int, dx: int, dy: int) -> bytes:
+    """A square picture's pixels moved right dx and down dy, index 0 (clear) filling where they leave; what goes past
+    the edge is lost."""
+    out = bytearray(size * size)
+    for y in range(size - dy):
+        for x in range(size - dx):
+            out[(y + dy) * size + x + dx] = pixels[y * size + x]
+    return bytes(out)
+
+
 def icon_texture(item: str) -> bytes:
     """An item's bag icon as a BTX0 of one 32 by 32 GX_TEXFMT_PLTT16 texture with the bag's palette, index 0 clear."""
     sys.path.insert(0, str(ROOT / "tools" / "data"))
@@ -292,6 +333,7 @@ def icon_texture(item: str) -> bytes:
         raise datajson.DataError(f"{datajson.label(icon)}: {error_}") from error_
     if (width, height) != (MARKER_SIZE, MARKER_SIZE) or (pixels and max(pixels) >= MARKER_COLORS):
         raise datajson.DataError(f"{datajson.label(icon)}: not a 32 by 32 icon of 16 colors")
+    pixels = shift_picture(pixels, MARKER_SIZE, *ICON_SHIFT)
     colors = (list(colors) + [(0, 0, 0)] * MARKER_COLORS)[:MARKER_COLORS]
     palette = b"".join(struct.pack("<H", r | g << 5 | b << 10) for r, g, b in map(color5, colors))
     name = item.removeprefix("ITEM_").lower()[:12]
@@ -653,6 +695,9 @@ def tables(directory: Path) -> dict:
         "custom_chance": run.get("custom_chance", DEFAULT_CUSTOM_CHANCE),
         "ground_item_chance": run.get("ground_item_chance", DEFAULT_GROUND_ITEM_CHANCE),
         "hidden_item_chance": run.get("hidden_item_chance", DEFAULT_HIDDEN_ITEM_CHANCE),
+        "dust": [{**DEFAULT_DUST, **run.get("dust", {})}[kind] for kind in DUST_KINDS],
+        "dust_round_percent": round_percents(run.get("dust_round_percent", DEFAULT_DUST_ROUND_PERCENT)),
+        "shop_items": run.get("shop_items", DEFAULT_SHOP_ITEMS),
         "type_templates": type_templates,
         "marker_spots": [tuple(spots[door]) for door in DOORS],
         "npc_markers": list(npc_markers),
@@ -661,6 +706,11 @@ def tables(directory: Path) -> dict:
         "clearings": clearings,
         "flower_tiles": flower_tiles,
     }
+
+
+def round_percents(percents: list[int]) -> list[int]:
+    """The Dream Dust percent of each of the 3 rounds: run.json's, the last again for rounds it leaves out."""
+    return [percents[min(i, len(percents) - 1)] for i in range(3)]
 
 
 def initializer(rows: list[str]) -> str:
@@ -714,6 +764,10 @@ def header(directory: Path) -> str:
         f"#define ENTRALINK_RUN_CUSTOM_CHANCE {data['custom_chance']}",
         f"#define ENTRALINK_RUN_GROUND_ITEM_CHANCE {data['ground_item_chance']}",
         f"#define ENTRALINK_RUN_HIDDEN_ITEM_CHANCE {data['hidden_item_chance']}",
+        "// Dream Dust: a battle won's by its room (ENTRALINK_DUST_* order), times its round's percent; a shop's goods",
+        f"#define ENTRALINK_RUN_DUST {{ {', '.join(map(str, data['dust']))} }}",
+        f"#define ENTRALINK_RUN_DUST_ROUND_PERCENT {{ {', '.join(map(str, data['dust_round_percent']))} }}",
+        f"#define ENTRALINK_RUN_SHOP_ITEMS {data['shop_items']}",
         "// Each room type's template (ENTRALINK_TYPE_* order), or ENTRALINK_RUN_ROOM_NONE",
         f"#define ENTRALINK_RUN_TYPE_TEMPLATES {{ {', '.join(f'0x{t:02x}' for t in data['type_templates'])} }}",
         "// The ground markers' spots, the top-left tiles of 2 by 2, in ENTRALINK_DOOR_* order (north, east, west)",
@@ -768,7 +822,7 @@ def main():
         for level, message in draw_problems(run, load_rooms(args.source), templates):
             if level == "warning":
                 print(f"warning: run.json: {message}", file=sys.stderr)
-        for level, message in template_problems(run, templates):
+        for level, message in [*template_problems(run, templates), *room_problems(load_rooms(args.source))]:
             if level == "warning":
                 print(f"warning: {message}", file=sys.stderr)
         if args.check:

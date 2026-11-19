@@ -5,7 +5,8 @@ four rooms in the Entree Forest, each with a legendary to battle, from a cleared
 HP numbers, no C-Gear screen. Step 2 (same day) added the level-100 team and the forfeit, step 3 the room format, the
 run's bag, catching and saved progress, step 4 the run's rounds with repeats, the dialogue's window styles and the
 greyed pockets, step 5 the doors' rooms drawn on entering a room, the markers and the rounds' fogs, step 6 the room
-types, templates, rest and item rooms and the ground and hidden items; see "Step 2" to "Step 6" below.
+types, templates, rest and item rooms and the ground and hidden items, step 7 the enemy choice rooms, Dream Dust,
+the shops and the Dowsing MCHN; see "Step 2" to "Step 7" below.
 
 ## What a run is
 
@@ -759,7 +760,8 @@ with no NPC or ball on it. The ball is an actor with ID 16 (after the room's 16 
 script 10498 (`ENTRALINK_RUN_NPC_GROUND`). The hidden item has no event: `FieldEventProvider_Grid_CheckForEvent`
 (`src/ov036/fieldmap_event.c`, `#ifdef PAPERWHITE2`) asks `EntralinkRun_CheckHiddenItem` after the bg events, with the
 tile in front of the player, and starts script 10499 (`global_10490.s` Script_10): "Riku found X!" into the run's bag.
-**No Dowsing MCHN:** it is a key item, which the run's bag doesn't hold, so it can't be used in a run.
+**No Dowsing MCHN:** it is a key item, which the run's bag doesn't hold, so it can't be used in a run (step 7 lets the
+run's bag hold it).
 
 ### The level-100 copies' items
 
@@ -817,6 +819,137 @@ twelve lines at the end of `global_10490.txt` (`RunHealed` ... `RunChoiceDone`);
 
 Not tested: real hardware; a premade rest/item/buff/shop room at `custom_chance` (no such room yet); a bonus battle in a
 choice room; the gift with a full bag; an event template.
+
+## Step 7: playtest fixes, enemy choice rooms, Dream Dust and shops (2026-11-18)
+
+Decided with the user the same day (the session's spec `dust_spec.md`, sections A-E). The editor's side is in this
+section too (the Entree page: the room type, the Run section's Dream Dust, the Items tab's price unit).
+
+### Fixes and small changes
+
+- **The doors before the pre-boss rest** (the doors of a round's second-to-last room, which lead to its last) draw any
+  type but rest and shop. The game did so since step 6 (`EntralinkRun_DrawTypedRoom`'s `beforeRest`): retested, 12
+  draws of place 3's doors with the default weights gave 23 enemy rooms, 9 buff and 4 item rooms (challenge and event
+  have no room yet); every type weighted 1 gave none of rest or shop in 24 doors.
+- **The item room's icons:** a bag icon's picture is in the top-left 24 by 24 of its 32 by 32, so it sat about 5 pixels
+  left of the ball's middle and 15 above it. The packer moves the picture right 4 (centring the 24 in the 32; 8 would
+  overshoot by 4) and down 8 (`ICON_SHIFT`, `shift_picture`), in the icons' textures only; the icons' place in the world
+  is unchanged. Shots `item_before_zoom.png`, `item_zoom.png`.
+- **The NPC markers** stood straight up from the NPC's feet (world y), but the NPC's sprite, a quad facing the camera,
+  stands along the camera's up, which leans back from the camera as far as it looks down: so the marker was in front of
+  the head, lower on the screen, bigger and a little to the left (it also left out the sprite's draw offsets). They now
+  go from where the sprite is drawn (`CopyActorPosAllAdd` and the field's actor y offset) along the camera's up
+  (`Markers_GetCameraUp`: the camera's up vector less its part along the view), 2 units over the sprite's top
+  (`NPC_MARKER_GAP`, from 10). The item icons keep their place. Shots `rest_before_zoom.png`, `rest_zoom.png`.
+- **NPC marker art (placeholders):** `npc_markers/challenge.png` (an orange disc, !), `heal.png` (pink, H) and
+  `revive.png` (purple, V); the rest and pre-boss rest templates' heal and revive NPCs take them (they had the old
+  generic `rest`; their sprites, the user's, are kept). A new NPC of those types gets them in the editor
+  (`NPC_DEFAULT_MARKERS`). Graphics & Palettes lists them with no change (`entralink_marker_art.py list`).
+- **Triple battles can't stall:** in Time and Space (Dialga, Giratina, Palkia) with the run's party down to its first
+  (alone on the left) and Giratina and Palkia poked to 0 HP at the first command, Dialga alone in the foe's first slot,
+  the opposite corner: the turn's end showed "AUTO CENTER" and moved both to the middle
+  (`ServerControl_TripleBattleShiftToCenter`, which counts the living by HP and compares their slots), and Oinkums'
+  Arm Thrust then hit Dialga ("It's super effective! Hit 4 times!"); the battle was won. The raid with one Pokémon
+  (Rayquaza alone in the middle, which reaches every slot) was won by attacking. The run's fainted-in-place hook
+  (`PokeCon_CreateClientParty`) only orders the foe's party as the battle starts, so it doesn't touch the shift: nothing
+  to fix. Shot `triple_center.png`.
+
+### Enemy choice rooms
+
+| Where | What |
+| --- | --- |
+| `room.schema.json` `type` | `enemy_choice` (`ENTRALINK_TYPE_ENEMY_CHOICE`, 7): an enemy room with several battles to choose from, one NPC each; it plays as any battle room (winning one opens the room, the others go) |
+| `room.schema.json` `marker` | `enemy_choice` (`ENTRALINK_MARKER_ENEMY_CHOICE`, 10, after catch so the other markers keep their members): `markers/enemy_choice.png`, a placeholder (a magenta disc, EE); the default of an enemy_choice room; catch replaces it as it does enemy's |
+| `run.schema.json` `type_weights` | `enemy_choice`, default 8 (enemy's default 50 -> 42) |
+| The packer, the editor | Warnings: an enemy_choice room with fewer than 2 battles, an enemy room with more than 1 (`room_problems`, `checkRoom`); the types' lists, weights table, filters and pickers include it |
+
+Prince or Princess (two battles, an enemy room) is warned now: whether it becomes an enemy_choice room is the user's
+call (it would come up at enemy_choice's weight, 8, instead of enemy's, 42).
+
+### Dream Dust
+
+| run.json | What |
+| --- | --- |
+| `dust` | Optional `{ enemy, enemy_choice, challenge, boss, final }`, each 0-9999 (40, 50, 80, 150, 0): what a battle won gives by its room (a boss's, the final room's, else its type's; a battle in a room of another type, a bonus battle in a rest room, an enemy room's) |
+| `dust_round_percent` | Optional, 1-3 entries of 0-1000 (100, 150, 200): the percent of it in rounds 1, 2, 3 (a boss's and pre-boss rest's round is its round's, the final room's the last); a round left out takes the last given |
+| `shop_items` | Optional 1-8 (5): how many different items a shop sells |
+
+- **Earned:** `EntralinkRun_FinishBattle` on a win or a capture adds `EntralinkRun_GetBattleDust` (the kind's times the
+  round's percent / 100) to the state's `dust` (at most 65535) and keeps it in `dustGained`. The script
+  (`L_RunDust`, after the battle and before the NPC's after message, on a cleared room and after the final room) asks
+  `ENTRALINK_RUN_ACTION_GET_DUST` (22: arg 0 the gain, 1 the total) and shows "You gathered N Dream Dust!\n(total M)"
+  (`Global10490_Text_RunGatheredDust`) when the gain isn't 0 (the final's default 0 shows nothing).
+- **Kept** in `EntralinkRunState` (RAM, `dust`, `dustGained`), so it is 0 at a run's start and gone at its end (the
+  state is cleared both times). No carry-over, no conversion. Shown in the shop; the C-Gear display comes later.
+
+### Shops
+
+- **The screen:** the game's own Poké Mart screen (`src/ov036/scrcmd_shop.c`), which already sells for money, BP or a
+  tutor's shards: a fourth currency, `SHOP_CURRENCY_DREAM_DUST`, under `#ifdef PAPERWHITE2`. The script command
+  `CallFriendlyShopBuy ENTRALINK_RUN_SHOP_ID, var` (0xfc, a shop ID no Mart uses; `entralink_run_actions.h`) lists the
+  room's goods (`ShopUI_LoadEntralinkRunItems`), titles the balance "Dream Dust" and shows it ("140 Dust"), prices
+  "60 Dust", asks "Ether, and you want 1. That will be 60 Dream Dust. OK?", refuses with "You don't have enough Dream
+  Dust.", takes the Dust from the run's state (no money, no records, no beacon: the run touches nothing outside it) and
+  puts the item in the game's bag, which is the run's. Buy only (the command is the Mart's buy screen). Six lines at the
+  end of `res/text/script/scrcmd_shop.txt` (`ScrcmdShop_Text_DreamDust` ... `_WantWillDustOk`).
+- **The stock** is drawn as the room is entered when a shop NPC came up (`EntralinkRun_DrawShop`): `shop_items`
+  different items of the item table's `shop` pool by the draw's rules (weights, rounds, the Nightmare Ball only while
+  something can be caught, the Dowsing MCHN only while not held), each at its entry's `price`, kept in the state
+  (`shopItems`, `shopPrices`, `shopCount`) for the room. The buffs will join it there.
+- **The choice:** the shop is now a choice NPC (`EntralinkRun_IsChoiceType`): talking to it opens the shop, and closing
+  it makes the room's choice (`ENTRALINK_RUN_ACTION_MAKE_CHOICE`) whether anything was bought or not, so in the pre-boss
+  rest the heal, revive and gift NPCs go, and a shop room is done. The shop that was the choice opens again when talked
+  to (the stock as it was); the other choice NPCs say "Go on. The nightmare awaits." as before.
+  `Global10490_Text_RunShopClosed` is gone.
+
+### The Dowsing MCHN
+
+- The user may add `ITEM_DOWSING_MCHN` to `items.json` (rare, in the item_room or shop pools); none is in it now.
+- **The run's bag** holds 1 key item (`ENTRALINK_RUN_BAG_KEY_ITEMS`), and its Key Items pocket is shown, its tab not
+  greyed, while it holds the Dowsing MCHN (`ItemMenu_IsPocketShown`, `itemmenu.c`). The Entralink forces the season,
+  which blocks every key item's Use (`ItemMenu_CanUseInMode`): the run's bag is let through. The Dowsing's field check
+  (action 9, `FieldActionBlockCheck_NormalZoneNotRoyalUnova`) refuses the Entralink's zones, which aren't "normal":
+  `PaperWhite2_FieldActionBlockCheck_Dowsing` (`itemuse_event.c`) allows a run's forest rooms.
+- **Finding:** the Dowsing's search (`src/ov086/dowsing.c`, `DowsingSearch_Next`) has, in a run's forest room, one hit:
+  the room's hidden item as a `HiddenItem` of the room's zone (`DowsingSearch`'s `runItem`, in its heap work: overlay
+  86 has no .bss in the link), there while the state's `hiddenItem` isn't taken. Found with A as before (script 10499).
+- **Once per run:** not drawn while the run's bag holds it (`ItemFilter`'s `dowsing`). Gone at the run's end with the
+  rest of the run's bag; the real bag never had it.
+
+### Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `dust/`)
+
+- **Doors before the pre-boss rest:** above (12 seeded draws, then every type at 1).
+- **Icons and markers:** before and after, the item template's balls and the rest template's NPCs from (15, 18)
+  (`item_before_zoom.png`/`item_zoom.png`, `rest_before_zoom.png`/`rest_zoom.png`): the icons centred over the balls,
+  just above them; the markers centred over the heads (H and V on the heal and revive NPCs).
+- **Triple corner and raid:** above (`triple_center.png`).
+- **enemy_choice:** Prince or Princess poked to the type: drawn behind doors (3 of 24 with every type at 1); its marker
+  EE in front of the doors (`enemy_choice_markers_zoom.png`).
+- **Dust:** a new run 0; room 1 (The Illusionist, enemy, round 1) won: 40, "You gathered 40 Dream Dust! (total 40)"
+  (`dust_room1_00.png`); Time and Space as round 2's boss (place 10): +225 (150 x 150%); Prince or Princess as
+  enemy_choice in round 3 (place 11): +100 (50 x 200%), total 365; the back door: the run over, 0; a new run: 0.
+- **Shop room** (the template behind room 1's doors): stock Ether 60, Potion 20, X Sp. Def 50, Nightmare Ball 100,
+  Pecha Berry 20; with 1 Dust "You don't have enough Dream Dust." and nothing bought; closing it: the room done (choice,
+  markers); talked to again it opened, and with 200 Dust a Potion: 180 left, the Potion in the run bag's Medicine
+  (`short_sheet.png`, `shop_sheet.png`). 30 seeded shop stocks: always 5 different items, the Nightmare Ball in 9; with
+  every catch poked away, 0 in 20.
+- **Pre-boss rest:** its shop (5 items) opened and closed without buying: heal, revive and gift gone, the room done.
+- **Dowsing MCHN** (poked into the run's bag, the hidden item poked to (13, 20)): the Key Items pocket shown with it
+  (its tab red), Use, the Dowsing screen pointing to it, "Riku found Potion!" with A from (13, 21), then no signal
+  (`dw_sheet.png`); with the item table's first entry poked to it at weight 255, three shop stocks drew it when not held
+  and none when held; after the back door the run bag was empty and the real bag without it.
+- The packer's tests (24, three new), the editor's (251, two new), `verify_dsi_rom.py`, the plain build's module
+  check.
+
+Not tested: real hardware; buying the Dowsing MCHN from a shop's screen (the draw and the bag were tested apart); a
+shop with fewer than 5 items in its pool.
+
+### Memory
+
+Code: overlay 12 +0.45 KB, overlay 36 +0.52 KB (the shop 0.36), overlay 86 +0.16 KB, overlay 142 +44 bytes, ARM9 main
++56 bytes (the state +40 of .bss). The DS arena: 45 KB left (from 46). At run time: the shop's screen is the Mart's,
+in its own heaps and freed when it closes; the Dowsing's search work +12 bytes; VRAM as before per marker texture (the
+enemy_choice marker 544 bytes, each NPC marker 160) only while shown.
 
 ## The re-entry question
 

@@ -31,6 +31,8 @@
 #include "system/infowin.h"
 #include "system/palanm.h"
 #ifdef PAPERWHITE2
+#include "constants/items.h"
+#include "paperwhite2/entralink_run_state.h"
 #include "paperwhite2/version_places.h"
 #endif
 
@@ -108,6 +110,12 @@ enum {
 typedef struct {
     EventWork *eventWork;
     u16 index;
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink run's room's hidden item (paperwhite2/entralink_run_state.h, on one of its
+    // clearing's flower tiles), as if it were a hidden item of the room's zone; it has no flag, and is there until it
+    // is found
+    HiddenItem runItem;
+#endif
 } DowsingSearch;
 
 // A hidden item that the search found
@@ -218,6 +226,15 @@ static void Dowsing_UpdateFade(DowsingWork *work);
 // The Hidden Grotto's entrance, as if it were a hidden item of the grotto's own zone
 static const HiddenItem sHiddenGrottoItem = { 0, 0, 0, ZONE_HIDDEN_GROTTO, 15, 12 };
 
+#ifdef PAPERWHITE2
+// Paper White 2: whether an Entralink run's hidden item is still there to find, in the room it was found in
+static BOOL DowsingSearch_IsEntralinkRunItemHere(const HiddenItem *item) {
+    EntralinkRunState *state = EntralinkRun_GetState();
+
+    return state->room != 0 && state->hiddenItem != ITEM_NONE && item->x == state->hiddenX && item->z == state->hiddenZ;
+}
+#endif
+
 static const DowsingIconRes sIconRes[ICON_COUNT] = {
     { 3, 4, 8 },
     { 3, 4, 8 },
@@ -268,6 +285,11 @@ static void DowsingSearch_Free(DowsingSearch *search) {
 // Whether a hit is still there to find: a hidden item that has not been picked up, or the grotto's entrance once it is
 // open
 static BOOL DowsingSearch_IsHere(DowsingSearch *search, const DowsingHit *hit) {
+#ifdef PAPERWHITE2
+    if (hit->type == HIT_HIDDEN_ITEM && hit->item == &search->runItem) {
+        return DowsingSearch_IsEntralinkRunItemHere(hit->item);
+    }
+#endif
     if (hit->type == HIT_HIDDEN_ITEM) {
         if (!GetZoneIsHiddenGroto(hit->item->zoneId)) {
             if (EventWork_FlagGet(search->eventWork, hit->item->index + HIDDEN_ITEM_FLAG_START)) {
@@ -291,6 +313,24 @@ static BOOL DowsingSearch_Next(DowsingSearch *search, DowsingHit *hit, u32 mode,
     DowsingHit candidate;
     const HiddenItem *items = GetHiddenItems(&count);
 
+#ifdef PAPERWHITE2
+    // Paper White 2: in an Entralink run's room, its hidden item is the only one
+    if (mode <= 1 && EntralinkRun_GetState()->room != 0 && GetZoneIsEntreeForest(zoneId)) {
+        if (search->index < 1) {
+            search->index++;
+            search->runItem.zoneId = zoneId;
+            search->runItem.x = EntralinkRun_GetState()->hiddenX;
+            search->runItem.z = EntralinkRun_GetState()->hiddenZ;
+            if (DowsingSearch_IsEntralinkRunItemHere(&search->runItem)) {
+                hit->type = HIT_HIDDEN_ITEM;
+                hit->item = &search->runItem;
+                return TRUE;
+            }
+        }
+        hit->type = HIT_NONE;
+        return FALSE;
+    }
+#endif
     if (mode <= 1) {
         if (!GetZoneIsHiddenGroto(zoneId)) {
             while (search->index < count) {

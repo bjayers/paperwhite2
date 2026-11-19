@@ -23,7 +23,7 @@
 #define ENTRALINK_RUN_ACTION_WARP_HUB 4
 // Takes the talked-to NPC as the one the next actions are about, and returns its type (ENTRALINK_NPC_*,
 // paperwhite2/entralink_run.h, ENTRALINK_RUN_NPC_* here), ENTRALINK_RUN_NPC_GROUND for the room's ball on the ground,
-// or ENTRALINK_RUN_NPC_DONE for a choice NPC whose choice was made
+// or ENTRALINK_RUN_NPC_DONE for a choice NPC whose choice was made (but a shop that was the choice, which opens again)
 #define ENTRALINK_RUN_ACTION_TALK 5
 // arg1 0 for its before message, 1 for its after one: returns the message's number in the text bank
 // SCRIPT_TEXT_ENTRALINK_DIALOGUE, or ENTRALINK_RUN_NO_MESSAGE
@@ -58,13 +58,16 @@
 #define ENTRALINK_RUN_ACTION_GET_GIFT_ITEM 17
 // A gift NPC, arg1 0 to 2: puts that item in the run's bag, and returns 0 if the bag had no room
 #define ENTRALINK_RUN_ACTION_GIVE_GIFT 18
-// A choice NPC used (healed, revived, gave, taken): the room's choice is made, its other choice NPCs go and it is done
+// A choice NPC used (healed, revived, gave, taken, a shop talked to): the room's choice is made, its other choice NPCs
+// go and it is done
 #define ENTRALINK_RUN_ACTION_MAKE_CHOICE 19
 // The room's hidden item (script 10499, found with A): returns it
 #define ENTRALINK_RUN_ACTION_GET_HIDDEN_ITEM 20
 // Puts the hidden item in the run's bag, which takes it from the room; returns 0 if the bag had no room, which leaves
 // it
 #define ENTRALINK_RUN_ACTION_TAKE_HIDDEN_ITEM 21
+// Step 7: arg1 0: returns the Dream Dust the last battle won gave (0 for none), 1: the run's Dream Dust
+#define ENTRALINK_RUN_ACTION_GET_DUST 22
 
 #define ENTRALINK_RUN_RESULT_LOST 0
 #define ENTRALINK_RUN_RESULT_CLEARED 1
@@ -98,5 +101,9 @@
 #define ENTRALINK_RUN_EAST_EXIT 3
 
 #define ENTRALINK_RUN_NO_MESSAGE 0xffff
+
+// The shop ID of a run's shop for CallFriendlyShopBuy (src/ov036/scrcmd_shop.c): the Poké Mart's screen with the room's
+// goods (EntralinkRunState's shopItems), sold for Dream Dust into the run's bag
+#define ENTRALINK_RUN_SHOP_ID 0xfc
 
 #endif // PAPERWHITE2_ENTRALINK_RUN_ACTIONS_H

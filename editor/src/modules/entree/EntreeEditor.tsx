@@ -36,7 +36,7 @@ import {
   DEFAULT_ONCE, PROGRESS_IDS, PROGRESS_IDS_SCHEMA, RUN_COMPLETED, assignProgressIds, battleKey, battleKeys, renameKeys, withoutProgressIds,
   MESSAGE_STYLES, MESSAGE_STYLE_NOTES, readRun, roundSummary, runProblems, type MessageStyle,
   DOORS, MARKER_NOTES, MARKER_TYPES, NPC_MARKERS_DIR, markerArt, npcMarkerArt, type Door,
-  BALL_TYPES, DEFAULT_ROOM_TYPE, DEFAULT_TYPE_WEIGHTS, FLOWER_TILES, FLOWER_TILES_SCHEMA, ITEMS, LADY_SPRITE, NPC_DEFAULT_MARKERS, NPC_TYPE_NOTES,
+  BALL_TYPES, DEFAULT_ROOM_TYPE, DEFAULT_TYPE_WEIGHTS, DUST_KINDS, DUST_NOTES, MAX_SHOP_ITEMS, FLOWER_TILES, FLOWER_TILES_SCHEMA, ITEMS, LADY_SPRITE, NPC_DEFAULT_MARKERS, NPC_TYPE_NOTES,
   ROOM_TYPES, ROOM_TYPE_NOTES, TEMPLATES, TEMPLATES_DIR, TEMPLATE_NOTES, TEMPLATE_TYPES, WEIGHT_ORDER, checkTemplates, defaultMarker,
   isTemplateFile, newTemplateData, percent, readFlowerTiles, setFlowerTiles, templatePath, typeChances, type RoomType,
   type Round, type Exit, type MapInfo, type NpcType, type Problem, type ProgressCounters, type Role, type Room,
@@ -705,6 +705,36 @@ function RunSection({ rooms, templates }: { rooms: { id: string; room: Room }[];
         </div>
         <span className="muted small">An item of the ground pool hidden on one of the clearing's flower tiles (the grid's Flower tiles)</span>
 
+        <h6 className="en-sub en-run-head">Dream Dust <span className="muted">the run's currency, for its shops</span></h6>
+        {DUST_KINDS.map((kind) => (
+          <div key={kind} className="en-run">
+            <span className="muted small">{kind === "enemy_choice" ? "Enemy choice" : kind[0].toUpperCase() + kind.slice(1)}</span>
+            <span className="en-run-controls" title={DUST_NOTES[kind]}>
+              <NumberBox value={run.dust[kind]} min={0} max={9999} width={64}
+                         onChange={(n) => setKey("dust", new Map<string, JsonValue>(DUST_KINDS.map((k) => [k, k === kind ? n : run.dust[k]])))} />
+              <span className="small">Dust a win</span>
+            </span>
+          </div>
+        ))}
+        {run.dustRoundPercent.map((p, i) => (
+          <div key={i} className="en-run">
+            <span className="muted small">Round {i + 1}</span>
+            <span className="en-run-controls" title={`Round ${i + 1}'s battles give this percent of their Dust`}>
+              <NumberBox value={p} min={0} max={1000} width={64}
+                         onChange={(n) => setKey("dust_round_percent", run.dustRoundPercent.map((v, k) => (k === i ? n : v)))} />
+              <span className="small">% of it</span>
+            </span>
+          </div>
+        ))}
+        <span className="muted small">What a battle won gives (a catch counts as a win), times its round's percent; none at a run's start, lost at its end</span>
+        <div className="en-run">
+          <span className="muted small">Shop items</span>
+          <span className="en-run-controls">
+            <NumberBox value={run.shopItems} min={1} max={MAX_SHOP_ITEMS} width={52} onChange={(n) => setKey("shop_items", n)} />
+          </span>
+        </div>
+        <span className="muted small">How many different items of the shop pool a shop sells, drawn as its room is entered, at their prices in Dream Dust (the Items tab)</span>
+
         <h6 className="en-sub en-run-head">Rounds <span className="muted">then the final room</span></h6>
         <div className="en-list-actions">
           <button onClick={() => setKey("rounds", [...rounds, new Map<string, JsonValue>([["rooms", 3]])])} disabled={rounds.length >= maxRounds}
@@ -839,7 +869,7 @@ function Checks({ problems, schemaErrors, onNpc }: { problems: Problem[]; schema
 // ---- Room ------------------------------------------------------------------------------------------------------------
 
 const TEMPLATE_TYPE_SET = new Set<RoomType>(["rest", "item", "buff", "shop"]);
-const TYPE_MARKER_NAME: Record<RoomType, string> = { enemy: "enemy", challenge: "challenge", rest: "rest", item: "gift", buff: "gift", shop: "shop", event: "event" };
+const TYPE_MARKER_NAME: Record<RoomType, string> = { enemy: "enemy", enemy_choice: "enemy choice", challenge: "challenge", rest: "rest", item: "gift", buff: "gift", shop: "shop", event: "event" };
 
 function RoomSection({ id, room, constants, saved, template, setField, rename }: {
   id: string; room: Room; constants: Constants; saved: boolean; template: boolean;
@@ -911,7 +941,7 @@ function RoomSection({ id, room, constants, saved, template, setField, rename }:
           <SearchSelect value={room.weather ?? ""} options={weathers} placeholder="The field's / random" onChange={(v) => setField("weather", v || undefined)} />
         </Row>
         <Row label="Marker" hint={`In front of any door leading to it: ${MARKER_NOTES[marker].toLowerCase()}${room.marker ? "" : room.role === "room" ? " (its type's)" : " (its role's)"}. `
-          + "Enemy, challenge and boss show catch instead while one of its enemies can be caught and the run's bag holds a Nightmare Ball"}>
+          + "Enemy, enemy choice, challenge and boss show catch instead while one of its enemies can be caught and the run's bag holds a Nightmare Ball"}>
           <span className="en-markers">
             {MARKER_TYPES.map((m) => (
               <button key={m} className={marker === m ? "active" : ""} title={`${MARKER_NOTES[m]}${defaultMarker(room) === m ? " (the default)" : ""}`}

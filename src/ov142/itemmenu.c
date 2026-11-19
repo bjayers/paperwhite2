@@ -979,10 +979,13 @@ static void ItemMenu_StateSelectItem(ItemMenuWork *work) {
 // The list
 #ifdef PAPERWHITE2
 // Paper White 2: whether the bag shows a pocket: all of them, but an Entralink run's bag only its Items, Medicine and
-// Berries pockets (paperwhite2/entralink_run_state.h)
+// Berries pockets, and its Key Items pocket while it holds the Dowsing MCHN (paperwhite2/entralink_run_state.h)
 static BOOL ItemMenu_IsPocketShown(ItemMenuWork *work, s32 pocket) {
     if (!EntralinkRun_IsRunBag(work->bag)) {
         return TRUE;
+    }
+    if (pocket == BAG_POCKET_KEY_ITEMS) {
+        return BagSave_CheckAmount(work->bag, ITEM_DOWSING_MCHN, 1, work->heapId);
     }
     return pocket == BAG_POCKET_ITEMS || pocket == BAG_POCKET_MEDICINE || pocket == BAG_POCKET_BERRIES;
 }
@@ -2954,9 +2957,18 @@ static BOOL ItemMenu_CanUseInMode(ItemMenuWork *work, u8 fieldPocket) {
     if (work->mode == 3 || work->mode == 1) {
         return FALSE;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the Entralink (where the season is forced) blocks the key items, but an Entralink run's bag's one,
+    // the Dowsing MCHN, finds its rooms' hidden items (paperwhite2/entralink_run_state.h)
+    if (GameData_IsForceSeasonSync(work->gameData) == TRUE && fieldPocket == BAG_POCKET_KEY_ITEMS &&
+        !EntralinkRun_IsRunBag(work->bag)) {
+        return FALSE;
+    }
+#else
     if (GameData_IsForceSeasonSync(work->gameData) == TRUE && fieldPocket == BAG_POCKET_KEY_ITEMS) {
         return FALSE;
     }
+#endif
     return TRUE;
 }
 

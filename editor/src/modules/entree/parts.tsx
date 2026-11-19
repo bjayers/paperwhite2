@@ -4,7 +4,7 @@
 
 import type { ReactNode } from "react";
 
-export const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
+export const cap = (s: string) => s[0].toUpperCase() + s.slice(1).replace(/_/g, " ");
 export const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
 export function Section({ title, summary, actions, children }: { title: string; summary?: ReactNode; actions?: ReactNode; children: ReactNode }) {

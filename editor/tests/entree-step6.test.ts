@@ -15,7 +15,7 @@ import {
   DEFAULT_TYPE_WEIGHTS, FLOWER_TILES_SCHEMA, ITEMS_SCHEMA, ITEM_BALL_SPRITE, LADY_SPRITE, NIGHTMARE_BALL, NPC_TYPES, ROOM_SCHEMA, ROOM_TYPES,
   TEMPLATES, TEMPLATES_DIR, TEMPLATE_TYPES, TYPE_MARKERS, WEIGHT_ORDER, checkItems, checkRoom, checkTemplates, defaultMarker, newItemEntry,
   newNpc, newRoomData, newTemplateData, npcSprite, percent, poolChances, readFlowerTiles, readItems, readRoom, readRun, runProblems,
-  setFlowerTiles, typeChances, type Room,
+  setFlowerTiles, typeChances, type NpcType, type Room,
 } from "../src/modules/entree/model.ts";
 
 const ROOT = resolve(import.meta.dirname, "../..");
@@ -50,7 +50,7 @@ test("room types: read, enemy by default, the door's marker follows the type unl
     assert.equal(defaultMarker(room), TYPE_MARKERS[type]);
     assert.deepEqual(errors(data, roomSchema).filter((e) => !e.endsWith("progress_id is missing")), [], type);
   }
-  assert.deepEqual(TYPE_MARKERS, { enemy: "enemy", challenge: "challenge", rest: "rest", item: "gift", buff: "gift", shop: "shop", event: "event" });
+  assert.deepEqual(TYPE_MARKERS, { enemy: "enemy", enemy_choice: "enemy_choice", challenge: "challenge", rest: "rest", item: "gift", buff: "gift", shop: "shop", event: "event" });
   // A boss or final room's is its role's, and a type there is warned as unused
   const boss = { ...readRoom(data), role: "boss" as const, type: "rest" as const };
   assert.equal(defaultMarker(boss), "boss");
@@ -61,8 +61,11 @@ test("room types: read, enemy by default, the door's marker follows the type unl
 test("the new NPC types: valid, their default sprites and markers, item-choice rooms of fewer than 3 warned", () => {
   const room = readRoom(newRoomData("x"));
   const npcs = NPC_TYPES.map((t, i) => newNpc(t, 3 + i, 4, room, markers));
-  // Their markers: people the rest, gift the item, shop the shop, buff balls the buff; item-choice balls none
-  assert.deepEqual(npcs.map((n) => n.get("marker") ?? null), [null, null, "rest", "rest", "item", "shop", null, "buff", "rest", "buff"]);
+  // Their markers: heal and revive their own (step 7; none where the art isn't given), gift the item, shop the shop,
+  // buff balls the buff; item-choice balls none
+  assert.deepEqual(npcs.map((n) => n.get("marker") ?? null), [null, null, null, null, "item", "shop", null, "buff", "rest", "buff"]);
+  const step7 = new Set([...markers, "heal", "revive"]);
+  assert.deepEqual(["heal", "revive"].map((t) => newNpc(t as NpcType, 3, 4, room, step7).get("marker")), ["heal", "revive"]);
   // Without npc_markers/ art, none
   assert.equal(newNpc("heal", 0, 0, room, new Set()).has("marker"), false);
   const data = setIn(newRoomData("x"), ["npcs"], npcs);
@@ -107,7 +110,7 @@ test("the rounds' type weights and the run's chances: read with their defaults, 
   const real = parseJson(readFileSync(join(ROOT, "res/paperwhite2/entralink/run.json"), "utf8"));
   const run = readRun(real);
   assert.deepEqual(run.rounds[0].typeWeights, DEFAULT_TYPE_WEIGHTS);
-  assert.deepEqual([...WEIGHT_ORDER], ["enemy", "challenge", "item", "buff", "rest", "event", "shop"]);
+  assert.deepEqual([...WEIGHT_ORDER], ["enemy", "enemy_choice", "challenge", "item", "buff", "rest", "event", "shop"]);
   // The editor writes all seven once one is changed, in the file's order
   const weights = new Map<string, JsonValue>(WEIGHT_ORDER.map((t) => [t, t === "shop" ? 0 : DEFAULT_TYPE_WEIGHTS[t]]));
   let data = setIn(real, ["rounds", 0, "type_weights"], weights);
@@ -122,17 +125,17 @@ test("the rounds' type weights and the run's chances: read with their defaults, 
   assert.deepEqual([run.customChance, run.groundItemChance, run.hiddenItemChance], [25, 30, 20]);
   assert.equal(errors(setIn(data, ["rounds", 0, "type_weights", "enemy"], 256), runSchema).length, 1);
   // The chances: the defaults add up to 100
-  assert.deepEqual(typeChances(DEFAULT_TYPE_WEIGHTS), { enemy: 50, challenge: 12, item: 10, buff: 10, rest: 10, event: 5, shop: 3 });
+  assert.deepEqual(typeChances(DEFAULT_TYPE_WEIGHTS), { enemy: 42, enemy_choice: 8, challenge: 12, item: 10, buff: 10, rest: 10, event: 5, shop: 3 });
   assert.equal(percent(100 / 3), "33%");
   assert.equal(percent(3.333), "3.3%");
-  // The draw: with the templates known, a round of only generic enemy rooms skips challenge and event; weights of 0 are
+  // The draw: with the templates known, a round of only generic enemy rooms skips enemy_choice, challenge and event; weights of 0 are
   // an error; a round with no premade room draws from the templates
   const rooms = ["a", "b", "c"].map((id) => ({ id, room: readRoom(newRoomData(id)) }));
   rooms.push({ id: "f", room: { ...readRoom(newRoomData("f")), role: "final" } });
   const all = new Set(TEMPLATES);
   const messages = (r: Parameters<typeof runProblems>[0], t = all as ReadonlySet<string>) => runProblems(r, rooms, t).map((p) => `${p.severity}: ${p.message}`);
   assert.deepEqual(messages({ rounds: [{ rooms: 2, boss: false, typeWeights: DEFAULT_TYPE_WEIGHTS }] }),
-    ["warning: Round 1: no challenge or event room can come up, so those types are skipped (the other types' chances rise)."]);
+    ["warning: Round 1: no enemy_choice or challenge or event room can come up, so those types are skipped (the other types' chances rise)."]);
   const zero = Object.fromEntries(WEIGHT_ORDER.map((t) => [t, 0])) as typeof DEFAULT_TYPE_WEIGHTS;
   assert.deepEqual(messages({ rounds: [{ rooms: 2, boss: false, typeWeights: zero }] }),
     ["error: Round 1's room-type weights add up to 0, so its doors can't draw a room."]);
@@ -143,7 +146,7 @@ test("the rounds' type weights and the run's chances: read with their defaults, 
   // A premade challenge room makes challenge drawable
   rooms.push({ id: "ch", room: { ...readRoom(newRoomData("ch")), type: "challenge" } });
   assert.deepEqual(messages({ rounds: [{ rooms: 2, boss: false, typeWeights: DEFAULT_TYPE_WEIGHTS }] }),
-    ["warning: Round 1: no event room can come up, so that type is skipped (the other types' chances rise)."]);
+    ["warning: Round 1: no enemy_choice or event room can come up, so those types are skipped (the other types' chances rise)."]);
 });
 
 test("the item table: entries read and written valid, each pool's chances, the Nightmare Ball only while catchable, the checks", () => {
