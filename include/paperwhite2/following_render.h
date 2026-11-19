@@ -57,6 +57,11 @@ enum {
     FOLLOWING_SHADOW_CAMERA_CENTER_FIX,
     // Every camera as the original has it: the camera fixes off
     FOLLOWING_SHADOW_CAMERA_FIXES_OFF,
+    // In the W-buffered setups that keep their planes and fog (the camera fixes' w_pull), the actors' pass moved
+    // nearer the camera in true depth, their pictures unchanged: by the setup's w_pull with the effects in place, or by
+    // the ordinary maps' depth with the effects at half of it, as the clip Z offset gives on a Z-buffered map
+    FOLLOWING_SHADOW_NEARER_IN_W,
+    FOLLOWING_SHADOW_NEARER_IN_W_FULL,
     FOLLOWING_SHADOW_VARIANT_COUNT,
 };
 
@@ -76,6 +81,10 @@ void FollowingRender_ApplyCamera(FieldCamera *camera);
 // The actors' clip Z offset (objectProjectionMatrixOffset, or half of it for the effects) for the camera's near plane:
 // multiplied by the near plane in units where the setup's camera fix scales it, unchanged elsewhere
 fx32 FollowingRender_ClipOffset(FieldCamera *camera, fx32 offset);
+// The W-buffer's version of that offset, for FOLLOWING_SHADOW_NEARER_IN_W and _FULL: the projection mtx scaled so
+// everything it draws comes nearer the eye along its ray, in the W-buffered setups listed for it. offset is the pass's
+// vanilla clip Z offset (the actors', or the effects' half of it), and actors whether it is the actors' pass
+void FollowingRender_NearerInW(FieldCamera *camera, MtxFx44 *mtx, fx32 offset, BOOL actors);
 
 // The descriptor's Z offset moves the model and its shadow together, and stays the same whatever the facing, so
 // turning snaps neither

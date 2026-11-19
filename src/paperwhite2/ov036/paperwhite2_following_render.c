@@ -814,6 +814,9 @@ typedef struct {
     BOOL scaleOffset;
     // 0 keeps the setup's own
     fx32 zNear;
+    // The debug menu's FOLLOWING_SHADOW_NEARER_IN_W: the fraction of their distance that the actors come nearer in a
+    // setup that stays W-buffered, 0 for none
+    fx32 wPull;
 } FollowingCameraFix;
 
 static const FollowingCameraFix sCameraFixes[PAPERWHITE2_FOLLOWING_CAMERA_FIX_COUNT] =
@@ -895,6 +898,42 @@ fx32 FollowingRender_ClipOffset(FieldCamera *camera, fx32 offset) {
         return offset;
     }
     return FX_Mul(offset, zNear);
+}
+
+void FollowingRender_NearerInW(FieldCamera *camera, MtxFx44 *mtx, fx32 offset, BOOL actors) {
+    const FollowingCameraFix *fix;
+    u32 variant = FollowingRender_GetShadowVariant();
+    fx32 pull;
+    fx32 scale;
+    u32 row;
+    u32 col;
+
+    if (variant != FOLLOWING_SHADOW_NEARER_IN_W && variant != FOLLOWING_SHADOW_NEARER_IN_W_FULL) {
+        return;
+    }
+    fix = GetCameraFix(camera->defaultsIndex);
+    if (fix == NULL || fix->wPull == 0) {
+        return;
+    }
+    // A W-buffer compares the eye's depth, which the clip Z offset doesn't change. Multiplying the eye coordinates by
+    // 1 - pull (the projection's x, y and z rows) moves every point toward the eye along its own ray to 1 - pull of its
+    // depth, so its picture stays where it was. A clip Z offset k gives about k * depth / 2 at a near plane of a unit,
+    // so _FULL's pull of half the pass's offset is the ordinary maps' depth, the effects' half of the actors'. The
+    // depths keep their order, so the actors stay in front of or behind one another as they were
+    if (variant == FOLLOWING_SHADOW_NEARER_IN_W) {
+        if (!actors) {
+            return;
+        }
+        pull = fix->wPull;
+    } else {
+        pull = offset / 2;
+    }
+    scale = FX32_ONE - pull;
+    for (row = 0; row < 3; row++) {
+        for (col = 0; col < 4; col++) {
+            mtx->m[row][col] = FX_Mul(mtx->m[row][col], scale);
+        }
+    }
 }
 
 void FollowingRender_Draw(BillboardActorSys *system, G3DCamera *camera, G3DLight *lights, FieldActor *follower,

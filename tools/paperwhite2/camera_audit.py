@@ -81,7 +81,9 @@ def fix_text(fix):
         parts.append(f"near {fix['near']}")
     if fix["scale_offset"]:
         parts.append("offset x near")
-    return ", ".join(parts)
+    if fix.get("w_pull") is not None:
+        parts.append(f"debug 14a: nearer in W by {fix['w_pull']}")
+    return ", ".join(parts) or "-"
 
 
 def zone_ids():

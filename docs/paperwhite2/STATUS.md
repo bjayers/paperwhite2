@@ -2,6 +2,25 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-19: follower shadow, variant 14 "actors nearer in W" (ROM session, on a branch)
+
+- **For the W-buffered outdoor setups** that keep their planes, buffering and fog (1 Skyarrow Bridge, 2 Castelia's
+  streets, 4 the Skyarrow gate, 10 the Tubeline Bridge, 11 Victory Road's outside, 39 the Marine Tube): new debug
+  rows `14a Nearer in W` and `14b Nearer in W, full` after 13 (same list and word slot). `FollowingRender_NearerInW`
+  scales the actors' pass's projection (x, y, z rows) by 1 - pull, so every actor comes nearer along its eye ray with
+  its picture unchanged and their order kept. 14a: the actors by the setup's `w_pull` in
+  `follower_camera_fixes.json` (0.024 to 0.032 of the distance: 6 to 9 units, the smallest that clears the oval on
+  the walk's down frames), the effects in place. 14b: the normal maps' depth (actors 6% of the distance, 12 to 17
+  units; effects half that).
+- **Edge overlap:** a surface less than pull / cos(pitch) in front of an actor loses to it; 14a about 3.5 pixels in
+  front of the feet on Castelia's street and the Skyarrow span, 8 to 10 on the bridge's stairs and Victory Road; 14b
+  about 2.5 times that; a normal map's offset is about 21. DeSmuME: 3 (14a) or 4 (14b) rows of the player's legs over
+  Castelia's railing. A sprite row can repeat by rounding in some poses (one hair row in 2 of 7 shots under 14a).
+- Table and details in `following-pokemon.md`, "Variant 14"; shots in the scratchpad's `shadow5/`. Build clean,
+  `verify_dsi_rom.py` intact, editor tests pass.
+- **For the user:** in melonDS, Castelia's street and Skyarrow Bridge first, 14a against 14b against 0: the feet,
+  the railing and parapets, the player and the follower crossing.
+
 ## 2026-11-19: follower shadow, camera fixes across the game (ROM session, on a branch)
 
 - **Camera fixes are data now:** `res/paperwhite2/follower_camera_fixes.json` (a camera setup each: Z-buffer, near

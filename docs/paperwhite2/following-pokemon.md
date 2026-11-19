@@ -934,9 +934,8 @@ types; the row takes the weaker offset, 0x136. The distances are to the follower
     does nothing; the oval covers 0 to 1 unit of the quad (about a pixel at most, the Opelucid Gym's being the
     largest), as an NPC's does there. The only lever would be a stronger offset, which carries every actor into
     ledges and counters too. Left alone; worth a look.
-  - A third way for the W-buffered outdoor setups, not tried: in a W-buffer the actors could be moved nearer in W
-    (the actors' pass's projection with w less a few units and x, y scaled to keep their pictures), the W-buffer's
-    version of the engine's clip Z offset, which keeps the planes, the precision and the fog.
+  - A third way for the W-buffered outdoor setups: the actors moved nearer in W, the W-buffer's version of the
+    engine's clip Z offset, which keeps the planes, the precision and the fog. Now variant 14, below.
 - **Shown** (DeSmuME, scratchpad `shadow4/`, each the top screen before and after with the follower 8 times larger):
   `white_before_after.png` (White Forest: the follower's and the player's feet now over their ovals),
   `plaza_before_after.png` (the plaza: the feet's bottom row), `center2_before_after.png` (a center with 12c built
@@ -944,6 +943,66 @@ types; the row takes the weaker offset, 0x136. The distances are to the follower
   (Castelia's street, the oval over the feet's bottom row) and `skyarrow_before_after.png`. `white_changed_pixels.png`
   marks what changed in White Forest: the actors' feet and the animated leaves and NPCs, no geometry. DeSmuME shows
   the ovals but not z-fighting, so for 24 the layer maths is the evidence; melonDS and the 3DS are the check.
+
+**Variant 14: the actors nearer in W (2026-11-19, debug switch only).** The user's tests passed in the centers, the
+Entree Forest, the Central Plaza, White Forest and Black City. Left: the W-buffered outdoor setups 1 (Skyarrow Bridge),
+2 (Castelia's streets), 4 (the gate by Skyarrow), 10 (the Tubeline Bridge), 11 (Victory Road's outside) and 39 (the
+Marine Tube), whose fog is tuned for their W-buffer, so their planes and buffering stay. Variant 14 does there in true
+depth what the clip Z offset does on a Z-buffered map.
+
+- **How.** `FieldRenderPhase2_Fieldmap` calls `FollowingRender_NearerInW` on each pass's projection, after the clip Z
+  offset. In the setups with a `w_pull` in `follower_camera_fixes.json` (the six above; it does nothing without the
+  debug row), it multiplies the projection's x, y and z rows by 1 - pull: every eye-space point the pass draws comes
+  to 1 - pull of its depth along its own ray, so its picture stays and its W (the buffer's value and the divisor)
+  falls by the pull. That is everything the engine's offset reaches on a normal map: the actors' pass (the player, NPCs,
+  the follower, wanderers, the grass over feet, the 3D field objects and the field effects drawn in that pass) moves
+  together, so the actors keep their order among themselves (the follower covers the player no more than now). The
+  camera, the planes, the buffering and the fog stay; the pulled actors take the pull's depth less fog, as the offset
+  gives them on normal maps.
+  - **14a Nearer in W:** the actors by the setup's `w_pull`, the effects' pass (the ovals, the follower's effects, the
+    Entralink markers) in place. The pull is the smallest that clears the oval on the walk's down frames (the audit's
+    `covered` with the lift at 3.75 units instead of 2: G of 5.7 to 6.8 at these views, against 3.75 to 5.8 at rest),
+    at the setup's worst measured view, rounded up: a fraction of the distance, since a projection scale is one.
+  - **14b Nearer in W, full:** the ordinary maps' depth: the actors by half the vanilla offset k (0x1ee: 6.0% of their
+    distance) and the effects by half of that, as `FieldRenderPhase2_Fieldmap` gives a normal map at a near plane of a
+    unit. Body over oval G is then a quarter of k times the distance.
+- **The pulls** (units of depth at the follower; the effects' pull in brackets; normal maps at setup 0, 237 units at
+  53 degrees: actors 14.3, effects 7.1, G 7.1):
+
+  | setup | where | distance, ray pitch | w_pull | 14a pull (G) | 14b pull, effects (G) |
+  | --- | --- | --- | --- | --- | --- |
+  | 1 | Skyarrow Bridge: stairs, span, bend | 234, 45; 202, 21; 282, 49 | 0.032 | 7.5, 6.5, 9.0 | 14.1 (7.1), 12.2 (6.1), 17.0 (8.5) |
+  | 2 | Castelia's street by the center | 288, 29 | 0.024 | 6.9 | 17.4 (8.7) |
+  | 4 | the gate by Skyarrow | 227, 10 | 0.026 | 5.9 | 13.7 (6.8) |
+  | 10 | the Tubeline Bridge (table) | 228, 24 | 0.029 | 6.6 | 13.7 (6.9) |
+  | 11 | Victory Road's outside (table) | 237, 53 | 0.026 | 6.2 | 14.3 (7.1) |
+  | 39 | the Marine Tube (table) | 228, 16 | 0.028 | 6.4 | 13.7 (6.9) |
+
+  The smallest pull at rest (lift 2, the audit's line of 3) is 3.75 to 5.8 units with the effects in place, twice that
+  with them at half: 14a's 6 to 9 is about half the normal maps' 12 to 17 and clears the down frames too. With the
+  effects at half, the smallest that clears would be 11.4 to 13.5, nearly 14b's amount, so it has no row of its own.
+- **Edges.** The W-buffer compares true depth, so a pulled actor shows over any surface less than pull / cos(ray pitch)
+  in front of its quad, along the ground: a fence, a railing, a ledge's face or a building's corner there loses the
+  rows it hid. On the screen that is a band in front of the feet pull x tan(pitch) units tall: 14a about 3.5 pixels on
+  Castelia's street (reach 7.9 units, half a tile), 3.3 on the Skyarrow span, 8 to 10 on its stairs and bend, 1 at the
+  gate, 3.4 on the Tubeline Bridge, 9 on Victory Road, 2 in the Marine Tube; 14b about 2.5 times that (8.7, 6.2, 16 to
+  18, 3, 7, 21, 4.5). A normal map's offset reaches 24 units (21 pixels) at setup 0, so both are within what the
+  ordinary maps already show. Measured: the player against Castelia's railing (the camera pulled out to 445 units
+  there) shows 3 rows of legs over its top under 14a and 4 under 14b (`street_railing.png`).
+- **Rounding.** The scaled matrix rounds its x and y entries to 1/4096, about 1/20000 of the picture, so a quad edge
+  that lay exactly on a pixel boundary can move a pixel and a sprite repeat or drop a row: in DeSmuME one row of the
+  player's hair in two of the seven 14a shots (`skyarrow_front.png`, `skyarrow_span_beside.png`), none under 14b.
+  Static per pose; worth watching in melonDS.
+- **In DeSmuME** (scratchpad `shadow5/`, each 0, 14a and 14b with the box zoomed 4x and the changed pixels in magenta):
+  `street_beside.png` (the follower beside the player: the oval no longer over its bottom row), `street_front.png` (the
+  player in front of the follower: the same order, the player's feet over its oval), `street_railing.png`,
+  `skyarrow_stairs.png`, `skyarrow_beside.png`, `skyarrow_front.png`, `skyarrow_span_beside.png`. 7 to 72 pixels change
+  a shot, all at the actors' feet, the railing and the rows above.
+- **To test** (melonDS): START > Follower... > Follower shadow, A to `14a Nearer in W` or `14b Nearer in W, full` (13
+  and its numbers stay; 14a and 14b come after it). On Castelia's street and Skyarrow Bridge first: the feet over the
+  ovals, the player against the street's railing and the bridge's parapets, the player and the follower crossing.
+  Building one in: drop the debug check for that setup's `w_pull` in `FollowingRender_NearerInW` (or a `w_pull_built_in`
+  flag in the table).
 
 ## Small followers in front of counters
 
