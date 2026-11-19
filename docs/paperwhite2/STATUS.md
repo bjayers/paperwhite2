@@ -2,6 +2,33 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-18: Entralink step 6, the game side (ROM session, on a branch)
+
+Details, data tables and tests: `docs/paperwhite2/design/entralink-roguelike-prototype.md`, "Step 6".
+
+- **Room types:** each forward door draws a type by its round's `type_weights` (no rest after a rest, no rest or shop
+  just before the pre-boss rest, a type with no room skipped), then a premade room or, for rest/item/buff/shop (at
+  `custom_chance`), its template (`templates/`). A pre-boss rest (`templates/pre_boss_rest.json`, in the pre-boss map)
+  comes before each boss and the final room: the real run is 15 rooms (max now 20).
+- **New NPCs:** heal (the unfainted only), revive (the party screen, a fainted one to full HP), gift (a list of 3 from
+  the item table), shop (a placeholder line), item_choice (its item's bag icon over the ball, Yes takes it), buff_choice
+  (placeholder). Using one is the room's choice: the others go, the room is done; battles in such a room are bonus.
+- **Items:** `items.json` (pools item_room, gift, shop, ground; rounds; weights; prices for step 7); the Nightmare Ball
+  only while something can still be caught. A ball on the ground (`ground_item_chance`) and a hidden item on a flower
+  tile, found with A (`hidden_item_chance`; hook in `fieldmap_event.c`); no Dowsing MCHN in a run (no key items).
+- **Flower tiles:** found from the map models (the `hana` textures, `tools/paperwhite2/entralink_flowers.py`), 15-44 per
+  clearing (none in `entree_forest_9`), in `flower_tiles.json`, editable in the editor.
+- **The copies** hold no items but form items (plates on Arceus, Drives, the Griseous Orb on Giratina).
+- **Memory:** the DS arena 46 KB left (from 50): overlay 12 +4.3 KB, ARM9 main +0.2 KB; at run time VRAM 544 bytes per
+  bag icon (3 in an item room) and 16 marker materials (from 12).
+- **Packer and editor agree** (the coordinator's points): with templates, a round with no premade room still draws; the
+  repeat warnings count enemy, challenge and event rooms; a missing template is an error only when a round draws its
+  type (pre_boss_rest always); flower lists keep their order, clearings by number.
+- Tested in py-desmume (scratchpad `roomtypes/`): every point of the doc's test list passed. Packer tests 21, the
+  editor's (merged) pass, `verify_dsi_rom.py` intact.
+- **For the user:** the placeholders (templates' NPCs and lines, the item table's weights and prices), the challenge and
+  event weights (no such rooms yet, so skipped), and whether a used shop placeholder should count as the choice.
+
 ## 2026-11-18: Entralink step 6, the editor side (ROM session, on a branch)
 
 - **Built on the game side's schemas** (commit f4ea610829, merged in): room `type`, the new NPC types, `type_weights`

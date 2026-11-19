@@ -79,8 +79,8 @@ def generate(current: dict | None = None) -> dict:
 
 
 def write(data: dict, path: Path = OUTPUT):
-    text = "{\n" + ",\n".join(f"    {json.dumps(key)}: {json.dumps(value)}" for key, value in data.items()) + "\n}\n"
-    path.write_text(text)
+    # The data files' layout, which the editor writes back as it is (datajson.dumps)
+    path.write_text(datajson.dumps(data) + "\n")
 
 
 def show(tiles: list[list[int]]):

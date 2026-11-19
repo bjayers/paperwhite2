@@ -4,8 +4,8 @@ Built 2026-11-15 on `entralink-roguelike.md`'s design and survey (sections 1 and
 four rooms in the Entree Forest, each with a legendary to battle, from a cleared Entralink hub. No buffs, no damage or
 HP numbers, no C-Gear screen. Step 2 (same day) added the level-100 team and the forfeit, step 3 the room format, the
 run's bag, catching and saved progress, step 4 the run's rounds with repeats, the dialogue's window styles and the
-greyed pockets, step 5 the doors' rooms drawn on entering a room, the markers and the rounds' fogs; see "Step 2" to
-"Step 5" below.
+greyed pockets, step 5 the doors' rooms drawn on entering a room, the markers and the rounds' fogs, step 6 the room
+types, templates, rest and item rooms and the ground and hidden items; see "Step 2" to "Step 6" below.
 
 ## What a run is
 
@@ -655,6 +655,168 @@ scratchpad `forest10/`): room 1 loads in zone 276 looking like `entree_forest_5`
 exit asks "Return to the Entralink?", No steps back; the north exit before the win says "A nightmare blocks the way."
 and steps back; at the east opening (26, 16) nothing happens; the room opened, the north exit leads to room 2
 (`entree_forest_6`, zone 285).
+
+## Step 6: room types, templates, rest and item rooms, ground and hidden items (2026-11-18)
+
+Decided with the user the same day (the session's spec `roomtypes_spec.md`, sections 1-6). The editor's side (the
+room's Type, the Templates group, the Items tab, the run's new settings, the flower tiles) is in its own entry of
+STATUS.md.
+
+### The data
+
+`room.schema.json` gains `type`; the NPC record new types. `run.schema.json` gains:
+
+| Field | What |
+| --- | --- |
+| `rounds[].type_weights` | Optional `{ enemy, challenge, item, buff, rest, event, shop }`, each 0-255: the weights a forward door of the round draws a room type by; a type left out takes its default (50, 12, 10, 10, 10, 5, 3) |
+| `custom_chance` | Optional (25): the percent chance that a rest, item, buff or shop door leads to a premade room of the type (rooms/, if one fits) rather than its template |
+| `ground_item_chance` | Optional (30): the percent chance of a ball on the ground in a room with no hand-placed `item` or `item_choice` NPC |
+| `hidden_item_chance` | Optional (20): the percent chance of a hidden item on one of the clearing's flower tiles |
+
+A room's `type`:
+
+| Field | What |
+| --- | --- |
+| `type` | Optional, role `room` only: `enemy` (the default), `challenge`, `rest`, `item`, `buff`, `shop`, `event`. Its door marker by default: enemy, challenge, rest, gift (item and buff), shop, event; an explicit `marker` still wins. Boss and final rooms ignore it |
+
+The new NPC types:
+
+| Type | What |
+| --- | --- |
+| `heal` | Heals every Pokémon that hasn't fainted (HP, status, PP; `PokeParty_Recover` on each, eggs and HP 0 skipped), with the Pokémon Center's jingle |
+| `revive` | With no fainted Pokémon: "None of your Pokémon has fainted. No one needs reviving." Else the party screen (`CallPokeSelect`); a Pokémon that hasn't fainted: "That Pokémon hasn't fainted." and the party screen again; a fainted one revived to full HP, its status cleared (PP untouched). B leaves the choice open |
+| `gift` | A list (`ListMenuAnchorTopLeft`) of 3 items drawn from the item table's `gift` pool as the room is entered; the one taken goes into the run's bag ("Riku received ..."). B leaves the choice open. No description line (the item's description is in another bank; a later step) |
+| `shop` | A placeholder: its dialogue or "The shop isn't open yet..." (step 7). Talking counts as used (a shop room is then done), but it isn't the room's choice |
+| `item_choice` | An item ball (`OBJ_CODE_110`) whose item is drawn from the `item_room` pool as the room is entered, the room's balls each another item; its bag icon floats over it. "It's X! Will you take it?" Yes puts it in the run's bag |
+| `buff_choice` | A placeholder: its dialogue or "This nightmare isn't ready for you yet...", and the room's choice. Its sprite is the item ball with the `buff` NPC marker (no palette swap: the ball's palette comes from the archive per sprite, and a tinted copy needs a new sprite) |
+| `rest`, `buff` | Unchanged (their dialogue or the placeholder line) |
+
+**The choice:** using one heal, revive, gift, item_choice or buff_choice NPC (`ENTRALINK_RUN_ACTION_MAKE_CHOICE`) makes
+the room's choice: every other NPC of those types and the shops go, and the room is done (markers, exits). A used NPC
+that stays (heal, revive, gift) says "Go on. The nightmare awaits." A room with such an NPC isn't done by its battles
+(bonus battles stay optional and can be fought after); a room with neither battles nor choice NPCs is done once every
+NPC is used, as before.
+
+**Templates** (`templates/<name>.json`, the room format, role `room`, type their file's): `rest` (heal, revive, gift),
+`item` (three item_choice balls), `buff` (three buff_choice balls), `shop` (one shop), `pre_boss_rest` (heal, revive,
+gift, shop) and an optional `event`. Placeholders at x 11-20, z 14, facing down, markers rest/item/shop/buff. They come
+after the rooms in the header's room table (`isTemplate`, never in a pool), `ENTRALINK_TEMPLATE_*`; their NPCs'
+dialogue goes into `entralink_dialogue` after the rooms'. Their battles (none yet) get progress ids but aren't keys of
+`requires` or `catch.after`. A missing template is an error when the run draws its type (a weight above 0 in some
+round; `pre_boss_rest` always), else a warning (`template_problems`).
+
+**The item table** (`items.json`, `items.schema.json`): `{ "items": [ { item, weight 1-255, rounds?, price?, pools } ] }`
+(an object, not a bare list, so it carries `$schema`). The starting table: Potion, Super/Hyper Potion, Full Restore,
+Revive, Max Revive, Ether, Elixir, Full Heal, the five status berries, Lum and Sitrus, X Attack/Defend/Speed/
+Special/Sp. Def and the Nightmare Ball, with placeholder weights, rounds and prices.
+
+| Pool | Drawn for |
+| --- | --- |
+| `item_room` | an item room's balls; their icons are packed |
+| `gift` | a gift NPC's 3 |
+| `shop` | step 7 |
+| `ground` | the ball on the ground and the hidden item |
+
+An entry fits a draw when it has the pool and the round (the place's: a pre-boss rest's is its round's, the final
+room's the last), and the Nightmare Ball only while something can be caught: an enemy whose catch holds now
+(`EntralinkRun_CanCatch`: its `after`, not spent if `once`) in a room that can still come up (role room or boss kept to
+this round or a later one, or generic, or a final room). Draws within one choice differ.
+
+**Flower tiles** (`flower_tiles.json`, `flower_tiles.schema.json`: `{ "ZONE_ENTREE_FOREST_n": [[x, z], ...] }`, keys by
+`patternProperties`, which `tools/data/datajson.py` now validates): generated by `tools/paperwhite2/entralink_flowers.py`
+from each clearing's map model: a tile is a flower tile when the faces textured `out25_hana01`-`03` or `out37_hana01`
+(the Entree Forest's "hana", flower, textures) cover at least 0.2 of it (`map_reader.Chunk`'s clipped pieces). The
+forest's flowers are small patches of two triangles, each over 2 by 2 tiles; the list has 15-44 tiles a clearing,
+none in `entree_forest_9` (no flower texture). Rewriting keeps a list's tiles in their order and appends what the model
+adds; clearings in their numbers' order, an empty one left out, in the data files' layout (as the editor writes it).
+`--check` says which lists differ from the models, `--show ZONE` draws one.
+
+### The draw
+
+- **Places:** a round's rooms, then, before its boss and before the final room, the **pre-boss rest**
+  (`ENTRALINK_ROLE_PRE_BOSS`, the `pre_boss_rest` template). The real run: 3 + rest + boss, 3 + rest + boss, 3 + rest +
+  final = 15 (`ENTRALINK_RUN_ROOMS_MAX` now 20). The last room of a round and the pre-boss rest are in `pre_boss_map`
+  (as before: the next place isn't a round's room); the last room's north door shows the rest marker.
+- **A forward door to a round's room** (`EntralinkRun_DrawTypedRoom`): a type by the round's weights, with rest out after
+  a rest room and rest and shop out just before the pre-boss rest; then enemy and challenge from rooms/ (step 4's
+  least-used rules), event from rooms/ or its template, rest/item/buff/shop from rooms/ at `custom_chance` else the
+  template. A type that gives no room has its weight zeroed and the type is drawn again; all zero, the door is shut.
+  The unknown roll is unchanged.
+- **The first room** (no door) is an enemy room (any room of the round if there is none).
+- **Room types in the packer and editor alike** (`draw_problems` with the templates, `runProblems`): an error when a
+  round's weights add up to 0 or no weighted type has a room or template; a warning for each round's weighted types
+  with none (the real data: challenge and event, which the game skips); the repeat warnings count only enemy,
+  challenge and event rooms.
+
+### Items in a room
+
+On entry (`EntralinkRun_DrawRoomItems`): the item room balls' items, the gift's 3, then the ball on the ground (no
+hand-placed item NPC, `ground_item_chance`, the `ground` pool) on a random tile that the clearing's collision lets the
+player walk on (`terrain_0.csv`, packed as a 32-bit row per z, `EntralinkClearing.blocked`), not an exit, not under a
+door's marker, not an NPC's that came up, not within one tile of the arrival (15, 23); and the hidden item
+(`hidden_item_chance`, the `ground` pool) on a random flower tile of the clearing (`EntralinkClearing`'s flower tiles)
+with no NPC or ball on it. The ball is an actor with ID 16 (after the room's 16 NPCs), the item ball, talked to through
+script 10498 (`ENTRALINK_RUN_NPC_GROUND`). The hidden item has no event: `FieldEventProvider_Grid_CheckForEvent`
+(`src/ov036/fieldmap_event.c`, `#ifdef PAPERWHITE2`) asks `EntralinkRun_CheckHiddenItem` after the bg events, with the
+tile in front of the player, and starts script 10499 (`global_10490.s` Script_10): "Riku found X!" into the run's bag.
+**No Dowsing MCHN:** it is a key item, which the run's bag doesn't hold, so it can't be used in a run.
+
+### The level-100 copies' items
+
+`EntralinkRun_KeepParty` clears every copy's held item except one that decides its form, as the form-by-item code
+reads it: Arceus's plates (`PaperWhite2_GetArceusPlateForm` not 0), Genesect's Drives (`PML_ItemGetGenesectDriveForme`
+not 0), Giratina's Griseous Orb. The real party keeps its items.
+
+### The bag icons
+
+`marker_members` appends, after the NPC markers, a BTX0 per item of the `item_room` pool (in the table's order): the
+item's bag icon (`res/items/<icon>/icon.png`) with the palette the bag shows it with, both from `pml_item.c`'s
+`ITEM_GRAPHICS_CHARS_AND_PALETTES` (the Super Potion is the Potion's icon in its own palette), 32 by 32
+GX_TEXFMT_PLTT16, index 0 clear: `ENTRALINK_RUN_ITEM_ICON_FILE`. An item_choice NPC's marker is
+`ENTRALINK_NPC_MARKER_ICON | icon`; the markers' system draws it as a 2 by 2 tiles camera-facing quad over the ball (its
+bottom just over the ball). a/0/4/7 rebuilds when `items.json`, `pml_item.c` or `res/items` change.
+
+**Memory:** VRAM 544 bytes per icon (512 of texels, 32 of palette), 3 in an item room (1.6 KB); the field heap
+about 150 bytes per icon kept after trimming, and the markers' system has 16 materials (from 12: about 32 bytes more).
+Code: overlay 12 +4.3 KB (7.0 KB of text, 2.0 KB of tables now), overlay 36 +0.1 KB, ARM9 main +0.2 KB (the state's
+items, 52 bytes). The DS arena: 46 KB left (from 50).
+
+### Script and text
+
+`global_10490.s` Script_9's new branches (`L_RunHealNpc`, `L_RunReviveNpc`, `L_RunGiftNpc`, `L_RunShopNpc`,
+`L_RunItemChoice`, `L_RunBuffChoice`, `L_RunChoiceDone`, `L_RunGiveItem` for the ball on the ground) and Script_10;
+twelve lines at the end of `global_10490.txt` (`RunHealed` ... `RunChoiceDone`); actions 14-21
+(`entralink_run_actions.h`).
+
+### Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `roomtypes/`)
+
+- **Door types:** 16 runs from the hub with the RNG seeded differently: 48 doors, 25 enemy rooms, 8 rest, 7 item,
+  6 buff, 2 shop (challenge and event skipped: no rooms). Each type forced by poking the rounds' weights in RAM: rest,
+  item, buff and shop gave all three doors their template; challenge or event against enemy 5:1 gave enemy rooms only.
+  After a rest room (rest and enemy 1:1): no rest door. Entering place 2 (rest, shop and enemy 1:1:1): enemy doors only.
+- **Rest (template):** heal: slot 0 (1 HP, poisoned, PP 0) to full, its status and PP restored; slot 1 (fainted) still
+  0 HP; revive and gift gone, the room done (shot `heal_done.png`). Revive with none fainted: the line, the choice
+  open; with slot 1 fainted, slot 0 chosen first: "That Pokémon hasn't fainted.", then slot 1: "Klink was revived!"
+  (0 to 375 HP, poison cleared; `rv6.png`). Gift: Super Potion, Pecha Berry, Aspear Berry in the list (`gift_list.png`);
+  the second into the run's Berries; heal and revive gone, done.
+- **Item room:** three different items (Sitrus Berry, Super Potion, Hyper Potion) with their bag icons over the balls
+  (`item_icons.png`); "It's Super Potion! Will you take it?" Yes: into Medicine, the two other balls and icons gone, done.
+- **Buff room:** the three balls with the buff marker (`buff_room.png`); one talked to: the line, the others gone, done.
+- **Pre-boss:** place 2 to place 3 (in `ZONE_ENTREE_FOREST_10`), its north door to the pre-boss rest, the others shut
+  (the rest marker, `place3_door_rest_marker.png`); the pre-boss rest in zone 276 with heal, revive, gift and shop
+  (`preboss_rest.png`); the shop: "The shop isn't open yet..." (used, not the choice); heal: the others gone, done; north
+  to Ho-Oh's room (Seaside Gales, zone 280).
+- **Ground and hidden items** (a scratch build with both chances 100): room 1's ball at (9, 10) (`ground_ball.png`)
+  taken by talking (a Pecha Berry into the run's bag, the ball gone); the hidden Nightmare Ball at (9, 21), a flower
+  tile, found with A from (9, 22) ("Riku found Nightmare Ball!"), A again found nothing.
+- **The Nightmare Ball** at weight 255 in every pool (scratch builds): with the real data (Time and Space catchable,
+  round 2) drawn 12 times in 60 draws of round 1; with no catchable enemy anywhere, 0 in 60.
+- **The copies:** the real party given Leftovers, a Flame Plate on an Arceus (poked) and a Griseous Orb on a
+  non-Giratina: the copies held only the Flame Plate; the real party kept all three.
+- The packer's tests (21, seven new), the editor's (after merging its branch), `verify_dsi_rom.py`.
+
+Not tested: real hardware; a premade rest/item/buff/shop room at `custom_chance` (no such room yet); a bonus battle in a
+choice room; the gift with a full bag; an event template.
 
 ## The re-entry question
 

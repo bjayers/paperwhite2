@@ -48,9 +48,9 @@
 // A tile, and the space between an NPC's sprite and its marker's middle
 #define TILE_SIZE FX32_CONST(16)
 #define NPC_MARKER_GAP FX32_CONST(10)
-// The space between an item room ball's sprite and its icon's middle, which keeps the icon's bottom where an NPC
-// marker's is
-#define ICON_GAP FX32_CONST(18)
+// The space between the top of an item room ball's sprite and its icon's middle: the ball fills only the lower half of
+// its 32-unit billboard, so the 32-unit icon's bottom sits just over the ball
+#define ICON_GAP FX32_CONST(2)
 
 #define NO_FILE 0xffff
 

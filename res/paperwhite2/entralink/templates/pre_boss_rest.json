@@ -22,7 +22,7 @@
             "facing": "DIR_DOWN",
             "marker": "rest",
             "dialogue": {
-                "before": "A fallen Pokémon can rise again here.{be01}"
+                "before": "A fallen Pokémon can rise again here."
             }
         },
         {

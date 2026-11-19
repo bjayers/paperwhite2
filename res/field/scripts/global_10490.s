@@ -348,7 +348,8 @@ Movement_RunExitBack3:
 // Paper White 2: talking to an Entralink run room's NPC (script 10498, paperwhite2_entralink_run.c). A battle NPC: its
 // dialogue, its cry and its battle; a win (or a capture) its after dialogue and the room open, or after the final room
 // the run's end at the hub; a loss or a forfeit (running) end the run there too, with the real party and bag back. An
-// item NPC: its dialogue and its item into the run's bag. A rest or buff NPC: its dialogue, or a placeholder for now
+// item NPC: its dialogue and its item into the run's bag. A rest or buff NPC: its dialogue, or a placeholder for now.
+// Step 6: the ball on the ground, the heal, revive, gift and shop NPCs, the item room's balls and the buff balls
 Script_9:
     ActorsPauseAll
     ActorSetEyeToEye
