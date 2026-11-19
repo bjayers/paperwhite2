@@ -210,6 +210,7 @@ static const u16 sDebugShadowNames[FOLLOWING_SHADOW_VARIANT_COUNT] = {
     Global10200_Text_DebugShadowCenterNear16, Global10200_Text_DebugShadowCenterNear32,
     Global10200_Text_DebugShadowCenterFix,    Global10200_Text_DebugShadowCamerasOff,
     Global10200_Text_DebugShadowNearerInW,    Global10200_Text_DebugShadowNearerInWFull,
+    Global10200_Text_DebugShadowLowOvalNearer,
 };
 
 // The key items that Give key items adds: the tools and the forme items, which no story event checks for. The rest of

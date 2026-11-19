@@ -2,6 +2,28 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-19: follower shadow, 14a built in on the bridges and the gate; variant 15 for Castelia (ROM session, on a branch)
+
+- **Built in** (`"w_pull_built_in": true` in `follower_camera_fixes.json`): 14a's pull for setups 1 (Skyarrow
+  Bridge), 4 (the gate by Skyarrow), 10 (the Tubeline Bridge) and 39 (the Marine Tube), always on like the centers'
+  and the forest's fixes; `13 Camera fixes off` still turns it off. Setups 2 (Castelia's streets) and 11 (Victory
+  Road's outside, untested) stay on the debug row, now `14a Nearer in W: 2, 11`.
+- **Variant 15** (`15 Low oval, Castelia`, after 14b, same list id and word slot), setup 2 only: the follower's oval
+  at the ground + 0.25 and the actors pulled by `low_oval_pull` 0.009 (2.6 units at 288), the smallest that keeps the
+  oval off the follower's body on every frame of two walks in DeSmuME (0.008 doesn't; 14a's own smallest is 0.014, as
+  tested 0.024). Edge band in front of the feet 1.3 pixels on the street, 0.95 at the harbor railing, against 14a's
+  3.5 and 2.5; DeSmuME: 14a 3 rows of legs over the railing and the hair around a streetlight, 15 none. The lowered
+  oval should not fight the street (0.5 units along the ray in a W-buffer; the player's oval is at + 0.5 already);
+  melonDS is the check.
+- **The gate's floor flicker is vanilla**, not 14: the projection is scaled only for the actors' pass, after the map
+  is drawn, and restored before anything else; no floor pixel differs between 13, 0 and 14a in DeSmuME by the red
+  mat. The gate's model has two translucent shadows exactly coplanar 1 unit over the floor there, the likely flicker.
+- Details in `following-pokemon.md` ("14a built in ...", "The gate's floor flicker"); shots in the scratchpad's
+  `shadow6/`. Build clean, `verify_dsi_rom.py` intact, editor tests pass (251).
+- **For the user:** in melonDS, Castelia's street on 15 (railings, streetlights, the oval on the street, the feet
+  while walking); if clean, 15 becomes setup 2's built-in fix. The gate spot under `13 Camera fixes off`, to confirm
+  the flicker is vanilla.
+
 ## 2026-11-19: follower shadow, variant 14 "actors nearer in W" (ROM session, on a branch)
 
 - **For the W-buffered outdoor setups** that keep their planes, buffering and fog (1 Skyarrow Bridge, 2 Castelia's

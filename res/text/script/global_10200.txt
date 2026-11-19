@@ -242,5 +242,6 @@ Global10200_Text_DebugShadowCenterNear16 = 12a Center near 16
 Global10200_Text_DebugShadowCenterNear32 = 12b Center near 32
 Global10200_Text_DebugShadowCenterFix = 12c Center fix: now 0
 Global10200_Text_DebugShadowCamerasOff = 13 Camera fixes off
-Global10200_Text_DebugShadowNearerInW = 14a Nearer in W
+Global10200_Text_DebugShadowNearerInW = 14a Nearer in W: 2, 11
 Global10200_Text_DebugShadowNearerInWFull = 14b Nearer in W, full
+Global10200_Text_DebugShadowLowOvalNearer = 15 Low oval, Castelia

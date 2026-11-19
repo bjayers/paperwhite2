@@ -32,7 +32,8 @@
             "near": null,
             "scale_offset": false,
             "w_pull": 0.032,
-            "note": "W-buffered with a fog of its own: the debug menu's 14a only, the actors 6.5 to 9 units nearer (the span's 202 units at 21 degrees needs the most)"
+            "w_pull_built_in": true,
+            "note": "W-buffered with a fog of its own: 14a built in (tested in melonDS), the actors 6.5 to 9 units nearer (the span's 202 units at 21 degrees needs the most)"
         },
         {
             "setup": 2,
@@ -41,7 +42,8 @@
             "near": null,
             "scale_offset": false,
             "w_pull": 0.024,
-            "note": "W-buffered, the weather fog tuned for it: the debug menu's 14a only, the actors 6.9 units nearer at 288"
+            "low_oval_pull": 0.009,
+            "note": "W-buffered, the weather fog tuned for it: the debug menu's 14a only, the actors 6.9 units nearer at 288 (railings and streetlights in front lose rows to them in melonDS); variant 15 lowers the follower's oval and pulls less"
         },
         {
             "setup": 4,
@@ -50,7 +52,8 @@
             "near": null,
             "scale_offset": false,
             "w_pull": 0.026,
-            "note": "W-buffered with a fog of its own: the debug menu's 14a only, the actors 5.9 units nearer at 227"
+            "w_pull_built_in": true,
+            "note": "W-buffered with a fog of its own: 14a built in (tested in melonDS), the actors 5.9 units nearer at 227"
         },
         {
             "setup": 10,
@@ -59,7 +62,8 @@
             "near": null,
             "scale_offset": false,
             "w_pull": 0.029,
-            "note": "W-buffered with a fog of its own: the debug menu's 14a only, the actors 6.6 units nearer at 228"
+            "w_pull_built_in": true,
+            "note": "W-buffered with a fog of its own: 14a built in (tested in melonDS), the actors 6.6 units nearer at 228"
         },
         {
             "setup": 11,
@@ -77,7 +81,8 @@
             "near": null,
             "scale_offset": false,
             "w_pull": 0.028,
-            "note": "W-buffered with a fog of its own: the debug menu's 14a only, the actors 6.4 units nearer at 228"
+            "w_pull_built_in": true,
+            "note": "W-buffered with a fog of its own: 14a built in (tested in melonDS), the actors 6.4 units nearer at 228"
         },
         {
             "setup": 35,

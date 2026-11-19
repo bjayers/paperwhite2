@@ -82,7 +82,7 @@ def fix_text(fix):
     if fix["scale_offset"]:
         parts.append("offset x near")
     if fix.get("w_pull") is not None:
-        parts.append(f"debug 14a: nearer in W by {fix['w_pull']}")
+        parts.append(f"{'' if fix.get('w_pull_built_in') else 'debug 14a: '}nearer in W by {fix['w_pull']}")
     return ", ".join(parts) or "-"
 
 

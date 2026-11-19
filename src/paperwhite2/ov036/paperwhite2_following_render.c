@@ -149,6 +149,9 @@ static FollowingUpper sUpper;
 // The camera of the last actors' pass, for the oval's moves back, which the effects' tasks place before that pass
 static FollowingCamera sOvalCamera;
 static BOOL sOvalCameraValid;
+// Whether the last actors' pass was FOLLOWING_SHADOW_LOW_OVAL_NEARER's in a setup with its pull, for the oval, which
+// the effects' tasks place before that pass
+static BOOL sLowOval;
 
 static void GetCamera(G3DCamera *camera, FollowingCamera *view) {
     GFL_G3DCameraGetLookatPos(camera, &view->eye);
@@ -796,6 +799,11 @@ void FollowingRender_PlaceOval(VecFx32 *pos, s16 *scale) {
     case FOLLOWING_SHADOW_LOW:
         pos->y -= OVAL_LOW_DROP;
         break;
+    case FOLLOWING_SHADOW_LOW_OVAL_NEARER:
+        if (sLowOval) {
+            pos->y -= OVAL_LOW_DROP;
+        }
+        break;
     }
     if (back != 0 && sOvalCameraValid) {
         FollowingRender_GroundBack(pos, &sOvalCamera, back, pos);
@@ -814,9 +822,12 @@ typedef struct {
     BOOL scaleOffset;
     // 0 keeps the setup's own
     fx32 zNear;
-    // The debug menu's FOLLOWING_SHADOW_NEARER_IN_W: the fraction of their distance that the actors come nearer in a
-    // setup that stays W-buffered, 0 for none
+    // FOLLOWING_SHADOW_NEARER_IN_W: the fraction of their distance that the actors come nearer in a setup that stays
+    // W-buffered, 0 for none; always, where wPullBuiltIn, else with the debug row alone
     fx32 wPull;
+    BOOL wPullBuiltIn;
+    // FOLLOWING_SHADOW_LOW_OVAL_NEARER's pull, with the follower's oval lowered; 0 for none
+    fx32 lowOvalPull;
 } FollowingCameraFix;
 
 static const FollowingCameraFix sCameraFixes[PAPERWHITE2_FOLLOWING_CAMERA_FIX_COUNT] =
@@ -901,17 +912,16 @@ fx32 FollowingRender_ClipOffset(FieldCamera *camera, fx32 offset) {
 }
 
 void FollowingRender_NearerInW(FieldCamera *camera, MtxFx44 *mtx, fx32 offset, BOOL actors) {
-    const FollowingCameraFix *fix;
+    const FollowingCameraFix *fix = GetCameraFix(camera->defaultsIndex);
     u32 variant = FollowingRender_GetShadowVariant();
     fx32 pull;
     fx32 scale;
     u32 row;
     u32 col;
 
-    if (variant != FOLLOWING_SHADOW_NEARER_IN_W && variant != FOLLOWING_SHADOW_NEARER_IN_W_FULL) {
-        return;
+    if (actors) {
+        sLowOval = FALSE;
     }
-    fix = GetCameraFix(camera->defaultsIndex);
     if (fix == NULL || fix->wPull == 0) {
         return;
     }
@@ -919,14 +929,20 @@ void FollowingRender_NearerInW(FieldCamera *camera, MtxFx44 *mtx, fx32 offset, B
     // 1 - pull (the projection's x, y and z rows) moves every point toward the eye along its own ray to 1 - pull of its
     // depth, so its picture stays where it was. A clip Z offset k gives about k * depth / 2 at a near plane of a unit,
     // so _FULL's pull of half the pass's offset is the ordinary maps' depth, the effects' half of the actors'. The
-    // depths keep their order, so the actors stay in front of or behind one another as they were
-    if (variant == FOLLOWING_SHADOW_NEARER_IN_W) {
-        if (!actors) {
-            return;
-        }
+    // depths keep their order, so the actors stay in front of or behind one another as they were. The setup's w_pull
+    // moves the actors alone, the effects (the ovals) staying in place
+    if (variant == FOLLOWING_SHADOW_NEARER_IN_W_FULL) {
+        pull = offset / 2;
+    } else if (!actors) {
+        return;
+    } else if (variant == FOLLOWING_SHADOW_LOW_OVAL_NEARER && fix->lowOvalPull != 0) {
+        // The follower's oval lowered (FollowingRender_PlaceOval) needs less
+        sLowOval = TRUE;
+        pull = fix->lowOvalPull;
+    } else if (variant == FOLLOWING_SHADOW_NEARER_IN_W || fix->wPullBuiltIn) {
         pull = fix->wPull;
     } else {
-        pull = offset / 2;
+        return;
     }
     scale = FX32_ONE - pull;
     for (row = 0; row < 3; row++) {

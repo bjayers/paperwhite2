@@ -1470,7 +1470,8 @@ void FieldRenderPhase2_Fieldmap(Field *field) {
     // Centers, ...), so the follower's body stays over its oval (paperwhite2_following_render.c)
     mtx.m[3][2] +=
         FX_Mul(mtx.m[2][2], FollowingRender_ClipOffset(field->cameraSystem, field->objectProjectionMatrixOffset));
-    // Paper White 2: the debug menu's actors nearer in W, the W-buffer's version of the offset
+    // Paper White 2: the actors nearer in W, the W-buffer's version of the offset, where the camera's fix (Skyarrow
+    // Bridge, its gate, the Tubeline Bridge, the Marine Tube) or the debug menu says
     FollowingRender_NearerInW(field->cameraSystem, &mtx, field->objectProjectionMatrixOffset, TRUE);
 #else
     mtx.m[3][2] += FX_Mul(mtx.m[2][2], field->objectProjectionMatrixOffset);

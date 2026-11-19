@@ -1004,6 +1004,63 @@ depth what the clip Z offset does on a Z-buffered map.
   Building one in: drop the debug check for that setup's `w_pull` in `FollowingRender_NearerInW` (or a `w_pull_built_in`
   flag in the table).
 
+**14a built in where it tested clean; variant 15 for Castelia (2026-11-19, after the user's melonDS tests).**
+
+- **Built in:** setups 1 (Skyarrow Bridge), 4 (the gate by Skyarrow), 10 (the Tubeline Bridge) and 39 (the Marine
+  Tube): `"w_pull_built_in": true` in `follower_camera_fixes.json` (the header's `wPullBuiltIn`), so
+  `FollowingRender_NearerInW` pulls their actors by their `w_pull` always, as the centers' and the forest's fixes are,
+  and `13 Camera fixes off` turns it off with the rest. 1, 10 and 39 were clean on 14a and 14b in melonDS; 4 too, but
+  for a flicker on the floor that is the map's own (below).
+- **Still on the switch:** setup 11 (Victory Road's outside, untested) and setup 2 (Castelia's streets): the debug row
+  is now `14a Nearer in W: 2, 11` (on the others it draws as 0). 14b is unchanged.
+- **Castelia's streets on 14a and 14b:** the user saw the player and the follower clear the NPCs but come over
+  streetlights and railings in front of them. **Variant 15** (`15 Low oval, Castelia`, after 14b, same list and word
+  slot) is for setup 2 alone, its `low_oval_pull`: the follower's oval at the ground + 0.25 (as variant 6) and the
+  actors pulled by that smaller fraction, the effects in place. Elsewhere 15 draws as 0. **The follower's oval only:**
+  the pull is set by the follower, whose quad is lowered by the lift (2 units, 3.75 on the walk's down frames); the
+  player's and the NPCs' 32-pixel ovals sit at the ground + 0.5 already (`FldeffShadow_Draw`) and need about one unit
+  (0.0036 of the distance by the audit's model), so lowering them would change every NPC on the street for nothing.
+- **The smallest pulls, measured** (DeSmuME, scratchpad `shadow6/work/oval.py`: Castelia's street at 288 units and 29
+  degrees, two walks of 10 and 11 steps in all four directions (208 and 236 frames) recorded three times, as is, with the follower's oval sent
+  under the ground and with its body hidden too, so only the oval's pixels over the body count):
+
+  | variant | oval | pull (fraction) | units at 288 | frames with the oval over the body |
+  | --- | --- | --- | --- | --- |
+  | 0 | + 1 | 0 | 0 | 89 of 208 (17 pixels at most) |
+  | 14a | + 1 | 0.013 | 3.7 | 2 of 236 (3 pixels) |
+  | 14a | + 1 | 0.014 (0.024 as tested) | 4.0 | none |
+  | 15 | + 0.25 | 0.008 | 2.3 | 15 of 208 (4 pixels) |
+  | 15 | + 0.25 | **0.009** | 2.6 | none (both walks) |
+
+  So 14a's 0.024 had a margin (the audit's model counts the quad's empty bottom rows): its own smallest is 0.014.
+- **The edge band** (pull x tan(ray) on the screen in front of the feet): at the street's 288 units, 14a as tested 3.5
+  pixels, 14a at its smallest 2.0, **15 1.3**; at the harbor railing, where the camera pulls out to 445 units at 22
+  degrees, 2.5 against **0.95**. Measured there (`shadow6/castelia_railing.png`, 0, 14a, 15): 14a draws 3 rows of the
+  player's legs over the railing, 15 none (its changed pixels are the lowered oval's). Behind a streetlight
+  (`shadow6/castelia_streetlight.png`): 14a changes 77 pixels of the player's hair around the post and its light, 15
+  none of the body (10 at the feet, the oval). So 15 keeps the band to about a pixel.
+- **The lowered oval against the street:** 0.25 units over it is 0.5 units along the 29-degree ray, which the
+  W-buffer, keeping eye depth to a small fraction of a unit at these distances, separates by a wide margin; the
+  engine's own player oval sits at + 0.5 in the same buffer and doesn't fight. DeSmuME can't show a depth fight (see
+  the centers' windows), so the hardware's interpolation of W over the street's large polygons is melonDS's check.
+- **Recommendation:** 15 for Castelia if the user's melonDS test of the railings, the streetlights and the oval on
+  the street is clean; then setup 2 gets it built in. If it isn't, leave setup 2 alone.
+
+**The gate's floor flicker (setup 4): the map's own, not variant 14.** The user saw, with 14 on, the floor flicker at
+one spot by the red mat by the gate building's door. 14 can't reach the floor: `FieldRenderPhase2_Fieldmap` draws the
+map's two passes (`FieldG3D_RenderFieldmap`, phase 1 before it and pass 1 at its start) with the camera's projection,
+scales only the copy it sets for the actors, sets the effects' own copy, and puts the saved one back (`NNS_G3dGlb
+SetProjectionMtx(&saved)` and a flush) before the weather, the particles and anything else; the emotion bubbles and
+`Field3DBG` save and restore theirs too. In DeSmuME at two spots by the mat (`shadow6/work/gate.py`: 12 frames standing
+and 16 walking, under 13, 0 and 14a) no floor pixel differs: only the actors' feet (4 to 16 pixels a frame), and the
+frame-to-frame changes (the sky and the follower's idle) are the same in all three (`shadow6/gate_red_mat.png`). The
+gate's model (`bridge_gate_h01b_00_00`, `camera_audit.py layers 4`) has layers that the gate's level camera sees at a
+grazing angle: two translucent shadows exactly coplanar 1 unit over the floor (`kage_out` and `mise01kage`, overlapping
+by the mat's far-left corner and in front of the steps) and walls' trims 0.06 to 0.16 units over their walls. Coplanar
+translucent faces are where the DS's per-pixel interpolation flickers, which melonDS shows and DeSmuME doesn't. So it
+is vanilla: to confirm, the same spot under `13 Camera fixes off`. A cheap fix, if it is those shadows: in the gate's
+model, drop the overlap from one of the two or raise `kage_out` a quarter of a unit (a map model edit, not made).
+
 ## Small followers in front of counters
 
 **The clipping.** In a Pokémon Center a 32-pixel follower's middle rows went into the counter on the walk's down
