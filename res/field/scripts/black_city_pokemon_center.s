@@ -51,8 +51,10 @@ Script_3:
     ActorsUnpauseAll
     VMHalt
 
-// Paper White 2: the exit leads to Black City or White Forest, as the place is now: the other city's exit is moved off
-// the doorway (paperwhite2/version_places.h)
+// Paper White 2: the exit leads to Black City or White Forest, as the place is now: the city's exit is put on the doorway
+// (tiles 6-8, 19) and the other city's moved off it (paperwhite2/version_places.h). Both are set each time: this runs
+// again when the field reopens after the globe's Season app (type 3), on the zone's warps as they were left, since the
+// field reloads them only at a map change, so moving only one would leave neither on the doorway
 Script_4:
     VMCall L_Exit
     VMHalt
@@ -62,10 +64,12 @@ L_Exit:
     VMStackPushConst 1
     VMStackCmp CMP_EQ
     VMJumpIf CMP_STACK, L_ExitWhiteForest
+    ObjInitWarpGPos 0, 6, 0, 19
     ObjInitWarpGPos 1, 0, 0, 0
     VMReturn
 
 L_ExitWhiteForest:
+    ObjInitWarpGPos 1, 6, 0, 19
     ObjInitWarpGPos 0, 0, 0, 0
     VMReturn
 
