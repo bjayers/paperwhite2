@@ -47,13 +47,19 @@ enum {
     FOLLOWING_SHADOW_CAMERA_Z_BUFFER,
     // Both of the two above
     FOLLOWING_SHADOW_CAMERA_BOTH,
-    // The near plane kept and the clip Z offset scaled by it instead: the ordinary offset's depth at any near plane
+    // The clip Z offset scaled by the near plane, which the forest now has always (FollowingRender_ClipOffset): the
+    // same as FOLLOWING_SHADOW_CURRENT, kept so the variants' numbers stay
     FOLLOWING_SHADOW_CAMERA_SCALED_OFFSET,
+    // The centers' camera setup Z-buffered with a near plane of 16, 32 or 64 units, for the Z-buffer's precision at
+    // the back wall, and the clip Z offset scaled by it
+    FOLLOWING_SHADOW_CAMERA_CENTER_NEAR_16,
+    FOLLOWING_SHADOW_CAMERA_CENTER_NEAR_32,
+    FOLLOWING_SHADOW_CAMERA_CENTER_NEAR_64,
     FOLLOWING_SHADOW_VARIANT_COUNT,
 };
 
-// The camera setups that the camera-side variants change: the Entree Forest's (near 112) and the Pokémon Centers'
-// (W-buffered)
+// The camera setups that the camera-side fixes change: the Entree Forest's (near 112, its clip Z offset always scaled)
+// and the Pokémon Centers' (W-buffered, changed only by the variants)
 #define FOLLOWING_CAMERA_FOREST 35
 #define FOLLOWING_CAMERA_CENTER 3
 
@@ -62,13 +68,14 @@ u32 FollowingRender_GetShadowVariant(void);
 // FldeffShadow_Draw's oval for the follower: moves pos and sets scale (fx32 of the oval's size) by the variant
 void FollowingRender_PlaceOval(VecFx32 *pos, s16 *scale);
 // FieldCamera_ReadDefaults's setup index of archive 0x3b changed by the camera-side variant: the forest's near plane
-// or the centers' buffering
+// or the centers' buffering and near plane
 void FollowingRender_AdjustCamera(u32 index, FieldCameraDefaults *defaults);
 // The camera's planes and buffering set again from its setup, as a map load does, so a new variant shows at once
 void FollowingRender_ApplyCamera(FieldCamera *camera);
 // The actors' clip Z offset (objectProjectionMatrixOffset, or half of it for the effects) for the camera's near plane:
-// unchanged but with FOLLOWING_SHADOW_CAMERA_SCALED_OFFSET, which multiplies it by the near plane in units
-fx32 FollowingRender_ClipOffset(G3DCamera *camera, fx32 offset);
+// multiplied by the near plane in units in the Entree Forest (setup FOLLOWING_CAMERA_FOREST, always) and in the
+// centers under the FOLLOWING_SHADOW_CAMERA_CENTER_NEAR_* variants, unchanged elsewhere
+fx32 FollowingRender_ClipOffset(FieldCamera *camera, fx32 offset);
 
 // The descriptor's Z offset moves the model and its shadow together, and stays the same whatever the facing, so
 // turning snaps neither

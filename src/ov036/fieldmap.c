@@ -1466,9 +1466,10 @@ void FieldRenderPhase2_Fieldmap(Field *field) {
     saved = NNS_G3dGlb.projMtx;
     mtx = saved;
 #ifdef PAPERWHITE2
-    // Paper White 2: the offset for the near plane under the debug menu's camera-side shadow variant
+    // Paper White 2: the offset scaled by the near plane in the Entree Forest, and in the centers under the debug
+    // menu's camera-side shadow variants, so the follower's body stays over its oval (paperwhite2_following_render.c)
     mtx.m[3][2] +=
-        FX_Mul(mtx.m[2][2], FollowingRender_ClipOffset(field->g3dCamera, field->objectProjectionMatrixOffset));
+        FX_Mul(mtx.m[2][2], FollowingRender_ClipOffset(field->cameraSystem, field->objectProjectionMatrixOffset));
 #else
     mtx.m[3][2] += FX_Mul(mtx.m[2][2], field->objectProjectionMatrixOffset);
 #endif
@@ -1493,7 +1494,7 @@ void FieldRenderPhase2_Fieldmap(Field *field) {
 #ifdef PAPERWHITE2
     // Paper White 2: as for the actors
     mtx.m[3][2] +=
-        FX_Mul(mtx.m[2][2], FollowingRender_ClipOffset(field->g3dCamera, field->objectProjectionMatrixOffset / 2));
+        FX_Mul(mtx.m[2][2], FollowingRender_ClipOffset(field->cameraSystem, field->objectProjectionMatrixOffset / 2));
 #else
     mtx.m[3][2] += FX_Mul(mtx.m[2][2], field->objectProjectionMatrixOffset / 2);
 #endif

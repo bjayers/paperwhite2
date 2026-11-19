@@ -800,6 +800,21 @@ void FollowingRender_PlaceOval(VecFx32 *pos, s16 *scale) {
     }
 }
 
+// The centers' near plane under the FOLLOWING_SHADOW_CAMERA_CENTER_NEAR_* variants, 0 under the others. The
+// Z-buffer's step at a distance d is about d * d * (far - near) / (32768 * far * near) units, so a larger near plane
+// resolves the back wall's window from the wall 2 units in front of it (docs/paperwhite2/following-pokemon.md)
+static fx32 GetCenterNear(u32 variant) {
+    switch (variant) {
+    case FOLLOWING_SHADOW_CAMERA_CENTER_NEAR_16:
+        return FX32_CONST(16);
+    case FOLLOWING_SHADOW_CAMERA_CENTER_NEAR_32:
+        return FX32_CONST(32);
+    case FOLLOWING_SHADOW_CAMERA_CENTER_NEAR_64:
+        return FX32_CONST(64);
+    }
+    return 0;
+}
+
 void FollowingRender_AdjustCamera(u32 index, FieldCameraDefaults *defaults) {
     u32 variant = FollowingRender_GetShadowVariant();
 
@@ -811,6 +826,10 @@ void FollowingRender_AdjustCamera(u32 index, FieldCameraDefaults *defaults) {
     if (index == FOLLOWING_CAMERA_CENTER &&
         (variant == FOLLOWING_SHADOW_CAMERA_Z_BUFFER || variant == FOLLOWING_SHADOW_CAMERA_BOTH)) {
         defaults->swapMode = GX_BUFFERMODE_Z;
+    }
+    if (index == FOLLOWING_CAMERA_CENTER && GetCenterNear(variant) != 0) {
+        defaults->swapMode = GX_BUFFERMODE_Z;
+        defaults->zNear = GetCenterNear(variant);
     }
 }
 
@@ -828,16 +847,19 @@ void FollowingRender_ApplyCamera(FieldCamera *camera) {
     }
 }
 
-fx32 FollowingRender_ClipOffset(G3DCamera *camera, fx32 offset) {
+fx32 FollowingRender_ClipOffset(FieldCamera *camera, fx32 offset) {
     fx32 zNear;
 
-    if (FollowingRender_GetShadowVariant() != FOLLOWING_SHADOW_CAMERA_SCALED_OFFSET) {
+    // The Entree Forest's camera always (its near plane of 112 left the offset about 60 times too weak to keep the
+    // follower's oval under its body), the centers' only under the variants that give them a near plane over 1
+    if (camera->defaultsIndex != FOLLOWING_CAMERA_FOREST &&
+        (camera->defaultsIndex != FOLLOWING_CAMERA_CENTER || GetCenterNear(FollowingRender_GetShadowVariant()) == 0)) {
         return offset;
     }
     // A clip Z offset k moves a point about k * distance * (far + near) / (2 * far * near) units of depth, k * distance
     // / 2 at the ordinary near plane of a unit: k * near keeps that depth wherever the far plane is well beyond the
     // near
-    GFL_G3DCameraGetProjectionZNear(camera, &zNear);
+    GFL_G3DCameraGetProjectionZNear(camera->g3dCamera, &zNear);
     if (zNear <= FX32_ONE) {
         return offset;
     }

@@ -2,6 +2,24 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-19: follower shadow, the forest's fix built in, center variants 12a to 12c (ROM session, on a branch)
+
+- **Entree Forest, permanent:** the actors' clip Z offset is scaled by the near plane for camera setup 35 alone
+  (`FollowingRender_ClipOffset`, now given the `FieldCamera`), with no debug override; setup 7 (`castelia_city_2`,
+  near 5) and every other camera keep the vanilla offset. Variant 11 keeps its row (`11 Forest fix: now 0`) and draws
+  as 0.
+- **Debug switch, new rows 12a/12b/12c Center near 16/32/64:** setup 3 Z-buffered as 9, with that near plane and the
+  offset scaled by it. The model: the outside view `in02_window` is one opaque quad 2 units behind the back wall's
+  plane, which is the opaque `in02_pc` bands and the translucent `in02_pcwin` panes side by side; it runs behind the
+  solid bands, so it fights them at near 1 (0.3 to 0.7 depth steps). Near 16, 32, 64 give 5 to 11, 11 to 23, 22 to 47
+  steps: all should resolve. Nothing comes within 150 units of the eye. The ledge NPC's legs and the nurse's pixel stay
+  as in 9 (they come from the offset). DeSmuME doesn't show the window fight at all, so it's for melonDS.
+- Details and the table: `following-pokemon.md`, "Camera-side fixes". Shots in the scratchpad's `shadow3/`. Build
+  clean, `verify_dsi_rom.py` intact, editor tests 251 pass.
+- **For the user:** in a Pokémon Center, cycle 12a to 12c in melonDS and look at the back windows upstairs and the
+  follower's feet; the chosen one then goes into setup 3's row of `res/field/cameras/defaults.json` and the switch
+  goes.
+
 ## 2026-11-19: follower shadow, camera-side variants 8 to 11 (ROM session, on a branch)
 
 - **Debug menu, Follower... > `Follower shadow`** cycles on to 8 Forest near 1, 9 Center Z-buffer, 10 Both cameras and

@@ -201,12 +201,14 @@ static const u16 sDebugWeatherNames[WEATHER_MAX] = {
 
 // The follower's shadow variants' names, by FOLLOWING_SHADOW_*
 static const u16 sDebugShadowNames[FOLLOWING_SHADOW_VARIANT_COUNT] = {
-    Global10200_Text_DebugShadowCurrent,     Global10200_Text_DebugShadowBack2,
-    Global10200_Text_DebugShadowBack4,       Global10200_Text_DebugShadowSize80,
-    Global10200_Text_DebugShadowSize65,      Global10200_Text_DebugShadowNoLift,
-    Global10200_Text_DebugShadowLow,         Global10200_Text_DebugShadowScreenLift,
-    Global10200_Text_DebugShadowCameraNear1, Global10200_Text_DebugShadowCameraZBuffer,
-    Global10200_Text_DebugShadowCameraBoth,  Global10200_Text_DebugShadowCameraScaledOffset,
+    Global10200_Text_DebugShadowCurrent,      Global10200_Text_DebugShadowBack2,
+    Global10200_Text_DebugShadowBack4,        Global10200_Text_DebugShadowSize80,
+    Global10200_Text_DebugShadowSize65,       Global10200_Text_DebugShadowNoLift,
+    Global10200_Text_DebugShadowLow,          Global10200_Text_DebugShadowScreenLift,
+    Global10200_Text_DebugShadowCameraNear1,  Global10200_Text_DebugShadowCameraZBuffer,
+    Global10200_Text_DebugShadowCameraBoth,   Global10200_Text_DebugShadowCameraScaledOffset,
+    Global10200_Text_DebugShadowCenterNear16, Global10200_Text_DebugShadowCenterNear32,
+    Global10200_Text_DebugShadowCenterNear64,
 };
 
 // The key items that Give key items adds: the tools and the forme items, which no story event checks for. The rest of

@@ -766,13 +766,57 @@ on the ordinary maps, where the follower looks right. The follower is drawn as i
   as the ordinary offset gives them on other maps (200 to 340 pixels change around the actors, none elsewhere). Of the
   setups, 7 (`castelia_city_2`, near 5) is the other Z-buffered one with a near plane over 1; W-buffered ones aren't
   changed by it.
+- **11 is now built in, for the forest alone (2026-11-19, after the user's melonDS test).** `FollowingRender_ClipOffset`
+  takes the field's `FieldCamera` and scales the offset whenever its setup (`defaultsIndex`) is 35, with or without the
+  debug menu; setup 7 and every other camera keep the vanilla offset. The variant's row stays (`11 Forest fix: now 0`)
+  so the numbers don't move, and draws as 0. In DeSmuME the forest with 0 now matches the old 11 (`shadow3/`
+  `forest_permanent_fix.png`: rows before 0, before 11, now 0; the light differs with the clock).
+- **12a, 12b, 12c Center near 16, 32, 64** (the slots after 11): setup 3 Z-buffered as 9, with the near plane at 16, 32
+  or 64 units and the offset scaled by it as 11 does, so the actors keep 9's G of 4.3. Why: in 9 the back wall's
+  windows fight the wall (melonDS).
+  - **The model** (`black_city_pokemon_center_m_pc01_00_00`, which every center's matrix uses). The back wall is the
+    plane z = -260 (model units; world z = model + 256, y = model + 4), built of tiles that share edges and don't
+    overlap: the opaque `in02_pc` bands (y 84 to 92 over the windows, 44 to 62.28 between them, -4 to 12 under them)
+    and the two translucent `in02_pcwin` panes (glass and frame, alpha blend; y 62.28 to 84 and 12 to 44), x -224 to
+    -48. So the wall has openings, filled by the panes in its own plane. The view outside, `in02_window`, is one opaque
+    quad at z = -262, **2 units behind the wall** (x -232 to -40, y -7.2 to 87.2), larger than the openings, so it
+    runs behind the solid bands too; no face joins the two planes (no reveals or sills). The fight is the window quad
+    against what is 2 units in front of it: the solid red band behind which it continues (and the strips above and
+    below), and the translucent panes' depth test against it. The panes and the wall bands never fight each other
+    (coplanar but side by side).
+  - **The depth steps.** The DS's Z-buffer keeps (z << 14) / w per vertex, 2^15 steps over the depth range, so a step
+    at eye depth d is d^2 (far - near) / (32768 far near) units; the window's 2 units along z are 1.7 units of eye
+    depth (the camera looks down 31.8 degrees, read from the emulator's lookat). The wall is 295 to 330 units from the
+    eye with the player upstairs in front of it, 380 to 410 from the counter's floor. Steps between window and wall:
+
+    | near | step at the wall (units) | window behind the wall (steps) |
+    | ---- | ------------------------ | ------------------------------ |
+    | 1 (9) | 2.4 to 5.1 | 0.33 to 0.70: fights |
+    | 16 (12a) | 0.15 to 0.32 | 5.4 to 11.3 |
+    | 32 (12b) | 0.07 to 0.16 | 10.9 to 23 |
+    | 64 (12c) | 0.04 to 0.08 | 22.5 to 47.5 |
+
+    A vertex's depth is rounded to half a step either way, so anything over 2 or 3 steps holds: all three should
+    separate the window. The far plane stays 1024: the farthest point in view is under 500 units away. The nearest
+    geometry is the front wall's top, about 156 units from the eye with the player at the door, and the actors are
+    over 200, so nothing comes within even 64 of the camera. The floor decals and the counter's floor shadow
+    `in02_kage` (1.5 to 2 units over the floor, about half a step at near 1) gain the same factor.
+  - **The fallback**, for the model: at near 1 (or W-buffered) the window would have to sit about 6 units behind the
+    wall for one step at the counter's distance and 18 for a safe three, instead of 2. Not needed if 12 works.
+  - **In DeSmuME** (`shadow3/`): DeSmuME doesn't show the fight even in 9 (`center_back_wall.png`, the wall upstairs,
+    the same in 0, 9 and 12a to 12c), so the windows can only be judged in melonDS. The follower's feet are as in 9
+    (`center_follower_feet.png`). The side effects stay, since they come from the offset's depth and not the precision:
+    the NPC by the ledge shows his legs over its edge and the nurse sits a pixel or two lower over the counter
+    (`center_nurse_ledge.png`), as in 9. 12a and 12b also move a pixel row on the benches' and pods' floor edges
+    upstairs; 12c doesn't. Nothing flickers between frames (only the globe's animation). Full screens:
+    `center_counter_full.png`, `center_upstairs_full.png`.
 - **Who shares the setups.** Setup 3: the 18 Pokémon Centers' zones plus `pokemon_league_11` and `victory_road_27`
   (the League's and Victory Road's centers), all projection type 0. Setup 35: the ten `entree_forest*` zones alone.
   A change to either setup's row in `res/field/cameras/defaults.json` touches only those zones. The other W-buffered
   setups (1, 2, 4, 10, 11, 24, 39: Skyarrow Bridge, Castelia's street, the bridge gates, the Tubeline Bridge, Victory
   Road's 2, Black City and White Forest, the Marine Tube) have the centers' problem too; they aren't changed.
 - **How.** `FieldCamera_ReadDefaults` passes its setup to `FollowingRender_AdjustCamera` (only setups 3 and 35, only
-  under the RAM override), and the menu's A calls `FollowingRender_ApplyCamera`, which sets the planes and the
+  under the RAM override; the forest's scaled offset is in `FollowingRender_ClipOffset` and needs neither), and the menu's A calls `FollowingRender_ApplyCamera`, which sets the planes and the
   buffering again from the setup without touching the camera's position: the variants show at once, with no map load.
   The weather fog's cache (`paperwhite2_weather_fog.c`) reads the planes once per setup, so a weather in those zones
   would keep the old planes until the next map; neither has weather.
@@ -782,6 +826,10 @@ on the ordinary maps, where the follower looks right. The follower is drawn as i
   The geometry above and the shots agree.
 - **Recommendation**: 9 for the centers and 11 for the forest (as a fixed change: setup 3's `swap_mode` 0 in the
   camera table, and the offset times the near plane, or setup 35's zones alone). The user picks by eye in melonDS.
+  The user's melonDS test: 11 works in the forest (now built in, above); 9 fixes the feet but the windows fight, hence
+  12. For the centers, 12c (near 64) has the most margin and no edge change in DeSmuME; once the user picks one, it
+  becomes setup 3's row in `res/field/cameras/defaults.json` (`swap_mode` 0, `near`) with setup 3 added to the scaled
+  offset.
 
 ## Small followers in front of counters
 
