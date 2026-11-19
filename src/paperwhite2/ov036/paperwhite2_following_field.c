@@ -2641,6 +2641,14 @@ void PaperWhite2_FollowingEffectsDraw(BillboardActorSys *system, G3DCamera *came
     FollowingEffects_Draw(camera, lights);
 }
 
+BOOL PaperWhite2_FollowingPlaceShadow(FieldActor *actor, VecFx32 *pos, s16 *scale) {
+    if (!IsOwned() || actor != sFollower.actor) {
+        return FALSE;
+    }
+    FollowingRender_PlaceOval(pos, scale);
+    return TRUE;
+}
+
 void PaperWhite2_FollowingTerrainDraw(BillboardActorSys *system, G3DCamera *camera, G3DLight *lights) {
     FollowingRender_GrassDraw(system, camera, lights, IsOwned() ? sFollower.actor : NULL);
 }

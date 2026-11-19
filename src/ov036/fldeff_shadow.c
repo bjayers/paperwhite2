@@ -11,6 +11,10 @@
 #include "gfl/heap.h"
 #include "nitro/fx.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/following_field.h"
+#endif
+
 typedef struct {
     FieldEffects *effects;
     VecFx32 scale;
@@ -176,6 +180,9 @@ static void FldeffShadow_Draw(FieldEffectTask *task, void *work) {
     VecFx32 pos;
     VecFx32 offset;
     BOOL visible;
+#ifdef PAPERWHITE2
+    s16 scale;
+#endif
     ShadowTask *shadowTask = work;
     u32 actorIndex = shadowTask->actorIndex;
     const FieldActorConfig *config = GetActorMdlInfo(shadowTask->actor);
@@ -201,6 +208,13 @@ static void FldeffShadow_Draw(FieldEffectTask *task, void *work) {
         }
         BillboardActorScene_SetActorHidden(shadowTask->shadow->scene, actorIndex, &visible);
         pos.y += FX32_ONE;
+#ifdef PAPERWHITE2
+        // Paper White 2: the follower's oval where the debug menu's shadow variant puts it, at its size; every other
+        // actor's as the original (paperwhite2_following_render.c, FollowingRender_PlaceOval)
+        if (PaperWhite2_FollowingPlaceShadow(shadowTask->actor, &pos, &scale)) {
+            BillboardActorScene_SetActorScale(shadowTask->shadow->scene, actorIndex, &scale, &scale);
+        }
+#endif
         BillboardActorScene_SetActorPos(shadowTask->shadow->scene, actorIndex, &pos);
     } else {
         BOOL hidden = FALSE;

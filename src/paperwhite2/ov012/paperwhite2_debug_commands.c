@@ -29,6 +29,7 @@
 #include "paperwhite2/following_data.h"
 #include "paperwhite2/following_dialogue.h"
 #include "paperwhite2/following_field.h"
+#include "paperwhite2/following_render.h"
 #include "paperwhite2/prestige.h"
 #include "paperwhite2/season.h"
 #include "paperwhite2/shiny_candy.h"
@@ -196,6 +197,13 @@ static const u16 sDebugWeatherNames[WEATHER_MAX] = {
     Global10200_Text_DebugWeatherCustomTint8,  Global10200_Text_DebugWeatherCustomTint9,
     Global10200_Text_DebugWeatherCustomTint10, Global10200_Text_DebugWeatherCustomTint11,
     Global10200_Text_DebugWeatherCustomTint12,
+};
+
+// The follower's shadow variants' names, by FOLLOWING_SHADOW_*
+static const u16 sDebugShadowNames[FOLLOWING_SHADOW_VARIANT_COUNT] = {
+    Global10200_Text_DebugShadowCurrent, Global10200_Text_DebugShadowBack2,      Global10200_Text_DebugShadowBack4,
+    Global10200_Text_DebugShadowSize80,  Global10200_Text_DebugShadowSize65,     Global10200_Text_DebugShadowNoLift,
+    Global10200_Text_DebugShadowLow,     Global10200_Text_DebugShadowScreenLift,
 };
 
 // The key items that Give key items adds: the tools and the forme items, which no story event checks for. The rest of
@@ -394,6 +402,13 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
     case DEBUG_ACTION_SET_WILD_FORM:
         PaperWhite2_Debug_SetOverride(DEBUG_OVERRIDE_WILD_FORM, sDebugNumber.value);
         return TRUE;
+    case DEBUG_ACTION_FOLLOWER_SHADOW_WORD:
+        DebugCommands_SetWordText(env, arg1, sDebugShadowNames[FollowingRender_GetShadowVariant()]);
+        return TRUE;
+    case DEBUG_ACTION_FOLLOWER_SHADOW_NEXT:
+        value = (FollowingRender_GetShadowVariant() + 1) % FOLLOWING_SHADOW_VARIANT_COUNT;
+        PaperWhite2_Debug_SetOverride(DEBUG_OVERRIDE_FOLLOWER_SHADOW, value);
+        return value;
     case DEBUG_ACTION_FORM_COUNT:
         return DebugCommands_GetFormCount(arg1);
     case DEBUG_ACTION_SET_WILD_LEVEL:

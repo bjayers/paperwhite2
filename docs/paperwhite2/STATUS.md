@@ -2,6 +2,20 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-18: follower shadow variants, a debug switch (ROM session, on a branch)
+
+- **Debug menu, Follower... > `Follower shadow: <name>`**: A cycles 8 candidate fixes of the oval over the follower's
+  feet, live (0 Current, 1/2 oval back 2/4, 3/4 oval 80%/65% a unit back, 5 no lowering, 6 oval low, 7 the lift on
+  the screen only). Only the follower's oval and body change; 0 is the default, and a reset goes back to it. Details
+  and the depth maths: `following-pokemon.md`, "The shadow variants".
+- **The Entree Forest** is camera setup 35: Z-buffered, but its near plane of 112 units makes the actors' clip Z
+  offset worth about 0.08 units of depth, so it behaves as the W-buffered Pokémon Centers (camera setup 3) do.
+- Debug actions 57 and 58 are new (`DEBUG_ACTION_FOLLOWER_SHADOW_WORD`, `_NEXT`), word slot 5 in the Follower menu.
+- Tested in py-desmume: the menu cycles 0 to 7 and back; contact sheets in the scratchpad's `shadow/`. Build clean,
+  `verify_dsi_rom.py` intact, editor tests 249 pass.
+- **For the user:** pick a variant by eye in melonDS (a Pokémon Center and the Entree Forest, standing and walking
+  down); it then becomes the fixed behaviour and the switch goes.
+
 ## 2026-11-18: Entralink step 6, the game side (ROM session, on a branch)
 
 Details, data tables and tests: `docs/paperwhite2/design/entralink-roguelike-prototype.md`, "Step 6".

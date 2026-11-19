@@ -25,6 +25,9 @@ enum {
     DEBUG_OVERRIDE_SAVED_SEASON_MODE,
     // The form of the forced species' encounters, where the species has it
     DEBUG_OVERRIDE_WILD_FORM,
+    // The follower's oval and body variant (a FOLLOWING_SHADOW_*, paperwhite2/following_render.h), for comparing the
+    // candidate fixes of the oval over its feet
+    DEBUG_OVERRIDE_FOLLOWER_SHADOW,
     DEBUG_OVERRIDE_COUNT,
 };
 

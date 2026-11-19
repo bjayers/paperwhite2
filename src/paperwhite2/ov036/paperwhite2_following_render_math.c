@@ -871,3 +871,33 @@ BOOL FollowingRender_Strips(const FollowingPose *body, const FollowingCamera *ca
     }
     return TRUE;
 }
+
+BOOL FollowingRender_GroundBack(const VecFx32 *point, const FollowingCamera *camera, fx32 distance, VecFx32 *output) {
+    VecFx32 forward;
+    VecFx32 moved = *point;
+
+    *output = moved;
+    if (camera->projection > G3DCAM_PROJECTION_ORTHO || !Delta(&camera->target, &camera->eye, &forward, 1 << 27)) {
+        return FALSE;
+    }
+    forward.y = 0;
+    if (!Axis(forward, &forward)) {
+        return FALSE;
+    }
+    moved.x += Divide((s64)forward.x * distance, FX32_ONE);
+    moved.z += Divide((s64)forward.z * distance, FX32_ONE);
+    *output = moved;
+    return TRUE;
+}
+
+BOOL FollowingRender_LiftOnScreen(const FollowingPose *lowered, const FollowingCamera *camera, fx32 lift,
+                                  FollowingPose *output) {
+    VecFx32 toward;
+
+    *output = *lowered;
+    if (camera->projection > G3DCAM_PROJECTION_ORTHO || !IsScaleValid(lowered) || !ViewAxis(camera, &toward)) {
+        return FALSE;
+    }
+    // A move of lift up the world's Y is toward.y of it nearer the camera, which the quad takes back
+    return ShiftDepth(lowered, camera, &toward, -Divide((s64)lift * toward.y, FX32_ONE), output);
+}

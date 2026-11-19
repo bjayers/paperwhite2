@@ -22,6 +22,31 @@ typedef struct {
 #define FOLLOWING_LIGHTS_SUN GX_LIGHTMASK_0
 #define FOLLOWING_LIGHTS_SHADE GX_LIGHTMASK_3
 
+// The candidate fixes of the oval over the follower's feet, which the debug menu's Follower shadow cycles
+// (docs/paperwhite2/following-pokemon.md, "The oval over the feet"). Only the follower's oval and body change
+enum {
+    // The engine's oval, the quad lowered by the lift
+    FOLLOWING_SHADOW_CURRENT,
+    // The oval 2 or 4 units back along the ground, away from the camera
+    FOLLOWING_SHADOW_BACK_2,
+    FOLLOWING_SHADOW_BACK_4,
+    // The oval at 80% or 65% of its size, a unit back
+    FOLLOWING_SHADOW_SIZE_80,
+    FOLLOWING_SHADOW_SIZE_65,
+    // The quad not lowered, the oval as the engine puts it
+    FOLLOWING_SHADOW_NO_LIFT,
+    // The oval a quarter of a unit over the ground instead of a unit
+    FOLLOWING_SHADOW_LOW,
+    // The quad lowered on the screen only: the same picture, at the depth of a quad that isn't lowered
+    FOLLOWING_SHADOW_SCREEN_LIFT,
+    FOLLOWING_SHADOW_VARIANT_COUNT,
+};
+
+// The variant in use: the debug menu's, FOLLOWING_SHADOW_CURRENT without one
+u32 FollowingRender_GetShadowVariant(void);
+// FldeffShadow_Draw's oval for the follower: moves pos and sets scale (fx32 of the oval's size) by the variant
+void FollowingRender_PlaceOval(VecFx32 *pos, s16 *scale);
+
 // The descriptor's Z offset moves the model and its shadow together, and stays the same whatever the facing, so
 // turning snaps neither
 void FollowingRender_Anchor(FieldActor *actor, u32 face);
