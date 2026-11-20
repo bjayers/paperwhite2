@@ -93,7 +93,7 @@
 .en-run-round { display: flex; flex-direction: column; gap: 4px; }
 /* Phase 5: the enemy scaling, a small table a stat */
 .en-scaling { border-collapse: collapse; margin: 6px 0 2px; table-layout: fixed; width: 100%; }
-.en-scaling th:first-child, .en-scaling td:first-child { width: 30px; }
+.en-scaling th:first-child, .en-scaling td:first-child { width: 64px; }
 .en-scaling caption { text-align: left; font-weight: 600; font-size: 12px; padding-top: 4px; }
 .en-scaling th { text-align: left; font-size: 12px; padding: 0 8px 2px 0; }
 .en-scaling td { padding: 1px 4px 1px 0; }

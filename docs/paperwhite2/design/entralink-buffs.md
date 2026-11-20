@@ -862,12 +862,11 @@ boss's three times that. The curves in run.json are its proposal, rounded and sm
 
 ### 12.2 Scaling in battle
 
-- **The data:** `enemy_scaling` in run.json, for each of HP, Attack, Defense, Sp. Atk, Sp. Def and Speed, three
-  values a round: `rooms` (the round's first room), `room_step` (added for each later room of the round) and `boss`
-  (the round's boss; round 3's is the final room; also any raid in the round). Each room enemy has `scale` (percent,
-  100 by default) on top, on every stat: the lever for Darkrai.
-- **In the run (overlay 12):** `EntralinkRun_CreateBattle` works out each enemy's six percents (the place's round and
-  its index in the round, or the boss values; times its scale; at most 65,535) into `EntralinkRunState.enemyScale`.
+- **The data:** `enemy_scaling` in run.json, for each of HP, Attack, Defense, Sp. Atk, Sp. Def and Speed: a room curve
+  (`start`, `end`, `curve`) and a `boss` value for each round (round 3's is the final room). Each room enemy has `scale`
+  (percent, 100 by default) on top, on every stat: the lever for Darkrai. Phase 5 first had the first room's value and
+  a step for each round, and raids took the boss values; section 12.7 replaced that (2026-11-20).
+- **In the run (overlay 12):** `EntralinkRun_CreateBattle` works out each enemy's six percents (the room's depth across the run, or the boss values; times its scale; at most 65,535) into `EntralinkRunState.enemyScale`.
 - **In the battle (overlay 167):** `PokeCon_CreateClientParty` creates the battle's Pokémon for the server's and the
   client's copies; for a run battle's foe it marks the `BattleMon` with its party slot (`BattleMonCore.entralinkScale`)
   and scales its max HP, HP and stats. `setupBySrcData` and `setupBySrcDataBase` re-read them from the party data
@@ -926,13 +925,108 @@ the gauge's tiles, palettes and HP-numbers actor.
 
 ### 12.6 Calls made, for the user
 
-- Raids take their round's boss values wherever they are (room 1's raid is a boss-sized fight).
+- (Replaced by 12.7: raids take the room curve, times a raid HP factor.)
 - The per-enemy `scale` multiplies every stat (Defense and Speed too), as a plain "harder/easier" knob.
 - The bars' rule is a fixed most HP a bar (5,000) with equal bars, at most 10; the count is "×N" under the bar.
 - The final room's ~50,000 is kept though the simulator says it is long for today's run length (12.1).
 - Speed scales to ×1.5 by the end: late enemies match an unbuffed team, the Speed blue wins it back.
 - Not done: a Pokémon transformed into a scaled enemy copies its scaled stats (vanilla Transform); the bar count in a
   triple battle sits tight between the stacked gauges.
+
+### 12.7 Rebalance (2026-11-20)
+
+After the user's first playtest: room 2 was the Rayquaza raid, which phase 5 had given round 1's boss values (6,627 HP,
+×27.5, Attack ×3), so their Dipplin's Dragon Breath, which one-shot it unscaled, barely dented it. Changed:
+
+- **Raids use the room curve,** not the boss values, and their HP takes an extra factor, `raid_hp_factor` in run.json
+  (3.0; the three attackers; the other stats as the room's). A raid as a boss or final room (none today) keeps the
+  boss values.
+- **The room curve is `start`, `end` and `curve` for each stat, keyed by depth across the whole run:**
+  percent = start + (end - start) x depth^(curve / 100), the depth 0 in the run's first room to 1 in its last room
+  (before the final), by the room's place among all the run's rooms. Curve 100 is a straight line, 200 squares the depth:
+  it stays near `start` for the first rooms and climbs late (the buffs multiply late). The editor's table shows one row a
+  stat: First room, Last room, Curve, Boss R1..R3, with a Raid HP box below. The packer works the curve out for every
+  room (`entralink_run.room_percent`) into a table of up to 24 percents a stat, so the game only indexes it
+  (`EntralinkRun_GetRoomDepth`; no maths on the DS).
+- **Keyed by depth across the run, not by position in a round**, so that changing a round's rooms keeps the arc: the
+  first room is always at `start`, the last at `end`, and a 5-room round is a finer sampling of the same curve instead of
+  running past the last round's end value or restarting each round. The boss values stay per round (they don't depend
+  on the room count).
+- **Values (run.json):** HP 140% rising to 750% (curve 130), Attack and Sp. Atk 100 to 150 (curve 200), Defense and
+  Sp. Def 100 to 130 (curve 150), Speed 100 to 145 (curve 150); the bosses unchanged (HP 2,750 / 6,600 / 22,400, the
+  last the final room at about 50,000 HP, Attack and Sp. Atk 300 / 330 / 450, Defense and Sp. Def 110 / 120 / 130,
+  Speed 115 / 130 / 150). `entralink_sim.py --fit` now proposes start, end, curve and bosses (targets: the balanced
+  build's hits to kill 1.5 in the first room rising to 4 in the last, its hit taken level at about 17%); I rounded its
+  proposal by hand, and curved HP 130 instead of its straight line so the first rooms stay lighter.
+
+Simulated, balanced build, **3 rooms a round (run.json's, 9 rooms):**
+
+| Place | Buff picks so far | Enemy HP | Balanced build's typical hit | Hits to kill | Enemy hit, share of HP |
+| --- | --- | --- | --- | --- | --- |
+| R1 room 1 | 0 | 312 | 228 | 1.4 | 17% |
+| R1 room 2 | 0 | 404 | 226 | 1.8 | 17% |
+| R1 room 3 | 2 | 537 | 268 | 2.0 | 17% |
+| R1 boss | 2 | 6,132 | 255 | 24.1 | 49% |
+| R2 room 1 | 4 | 691 | 418 | 1.7 | 17% |
+| R2 room 2 | 4 | 865 | 402 | 2.2 | 18% |
+| R2 room 3 | 5 | 1,050 | 388 | 2.7 | 18% |
+| R2 boss | 6 | 14,718 | 406 | 36.2 | 49% |
+| R3 room 1 | 6 | 1,249 | 409 | 3.1 | 19% |
+| R3 room 2 | 7 | 1,456 | 431 | 3.4 | 21% |
+| R3 room 3 | 9 | 1,672 | 414 | 4.0 | 16% |
+| R3 final | 9 | 49,952 | 414 | 120.5 | 46% |
+
+**5 rooms a round (15 rooms), the same data:**
+
+| Place | Buff picks so far | Enemy HP | Balanced build's typical hit | Hits to kill | Enemy hit, share of HP |
+| --- | --- | --- | --- | --- | --- |
+| R1 room 1 | 0 | 312 | 228 | 1.4 | 17% |
+| R1 room 2 | 0 | 357 | 226 | 1.6 | 17% |
+| R1 room 3 | 2 | 421 | 273 | 1.5 | 17% |
+| R1 room 4 | 2 | 495 | 272 | 1.8 | 17% |
+| R1 room 5 | 3 | 580 | 267 | 2.2 | 16% |
+| R1 boss | 3 | 6,132 | 255 | 24.1 | 47% |
+| R2 room 1 | 5 | 669 | 421 | 1.6 | 16% |
+| R2 room 2 | 6 | 765 | 450 | 1.7 | 16% |
+| R2 room 3 | 6 | 865 | 439 | 2.0 | 17% |
+| R2 room 4 | 7 | 970 | 433 | 2.2 | 16% |
+| R2 room 5 | 8 | 1,077 | 467 | 2.3 | 17% |
+| R2 boss | 9 | 14,718 | 484 | 30.4 | 46% |
+| R3 room 1 | 10 | 1,191 | 495 | 2.4 | 13% |
+| R3 room 2 | 11 | 1,307 | 481 | 2.7 | 13% |
+| R3 room 3 | 12 | 1,425 | 470 | 3.0 | 13% |
+| R3 room 4 | 12 | 1,548 | 460 | 3.4 | 14% |
+| R3 room 5 | 13 | 1,672 | 484 | 3.5 | 14% |
+| R3 final | 14 | 49,952 | 528 | 94.6 | 42% |
+
+What it shows: with 3 rooms a round the balanced build needs 1.4 hits in the first room (an unscaled enemy takes 1)
+and 4.0 in the last, in steps (1.4, 1.8, 2.0, 1.7, 2.2, 2.7, 3.1, 3.4, 4.0: the dip at the start of round 2 is a round
+of picks arriving at the boss); an enemy's hit stays 16 to 21% of the build's HP. Rooms 1 and 2 are at ×1.4 and ×1.8 HP,
+Attack and the defences nearly ×1. The late rooms and the final room are where phase 5 had them (round 3's last room
+750% against 740%, the final room 49,952 HP). **5 rooms change** little in the curve (the same ends, smaller steps) but
+the player takes more picks along it (14 before the final against 9), so the later rooms are easier for the build
+(2.4 to 3.5 hits in round 3 against 3.1 to 4.0) and the bosses, whose values don't change, fall shorter
+(the final room 95 strong hits against 120); someone running 5 rooms would want somewhat higher boss values (a `boss`
+edit only).
+
+Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `rebalance/h/`; the stats of the foe in
+battle, its party data's in brackets):
+- **The Rayquaza raid in round 1** (place 2): max HP **1,270** (234, ×5.43: the curve's ×1.81 times 3), Attack 238
+  (236), the others ×1.01 to ×1.02. Before: 6,627 HP (×27.5) and Attack ×3.
+- **Round 1, room 1** (Dialga, place 1): HP **324** (232, ×1.40), the other stats ×1.00. Before: ×2.6 HP and ×1.0.
+- **Round 3, room 3** (Dialga, place 13): HP 1,740 (×7.5), Attack and Sp. Atk ×1.5, Defense and Sp. Def ×1.3, Speed
+  ×1.45. Before: ×7.4, ×1.5, ×1.3, ×1.45.
+- **The final room** (Darkrai, place 15): HP 42,560 (×224), Sp. Atk 954 (×4.5), Defense and Sp. Def ×1.3, Speed ×1.5:
+  as before (43,008 and 41,888 in phase 5's runs, which differ by the Pokémon's rolled stats).
+- The hack build is clean (the data warnings are the rooms'), `verify_dsi_rom.py` intact, the packers' and simulator's
+  tests and the editor's (`tsc`, `npm test`) pass, and the plain build's modules match.
+
+Calls I made:
+- A polynomial curve (start, end, exponent) rather than a growth multiplier a room: a growth rate per room would
+  depend on the room count, the exponent doesn't.
+- The raid's other stats follow the room's; only HP takes the factor. A raid in a boss or final room takes the boss values
+  without the factor.
+- The user's 3 rooms a round are untouched.
 
 ## 13. Phase 6: damage numbers and a foe's HP numbers (2026-11-20)
 

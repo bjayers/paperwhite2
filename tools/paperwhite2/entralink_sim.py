@@ -21,8 +21,10 @@ The model, stdlib only and deliberately plain:
   level 100, IVs 31, their attacking stat a dedicated attacker's (base 110, full EVs) and the others base 90 with no
   EVs; the enemies the rooms' level 70 with base 95 stats and IVs 15.
   Physical and special hits count half each, so a stat bucket counts at the average of its two stats.
-- **The enemies' multipliers** (enemy_scaling, percent): a stat's multiplier in a round's room n (from 0) is
-  rooms[round] + n x room_step[round]; a boss's, the final room's and a raid's is boss[round].
+- **The enemies' multipliers** (enemy_scaling, percent; entralink_run.enemy_scaling works them out): a room's is the
+  stat's curve at the room's depth across the whole run, start + (end - start) x depth^(curve / 100); a boss's and
+  the final room's is boss[round]. A raid in a room takes the room's, with its HP times raid_hp_factor (not modelled
+  here: the table is a lone enemy room). Keyed by depth across the run, so --rooms N keeps the arc.
 
 Output per place: the enemy's HP and multipliers; for each build its typical hit, the hits a lone attacker needs
 (typical and strong), the enemy's typical hit as a share of the build's HP, and who moves first.
@@ -77,6 +79,10 @@ ARCHETYPES = ["balanced", "glass_cannon", "defensive"]
 BOSS_STRONG_HITS = [6, 9, 9]
 FINAL_HP = 50000
 BOSS_SHARE = 3.0
+# The room enemies' target in typical hits of a balanced build: the first room's (a little more than the one hit that an
+# unscaled enemy takes) growing to the last room's, along the room curve's depth
+FIRST_HITS = 1.5
+LAST_HITS = 4.0
 
 
 def load(directory: Path = SOURCE) -> tuple[dict, dict]:
@@ -85,19 +91,21 @@ def load(directory: Path = SOURCE) -> tuple[dict, dict]:
     return run, buffs
 
 
-def multiplier(curves: dict, stat: str, round_index: int, room: int | None) -> int:
-    """A stat's percent in a round's room n (from 0), or for its boss (room None)."""
+def multiplier(curves: dict, stat: str, place: dict) -> int:
+    """A stat's percent in a place: its room's depth in the run's table, or its round's boss value."""
     curve = curves[stat]
-    if room is None:
-        return curve["boss"][round_index]
-    return curve["rooms"][round_index] + room * curve["room_step"][round_index]
+    if place["room"] is None:
+        return curve["boss"][place["round"]]
+    return curve["rooms"][place["index"]]
 
 
 def places(run: dict) -> list[dict]:
     out = []
+    index = 0
     for r, round_ in enumerate(run["rounds"]):
         for n in range(round_["rooms"]):
-            out.append({"label": f"R{r + 1} room {n + 1}", "round": r, "room": n,
+            index += 1
+            out.append({"label": f"R{r + 1} room {n + 1}", "round": r, "room": n, "index": index - 1,
                         "weights": {**DEFAULT_TYPE_WEIGHTS, **round_.get("type_weights", {})}})
         last = r == len(run["rounds"]) - 1
         if round_.get("boss") or last:
@@ -258,7 +266,7 @@ def simulate(run: dict, buffs: dict, curves: dict | None = None) -> dict[str, li
         rows = []
         for place in places(run):
             boss = place["room"] is None
-            m = {s: multiplier(curves, s, place["round"], place["room"]) / 100 for s in STATS}
+            m = {s: multiplier(curves, s, place) / 100 for s in STATS}
             e = {s: enemy[s] * m[s] for s in STATS}
             e["hp"] = min(e["hp"], 65535)
             f = build.factors(buffs, boss)
@@ -285,59 +293,60 @@ def simulate(run: dict, buffs: dict, curves: dict | None = None) -> dict[str, li
 
 
 def fit(run: dict, buffs: dict) -> dict:
-    """enemy_scaling's curves from the decisions (section 6): Defense and Sp. Def to x1.3 by the final room; Speed so
-    the final room's enemy matches the unbuffed player; HP so a balanced build's typical hit takes 2.5 hits in round
-    1's first room growing to 4 by round 3's last, a boss BOSS_STRONG_HITS of its strong hits and the final room
-    FINAL_HP; Attack and Sp. Atk so the enemy's hit costs a balanced build the share it costs in the first room, a
-    boss's BOSS_SHARE times that."""
-    boss_strong_hits = BOSS_STRONG_HITS
-    final_hp = FINAL_HP
-    boss_share = BOSS_SHARE
-    rounds = len(run["rounds"])
+    """enemy_scaling's curves from the decisions (section 6, and the rebalance of section 12): Defense and Sp. Def to
+    x1.3 by the last room; Speed so the last room's enemy matches the unbuffed player; HP so a balanced build's typical
+    hit takes FIRST_HITS hits in the first room growing to LAST_HITS by the last; Attack and Sp. Atk so the enemy's
+    hit costs a balanced build the share it costs in the first room. A stat's start and end are the wanted values in
+    the first and last room, its curve exponent the best (least squared error in the log) for the rooms between;
+    the bosses' values are the old fit's (a boss BOSS_STRONG_HITS of its strong hits, the final room FINAL_HP, a boss's
+    hit BOSS_SHARE times a room enemy's)."""
     all_places = places(run)
     count = len(all_places)
-    flat = {s: {"rooms": [100] * rounds, "room_step": [0] * rounds, "boss": [100] * rounds} for s in STATS}
+    room_count = entralink_run.run_room_count(run)
+    flat = entralink_run.enemy_scaling({"rounds": run["rounds"]})
     player = player_stats()
     enemy = enemy_stats()
     balanced = simulate(run, buffs, flat)["balanced"]
     base_share = balanced[0]["share"]
     wanted = {s: [] for s in STATS}
+    boss_wanted = {s: [] for s in STATS}
     for i, (place, row) in enumerate(zip(all_places, balanced)):
         depth = i / (count - 1)
         boss = place["room"] is None
         defense = 1 + 0.3 * depth
         speed = 1 + (player["speed"] / enemy["speed"] - 1) * depth
-        # the share with no attack multiplier is row's share (Defense flat); with this defence it is the same, since
-        # the enemy's defence doesn't enter its own hit
-        attack = base_share * (boss_share if boss else 1) / row["share"]
+        attack = base_share * (BOSS_SHARE if boss else 1) / row["share"]
         hit = row["hit"] / defense
         if boss:
-            target = final_hp if place.get("final") else boss_strong_hits[place["round"]] * row["strong"] / defense
+            target = FINAL_HP if place.get("final") else BOSS_STRONG_HITS[place["round"]] * row["strong"] / defense
         else:
-            target = (2.5 + 1.5 * depth) * hit
+            room_depth = place["index"] / max(1, room_count - 1)
+            target = (FIRST_HITS + (LAST_HITS - FIRST_HITS) * room_depth) * hit
         hp = target / enemy["hp"]
         for s, v in (("hp", hp), ("attack", attack), ("sp_attack", attack), ("defense", defense),
                      ("sp_defense", defense), ("speed", speed)):
-            wanted[s].append(v)
+            (boss_wanted if boss else wanted)[s].append(v)
     out = {}
     for s in STATS:
-        curve = {"rooms": [], "room_step": [], "boss": []}
-        i = 0
-        for r, round_ in enumerate(run["rounds"]):
-            n = round_["rooms"]
-            values = wanted[s][i:i + n]
-            first = values[0] if values else 1
-            step = (values[-1] - values[0]) / (n - 1) if n > 1 else 0
-            curve["rooms"].append(nice(first * 100))
-            curve["room_step"].append(nice(step * 100))
-            i += n
-            if round_.get("boss") or r == rounds - 1:
-                curve["boss"].append(nice(wanted[s][i] * 100))
-                i += 1
-            else:
-                curve["boss"].append(curve["rooms"][-1])
-        out[s] = curve
+        values = wanted[s]
+        start = nice(values[0] * 100)
+        end = nice(values[-1] * 100)
+        out[s] = {"start": start, "end": end, "curve": best_curve(values, start, end),
+                  "boss": [nice(v * 100) for v in boss_wanted[s]]}
     return out
+
+
+def best_curve(values: list[float], start: int, end: int) -> int:
+    """The curve exponent (hundredths, steps of 25) that puts start..end closest to the wanted values."""
+    n = len(values)
+    best = (1e18, 100)
+    for curve in range(25, 801, 25):
+        error = 0.0
+        for i, v in enumerate(values):
+            model = start + (end - start) * ((i / (n - 1)) ** (curve / 100) if n > 1 else 0)
+            error += (math.log(max(model, 1)) - math.log(max(v * 100, 1))) ** 2
+        best = min(best, (error, curve))
+    return best[1]
 
 
 def nice(value: float) -> int:
@@ -387,7 +396,8 @@ def main():
     if args.fit:
         curves = fit(run, buffs)
         print(json.dumps(curves, indent=4))
-        print_table(simulate(run, buffs, curves))
+        applied = {**run, "enemy_scaling": curves}
+        print_table(simulate(applied, buffs))
         return
     results = simulate(run, buffs)
     if args.markdown:

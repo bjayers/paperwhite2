@@ -45,6 +45,8 @@
 #define ENTRALINK_TYPE_COUNT 8
 // The most rounds a run has (run.json's rounds)
 #define ENTRALINK_RUN_ROUNDS_MAX 3
+// The most rooms of role room a run has (8 a round), the size of a stat's table of room percents
+#define ENTRALINK_RUN_SCALED_ROOMS_MAX 24
 // Any type: a boss or final room's draw
 #define ENTRALINK_TYPE_ANY 0xff
 
@@ -235,12 +237,10 @@ typedef struct {
     u8 typeWeights[ENTRALINK_TYPE_COUNT];
 } EntralinkRound;
 
-// A stat's multipliers in percent by the run's depth (run.json's enemy_scaling, phase 5), a round each: in the round's
-// first room, the step each later room of the round adds, and for its boss (the last round's: the final room) and its
-// raids
+// A stat's multipliers in percent (run.json's enemy_scaling, phase 5 and the rebalance): in each room of the run by its
+// depth across the run (rooms[0] the first room), and for each round's boss (the last round's: the final room)
 typedef struct {
-    u16 rooms[ENTRALINK_RUN_ROUNDS_MAX];
-    u16 roomStep[ENTRALINK_RUN_ROUNDS_MAX];
+    u16 rooms[ENTRALINK_RUN_SCALED_ROOMS_MAX];
     u16 boss[ENTRALINK_RUN_ROUNDS_MAX];
 } EntralinkScaling;
 

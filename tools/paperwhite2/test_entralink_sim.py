@@ -9,10 +9,22 @@ from tools.paperwhite2 import entralink_run, entralink_sim  # noqa: E402
 
 
 def test_multipliers_follow_the_curves():
-    curves = {s: {"rooms": [100, 200, 300], "room_step": [10, 20, 30], "boss": [500, 600, 700]}
-              for s in entralink_run.SCALED_STATS}
-    assert entralink_sim.multiplier(curves, "hp", 1, 2) == 240
-    assert entralink_sim.multiplier(curves, "hp", 2, None) == 700
+    run = {"rounds": [{"rooms": 3, "boss": True}, {"rooms": 2}],
+           "enemy_scaling": {"hp": {"start": 100, "end": 500, "curve": 200, "boss": [700, 900]}}}
+    curves = entralink_run.enemy_scaling(run)
+    where = {p["label"]: p for p in entralink_sim.places(run)}
+    assert entralink_sim.multiplier(curves, "hp", where["R1 room 1"]) == 100
+    assert entralink_sim.multiplier(curves, "hp", where["R2 room 1"]) == 325
+    assert entralink_sim.multiplier(curves, "hp", where["R1 boss"]) == 700
+    assert entralink_sim.multiplier(curves, "hp", where["R2 final"]) == 900
+
+
+def test_room_curve_is_keyed_by_depth_across_the_run():
+    """The same start, end and curve give the same first and last room for any rooms a round."""
+    curve = {"start": 100, "end": 700, "curve": 150}
+    for rooms in (2, 3, 5, 8):
+        table = [entralink_run.room_percent(curve, i, rooms * 3) for i in range(rooms * 3)]
+        assert table[0] == 100 and table[-1] == 700 and table == sorted(table)
 
 
 def test_simulates_every_place_for_every_build():
@@ -32,4 +44,4 @@ def test_fit_keeps_defences_at_most_130():
     run, buffs = entralink_sim.load()
     curves = entralink_sim.fit(run, buffs)
     for stat in ("defense", "sp_defense"):
-        assert max(curves[stat]["boss"] + curves[stat]["rooms"]) <= 130
+        assert max(curves[stat]["boss"] + [curves[stat]["end"]]) <= 130

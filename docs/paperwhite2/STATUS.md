@@ -2,6 +2,20 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-20: Entralink enemy scaling rebalance after the first playtest (ROM session, on a branch)
+
+- **Why:** room 2 was the Rayquaza raid, which had round 1's boss values (6,627 HP, x27.5, Attack x3): the user's
+  Dipplin barely dented it. **Now** raids use the room curve with HP times `raid_hp_factor` (run.json, 3.0): that raid is
+  1,270 HP (x5.4, Attack x1.0).
+- **The curve:** `enemy_scaling` per stat is now `start`, `end`, `curve` (exponent in hundredths) keyed by depth across
+  the whole run, and `boss` a round; the packer tabulates every room (up to 24), so a different rooms-a-round keeps the
+  arc. Values: HP 140% to 750%, Attack 100 to 150, defences 100 to 130, Speed 100 to 145; bosses and the final room
+  (about 50,000 HP) unchanged. Round 1 room 1 is x1.4 HP, others x1.0.
+- **Simulated 3 and 5 rooms a round** (entralink-buffs.md, 12.7): hits to kill 1.4 rising to 4.0, an enemy's hit 16 to
+  21% of HP; with 5 rooms the rooms are easier and the bosses shorter (raise `boss` for 5 rooms). The
+  editor's Run section has the new table (First room, Last room, Curve, Boss R1-R3) and Raid HP. Tested in the
+  emulator (raid, round 1 room 1, round 3 room 3, the final room).
+
 ## 2026-11-20: Entralink buffs, phase 7: the Reserve Box and the rest stops' swaps (ROM session, on a branch)
 
 - **The Reserve Box:** a new hub NPC (`entralink.json` id 5, a clerk at (28, 43) left of the exit Lady, placeholder
@@ -50,7 +64,7 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   (balanced, glass cannon, defensive), the buckets' maths and Gen 5's damage formula; `--fit` proposes curves, and its
   table is in `entralink-buffs.md` section 12.1. Finding: with today's 3-room rounds the 50,000-HP final takes 21-30
   strong hits of one attacker; lowering HP's final `boss` value is the lever if playtests agree.
-- **Enemy scaling:** `run.json`'s `enemy_scaling` (each stat: first room, a step a room, boss; a round each; the
+- **Enemy scaling:** `run.json`'s `enemy_scaling` (each stat: start, end, curve by depth across the run, boss a round, see the rebalance entry above; originally first room, a step a room, boss; the
   editor's Run section has a small table per stat) and each room enemy's `scale` (the enemy card's Scale). Applied to
   the foes' BattleMons as they are made and each time stats are re-read; a caught foe keeps its own stats and its HP
   share. Starting curves: room HP ×2.6-7.4, Attack ×1-1.5, defences ≤×1.3, Speed ≤×1.5; bosses ×27.5 / ×66 / ×224 HP.

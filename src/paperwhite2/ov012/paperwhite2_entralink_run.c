@@ -267,16 +267,19 @@ static u32 EntralinkRun_GetPlace(u32 place, u32 *round) {
     return ENTRALINK_ROLE_FINAL;
 }
 
-// A place's index among its round's rooms (from 0), or 0 for a pre-boss rest, a boss or the final room
-static u32 EntralinkRun_GetRoundRoomIndex(u32 place) {
+// A place's index among all the run's rooms of role room (from 0, the depth that the enemies' room curves follow), or 0
+// for a pre-boss rest, a boss or the final room
+static u32 EntralinkRun_GetRoomDepth(u32 place) {
     u32 count = 0;
+    u32 rooms = 0;
     u32 i;
 
     for (i = 0; i < ENTRALINK_RUN_ROUND_COUNT; i++) {
         if (place <= count + sRounds[i].rooms) {
-            return place - count - 1;
+            return rooms + place - count - 1;
         }
         count += sRounds[i].rooms + 2 * sRounds[i].boss;
+        rooms += sRounds[i].rooms;
         if (place <= count) {
             return 0;
         }
@@ -1239,18 +1242,18 @@ static void EntralinkRun_AddEnemy(GameData *gameData, PokeParty *party, const En
 // the Nightmare Ball on its catchable enemies (ENTRALINK_RUN_BTL_SETUP_FLAG). A raid is a triple battle whose two sides
 // are fainted copies of its enemy, so the enemy stands in the center and the battle plays as any triple with two foes
 // down
-// The battle's enemies' stat multipliers (phase 5), which the battle applies at its start: the room's depth's (a
-// round's room by its place in the round; a boss, the final room and a raid by the round's boss values) times each
-// enemy's own scale, at most 0xffff
+// The battle's enemies' stat multipliers (phase 5 and the rebalance), which the battle applies at its start: a room's
+// (a raid in a room too) by its depth across the run, a boss's and the final room's by the round's boss values, times
+// each enemy's own scale, at most 0xffff. A raid's HP also takes the raid factor, as three players hit it
 static void EntralinkRun_SetEnemyScale(EntralinkRunState *state, const EntralinkRoom *room,
                                        const EntralinkBattle *battle) {
     static const EntralinkScaling SCALING[ENTRALINK_STAT_COUNT] = ENTRALINK_RUN_ENEMY_SCALING;
     const EntralinkScaling *scaling;
     const EntralinkEnemy *enemy;
     u32 round;
-    u32 index = EntralinkRun_GetRoundRoomIndex(state->room);
-    BOOL boss = room->role == ENTRALINK_ROLE_BOSS || room->role == ENTRALINK_ROLE_FINAL ||
-                battle->format == ENTRALINK_FORMAT_RAID;
+    u32 depth = EntralinkRun_GetRoomDepth(state->room);
+    BOOL boss = room->role == ENTRALINK_ROLE_BOSS || room->role == ENTRALINK_ROLE_FINAL;
+    BOOL raid = battle->format == ENTRALINK_FORMAT_RAID;
     u32 percent;
     u32 stat;
     u32 i;
@@ -1261,11 +1264,14 @@ static void EntralinkRun_SetEnemyScale(EntralinkRunState *state, const Entralink
         if (boss) {
             percent = scaling->boss[round - 1];
         } else {
-            percent = scaling->rooms[round - 1] + index * scaling->roomStep[round - 1];
+            percent = scaling->rooms[depth];
+            if (raid && stat == ENTRALINK_STAT_HP) {
+                percent = percent * ENTRALINK_RUN_RAID_HP_PERCENT / 100;
+            }
         }
         for (i = 0; i < ENTRALINK_RUN_ENEMIES_MAX; i++) {
             // A raid's three are its one enemy
-            if (battle->format == ENTRALINK_FORMAT_RAID) {
+            if (raid) {
                 enemy = &sEnemies[battle->firstEnemy];
             } else if (i < battle->enemyCount) {
                 enemy = &sEnemies[battle->firstEnemy + i];

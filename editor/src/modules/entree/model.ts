@@ -495,16 +495,25 @@ export const DUST_NOTES: Record<DustKind, string> = {
 };
 export const DEFAULT_DUST: Record<DustKind, number> = { enemy: 40, enemy_choice: 50, challenge: 80, boss: 150, final: 0 };
 export const DEFAULT_DUST_ROUND_PERCENT = [100, 150, 200];
-/** run.json's enemy_scaling (phase 5): the stats, and each one's three rows, a value a round; their defaults. */
+/** run.json's enemy_scaling (phase 5 and its rebalance): the stats; each one's room curve (start, end, curve exponent in
+ * hundredths, by depth across the run) and its boss value a round; their defaults. */
 export const SCALED_STATS = ["hp", "attack", "defense", "sp_attack", "sp_defense", "speed"] as const;
 export type ScaledStat = (typeof SCALED_STATS)[number];
-export const SCALING_KEYS = ["rooms", "room_step", "boss"] as const;
-export type ScalingKey = (typeof SCALING_KEYS)[number];
-export const SCALING_DEFAULTS: Record<ScalingKey, number> = { rooms: 100, room_step: 0, boss: 100 };
+export const CURVE_KEYS = ["start", "end", "curve"] as const;
+export type CurveKey = (typeof CURVE_KEYS)[number];
+export const CURVE_DEFAULTS: Record<CurveKey, number> = { start: 100, end: 100, curve: 100 };
+export const CURVE_KEY_NAMES: Record<CurveKey, string> = { start: "First room", end: "Last room", curve: "Curve" };
+export const CURVE_KEY_TITLES: Record<CurveKey, string> = {
+  start: "Percent in the run's first room", end: "Percent in the run's last room before the final room",
+  curve: "The exponent in hundredths of the depth the rooms rise along: 100 is a straight line, 200 stays near the first room's value longer and then climbs, 300 more so",
+};
+export const BOSS_DEFAULT = 100;
+export type StatScaling = Record<CurveKey, number> & { boss: number[] };
 export const SCALED_STAT_NAMES: Record<ScaledStat, string> = {
   hp: "HP", attack: "Attack", defense: "Defense", sp_attack: "Sp. Atk", sp_defense: "Sp. Def", speed: "Speed",
 };
-export const SCALING_KEY_NAMES: Record<ScalingKey, string> = { rooms: "First", room_step: "Step", boss: "Boss" };
+/** A raid in a room has its HP times this on top of the curve's (three attackers against one foe). */
+export const DEFAULT_RAID_HP_FACTOR = 3;
 /** A room enemy's own scale (room data), percent. */
 export const DEFAULT_ENEMY_SCALE = 100;
 export const DEFAULT_SHOP_ITEMS = 5;
@@ -544,7 +553,8 @@ export interface RunLayout {
   swapDust: number;
   reserveSlots: number;
   /** Each stat's multipliers in percent by depth, three values a row (the last given for rounds left out). */
-  enemyScaling: Record<ScaledStat, Record<ScalingKey, number[]>>;
+  enemyScaling: Record<ScaledStat, StatScaling>;
+  raidHpFactor: number;
 }
 
 /** run.json's data as plain records. */
@@ -573,14 +583,16 @@ export function readRun(data: JsonValue | null | undefined): RunLayout {
     shopItems: num(m.get("shop_items")) ?? DEFAULT_SHOP_ITEMS,
     swapDust: num(m.get("swap_dust")) ?? DEFAULT_SWAP_DUST,
     reserveSlots: num(m.get("reserve_slots")) ?? DEFAULT_RESERVE_SLOTS,
+    raidHpFactor: num(m.get("raid_hp_factor")) ?? DEFAULT_RAID_HP_FACTOR,
     enemyScaling: Object.fromEntries(SCALED_STATS.map((stat) => {
       const entry = asMap(asMap(m.get("enemy_scaling")).get(stat));
-      return [stat, Object.fromEntries(SCALING_KEYS.map((key) => {
-        const given = asList(entry.get(key)).map((v) => num(v) ?? SCALING_DEFAULTS[key]);
-        const list = given.length ? given : [SCALING_DEFAULTS[key]];
-        return [key, ROUNDS.map((_, i) => list[Math.min(i, list.length - 1)])];
-      }))];
-    })) as Record<ScaledStat, Record<ScalingKey, number[]>>,
+      const given = asList(entry.get("boss")).map((v) => num(v) ?? BOSS_DEFAULT);
+      const list = given.length ? given : [BOSS_DEFAULT];
+      return [stat, {
+        ...Object.fromEntries(CURVE_KEYS.map((key) => [key, num(entry.get(key)) ?? CURVE_DEFAULTS[key]])),
+        boss: ROUNDS.map((_, i) => list[Math.min(i, list.length - 1)]),
+      }];
+    })) as Record<ScaledStat, StatScaling>,
     markerSpots: Object.fromEntries(DOORS.map((d) => {
       const spot = asList(asMap(m.get("marker_spots")).get(d)).map((v) => num(v) ?? 0);
       return [d, spot.length === 2 ? [spot[0], spot[1]] : DEFAULT_MARKER_SPOTS[d]];

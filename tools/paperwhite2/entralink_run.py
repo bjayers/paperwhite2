@@ -65,11 +65,13 @@ DEFAULT_SHOP_ITEMS = 5
 # most the progress block's, ENTRALINK_RESERVE_MAX)
 DEFAULT_SWAP_DUST = 100
 DEFAULT_RESERVE_SLOTS = 6
-# Phase 5 (entralink-buffs.md, section 12): the enemies' stat multipliers by depth, in EntralinkScaling's order
-# (ENTRALINK_STAT_*), each a round's first room, its step a later room and its boss; and an enemy's own scale
+# Phase 5 (entralink-buffs.md, section 12) and the rebalance (2026-11-20): the enemies' stat multipliers, in
+# EntralinkScaling's order (ENTRALINK_STAT_*): a room curve keyed by the room's depth across the run (start, end and a
+# curve exponent in hundredths) and a boss value per round; an enemy's own scale; and a raid's extra HP factor
 SCALED_STATS = ["hp", "attack", "defense", "sp_attack", "sp_defense", "speed"]
-SCALING_DEFAULTS = {"rooms": 100, "room_step": 0, "boss": 100}
+SCALING_DEFAULTS = {"start": 100, "end": 100, "curve": 100}
 DEFAULT_SCALE = 100
+DEFAULT_RAID_HP_FACTOR = 3.0
 # The item table's pools (ENTRALINK_POOL_*, bits)
 POOLS = {"item_room": 0, "gift": 1, "shop": 2, "ground": 3}
 # An item without a bag icon in the model table
@@ -708,6 +710,7 @@ def tables(directory: Path) -> dict:
         "dust": [{**DEFAULT_DUST, **run.get("dust", {})}[kind] for kind in DUST_KINDS],
         "dust_round_percent": round_percents(run.get("dust_round_percent", DEFAULT_DUST_ROUND_PERCENT)),
         "enemy_scaling": enemy_scaling(run),
+        "raid_hp_percent": raid_hp_percent(run),
         "shop_items": run.get("shop_items", DEFAULT_SHOP_ITEMS),
         "swap_dust": run.get("swap_dust", DEFAULT_SWAP_DUST),
         "reserve_slots": run.get("reserve_slots", DEFAULT_RESERVE_SLOTS),
@@ -721,18 +724,37 @@ def tables(directory: Path) -> dict:
     }
 
 
-def enemy_scaling(run: dict) -> dict[str, dict[str, list[int]]]:
-    """run.json's enemy_scaling with its defaults: each stat's rooms, room_step and boss, one value for each of the 3
-    rounds (a round left out takes the last one given)."""
+def room_percent(curve: dict, index: int, count: int) -> int:
+    """A room curve's percent in the run's room `index` (from 0) of `count` rooms: start, rising to end by the last
+    room along the depth (index / (count - 1)) raised to curve / 100 (100 linear; above it flatter early and steeper
+    late)."""
+    depth = index / (count - 1) if count > 1 else 0.0
+    return round(curve["start"] + (curve["end"] - curve["start"]) * depth ** (curve["curve"] / 100))
+
+
+def run_room_count(run: dict) -> int:
+    return sum(round_["rooms"] for round_ in run["rounds"])
+
+
+def enemy_scaling(run: dict) -> dict[str, dict]:
+    """run.json's enemy_scaling with its defaults: each stat's start, end and curve, its boss values (one for each of
+    the 3 rounds, a round left out taking the last one given) and `rooms`, the room curve's percent for every room of
+    the run by its depth across the run (the game's table)."""
     table = run.get("enemy_scaling", {})
+    count = run_room_count(run)
     out = {}
     for stat in SCALED_STATS:
         entry = table.get(stat, {})
-        out[stat] = {}
-        for key, default in SCALING_DEFAULTS.items():
-            values = entry.get(key) or [default]
-            out[stat][key] = [values[min(i, len(values) - 1)] for i in range(3)]
+        curve = {key: entry.get(key, default) for key, default in SCALING_DEFAULTS.items()}
+        boss = entry.get("boss") or [100]
+        out[stat] = {**curve, "boss": [boss[min(i, len(boss) - 1)] for i in range(3)],
+                     "rooms": [room_percent(curve, i, count) for i in range(count)]}
     return out
+
+
+def raid_hp_percent(run: dict) -> int:
+    """The raid's extra HP factor in percent (run.json's raid_hp_factor)."""
+    return round(run.get("raid_hp_factor", DEFAULT_RAID_HP_FACTOR) * 100)
 
 
 def round_percents(percents: list[int]) -> list[int]:
@@ -799,11 +821,13 @@ def header(directory: Path) -> str:
         "// A rest stop's swap's price in Dream Dust, and the Reserve Box's slots (phase 7)",
         f"#define ENTRALINK_RUN_SWAP_DUST {data['swap_dust']}",
         f"#define ENTRALINK_RUN_RESERVE_SLOTS {data['reserve_slots']}",
-        "// EntralinkScaling (phase 5), a stat each (ENTRALINK_STAT_* order): the percent in a round's first room, the",
-        "// step a later room of the round adds, the round's boss's (and its raids'); a round each",
+        "// EntralinkScaling (phase 5), a stat each (ENTRALINK_STAT_* order): the percent in each room of the run by its",
+        "// depth across the run (run.json's start, end and curve worked out), then the percent of the three rounds'",
+        "// bosses (the last: the final room). A raid in a room has its HP times the raid factor (percent) as well",
         "#define ENTRALINK_RUN_ENEMY_SCALING { " + ", ".join(
-            "{ " + ", ".join("{ " + ", ".join(map(str, data["enemy_scaling"][stat][key])) + " }"
-                             for key in SCALING_DEFAULTS) + " }" for stat in SCALED_STATS) + " }",
+            "{ { " + ", ".join(map(str, data["enemy_scaling"][stat]["rooms"])) + " }, { "
+            + ", ".join(map(str, data["enemy_scaling"][stat]["boss"])) + " } }" for stat in SCALED_STATS) + " }",
+        f"#define ENTRALINK_RUN_RAID_HP_PERCENT {data['raid_hp_percent']}",
         "// Each room type's template (ENTRALINK_TYPE_* order), or ENTRALINK_RUN_ROOM_NONE",
         f"#define ENTRALINK_RUN_TYPE_TEMPLATES {{ {', '.join(f'0x{t:02x}' for t in data['type_templates'])} }}",
         "// The ground markers' spots, the top-left tiles of 2 by 2, in ENTRALINK_DOOR_* order (north, east, west)",

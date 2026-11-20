@@ -81,10 +81,14 @@
       "$ref": "#/$defs/field_weather",
       "description": "The forest's field weather (include/system/zone_weather.h) in the rounds with no field_weather of their own, the hack's tints (WEATHER_CUSTOM_TINT_*, res/paperwhite2/field_tints/tints.json) among them; the forest's own if left out"
     },
+    "raid_hp_factor": {
+      "type": "number", "minimum": 0.1, "maximum": 20,
+      "description": "A raid in a room (three attackers against one foe) has its HP multiplied by this on top of the room curve's, the other stats as the room's; 3.0 if left out. A raid as a boss or the final room takes the boss values"
+    },
     "enemy_scaling": {
       "type": "object",
       "additionalProperties": false,
-      "description": "How the enemies' stats grow with the run's depth (entralink-buffs.md, section 12; tools/paperwhite2/entralink_sim.py simulates a run with them): each stat's multiplier in percent, applied at a run battle's start to the enemies' stats (a caught one keeps its own). A round's room n (from 0) multiplies by rooms + n x room_step, its boss, the final room and any raid by boss; then each enemy's own scale (room data). A stat left out stays 100",
+      "description": "How the enemies' stats grow with the run's depth (entralink-buffs.md, section 12 and its rebalance; tools/paperwhite2/entralink_sim.py simulates a run with them): each stat's multiplier in percent, applied at a run battle's start to the enemies' stats (a caught one keeps its own). A room (a raid in a room too) multiplies by a curve of its depth across the whole run, from start in the run's first room to end in its last: start + (end - start) x depth^(curve / 100), the depth 0 to 1 by the room's place among all the rooms, so changing a round's rooms keeps the run's arc; a boss and the final room by the round's boss value; then each enemy's own scale (room data). A stat left out stays 100",
       "properties": {
         "hp": { "$ref": "#/$defs/scaling" },
         "attack": { "$ref": "#/$defs/scaling" },
@@ -140,15 +144,12 @@
     "scaling": {
       "type": "object",
       "additionalProperties": false,
-      "description": "A stat's multipliers in percent, one value a round (rounds 1, 2, 3; a round left out takes the last one given). Max HP stops at 65,535",
+      "description": "A stat's multipliers in percent. Max HP stops at 65,535",
       "properties": {
-        "rooms": { "$ref": "#/$defs/percents", "description": "In a round's first room; 100 if left out" },
-        "room_step": {
-          "type": "array", "minItems": 1, "maxItems": 3,
-          "items": { "type": "integer", "minimum": 0, "maximum": 1000 },
-          "description": "Added for each later room of the round; 0 if left out"
-        },
-        "boss": { "$ref": "#/$defs/percents", "description": "For the round's boss (round 3's: the final room) and a raid in the round; 100 if left out" }
+        "start": { "type": "integer", "minimum": 10, "maximum": 50000, "description": "In the run's first room; 100 if left out" },
+        "end": { "type": "integer", "minimum": 10, "maximum": 50000, "description": "In the run's last room (before the final room); 100 if left out" },
+        "curve": { "type": "integer", "minimum": 25, "maximum": 1000, "description": "The exponent in hundredths of the depth the rooms rise along: 100 is a straight line, 200 squares the depth (stays near start for the first rooms, then climbs), 300 cubes it; 100 if left out" },
+        "boss": { "$ref": "#/$defs/percents", "description": "For the round's boss (round 3's: the final room), one value a round (rounds 1, 2, 3; a round left out takes the last one given); 100 if left out" }
       }
     },
     "percents": {
