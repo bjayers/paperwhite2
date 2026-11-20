@@ -6,5 +6,6 @@ import { EDITOR_PORT } from "./shared/api.ts";
 export default defineConfig({
   plugins: [react()],
   server: { port: EDITOR_PORT + 1, strictPort: true, proxy: { "/api": `http://127.0.0.1:${EDITOR_PORT}` } },
-  build: { outDir: "dist", emptyOutDir: true, chunkSizeWarningLimit: 2000 },
+  // (one chunk is fine for a page served from the local disk; the limit only quiets Vite's warning)
+  build: { outDir: "dist", emptyOutDir: true, chunkSizeWarningLimit: 4000 },
 });
