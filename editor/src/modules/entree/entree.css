@@ -198,3 +198,8 @@
 .en-category { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px; align-items: center; }
 .en-category-icons { display: inline-flex; gap: 2px; }
 .en-odds { display: grid; grid-template-columns: 80px repeat(3, 60px); gap: 4px 8px; align-items: center; margin-bottom: 10px; }
+
+/* The damage numbers' tiers: a threshold and its four colours (edited on Graphics & Palettes' Sprite sheets) */
+.en-damage-tiers { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.en-damage-tier { display: inline-flex; gap: 3px; align-items: center; }
+.en-damage-swatch { width: 14px; height: 22px; border: 1px solid var(--border); border-radius: 3px; }

@@ -4,8 +4,9 @@
 // The numbers are 3D quads drawn after the scene's 3D each frame, in an orthographic projection of the screen's
 // pixels, so that each can be any size and see-through (a polygon's alpha) without OBJ, affine parameters or the 2D
 // blend registers, which the message window's fade owns. Each digit is a 16 by 32 texture of 16 colours in texture
-// VRAM, one per digit and sheet row; each colour tier is a copy of the sheet's palette with entries 14 and 15
-// replaced by its colours, in texture palette VRAM. Both are loaded once a battle, by the VRAM transfer manager.
+// VRAM, one per digit and sheet row; each colour tier is a palette of 16 colours in texture palette VRAM (the sheet's,
+// with the outline and the tier's four colours over entries 1-5, made by the packer), and a number is drawn in its
+// tier's. Both are loaded once a battle, by the VRAM transfer manager.
 
 #include "types.h"
 #include "battle/btlv_effect.h"
@@ -26,7 +27,8 @@
 #include "paperwhite2/entralink_buffs_config.h"
 #include "paperwhite2/entralink_run_battle.h"
 
-// The sheet's member (tools/paperwhite2/damage_digits.py): its rows, the cells' size, the 16 colours, then the cells
+// The sheet's member (tools/paperwhite2/damage_digits.py): its rows, the cells' size and its tiers, each tier's 16
+// colours, then the cells
 #define DIGIT_COUNT 10
 #define CELL_WIDTH 16
 #define CELL_HEIGHT 32
@@ -35,9 +37,7 @@
 #define PALETTE_COLORS 16
 #define PALETTE_SIZE (PALETTE_COLORS * sizeof(u16))
 #define SHEET_ROWS_MAX 8
-// The palette entries each tier replaces with its light and dark
-#define COLOR_TIER_LIGHT 14
-#define COLOR_TIER_DARK 15
+#define PALETTES_SIZE (ENTRALINK_DAMAGE_NUMBERS_TIER_COUNT * PALETTE_SIZE)
 
 // The numbers on screen at once (a new one on a Pokémon sends its last one off), and a number's most digits
 #define NUMBER_MAX 6
@@ -59,12 +59,6 @@
 #define ALPHA_OPAQUE 31
 
 typedef struct {
-    u32 from;
-    u16 light;
-    u16 dark;
-} DamageNumberTier;
-
-typedef struct {
     BOOL active;
     u8 viewPos;
     u8 tier;
@@ -79,7 +73,8 @@ typedef struct {
     s16 y;
 } DamageNumber;
 
-static const DamageNumberTier sTiers[ENTRALINK_DAMAGE_NUMBERS_TIER_COUNT] = ENTRALINK_DAMAGE_NUMBERS_TIERS;
+// Each tier's least damage
+static const u32 sTierFrom[ENTRALINK_DAMAGE_NUMBERS_TIER_COUNT] = ENTRALINK_DAMAGE_NUMBERS_TIER_FROM;
 
 static struct {
     BOOL loaded;
@@ -110,27 +105,23 @@ static BOOL DamageNumbers_Shown(BtlMainModule *mainModule) {
 
 // Queues the digits' and the tiers' palettes' transfers to VRAM
 static BOOL DamageNumbers_QueueUpload(void) {
-    u8 *palettes = sDamageNumbers.file + SHEET_HEADER_SIZE + PALETTE_SIZE + sDamageNumbers.rows * DIGIT_COUNT * CELL_BYTES;
+    u8 *palettes = sDamageNumbers.file + SHEET_HEADER_SIZE;
     u32 texSize = sDamageNumbers.rows * DIGIT_COUNT * CELL_BYTES;
 
-    DC_FlushRange(sDamageNumbers.file, SHEET_HEADER_SIZE + PALETTE_SIZE + texSize +
-                                           ENTRALINK_DAMAGE_NUMBERS_TIER_COUNT * PALETTE_SIZE);
+    DC_FlushRange(sDamageNumbers.file, SHEET_HEADER_SIZE + PALETTES_SIZE + texSize);
     if (!NNS_GfdRegisterNewVramTransferTask(NNS_GFD_DST_3D_TEX_VRAM, NNS_GfdGetTexKeyAddr(sDamageNumbers.texKey),
-                                            sDamageNumbers.file + SHEET_HEADER_SIZE + PALETTE_SIZE, texSize)) {
+                                            palettes + PALETTES_SIZE, texSize)) {
         return FALSE;
     }
     // Should the palettes' task find the queue full, the digits go again with them the next frame
     return NNS_GfdRegisterNewVramTransferTask(NNS_GFD_DST_3D_TEX_PLTT, NNS_GfdGetPlttKeyAddr(sDamageNumbers.plttKey),
-                                              palettes, ENTRALINK_DAMAGE_NUMBERS_TIER_COUNT * PALETTE_SIZE);
+                                              palettes, PALETTES_SIZE);
 }
 
 void PaperWhite2_DamageNumbersInit(BtlMainModule *mainModule, HeapID heapId) {
     ArcTool *arc;
     u32 size;
     u32 texSize;
-    u16 *palette;
-    u16 *tierPalette;
-    u32 i;
 
     MI_CpuFill8(&sDamageNumbers, 0, sizeof(sDamageNumbers));
     if (mainModule == NULL) {
@@ -147,8 +138,7 @@ void PaperWhite2_DamageNumbersInit(BtlMainModule *mainModule, HeapID heapId) {
         return;
     }
     size = GFL_ArcToolGetDataLength(arc, DAMAGE_DIGITS_MEMBER);
-    // The file, then the tiers' palettes after it
-    sDamageNumbers.file = GFL_HeapAllocateCore(heapId, size + ENTRALINK_DAMAGE_NUMBERS_TIER_COUNT * PALETTE_SIZE);
+    sDamageNumbers.file = GFL_HeapAllocateCore(heapId, size);
     if (sDamageNumbers.file == NULL) {
         GFL_ArcToolFree(arc);
         return;
@@ -158,23 +148,17 @@ void PaperWhite2_DamageNumbersInit(BtlMainModule *mainModule, HeapID heapId) {
     sDamageNumbers.rows = sDamageNumbers.file[0];
     texSize = sDamageNumbers.rows * DIGIT_COUNT * CELL_BYTES;
     if (sDamageNumbers.rows == 0 || sDamageNumbers.rows > SHEET_ROWS_MAX || sDamageNumbers.file[1] != CELL_WIDTH ||
-        sDamageNumbers.file[2] != CELL_HEIGHT || size != SHEET_HEADER_SIZE + PALETTE_SIZE + texSize) {
+        sDamageNumbers.file[2] != CELL_HEIGHT || sDamageNumbers.file[3] != ENTRALINK_DAMAGE_NUMBERS_TIER_COUNT ||
+        size != SHEET_HEADER_SIZE + PALETTES_SIZE + texSize) {
         GFL_HeapFree(sDamageNumbers.file);
         sDamageNumbers.file = NULL;
         return;
     }
     sDamageNumbers.texKey = NNS_GfdAllocTexVram(texSize, FALSE, 0);
-    sDamageNumbers.plttKey = NNS_GfdAllocPlttVram(ENTRALINK_DAMAGE_NUMBERS_TIER_COUNT * PALETTE_SIZE, FALSE, 0);
+    sDamageNumbers.plttKey = NNS_GfdAllocPlttVram(PALETTES_SIZE, FALSE, 0);
     if (sDamageNumbers.texKey == NNS_GFD_ALLOC_ERROR_TEXKEY || sDamageNumbers.plttKey == NNS_GFD_ALLOC_ERROR_PLTTKEY) {
         PaperWhite2_DamageNumbersExit();
         return;
-    }
-    palette = (u16 *)(sDamageNumbers.file + SHEET_HEADER_SIZE);
-    tierPalette = (u16 *)(sDamageNumbers.file + size);
-    for (i = 0; i < ENTRALINK_DAMAGE_NUMBERS_TIER_COUNT; i++, tierPalette += PALETTE_COLORS) {
-        MI_CpuCopy16(palette, tierPalette, PALETTE_SIZE);
-        tierPalette[COLOR_TIER_LIGHT] = sTiers[i].light;
-        tierPalette[COLOR_TIER_DARK] = sTiers[i].dark;
     }
     sDamageNumbers.queued = DamageNumbers_QueueUpload();
     sDamageNumbers.uploadFrames = UPLOAD_FRAMES;
@@ -226,7 +210,7 @@ void PaperWhite2_DamageNumbersShow(u32 viewPos, u32 damage, u32 flags) {
     number->active = TRUE;
     number->viewPos = viewPos;
     i = ENTRALINK_DAMAGE_NUMBERS_TIER_COUNT - 1;
-    while (i > 0 && damage < sTiers[i].from) {
+    while (i > 0 && damage < sTierFrom[i]) {
         i--;
     }
     number->tier = i;

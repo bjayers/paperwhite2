@@ -466,13 +466,16 @@ DAMAGE_NUMBER_BATTLES = ["off", "run", "all"]
 DAMAGE_NUMBER_SHINES = ["off", "critical", "always"]
 DEFAULT_DAMAGE_NUMBERS = {
     "battles": "run",
-    "tiers": [{"from": 0, "light": "#f8f8f8", "dark": "#a8a8b8"},
-              {"from": 1000, "light": "#58b0f8", "dark": "#2058c0"},
-              {"from": 5000, "light": "#c878f8", "dark": "#7028b0"},
-              {"from": 10000, "light": "#f8d038", "dark": "#c07808"},
-              {"from": 40000, "light": "#f84838", "dark": "#a01010"}],
-    "overlap": 2,
-    "group_space": 3,
+    # The digits' outline (palette entry 1, every tier's) and each tier's entries 2-5: the dark shadow, the light
+    # shadow, the main colour and the shine (tools/paperwhite2/damage_digits.py makes a palette of each tier)
+    "outline": "#151515",
+    "tiers": [{"from": 0, "colors": ["#777777", "#b9b9b9", "#efefef", "#ffffff"]},
+              {"from": 1000, "colors": ["#1c3c94", "#3878e0", "#70b8ff", "#d0ecff"]},
+              {"from": 5000, "colors": ["#4c1c88", "#8840d8", "#c084ff", "#f0d8ff"]},
+              {"from": 10000, "colors": ["#8c4c00", "#d09000", "#ffd030", "#fff6b8"]},
+              {"from": 40000, "colors": ["#780c0c", "#d02418", "#ff5844", "#ffd0c4"]}],
+    "overlap": 3,
+    "group_space": 4,
     "start_scale": 300,
     "start_alpha": 8,
     "shrink_frames": 5,
@@ -492,25 +495,19 @@ def damage_numbers(settings: dict) -> dict:
     return {**DEFAULT_DAMAGE_NUMBERS, **settings.get("damage_numbers", {})}
 
 
-def rgb555(text: str) -> int:
-    r, g, b = (int(text[i:i + 2], 16) >> 3 for i in (1, 3, 5))
-    return r | g << 5 | b << 10
-
-
 def damage_number_lines(settings: dict) -> list[str]:
     numbers = damage_numbers(settings)
     tiers = numbers["tiers"]
     return [
         "// The damage numbers (phase 6): the battles they show in (0 none, 1 the run's, 2 all but link battles), the",
-        "// tiers' thresholds and their two colours (RGB555, the digits' palette entries 14 and 15), the digits' overlap",
+        "// tiers' thresholds (each tier's palette is in the digits' member, damage_digits.py), the digits' overlap",
         "// and the thousands' space in pixels, the pop-up's start (scale in percent, alpha of 31) and its frames, its",
         "// rise while it fades and its height over the Pokémon's feet in pixels, the shine (0 none, 1 critical hits",
         "// and capped ones, 2 every hit), its frames' length and its delay from one digit to the next, and whether",
         "// a foe's gauge shows its HP in the run's battles",
         f"#define ENTRALINK_DAMAGE_NUMBERS_BATTLES {DAMAGE_NUMBER_BATTLES.index(numbers['battles'])}",
         f"#define ENTRALINK_DAMAGE_NUMBERS_TIER_COUNT {len(tiers)}",
-        "#define ENTRALINK_DAMAGE_NUMBERS_TIERS { " + ", ".join(
-            f"{{ {t['from']}, 0x{rgb555(t['light']):04x}, 0x{rgb555(t['dark']):04x} }}" for t in tiers) + " }",
+        "#define ENTRALINK_DAMAGE_NUMBERS_TIER_FROM { " + ", ".join(str(t["from"]) for t in tiers) + " }",
         f"#define ENTRALINK_DAMAGE_NUMBERS_OVERLAP {numbers['overlap']}",
         f"#define ENTRALINK_DAMAGE_NUMBERS_GROUP_SPACE {numbers['group_space']}",
         f"#define ENTRALINK_DAMAGE_NUMBERS_START_SCALE {numbers['start_scale']}",

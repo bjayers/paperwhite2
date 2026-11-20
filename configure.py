@@ -383,8 +383,10 @@ HACK_MEMBER_EXTRA_SOURCES = {"a/1/2/7": ["res/paperwhite2/conditions", "res/poke
                                          "res/paperwhite2/level_scaling.json", "res/town_map", "res/field/zones/*.json",
                                          "include/system/zone_weather.h", "include/paperwhite2/weather_groups.h"],
                              "a/1/2/6": ["res/paperwhite2/conditions", "res/field/events"],
-                             # The digits' member's number (DAMAGE_DIGITS_MEMBER)
-                             "a/0/1/1": ["include/paperwhite2/damage_numbers.h"]}
+                             # The digits' member's number (DAMAGE_DIGITS_MEMBER) and the tiers' colours
+                             # (buffs.json's settings.damage_numbers)
+                             "a/0/1/1": ["include/paperwhite2/damage_numbers.h",
+                                         "res/paperwhite2/entralink/buffs.json"]}
 # Paper White 2: a file the hack's build makes from the user's own ROMs for an archive's members, with the option that
 # hands it to the members' tool: the Pokédex Info page's Flavour, the other games' Pokédex entries, which
 # tools/paperwhite2/dex_flavour.py takes from the ROMs in orig/ that are there (DEX_FLAVOUR_ROMS) into build/, never

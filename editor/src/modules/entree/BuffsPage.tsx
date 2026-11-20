@@ -11,7 +11,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { api } from "../../api.ts";
 import { documents, useDocuments } from "../../documents.ts";
-import { fromPlain, setIn, type JsonMap, type JsonPath, type JsonValue } from "../../../shared/json.ts";
+import { fromPlain, setIn, toPlain, type JsonMap, type JsonPath, type JsonValue } from "../../../shared/json.ts";
 import { resolve, validate, type Constants, type Schema } from "../../../shared/schema.ts";
 import { SearchSelect } from "../../shell/SearchSelect.tsx";
 import { BaseField, defaultFor, humanize, type FormContext } from "../schema-form/form.tsx";
@@ -603,18 +603,20 @@ function DamageNumbersSection({ data, setTop }: { data: JsonMap; setTop(key: str
           <Switch value={battles} options={DAMAGE_BATTLES} onChange={(v) => set("battles", v)}
                   labels={{ off: "Off", run: "Run's", all: "All" }} />
         </Row>
-        <Row label="Tiers" hint="From this damage up, the digits' palette entries 14 and 15 (light, dark) take these colours">
+        <Row label="Tiers" hint="From this damage up, the digits take the tier's colours (palette entries 2-5), which Graphics & Palettes → Sprite sheets → Damage numbers' digits edits with a preview">
           <span className="en-damage-tiers">
             {tiers.map((t, i) => (
               <span key={i} className="en-damage-tier">
                 <NumberBox value={(t.get("from") as number | undefined) ?? 0} min={0} max={65535} width={68} title="The tier's least damage"
                            onChange={(v) => setTier(i, "from", v)} />
-                <input type="color" value={String(t.get("light") ?? "#ffffff")} title="Light (palette entry 14)" onChange={(e) => setTier(i, "light", e.target.value)} />
-                <input type="color" value={String(t.get("dark") ?? "#808080")} title="Dark (palette entry 15)" onChange={(e) => setTier(i, "dark", e.target.value)} />
+                {asList(t.get("colors")).map((c, k) => (
+                  <span key={k} className="en-damage-swatch" style={{ background: String(c) }} title={`Entry ${k + 2}: ${String(c)}`} />
+                ))}
                 <button className="icon" title="Remove the tier" disabled={tiers.length <= 1} onClick={() => set("tiers", tiers.filter((_, k) => k !== i))}>×</button>
               </span>
             ))}
-            <button disabled={tiers.length >= 8} onClick={() => set("tiers", [...tiers, fromPlain({ from: Math.min(65535, ((tiers.at(-1)?.get("from") as number | undefined) ?? 0) + 1000), light: "#ffffff", dark: "#808080" })])}>+ Tier</button>
+            {/* A new tier starts with the last one's colours */}
+            <button disabled={tiers.length >= 8} onClick={() => set("tiers", [...tiers, fromPlain({ from: Math.min(65535, ((tiers.at(-1)?.get("from") as number | undefined) ?? 0) + 1000), colors: toPlain(tiers.at(-1)?.get("colors") ?? fromPlain(["#777777", "#b9b9b9", "#efefef", "#ffffff"])) })])}>+ Tier</button>
           </span>
         </Row>
         <Row label="Layout" hint="Pixels the digits overlap, the space before the thousands (12 345), the number's height over the Pokémon's feet">
