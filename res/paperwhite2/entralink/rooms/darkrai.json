@@ -21,9 +21,79 @@
         {
             "type": "battle",
             "battle": "darkrai",
+            "x": 21,
+            "z": 12,
+            "facing": "DIR_DOWN"
+        },
+        {
+            "type": "ambient",
+            "sprite": "OBJ_CODE_POKEMON_DARKRAI",
+            "x": 12,
+            "z": 11,
+            "facing": "DIR_DOWN",
+            "near": 2,
+            "return": true,
+            "far": 3
+        },
+        {
+            "type": "ambient",
+            "sprite": "OBJ_CODE_POKEMON_DARKRAI",
             "x": 15,
             "z": 14,
-            "facing": "DIR_DOWN"
+            "facing": "DIR_DOWN",
+            "near": 2,
+            "return": true,
+            "far": 3
+        },
+        {
+            "type": "ambient",
+            "sprite": "OBJ_CODE_POKEMON_DARKRAI",
+            "x": 12,
+            "z": 18,
+            "facing": "DIR_DOWN",
+            "near": 2,
+            "return": true,
+            "far": 3
+        },
+        {
+            "type": "ambient",
+            "sprite": "OBJ_CODE_POKEMON_DARKRAI",
+            "x": 18,
+            "z": 15,
+            "facing": "DIR_DOWN",
+            "near": 2,
+            "return": true,
+            "far": 3
+        },
+        {
+            "type": "ambient",
+            "sprite": "OBJ_CODE_POKEMON_DARKRAI",
+            "x": 23,
+            "z": 15,
+            "facing": "DIR_DOWN",
+            "near": 2,
+            "return": true,
+            "far": 3
+        },
+        {
+            "type": "ambient",
+            "sprite": "OBJ_CODE_POKEMON_DARKRAI",
+            "x": 9,
+            "z": 15,
+            "facing": "DIR_DOWN",
+            "near": 2,
+            "return": true,
+            "far": 3
+        },
+        {
+            "type": "ambient",
+            "sprite": "OBJ_CODE_POKEMON_DARKRAI",
+            "x": 20,
+            "z": 19,
+            "facing": "DIR_DOWN",
+            "near": 2,
+            "return": true,
+            "far": 3
         }
     ]
 }
