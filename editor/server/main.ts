@@ -303,8 +303,9 @@ const routes: Record<string, Handler> = {
         await project.writeAtomic(sheet.path, readFileSync(sheet.palette ? output : path));
         written = true;
       }
-      const colors = ok && existsSync(info) ? (JSON.parse(readFileSync(info, "utf8")) as { colors: string[] }).colors : undefined;
-      json(res, { ok, message, written, preview: existsSync(preview) ? readFileSync(preview).toString("base64") : null, colors });
+      const facts = ok && existsSync(info) ? (JSON.parse(readFileSync(info, "utf8")) as { colors: string[]; pixels?: string }) : undefined;
+      json(res, { ok, message, written, preview: existsSync(preview) ? readFileSync(preview).toString("base64") : null,
+        colors: facts?.colors, pixels: sheet.tierColors ? facts?.pixels : undefined });
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

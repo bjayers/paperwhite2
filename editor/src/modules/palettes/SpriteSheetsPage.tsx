@@ -3,11 +3,13 @@
 // /api/sprite-sheets/check), which says whether it packs, or which icons keep it from packing, and shows it as the
 // game will; Apply writes it over the sheet's PNG under res/, which the next build packs. A sheet that is one picture
 // of up to 16 colors (the Entralink run's markers, listed by their tool) also has its palette on the page: a color
-// changed there is checked by the tool again and Apply writes the PNG with it.
+// changed there is checked by the tool again and Apply writes the PNG with it. A sheet drawn in colour tiers (the
+// damage numbers' digits) has its tiers' colours on the page too (TierColorsPanel), with a preview of each tier.
 
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../api.ts";
 import type { SpriteSheet, SpriteSheetCheck } from "../../../shared/api.ts";
+import { TierColorsPanel } from "./TierColorsPanel.tsx";
 
 interface Chosen {
   file: string;
@@ -228,6 +230,11 @@ export function SpriteSheetsPage() {
               {sheet.palette && !chosen && !palette && current?.colors && swatches(current.colors)}
               {!current && <p className="muted pal-hint">Checking…</p>}
             </section>
+
+            {sheet.tierColors && (
+              <TierColorsPanel sheet={sheet} pixels={(result?.ok ? result : current)?.pixels}
+                               colors={palette ?? (result?.ok ? result.colors : current?.colors)} />
+            )}
 
             <section className="pal-panel art-screen">
               <div className="pal-row wrap">

@@ -2,6 +2,17 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-20: Damage numbers: the user's digits and four tier colours (ROM session, on a branch)
+
+- **The user's sheet** (`res/paperwhite2/battle/damage_digits.png`, 4 rows) is installed and packs; overlap 3 and
+  thousands space 4 suit its italic face.
+- **Five palette colours:** entry 1 the outline (shared, `settings.damage_numbers.outline`) and four a tier
+  (`tiers[].colors`: dark shadow, light shadow, main, shine), replacing the 14/15 swap. The packer builds the five
+  palettes into the digits' member; the game uploads them as they are. Colours in `entralink-buffs.md` 13.8.
+- **Editor:** Graphics & Palettes → Sprite sheets → Damage numbers' digits has a Tier colours panel (pickers, a live
+  `12 345` per tier, Play the shine, Save to `buffs.json`).
+- Tested in the emulator: a number in each tier and the red critical's shine. Details and screenshots: 13.8.
+
 ## 2026-11-20: Entralink fixes: new species' battle NPCs invisible, a short triple crashing (ROM session, on a branch)
 
 - **Invisible NPC** (`apples_to_applin`'s Dipplin): a battle NPC without a sprite took its enemy's from the game's

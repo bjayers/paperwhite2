@@ -1047,10 +1047,10 @@ Buffs, **Damage numbers** section).
   the numbers use **no OBJ, no affine parameters and no 2D palette**; they sit over the Pokémon and effects and under
   the gauges and the message window (OBJ and BG1 are above the 3D layer).
 - **VRAM:** each digit of each sheet row is a 16×32 texture of 16 colours (256 bytes): 10 KB of texture VRAM with the
-  placeholder's 4 rows, at 0x3500 in a battle (the stage's textures below it; the Pokémon sprites' fixed area starts
+  sheet's 4 rows, at 0x3500 in a battle (the stage's textures below it; the Pokémon sprites' fixed area starts
   at 0x24000, so there is room). Each colour tier is a 16-colour palette in texture palette VRAM (5 tiers: 160 bytes,
-  at 0x1c0, below the sprites' 0x1000). Loaded once a battle by the VRAM transfer manager; the 10 KB file is in the
-  battle's heap for three frames only. If either allocation fails, the battle simply shows no numbers.
+  at 0x1c0, below the sprites' 0x1000), which the packer makes (13.8) and a number is drawn in. Loaded once a battle
+  by the VRAM transfer manager; the 10.4 KB file is in the battle's heap for three frames only. If either allocation fails, the battle simply shows no numbers.
 - **Timing:** the server puts `SC_DAMAGE_NUMBER (target, flags, full damage)` just before each hit's damage display
   (`ServerControl_DamageListCore`, before `ServerDisplay_Damage` puts `SC_OP_SUBTRACT_HP`), so the client pops the
   number as the hit's HP drain starts, once per hit of a multi-hit move and once per foe of a spread move. Nothing waits
@@ -1071,11 +1071,12 @@ Buffs, **Damage numbers** section).
 | `hold_frames` | 30 | holds |
 | `fade_frames`, `rise` | 12, 10 | fades out over 12 frames, rising 10 pixels |
 | `height` | 48 | pixels over the Pokémon's feet |
-| `overlap`, `group_space` | 2, 3 | pixels the digits overlap; the space before the thousands (`12 345`) |
+| `overlap`, `group_space` | 3, 4 | pixels the digits overlap; the space before the thousands (`12 345`) |
 | `shine` | `critical` | the shine rows play: `off`, `critical` (critical hits and hits at the cap), `always` |
 | `shine_frame_time`, `shine_delay` | 2, 2 | frames a shine row shows; the delay from one digit to the next (a sweep left to right) |
 | `hp_numbers` | true | a foe's gauge shows its HP in the run's battles |
-| `tiers` | 0 white, 1,000 blue, 5,000 purple, 10,000 gold, 40,000 red | each `{from, light, dark}` |
+| `outline` | `#151515` | palette entry 1, the outline, in every tier |
+| `tiers` | 0 white, 1,000 blue, 5,000 purple, 10,000 gold, 40,000 red | each `{from, colors}`: entries 2-5 (13.8) |
 
 The ease is one function, `DamageNumbers_Scale`: an elastic curve (overshoot and settle) goes there later. The shine
 starts once the number has landed.
@@ -1083,21 +1084,23 @@ starts once the number has landed.
 ### 13.3 The sheet spec, for the user's art
 
 `res/paperwhite2/battle/damage_digits.png`, on the Graphics & Palettes → **Sprite sheets** page as "Damage numbers'
-digits" (it checks an import, previews it with a sample `12 345` in each tier, and edits its 16 colours):
+digits" (it checks an import, previews it with a sample `12 345` in each tier, edits its 16 colours, and has the
+**Tier colours** panel, 13.8). The user's art replaced the placeholder on 2026-11-20 (4 rows: the digits and 3 shine
+frames, indices 0-5 only):
 - **An indexed PNG of 16 colours, 160 pixels wide.** Cells of **16×32**, the digits **0 to 9 left to right**, every 16
   pixels; each cell keeps **one blank column at each side** (the glyph is at most 14 wide). The check warns if a cell
   draws in its side columns.
 - **Row 1** (y 0-31) is the digits as they show. **Each row under it is one shine frame**, played in order and back to
   row 1: 1 to 8 rows in all, so the height is 32, 64, ... up to 256 (the placeholder has 4: 3 shine frames). The game
   reads the row count from the sheet.
-- **Index 0 is transparent.** **Palette entries 14 (light) and 15 (dark) are the tier colours**: every tier replaces
-  them with its two colours, so draw the parts that change colour (the fill and its shade) with 14 and 15. The
-  sheet's own 14 and 15 are only a preview. The other entries (1-13) show as the sheet has them in every tier (the
-  placeholder: 1 the outline, 13 the shine's white, 2-12 a grey ramp, unused).
-- **Layout in game:** digit cells are placed `16 - 2 - overlap` pixels apart (12 now), plus `group_space` (3) before
-  the thousands; no comma, no "MAX".
-- `tools/paperwhite2/damage_digits.py placeholder` writes the placeholder again (bold digits, the tier colours light
-  above and dark from two-thirds down, a white band sweeping across them in the shine rows).
+- **Index 0 is transparent; 1 is the outline** (every tier's); **2-5 are the tier colours**: 2 the dark shadow, 3 the
+  light shadow, 4 the main colour, 5 the shine (the "reflection" the shine rows animate). Each tier replaces 1-5 with
+  the settings' outline and its four colours, so the sheet's own 1-5 are only a preview (the user's sheet has the white
+  tier's). Entries 6-15 show as the sheet has them in every tier.
+- **Layout in game:** digit cells are placed `16 - 2 - overlap` pixels apart (11 now), plus `group_space` (4) before
+  the thousands; no comma, no "MAX". Each digit is drawn over the one before.
+- `tools/paperwhite2/damage_digits.py placeholder` writes a placeholder (bold digits in the main colour above and
+  the light shadow from two-thirds down, a band of the shine colour sweeping across them in the shine rows).
 
 ### 13.4 A foe's HP numbers
 
@@ -1140,10 +1143,46 @@ quads a frame. The battle view's archive +10.3 KB (the sheet) and 111 bytes (the
 
 - Drawn as 3D quads (13.1) rather than affine OBJ: real transparency and any size, and no OBJ budget to share.
 - The HP line shows the foe's current HP only (no max), so that five digits and `×10` fit the 64-pixel line.
-- Tier colours are palette entries **14 and 15**; the shine plays on critical and capped hits, left to right after
-  the number lands; a new number on a foe fades the previous one.
+- Tier colours were palette entries 14 and 15 (replaced by 13.8's four); the shine plays on critical and capped hits,
+  left to right after the number lands; a new number on a foe fades the previous one.
 - `battles: all` is implemented (not link battles) but the setting stays `run`.
 - `EntralinkBattle_GetLastHitDamage` (phase 3, unused) gave way to each Pokémon's last hit, which every battle keeps.
+
+### 13.8 The user's sheet and four tier colours (2026-11-20)
+
+The user's digits (`damage_digits.png`, italic with a drop shadow, 4 rows: the digits and 3 shine frames that sweep
+a highlight down each digit) replaced the placeholder, with a new palette scheme: entry 1 the outline, shared, and
+**four colours a tier**, entries 2-5 (dark shadow, light shadow, main, shine).
+- **Data:** `settings.damage_numbers.outline` and each tier's `colors` (four `#rrggbb`), in place of `light`/`dark`
+  (schema updated). The white tier is the sheet's own colours; the others were designed on its ramp:
+
+  | Tier | from | dark shadow | light shadow | main | shine |
+  | --- | --- | --- | --- | --- | --- |
+  | white | 0 | `#777777` | `#b9b9b9` | `#efefef` | `#ffffff` |
+  | blue | 1,000 | `#1c3c94` | `#3878e0` | `#70b8ff` | `#d0ecff` |
+  | purple | 5,000 | `#4c1c88` | `#8840d8` | `#c084ff` | `#f0d8ff` |
+  | gold | 10,000 | `#8c4c00` | `#d09000` | `#ffd030` | `#fff6b8` |
+  | red | 40,000 | `#780c0c` | `#d02418` | `#ff5844` | `#ffd0c4` |
+
+  Outline `#151515`. `overlap` 3 and `group_space` 4 for this italic face (the digits' slant tucks under the one
+  before; the user asked for 2-3 px and a small thousands space).
+- **Packer:** `damage_digits.py` makes each tier's 16-colour palette (the sheet's, with the outline and the tier's
+  four over 1-5, RGB555) into the digits' member: its header's 4th byte is the tier count, the palettes follow it,
+  then the cells. The archive now depends on `buffs.json`. The C (`PaperWhite2_DamageNumbersInit`) uploads the
+  palettes as they are (no more building them in the heap: 160 bytes less of it) and checks the tier count against
+  `ENTRALINK_DAMAGE_NUMBERS_TIER_COUNT`; the generated header keeps only the thresholds (`..._TIER_FROM`). A number
+  picks its tier's palette as before.
+- **Editor:** the Sprite sheets page's "Damage numbers' digits" has a **Tier colours** panel (`TierColorsPanel.tsx`,
+  driven by the sheet's `tierColors` entry from `damage_digits.py list`): the shared outline and each tier's four
+  colours (pickers rounded to 5 bits an axis), a live 2× preview of `12 345` in each tier drawn from the sheet's
+  pixels at the settings' spacing, "Play the shine" (the game's timing), and Save, which writes `buffs.json` through
+  the editor's validated save. Entree → Buffs → Damage numbers keeps the thresholds and shows each tier's colours as
+  swatches; a new tier starts with the last one's colours.
+- **Tested** (py-desmume, the user's save copy, harness in the session's scratchpad `digits2/h/`): a battle with the
+  run's Darkrai, the lead's Attack (and the foe's Defense) poked: 138 white, 2,276 / 2,396 / 2,180 blue (Arm Thrust's
+  three hits), 6,822 purple, 11,576 gold, and a critical 59,708 red with the shine sweeping left to right, each digit
+  top to bottom (`digits2/shots/tiers_closeup.png`, `tiers_screens.png`, `red_shine.png`); the textures and the five
+  palettes load (0x3500, 0x1c0). Editor panel: `digits2/editor_tiers.png`.
 
 ## 14. Phase 7: the Reserve Box and the rest stops' swaps (2026-11-20)
 

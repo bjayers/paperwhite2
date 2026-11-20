@@ -58,35 +58,31 @@
         },
         "damage_numbers": {
             "battles": "run",
+            "outline": "#151515",
             "tiers": [
                 {
                     "from": 0,
-                    "light": "#f8f8f8",
-                    "dark": "#a8a8b8"
+                    "colors": [ "#777777", "#b9b9b9", "#efefef", "#ffffff" ]
                 },
                 {
                     "from": 1000,
-                    "light": "#58b0f8",
-                    "dark": "#2058c0"
+                    "colors": [ "#1c3c94", "#3878e0", "#70b8ff", "#d0ecff" ]
                 },
                 {
                     "from": 5000,
-                    "light": "#c878f8",
-                    "dark": "#7028b0"
+                    "colors": [ "#4c1c88", "#8840d8", "#c084ff", "#f0d8ff" ]
                 },
                 {
                     "from": 10000,
-                    "light": "#f8d038",
-                    "dark": "#c07808"
+                    "colors": [ "#8c4c00", "#d09000", "#ffd030", "#fff6b8" ]
                 },
                 {
                     "from": 40000,
-                    "light": "#f84838",
-                    "dark": "#a01010"
+                    "colors": [ "#780c0c", "#d02418", "#ff5844", "#ffd0c4" ]
                 }
             ],
-            "overlap": 2,
-            "group_space": 3,
+            "overlap": 3,
+            "group_space": 4,
             "start_scale": 300,
             "start_alpha": 8,
             "shrink_frames": 5,

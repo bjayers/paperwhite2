@@ -348,14 +348,13 @@
               "type": "array",
               "minItems": 1,
               "maxItems": 8,
-              "description": "The colour tiers by the hit's damage, from 0 up: each swaps the digits' palette entries 14 (light) and 15 (dark) for its colours",
+              "description": "The colour tiers by the hit's damage, from 0 up: each is a palette of the digits' sheet with its four colours over entries 2-5",
               "items": {
                 "type": "object",
                 "additionalProperties": false,
                 "required": [
                   "from",
-                  "light",
-                  "dark"
+                  "colors"
                 ],
                 "properties": {
                   "from": {
@@ -364,18 +363,20 @@
                     "maximum": 65535,
                     "description": "The least damage of the tier"
                   },
-                  "light": {
-                    "type": "string",
-                    "pattern": "^#[0-9a-fA-F]{6}$",
-                    "description": "Palette entry 14's colour"
-                  },
-                  "dark": {
-                    "type": "string",
-                    "pattern": "^#[0-9a-fA-F]{6}$",
-                    "description": "Palette entry 15's colour"
+                  "colors": {
+                    "type": "array",
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "items": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+                    "description": "The digits' palette entries 2-5 in this tier: the dark shadow, the light shadow, the main colour and the shine (the colour the sheet's shine rows draw with)"
                   }
                 }
               }
+            },
+            "outline": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$",
+              "description": "The digits' palette entry 1, the outline, in every tier"
             },
             "overlap": {
               "type": "integer",

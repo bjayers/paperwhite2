@@ -13,15 +13,18 @@ res/paperwhite2/battle/damage_digits.png, packed into the battle view's archive 
 
 The sheet is an indexed PNG of 16 colours, 160 pixels wide: cells of 16 by 32, the digits 0 to 9 left to right. Row 1
 (the top 32 pixels) is the digits as they show; each row under it is one frame of their shine, played in order and
-back to row 1 (up to MAX_ROWS rows in all). Each cell keeps one blank column at each side. Index 0 is clear; entries
-14 and 15 are the tier colours, which each colour tier (buffs.json's settings.damage_numbers.tiers) replaces with its
-light and dark, so the sheet's own 14 and 15 are only a preview; the other entries show as the sheet has them.
+back to row 1 (up to MAX_ROWS rows in all). Each cell keeps one blank column at each side. Index 0 is clear; entry 1 is
+the outline, every tier's; entries 2 to 5 are the tier colours (the dark shadow, the light shadow, the main colour and
+the shine, which the shine rows draw with). buffs.json's settings.damage_numbers has them all: its outline and each
+tier's four colours, which replace the sheet's own 1 to 5 (only a preview); the other entries show as the sheet has
+them.
 
-The member (DIGITS_MEMBER, the archive's first after its own) is a header (the rows, the cells' width and height, 0),
-the 16 colours as RGB555 and then every cell, row by row and 0 to 9 in a row, each a 16 by 32 texture of 4 bits a
-pixel (GX_TEXFMT_PLTT16, the left pixel in the low nibble), which src/paperwhite2/ov168/paperwhite2_damage_numbers.c
-loads into texture VRAM and draws as 3D quads. The next member is the cell of a foe's HP line on its gauge: the HP
-numbers' cell (HP_NUMBERS_CELL) widened to two 32 by 8 pieces, 64 pixels.
+The member (DIGITS_MEMBER, the archive's first after its own) is a header (the rows, the cells' width and height, the
+tiers), each tier's 16 colours as RGB555 and then every cell, row by row and 0 to 9 in a row, each a 16 by 32 texture
+of 4 bits a pixel (GX_TEXFMT_PLTT16, the left pixel in the low nibble), which
+src/paperwhite2/ov168/paperwhite2_damage_numbers.c loads into texture VRAM and draws as 3D quads, a number in its
+tier's palette. The next member is the cell of a foe's HP line on its gauge: the HP numbers' cell (HP_NUMBERS_CELL)
+widened to two 32 by 8 pieces, 64 pixels.
 """
 import json
 import re
@@ -43,9 +46,11 @@ DIGITS = 10
 WIDTH = CELL_WIDTH * DIGITS
 MAX_ROWS = 8
 COLORS = 16
-# The palette entries that the tiers replace, and the placeholder's other entries
-TIER_LIGHT, TIER_DARK = 14, 15
-OUTLINE, SHINE = 1, 13
+# The palette entries that the settings give: the outline, every tier's, and each tier's four from TIER_FIRST (the
+# dark shadow, the light shadow, the main colour and the shine)
+OUTLINE = 1
+TIER_FIRST, TIER_COLORS = 2, 4
+DARK_SHADOW, LIGHT_SHADOW, MAIN, SHINE = range(TIER_FIRST, TIER_FIRST + TIER_COLORS)
 # The battle view's archive's HP numbers' cell (BtlvGauge_CreateActors' 0x1c9)
 HP_NUMBERS_CELL = 0x1c9
 
@@ -53,9 +58,9 @@ ABOUT = (
     "The damage numbers' digits (phase 6): 160 pixels wide, cells of 16×32, the digits 0 to 9 left to right, with one "
     "blank column at each side of each cell. Row 1 (the top 32 pixels) is the digits as they show; each row under it "
     f"is one frame of their shine, played in order (up to {MAX_ROWS} rows in all, so the height is 32 times the rows). "
-    "An indexed PNG of 16 colours, index 0 clear: palette entries 14 (light) and 15 (dark) are the tier colours, "
-    "which each colour tier (Entree's Buffs settings) replaces, so draw the parts that change colour with those two; "
-    "the other entries show as they are. The game draws the digits overlapping and spaced by the settings, starts "
+    "An indexed PNG of 16 colours, index 0 clear: entry 1 is the outline and entries 2-5 the tier colours (dark "
+    "shadow, light shadow, main colour, shine: the shine rows draw with 5), which the Tier colours below set for "
+    "each tier; the sheet's own 1-5 are only a preview, and its other entries show as they are. The game draws the digits overlapping and spaced by the settings, starts "
     "each number large and see-through and shrinks it into place. The preview adds a sample number in each tier.")
 
 
@@ -73,8 +78,8 @@ def read_sheet(path: Path) -> tuple[int, bytes, list[tuple[int, int, int]]]:
     try:
         width, height, pixels, colors = read_indexed_png(path)
     except ValueError:
-        raise ValueError("The sheet must be an indexed PNG of 16 colours (index 0 clear, 14 and 15 the tier "
-                         "colours).") from None
+        raise ValueError("The sheet must be an indexed PNG of 16 colours (index 0 clear, 1 the outline, 2-5 the "
+                         "tier colours).") from None
     if width != WIDTH or height % CELL_HEIGHT or not CELL_HEIGHT <= height <= CELL_HEIGHT * MAX_ROWS:
         raise ValueError(f"The sheet is {width}×{height}; it must be {WIDTH} wide and 32 pixels a row tall, 1 to "
                          f"{MAX_ROWS} rows.")
@@ -99,10 +104,27 @@ def to555(color: tuple[int, int, int]) -> int:
     return r | g << 5 | b << 10
 
 
-def member(path: Path = SHEET) -> bytes:
+def hex_color(text: str) -> tuple[int, int, int]:
+    return tuple(int(text[i:i + 2], 16) for i in (1, 3, 5))
+
+
+def tier_palettes(colors: list, numbers: dict) -> list[list[tuple[int, int, int]]]:
+    """Each tier's 16 colours: the sheet's, with the settings' outline and the tier's four colours over 1 to 5."""
+    palettes = []
+    for tier in numbers["tiers"]:
+        palette = list(colors)
+        palette[OUTLINE] = hex_color(numbers["outline"])
+        for i, color in enumerate(tier["colors"]):
+            palette[TIER_FIRST + i] = hex_color(color)
+        palettes.append(palette)
+    return palettes
+
+
+def member(path: Path = SHEET, numbers: dict | None = None) -> bytes:
     rows, pixels, colors = read_sheet(path)
-    data = struct.pack("<BBBB", rows, CELL_WIDTH, CELL_HEIGHT, 0)
-    data += b"".join(struct.pack("<H", to555(color)) for color in colors)
+    palettes = tier_palettes(colors, numbers if numbers is not None else settings())
+    data = struct.pack("<BBBB", rows, CELL_WIDTH, CELL_HEIGHT, len(palettes))
+    data += b"".join(struct.pack("<H", to555(color)) for palette in palettes for color in palette)
     return data + b"".join(cell(pixels, row, digit) for row in range(rows) for digit in range(DIGITS))
 
 
@@ -160,17 +182,16 @@ GLYPHS = [
     [".####.", "######", "##..##", "##..##", "##..##", "##..##", "######", ".#####", "....##", "....##", "##..##",
      "######", ".####."],
 ]
-# The placeholder's colours: clear, the outline, a grey ramp for the artist, the shine's white, the tier colours
-# (the first tier's)
-PLACEHOLDER_COLORS = [(0, 0, 0), (24, 24, 32), (64, 64, 72), (96, 96, 104), (128, 128, 136), (160, 160, 168),
-                      (184, 184, 192), (208, 208, 216), (224, 224, 232), (40, 40, 48), (80, 80, 88), (112, 112, 120),
-                      (144, 144, 152), (255, 255, 255), (248, 248, 248), (168, 168, 184)]
+# The placeholder's colours: clear, the outline, the white tier's four, a grey ramp for the artist
+PLACEHOLDER_COLORS = [(0, 0, 0), (21, 21, 21), (119, 119, 119), (185, 185, 185), (239, 239, 239), (255, 255, 255),
+                      (64, 64, 72), (96, 96, 104), (128, 128, 136), (160, 160, 168), (184, 184, 192), (208, 208, 216),
+                      (224, 224, 232), (40, 40, 48), (80, 80, 88), (112, 112, 120)]
 PLACEHOLDER_SHINE_FRAMES = 3
 
 
 def placeholder() -> bytes:
-    """The placeholder sheet: the bold digits in the tier colours (light above, dark from two-thirds down) outlined,
-    and three shine frames of a white band sweeping across them."""
+    """The placeholder sheet: the bold digits in the tier colours (the main colour above, the light shadow from
+    two-thirds down) outlined, and three shine frames of a band of the shine colour sweeping across them."""
     rows = 1 + PLACEHOLDER_SHINE_FRAMES
     pixels = bytearray(WIDTH * CELL_HEIGHT * rows)
     for row in range(rows):
@@ -182,7 +203,7 @@ def placeholder() -> bytes:
                     near = any(0 <= y - 1 + dy < 26 and 0 <= x - 1 + dx < 12 and fill[y - 1 + dy][x - 1 + dx]
                                for dy in (-1, 0, 1) for dx in (-1, 0, 1))
                     if inside:
-                        index = TIER_LIGHT if y < 18 else TIER_DARK
+                        index = MAIN if y < 18 else LIGHT_SHADOW
                         # The shine: a band leaning right, in row r at a third of the way further each frame
                         band = (x + (27 - y) // 2) - (row * 9 - 4)
                         if row and 0 <= band < 4:
@@ -201,7 +222,11 @@ def sheets() -> list[dict]:
     rows = read_sheet(SHEET)[0] if SHEET.exists() else 1
     return [{"name": "damage_digits", "title": "Damage numbers' digits", "path": SHEET.relative_to(ROOT).as_posix(),
              "tool": TOOL, "width": WIDTH, "height": CELL_HEIGHT * rows, "heightStep": CELL_HEIGHT,
-             "maxHeight": CELL_HEIGHT * MAX_ROWS, "description": ABOUT, "palette": True}]
+             "maxHeight": CELL_HEIGHT * MAX_ROWS, "description": ABOUT, "palette": True,
+             # The tiers' colours, which the page edits with a preview of the sample number in each
+             "tierColors": {"file": (entralink_buffs.SOURCE / "buffs.json").relative_to(ROOT).as_posix(),
+                            "at": ["settings", "damage_numbers"], "first": TIER_FIRST, "outline": OUTLINE,
+                            "sample": "12345"}}]
 
 
 def settings() -> dict:
@@ -213,16 +238,16 @@ def shown(color: tuple[int, int, int]) -> tuple[int, int, int]:
     return tuple(axis * 255 // 31 for axis in color5(color))
 
 
-def sample(pixels: bytes, colors: list, tiers: list[dict], numbers: dict) -> tuple[int, int, bytes]:
-    """'12 345' at its normal size in each tier, a row of 32 pixels each, as RGBA."""
+def sample(pixels: bytes, colors: list, numbers: dict) -> tuple[int, int, bytes]:
+    """'12 345' at its normal size in each tier, a row of 32 pixels each, as RGBA: the digits as the game places them,
+    each over the one before."""
     text = "12345"
     advance = CELL_WIDTH - 2 - numbers["overlap"]
-    height = CELL_HEIGHT * len(tiers)
+    palettes = tier_palettes(colors, numbers)
+    height = CELL_HEIGHT * len(palettes)
     out = bytearray(WIDTH * height * 4)
-    for t, tier in enumerate(tiers):
-        palette = [shown(c) for c in colors]
-        palette[TIER_LIGHT] = shown(tuple(int(tier["light"][i:i + 2], 16) for i in (1, 3, 5)))
-        palette[TIER_DARK] = shown(tuple(int(tier["dark"][i:i + 2], 16) for i in (1, 3, 5)))
+    for t, tier_palette in enumerate(palettes):
+        palette = [shown(c) for c in tier_palette]
         x0 = 4
         for i, ch in enumerate(text):
             if i and (len(text) - i) % 3 == 0:
@@ -263,8 +288,8 @@ def check(args: list[str]):
         sys.exit(f"damage_digits.py: {str(error).replace(f'{rest[0]}: ', '')}")
     used = sorted(set(pixels))
     warnings = []
-    if not {TIER_LIGHT, TIER_DARK} & set(used):
-        warnings.append("no pixel uses entry 14 or 15, so the tiers don't change the digits' colour")
+    if not set(range(TIER_FIRST, TIER_FIRST + TIER_COLORS)) & set(used):
+        warnings.append("no pixel uses entries 2-5, so the tiers don't change the digits' colour")
     for row in range(rows):
         for digit in range(DIGITS):
             edges = [pixels[(row * CELL_HEIGHT + y) * WIDTH + digit * CELL_WIDTH + x]
@@ -276,15 +301,16 @@ def check(args: list[str]):
         body = bytearray()
         for index in pixels:
             body += bytes((*palette[index], 0 if index == 0 else 255))
-        numbers = settings()
-        _, extra_height, extra = sample(pixels, colors, numbers["tiers"], numbers)
+        _, extra_height, extra = sample(pixels, colors, settings())
         Path(options["--preview"]).write_bytes(write_rgba_png(WIDTH, rows * CELL_HEIGHT + extra_height,
                                                               bytes(body) + extra))
     if options["--output"]:
         Path(options["--output"]).write_bytes(write_indexed_png(WIDTH, rows * CELL_HEIGHT, pixels, colors))
     if options["--info"]:
+        # The pixels too (an index a hex digit, row by row), for the editor's tier colours' live preview
         Path(options["--info"]).write_text(json.dumps({"colors": ["#%02x%02x%02x" % shown(c) for c in colors],
-                                                       "used": used, "warnings": warnings}))
+                                                       "used": used, "warnings": warnings,
+                                                       "pixels": "".join("%x" % p for p in pixels)}))
     note = f"; warning: {'; '.join(warnings)}" if warnings else ""
     print(f"{rows} row{'s' if rows > 1 else ''} ({rows - 1} shine frame{'' if rows == 2 else 's'}){note}")
 

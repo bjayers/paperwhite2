@@ -161,6 +161,10 @@ export interface SpriteSheet {
   /** The sheet is a picture of up to 16 colors whose palette the page edits: its tool takes --palette, --output and
    * --info, and the check says the colors */
   palette?: boolean;
+  /** A sheet drawn in colour tiers (the damage numbers' digits): the JSON file and the place in it that holds the
+   * tiers' colours ({ outline, tiers: [{ from, colors }] } and the digits' layout), the palette entries each tier's
+   * colors cover from `first`, and the entry of the shared outline; the page edits them with a live preview */
+  tierColors?: { file: string; at: string[]; first: number; outline: number; sample: string };
 }
 
 /** A sheet's check by its tool (POST /api/sprite-sheets/check): its last line, and the sheet as the game shows it. */
@@ -171,6 +175,8 @@ export interface SpriteSheetCheck {
   preview: string | null;
   /** A sheet with a palette: its colors ("#rrggbb", 16) in the checked picture */
   colors?: string[];
+  /** A sheet with tier colors: its pixels' palette indices, a hex digit each, row by row */
+  pixels?: string;
 }
 
 /** An item's icon (GET /api/item-icons): the icon and palette members it shows in the hack's build, their files, the
