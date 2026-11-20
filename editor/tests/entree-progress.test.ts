@@ -88,16 +88,17 @@ test("progress ids: new battles and catches get the next numbers, old ones never
   assert.deepEqual(errors(parseJson(readFileSync(join(ROOT, PROGRESS_IDS), "utf8")), JSON.parse(readFileSync(join(ROOT, PROGRESS_IDS_SCHEMA), "utf8"))), []);
   assert.deepEqual(checkRooms(listed(real)).filter((m) => m.includes("progress id")), []);
 
-  // A new room with a catchable enemy, after a deleted battle 9 and catch 4: numbers above them
+  // A new room with a catchable enemy, after three deleted battles and catches past the real ones: numbers above them
+  const nextBattle = counters.next_battle + 3, nextCatch = counters.next_catch + 3;
   let fresh = newRoomData("New");
   fresh = setIn(fresh, ["battles", 0, "enemies", 0, "catch"], fromPlain({ after: [], once: true }));
   const rooms = [...real, { path: `${ROOMS_DIR}/zz_new.json`, data: fresh }];
-  const given = assignProgressIds(rooms, { next_battle: 10, next_catch: 5 }, orders);
+  const given = assignProgressIds(rooms, { next_battle: nextBattle, next_catch: nextCatch }, orders);
   assert.deepEqual([...given.changed.keys()], [`${ROOMS_DIR}/zz_new.json`]);
   const out = given.changed.get(`${ROOMS_DIR}/zz_new.json`)!;
-  assert.equal(getIn(out, ["battles", 0, "progress_id"]), 10);
-  assert.equal(getIn(out, ["battles", 0, "enemies", 0, "progress_id"]), 5);
-  assert.deepEqual(given.counters, { next_battle: 11, next_catch: 6 });
+  assert.equal(getIn(out, ["battles", 0, "progress_id"]), nextBattle);
+  assert.equal(getIn(out, ["battles", 0, "enemies", 0, "progress_id"]), nextCatch);
+  assert.deepEqual(given.counters, { next_battle: nextBattle + 1, next_catch: nextCatch + 1 });
   // In the schema's order: a battle's after its id, an enemy's after its catch
   assert.deepEqual([...(getIn(out, ["battles", 0]) as Map<string, JsonValue>).keys()], ["id", "progress_id", "format", "enemies"]);
   assert.deepEqual([...(getIn(out, ["battles", 0, "enemies", 0]) as Map<string, JsonValue>).keys()], ["species", "level", "catch", "progress_id"]);
@@ -115,12 +116,12 @@ test("progress ids: new battles and catches get the next numbers, old ones never
   // A copy of a room gets new numbers; a copy with its old ones would share them
   const copy = { path: `${ROOMS_DIR}/zz_new_copy.json`, data: out };
   assert.deepEqual(checkRooms(listed([...real, { path: `${ROOMS_DIR}/zz_new.json`, data: out }, copy])).filter((m) => m.includes("progress id")), [
-    "zz_new_copy/battle has the same battle progress id (10) as zz_new/battle: remove one's progress_id in the text view and save to give it a new one.",
-    "zz_new_copy/battle enemy 1 has the same catch progress id (5) as zz_new/battle enemy 1: remove one's progress_id in the text view and save to give it a new one.",
+    `zz_new_copy/battle has the same battle progress id (${nextBattle}) as zz_new/battle: remove one's progress_id in the text view and save to give it a new one.`,
+    `zz_new_copy/battle enemy 1 has the same catch progress id (${nextCatch}) as zz_new/battle enemy 1: remove one's progress_id in the text view and save to give it a new one.`,
   ]);
   const copied = assignProgressIds([{ path: `${ROOMS_DIR}/zz_new.json`, data: out }, { ...copy, data: withoutProgressIds(out) }], given.counters, orders);
-  assert.equal(getIn(copied.changed.get(copy.path)!, ["battles", 0, "progress_id"]), 11);
-  assert.equal(getIn(copied.changed.get(copy.path)!, ["battles", 0, "enemies", 0, "progress_id"]), 6);
+  assert.equal(getIn(copied.changed.get(copy.path)!, ["battles", 0, "progress_id"]), nextBattle + 1);
+  assert.equal(getIn(copied.changed.get(copy.path)!, ["battles", 0, "enemies", 0, "progress_id"]), nextCatch + 1);
   assert.equal(copied.changed.has(`${ROOMS_DIR}/zz_new.json`), false);
 
   // A catch turned off keeps its number, for when it's turned on again; the save's bits run out at their limits

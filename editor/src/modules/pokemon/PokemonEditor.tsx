@@ -24,6 +24,7 @@ import { SpeciesIcon, speciesFolder } from "./SpeciesIcon.tsx";
 import { useToolActive } from "../active.ts";
 import { useToolParams } from "../../navigation.ts";
 import { FormIcon, FormPage, FormsCard, MirrorToggle, Row, SERVICES, WonderTradeRow } from "./FormPage.tsx";
+import { VARIATION_PATH } from "./paletteVariation.ts";
 import { FollowerSpritesCard } from "./FollowerSprites.tsx";
 import { BattleSpriteArt } from "./BattleSpriteArt.tsx";
 import { isOriginalForm, listSpecies, type Listed } from "./forms.ts";
@@ -362,7 +363,10 @@ export function PokemonEditor({ constants }: ToolProps) {
 
   // (the Follower cards' rows too, whose walking sprite is picked there)
   // (a side's rig files are the Rig Editor's: it saves them with their bake and checks, so they are never saved here)
-  const editable = (p: string) => (p.startsWith("res/pokemon/") && !isRigFile(p)) || p === SERVICES || p.startsWith("res/field/actors/followers/");
+  // (the species' files, and the shared files its cards edit: the Wonder Trade's services, the followers, the palette
+  // variation's strengths and settings)
+  const editable = (p: string) => (p.startsWith("res/pokemon/") && !isRigFile(p)) || p === SERVICES || p === VARIATION_PATH
+    || p.startsWith("res/field/actors/followers/");
   const unsaved = [...docs.values()].filter((d) => d.dirty && editable(d.path));
   const save = useCallback(async () => {
     const paths = documents.dirtyPaths().filter(editable);
