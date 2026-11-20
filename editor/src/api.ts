@@ -177,6 +177,15 @@ export interface MoveUses {
   code: string[];
 }
 
+/** GET /api/moves/learnable: the moves a species (or its form's own record) can learn, each with how ("Lv. 46",
+ * "Evolving", "TM26", "HM01", "Tutor", "Egg"). */
+export interface LearnableMoves {
+  species: string;
+  form: number;
+  path: string;
+  moves: { move: string; how: string[] }[];
+}
+
 /** GET /api/abilities/uses: the species that have an ability, and what else names it. */
 export interface AbilityUses {
   ability: string;
@@ -462,6 +471,8 @@ export const api = {
   /** The moves and abilities Paper White 2 added (tools/paperwhite2/moves.py and abilities.py). */
   moves: () => request<MovesInfo>("GET", "/api/moves"),
   moveUses: (move: string) => request<MoveUses>("GET", `/api/moves/uses?move=${encodeURIComponent(move)}`),
+  learnableMoves: (species: string, form = 0) =>
+    request<LearnableMoves>("GET", `/api/moves/learnable?species=${encodeURIComponent(species)}&form=${form}`),
   addMove: (b: NewMove) => request<EntryChange>("POST", "/api/moves/add", b),
   removeMove: (b: { move: string; check?: boolean }) => request<EntryChange>("POST", "/api/moves/remove", b),
   retireMove: (b: { move: string; retired: boolean; check?: boolean }) => request<EntryChange>("POST", "/api/moves/retire", b),

@@ -63,7 +63,7 @@ test("the new NPC types: valid, their default sprites and markers, item-choice r
   const npcs = NPC_TYPES.map((t, i) => newNpc(t, 3 + i, 4, room, markers));
   // Their markers: heal, revive and swap their own (step 7, the buffs' phase 7; none where the art isn't given), gift
   // the item, shop the shop, buff balls the buff; item-choice balls none
-  assert.deepEqual(npcs.map((n) => n.get("marker") ?? null), [null, null, null, null, "item", "shop", null, null, "buff", "rest", "buff"]);
+  assert.deepEqual(npcs.map((n) => n.get("marker") ?? null), [null, null, null, null, "item", "shop", null, null, "buff", null, "rest", "buff"]);
   const step7 = new Set([...markers, "heal", "revive", "swap"]);
   assert.deepEqual(["heal", "revive", "swap"].map((t) => newNpc(t as NpcType, 3, 4, room, step7).get("marker")), ["heal", "revive", "swap"]);
   // Without npc_markers/ art, none
@@ -73,7 +73,7 @@ test("the new NPC types: valid, their default sprites and markers, item-choice r
   const read = readRoom(data);
   // Sprites: balls the item ball, people the Lady; none written
   assert.deepEqual(read.npcs.map((n) => (n.type === "battle" ? "battle" : npcSprite(n, read, constants))),
-    ["battle", ITEM_BALL_SPRITE, LADY_SPRITE, LADY_SPRITE, LADY_SPRITE, LADY_SPRITE, LADY_SPRITE, ITEM_BALL_SPRITE, ITEM_BALL_SPRITE, LADY_SPRITE, LADY_SPRITE]);
+    ["battle", ITEM_BALL_SPRITE, LADY_SPRITE, LADY_SPRITE, LADY_SPRITE, LADY_SPRITE, LADY_SPRITE, ITEM_BALL_SPRITE, ITEM_BALL_SPRITE, LADY_SPRITE, LADY_SPRITE, LADY_SPRITE]);
   assert.ok(npcs.every((n) => !n.has("sprite")));
   const ball = read.npcs.find((x) => x.type === "item_choice")!;
   const choices = (n: number): Room => ({ ...read, npcs: read.npcs.filter((x) => x.type === "item_choice").concat(

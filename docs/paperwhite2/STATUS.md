@@ -2,6 +2,19 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-20: Entree page number boxes, learnable moves first, room ambients (ROM session, on a branch)
+
+- **Number boxes:** every number of the Entree page (Scale, level, weights, chances, prices, Dust, the Run tables, Raid
+  HP, the Buffs tab) keeps the typed text while focused and commits on blur, Enter or Ctrl+S: out of range shows red
+  and is clamped on commit. Other editors still clamp per keystroke (listed in the prototype doc).
+- **Move pickers** (enemy cards and the Trainer Editor's party) list the species' learnable moves first, marked
+  ("Lv. 46", "TM32", "Tutor", "Egg"; a form's own record where it has one), then all moves; search covers both.
+  `moves.py learnable`, `GET /api/moves/learnable`.
+- **Room ambients:** NPC type `ambient` (`behaviour` fade or flee, `near` 3, `return` with `far` 6, `distance` 4):
+  decoys that fade (and come back) or run away and fade as the player nears; they never keep a room from being done.
+  `paperwhite2_entralink_ambients.c`; the prototype doc's "Room ambients". Tested in the emulator: three fading
+  Darkrai (one returning, and fading again), one fleeing 4 tiles, and the room's real battle still won.
+
 ## 2026-11-20: Entralink enemy scaling rebalance after the first playtest (ROM session, on a branch)
 
 - **Why:** room 2 was the Rayquaza raid, which had round 1's boss values (6,627 HP, x27.5, Attack x3): the user's

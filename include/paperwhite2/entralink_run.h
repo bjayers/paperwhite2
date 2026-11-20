@@ -69,6 +69,15 @@
 // Phase 7 of the buffs: a rest stop's swap, a Pokémon of the Reserve Box (paperwhite2/entralink_reserve.h) into the
 // team for Dream Dust in place of a copy, a choice NPC too
 #define ENTRALINK_NPC_SWAP 10
+// An ambient: an actor with nothing to say, which reacts as the player comes near
+// (src/paperwhite2/ov012/paperwhite2_entralink_ambients.c): it fades out (and with a return distance fades back in),
+// or runs away and fades. It never keeps the room from being done
+#define ENTRALINK_NPC_AMBIENT 11
+
+// What an ambient NPC does when the player comes within its near distance: fades out where it stands, or turns and
+// runs away from the player, fading as it goes
+#define ENTRALINK_AMBIENT_FADE 0
+#define ENTRALINK_AMBIENT_FLEE 1
 
 // The item table's pools, bits of EntralinkItem's pools: an item room's balls, a gift NPC's choice, a shop's goods,
 // and the items on the ground and hidden in a room
@@ -205,6 +214,12 @@ typedef struct {
     u8 afterStyle;
     // The icon over its head: an NPC marker (ENTRALINK_NPC_MARKER_* of the config), or ENTRALINK_NPC_MARKER_NONE
     u8 marker;
+    // An ambient's: ENTRALINK_AMBIENT_*, the tiles from the player at which it reacts, the tiles at which a faded one
+    // comes back (0: it doesn't), and the tiles a fleeing one runs
+    u8 behaviour;
+    u8 near;
+    u8 far;
+    u8 distance;
 } EntralinkNpc;
 
 typedef struct {
@@ -289,6 +304,14 @@ void EntralinkRun_GetMarkerSpot(u32 door, u32 *x, u32 *z);
 // The marker over the room's NPC of an index (its actor's ID), ENTRALINK_NPC_MARKER_NONE if it has none or isn't there;
 // over an item room's ball, its item's bag icon (ENTRALINK_NPC_MARKER_ICON)
 u32 EntralinkRun_GetNpcMarker(u32 index);
+// The room's NPC of an index if it is an ambient that came up and is still there, else NULL
+const EntralinkNpc *EntralinkRun_GetAmbient(u32 index);
+// Puts an ambient of the room back (hidden, for its fade-in), after it faded out to come back
+FieldActor *EntralinkRun_SpawnAmbient(Field *field, u32 index);
+// Takes the room's ambient of an index away for the rest of the room, its actor too
+void EntralinkRun_RemoveAmbient(Field *field, u32 index);
+// The room's ambients' reactions to the player, every frame of the field's update (paperwhite2_entralink_ambients.c)
+void PaperWhite2_EntralinkAmbientsUpdate(Field *field);
 // The script of the run's hidden item, if it lies on the tile at a position (the tile in front of the player, as A
 // is pressed: FieldEventProvider_Grid_CheckForEvent), else SCRID_NONE
 u16 EntralinkRun_CheckHiddenItem(u16 zoneId, const VecFx32 *pos);

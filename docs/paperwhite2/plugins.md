@@ -1485,6 +1485,8 @@ edited in the Overworld Editor's Ambients tab.
   the paths, the facing from the way it goes, a perch's turns among its faces and its hops, a walking Pokémon's two
   frames always playing); `tests/ambient-path.test.ts` checks it against the formulas.
 - **Not yet:** flying off when the player comes near, picking again in the zone, and sprites from the encounters.
+- The Entralink run's **room ambients** (NPCs of type `ambient`, which fade or run away as the player comes near) are
+  the rooms' own actors, not these: `docs/paperwhite2/design/entralink-roguelike-prototype.md`, "Room ambients".
 
 ### Wanderers
 

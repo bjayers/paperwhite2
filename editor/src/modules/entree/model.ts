@@ -26,8 +26,8 @@ export type Role = (typeof ROLES)[number];
 export const FORMATS = ["single", "double", "triple", "raid"] as const;
 export type Format = (typeof FORMATS)[number];
 /** The NPCs' types (room.schema.json's npc type), in the pickers' order: the step 6 types after battle and item (the
- * buffs' phase 7 swap with the rest's), the old placeholders last. */
-export const NPC_TYPES = ["battle", "item", "heal", "revive", "gift", "shop", "swap", "item_choice", "buff_choice", "rest", "buff"] as const;
+ * buffs' phase 7 swap with the rest's), the ambients, the old placeholders last. */
+export const NPC_TYPES = ["battle", "item", "heal", "revive", "gift", "shop", "swap", "item_choice", "buff_choice", "ambient", "rest", "buff"] as const;
 export type NpcType = (typeof NPC_TYPES)[number];
 export const NPC_TYPE_NOTES: Record<NpcType, string> = {
   battle: "Talking to it starts the battle it names.",
@@ -39,6 +39,7 @@ export const NPC_TYPE_NOTES: Record<NpcType, string> = {
   swap: "Brings a Pokémon of the Reserve Box (set aside at the Entralink's NPC) into the team as a level 100 copy, in place of a copy that hasn't fainted, for the run's swap Dust; the copy that makes way leaves the run. A swap is the room's choice; each reserved Pokémon joins once a run.",
   item_choice: "An item ball whose item is drawn from the item room pool as the room is entered; its bag icon floats above it. Taking one makes the others go.",
   buff_choice: "A buff ball (a placeholder line until buffs come).",
+  ambient: "Scenery with nothing to say: it reacts when the player comes near, fading out (and back in, with Return) or running away. Several may stand in a room, as decoys round its real battle NPC; it never keeps the room from being done.",
   rest: "The old placeholder: says its dialogue only.",
   buff: "The old placeholder: says its dialogue only.",
 };
@@ -243,7 +244,21 @@ export interface Npc {
   dialogue?: Dialogue;
   /** The icon over its head: npc_markers/<marker>.png. */
   marker?: string;
+  /** An ambient's reaction and its distances (AMBIENT_DEFAULTS when left out). */
+  behaviour?: AmbientBehaviour;
+  near?: number;
+  return?: boolean;
+  far?: number;
+  distance?: number;
 }
+
+/** An ambient's reactions (room.schema.json's behaviour): fade where it stands, or run away and fade. */
+export const AMBIENT_BEHAVIOURS = ["fade", "flee"] as const;
+export type AmbientBehaviour = (typeof AMBIENT_BEHAVIOURS)[number];
+/** An ambient's defaults: fade within 3 tiles; with return, back at 6; a fleeing one runs 4 (the packer's). */
+export const AMBIENT_DEFAULTS = { behaviour: "fade" as AmbientBehaviour, near: 3, far: 6, distance: 4 };
+/** The keys only an ambient has. */
+export const AMBIENT_KEYS = ["behaviour", "near", "return", "far", "distance"] as const;
 
 export interface Room {
   name: string;
@@ -304,6 +319,8 @@ export function readRoom(data: JsonValue | null | undefined): Room {
         sprite: str(nm.get("sprite")), requires: asList(nm.get("requires")).map(String), chance: num(nm.get("chance")),
         x: num(nm.get("x")) ?? 0, z: num(nm.get("z")) ?? 0, facing: str(nm.get("facing")) ?? "DIR_DOWN",
         marker: str(nm.get("marker")),
+        behaviour: AMBIENT_BEHAVIOURS.includes(nm.get("behaviour") as AmbientBehaviour) ? nm.get("behaviour") as AmbientBehaviour : undefined,
+        near: num(nm.get("near")), return: nm.get("return") === true ? true : undefined, far: num(nm.get("far")), distance: num(nm.get("distance")),
         dialogue: d instanceof Map ? {
           before: str(d.get("before")), after: str(d.get("after")),
           ...(messageStyle(d.get("before_style")) && { beforeStyle: messageStyle(d.get("before_style")) }),
@@ -440,7 +457,13 @@ export function checkRoom(room: Room, constants: ReadonlyMap<string, number>, cl
     if (n.type === "item" && !n.item) add("error", { npc: i }, `${name} gives no item: choose one.`);
     if (n.type === "item_choice" && (n.item !== undefined || n.count !== undefined)) add("warning", { npc: i }, `${name} has an item, but an item-choice ball's is drawn as the room is entered.`);
     else if (n.type !== "item" && (n.item !== undefined || n.count !== undefined)) add("warning", { npc: i }, `${name} has an item, which only item NPCs give.`);
-    if (n.type !== "battle" && n.dialogue?.after) add("warning", { npc: i }, `${name} has an "after the battle" message, which only battle NPCs say.`);
+    if (n.type !== "battle" && n.type !== "ambient" && n.dialogue?.after) add("warning", { npc: i }, `${name} has an "after the battle" message, which only battle NPCs say.`);
+    if (n.type === "ambient") {
+      if (n.dialogue?.before || n.dialogue?.after) add("warning", { npc: i }, `${name} is an ambient, which says nothing: its dialogue isn't used.`);
+      if (n.return && (n.behaviour ?? AMBIENT_DEFAULTS.behaviour) !== "fade") add("error", { npc: i }, `${name} flees and returns: only a fading ambient comes back.`);
+      if (n.return && (n.far ?? AMBIENT_DEFAULTS.far) <= (n.near ?? AMBIENT_DEFAULTS.near))
+        add("error", { npc: i }, `${name} comes back at ${n.far ?? AMBIENT_DEFAULTS.far} tiles, which isn't farther than it fades at (${n.near ?? AMBIENT_DEFAULTS.near}).`);
+    } else if (AMBIENT_KEYS.some((k) => n[k] !== undefined)) add("error", { npc: i }, `${name} has an ambient's reaction, but isn't an ambient.`);
     for (const key of n.requires) if (known && key !== RUN_COMPLETED && !known.has(key))
       add("error", { npc: i }, `${name} spawns only after winning "${key}", which no room has.`);
     if (new Set(n.requires).size !== n.requires.length) add("warning", { npc: i }, `${name} names a spawn condition twice.`);

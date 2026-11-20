@@ -95,6 +95,7 @@
 #include "paperwhite2/battle_weather.h"
 #include "paperwhite2/camera_areas.h"
 #include "paperwhite2/entralink_markers.h"
+#include "paperwhite2/entralink_run.h"
 #include "paperwhite2/field.h"
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/following_render.h"
@@ -568,6 +569,9 @@ u32 FieldRoutine_Run(GameSystem *gsys, Field *field) {
         PaperWhite2_WanderersUpdate(field);
         // Paper White 2: the Entralink run's markers at the doors and over NPCs (paperwhite2_entralink_markers.c)
         PaperWhite2_EntralinkMarkersUpdate(field);
+        // Paper White 2: the Entralink run's room ambients, which fade or run as the player comes near
+        // (paperwhite2_entralink_ambients.c)
+        PaperWhite2_EntralinkAmbientsUpdate(field);
 #else
         FldActSys_Update(field->actorSystem);
 #endif

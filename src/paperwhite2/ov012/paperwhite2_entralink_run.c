@@ -801,6 +801,7 @@ static void EntralinkRun_EnterRoom(GameData *gameData) {
     EntralinkRunState *state = EntralinkRun_GetState();
     const EntralinkRoom *room = EntralinkRun_GetRoom();
     const EntralinkNpc *npc;
+    u32 blocking = 0;
     u32 round;
     u32 i;
 
@@ -816,8 +817,12 @@ static void EntralinkRun_EnterRoom(GameData *gameData) {
             continue;
         }
         state->npcsSpawned |= 1 << i;
+        // (an ambient never keeps the room from being done)
+        if (npc->type != ENTRALINK_NPC_AMBIENT) {
+            blocking |= 1 << i;
+        }
     }
-    state->cleared = state->npcsSpawned == 0;
+    state->cleared = blocking == 0;
     EntralinkRun_GetPlace(state->room, &round);
     state->fieldWeather = sRounds[round - 1].fieldWeather;
     EntralinkRun_DrawRoomItems(gameData, state, room, round);
@@ -1020,6 +1025,41 @@ static void EntralinkRun_RemoveNpc(GameSystem *gsys, u32 index) {
     }
 }
 
+const EntralinkNpc *EntralinkRun_GetAmbient(u32 index) {
+    EntralinkRunState *state = EntralinkRun_GetState();
+    const EntralinkRoom *room = EntralinkRun_GetRoom();
+    const EntralinkNpc *npc;
+
+    if (room == NULL || index >= room->npcCount || !(state->npcsSpawned & (1 << index)) ||
+        (state->npcsGone & (1 << index))) {
+        return NULL;
+    }
+    npc = &sNpcs[room->firstNpc + index];
+    return npc->type == ENTRALINK_NPC_AMBIENT ? npc : NULL;
+}
+
+FieldActor *EntralinkRun_SpawnAmbient(Field *field, u32 index) {
+    const EntralinkRoom *room = EntralinkRun_GetRoom();
+    FieldActor *actor;
+
+    if (EntralinkRun_GetAmbient(index) == NULL) {
+        return NULL;
+    }
+    // (an ambient always has a sprite of its own, so its spawn reads no Pokémon data)
+    EntralinkRun_SpawnNpc(field, NULL, room, &sNpcs[room->firstNpc + index], index);
+    actor = FindFieldActor(Field_GetActorSystem(field), index);
+    if (actor != NULL) {
+        SetActorHidden(actor, TRUE);
+    }
+    return actor;
+}
+
+void EntralinkRun_RemoveAmbient(Field *field, u32 index) {
+    if (EntralinkRun_GetAmbient(index) != NULL) {
+        EntralinkRun_RemoveNpc(Field_GetGameSystem(field), index);
+    }
+}
+
 // Whether an NPC type makes the room's choice when used, and is one of the room's choice NPCs that go once the choice
 // is made: a rest's heal, revive, gift and swap, a shop (once talked to, whether anything is bought or not), an item
 // room's ball, a buff ball
@@ -1089,6 +1129,9 @@ static void EntralinkRun_CheckRoomDone(void) {
             continue;
         }
         type = sNpcs[room->firstNpc + i].type;
+        if (type == ENTRALINK_NPC_AMBIENT) {
+            continue;
+        }
         if (type == ENTRALINK_NPC_BATTLE || EntralinkRun_IsChoiceType(type)) {
             return;
         }

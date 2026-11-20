@@ -105,8 +105,8 @@
       "required": [ "type", "x", "z", "facing" ],
       "properties": {
         "type": {
-          "enum": [ "battle", "item", "rest", "buff", "heal", "revive", "gift", "shop", "item_choice", "buff_choice", "swap" ],
-          "description": "battle: starts the battle it names. item: gives a fixed item. heal: heals every Pokémon that hasn't fainted (HP, status, PP). revive: revives a fainted Pokémon the player chooses, to full HP. gift: a choice of 3 random items of items.json's gift pool. shop: a shop, the Poké Mart's screen selling run.json's shop_items items of items.json's shop pool for Dream Dust into the run's bag; talking to it is the room's choice, and it opens again after. item_choice: an item ball whose item is drawn from items.json's item_room pool as the room is entered, its bag icon floating above it. buff_choice: a buff ball (a placeholder line for now). swap: for run.json's swap_dust in Dream Dust, brings a Pokémon of the Reserve Box (set in the hub) into the team as a level 100 copy, in place of a copy that hasn't fainted, which leaves the run. rest and buff: their before dialogue only (the old placeholders). Using one heal, revive, gift, shop, item_choice or swap NPC is the room's choice: the room's other NPCs of those types go and the room is done; its battle NPCs stay, optional"
+          "enum": [ "battle", "item", "rest", "buff", "heal", "revive", "gift", "shop", "item_choice", "buff_choice", "swap", "ambient" ],
+          "description": "battle: starts the battle it names. item: gives a fixed item. heal: heals every Pokémon that hasn't fainted (HP, status, PP). revive: revives a fainted Pokémon the player chooses, to full HP. gift: a choice of 3 random items of items.json's gift pool. shop: a shop, the Poké Mart's screen selling run.json's shop_items items of items.json's shop pool for Dream Dust into the run's bag; talking to it is the room's choice, and it opens again after. item_choice: an item ball whose item is drawn from items.json's item_room pool as the room is entered, its bag icon floating above it. buff_choice: a buff ball (a placeholder line for now). swap: for run.json's swap_dust in Dream Dust, brings a Pokémon of the Reserve Box (set in the hub) into the team as a level 100 copy, in place of a copy that hasn't fainted, which leaves the run. ambient: an actor with nothing to say that reacts when the player comes near (behaviour, near, return, far, distance): it fades out, or runs away and fades; several may stand in a room (decoys round its real battle NPC), and they never keep a room from being done. rest and buff: their before dialogue only (the old placeholders). Using one heal, revive, gift, shop, item_choice or swap NPC is the room's choice: the room's other NPCs of those types go and the room is done; its battle NPCs stay, optional"
         },
         "battle": { "type": "string", "pattern": "^[a-z0-9_]+$", "description": "A battle NPC's battle, by its id; several NPCs may start the same one" },
         "enemy": {
@@ -131,6 +131,14 @@
           "type": "string", "pattern": "^[a-z0-9_]+$",
           "description": "An icon floating above its head, by name: npc_markers/<marker>.png; none if left out"
         },
+        "behaviour": {
+          "enum": [ "fade", "flee" ],
+          "description": "An ambient's reaction when the player comes within near tiles: fade, it fades out where it stands (over about 15 frames); flee, it turns and runs distance tiles away from the player, fading as it goes, then is gone. fade if left out"
+        },
+        "near": { "type": "integer", "minimum": 1, "maximum": 15, "description": "An ambient: how close the player comes (tiles either way) before it reacts; 3 if left out" },
+        "return": { "type": "boolean", "description": "A fading ambient: it comes back (fading in at its tile) once the player is far tiles away again; without it, it is gone for the rest of the room" },
+        "far": { "type": "integer", "minimum": 2, "maximum": 31, "description": "A returning ambient: how far the player goes (tiles either way) before it comes back; more than near; 6 if left out" },
+        "distance": { "type": "integer", "minimum": 1, "maximum": 15, "description": "A fleeing ambient: the tiles it runs away (fewer where its way is blocked); 4 if left out" },
         "dialogue": {
           "type": "object",
           "additionalProperties": false,

@@ -1,5 +1,7 @@
 // A drop-down you can type into to narrow its options by any part of a name or by number, as Frost's search boxes
-// did. Shows at most a few hundred matches at a time so long lists (thousands of flags) stay quick.
+// did. Shows at most a few hundred matches at a time so long lists (thousands of flags) stay quick. Options may carry
+// a group: a heading is shown where the group changes (the search runs across every group, keeping their order), so
+// a list can start with the likely choices and go on with all of them, a value appearing in both.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -8,6 +10,8 @@ export interface Option {
   label: string;
   /** Shown faintly after the label: a constant's name or number. */
   detail?: string;
+  /** A heading for a run of options: shown above the first of each run. */
+  group?: string;
 }
 
 const SHOWN = 300;
@@ -46,7 +50,7 @@ export function SearchSelect({ value, options, onChange, placeholder, allowCusto
   }, [open]);
 
   useEffect(() => {
-    list.current?.children[highlight]?.scrollIntoView({ block: "nearest" });
+    list.current?.querySelector(`[data-index="${highlight}"]`)?.scrollIntoView({ block: "nearest" });
   }, [highlight]);
 
   const choose = (v: string) => {
@@ -93,8 +97,9 @@ export function SearchSelect({ value, options, onChange, placeholder, allowCusto
       />
       {open && (
         <ul className="search-select-list" ref={list}>
-          {matches.slice(0, SHOWN).map((o, i) => (
-            <li key={o.value} className={i === highlight ? "highlight" : o.value === value ? "chosen" : ""}
+          {matches.slice(0, SHOWN).map((o, i) => [
+            o.group !== undefined && o.group !== matches[i - 1]?.group && <li key={`group:${i}`} className="group">{o.group}</li>,
+            <li key={`${o.group ?? ""}:${o.value}`} data-index={i} className={i === highlight ? "highlight" : o.value === value ? "chosen" : ""}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   choose(o.value);
@@ -102,8 +107,8 @@ export function SearchSelect({ value, options, onChange, placeholder, allowCusto
                 onMouseEnter={() => setHighlight(i)}>
               <span>{o.label}</span>
               {o.detail && <span className="detail">{o.detail}</span>}
-            </li>
-          ))}
+            </li>,
+          ])}
           {matches.length > SHOWN && <li className="more">{matches.length - SHOWN} more: keep typing to narrow</li>}
           {!matches.length && <li className="more">No match{allowCustom ? "; Enter keeps what you typed if it is valid" : ""}</li>}
         </ul>

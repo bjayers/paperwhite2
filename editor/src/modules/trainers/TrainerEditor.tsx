@@ -9,6 +9,7 @@ import { documents, useDocuments } from "../../documents.ts";
 import type { JsonMap, JsonValue } from "../../../shared/json.ts";
 import type { Constants } from "../../../shared/schema.ts";
 import { SearchSelect } from "../../shell/SearchSelect.tsx";
+import { useMoveOptions } from "../moves/learnable.ts";
 import type { ToolProps } from "../types.ts";
 import { PalettePreview } from "../palettes/PaletteEditor.tsx";
 import { parsePal, type Rgb } from "../palettes/pal.ts";
@@ -114,6 +115,7 @@ function PartyCard({ path, index, mon, constants, withItems, withMoves, count }:
   );
   const species = String(mon.get("species") ?? "SPECIES_NONE");
   const moves = (mon.get("moves") as JsonValue[] | undefined) ?? [];
+  const moveOptions = useMoveOptions(species, Number(mon.get("form") ?? 0), constants);
   const move = (i: number, value: string) => {
     const next = [0, 1, 2, 3].map((j) => (j === i ? value : String(moves[j] ?? "MOVE_NONE")));
     while (next.length && next[next.length - 1] === "MOVE_NONE") next.pop();
@@ -158,7 +160,7 @@ function PartyCard({ path, index, mon, constants, withItems, withMoves, count }:
       {withMoves ? (
         <div className="trn-moves">
           {[0, 1, 2, 3].map((i) => (
-            <SearchSelect key={i} value={String(moves[i] ?? "MOVE_NONE")} options={constantOptions(constants, "MOVE_")} onChange={(v) => move(i, v)} />
+            <SearchSelect key={i} value={String(moves[i] ?? "MOVE_NONE")} options={moveOptions} onChange={(v) => move(i, v)} />
           ))}
         </div>
       ) : <p className="muted trn-note">The moves of its level.</p>}

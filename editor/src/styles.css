@@ -261,6 +261,9 @@ textarea.raw {
 .search-select-list li.highlight { background: var(--selected); }
 .search-select-list li.chosen { font-weight: 600; }
 .search-select-list .detail { color: var(--muted); font-family: var(--mono); font-size: 12px; }
+.search-select-list li.group { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; cursor: default;
+  padding-top: 6px; border-top: 1px solid var(--border); }
+.search-select-list li.group:first-child { border-top: none; }
 .search-select-list .more { color: var(--muted); font-size: 12px; cursor: default; }
 
 /* ------------------------------------------------------------------ Build, changes, quick open */
