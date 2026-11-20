@@ -144,6 +144,8 @@ test("the checks refuse what the packer refuses", () => {
     [at(data(), ["buffs", 1, "id"], "attack"), /used twice/],
     [at(data(), ["buffs", 0, "bucket"], "def"), /attack side/],
     [at(data(), ["settings", "tier_odds", "boss", "gold"], 60), /add up to/],
+    [at(data(), ["settings", "tier_odds", "shop", "blue"], 0), /add up to/],
+    [at(data(), ["buffs", 0, "description"], "Attack +10% if Supercalifragilisticexpialidocious hits"), /takes more than/],
   ];
   const cat = readCatalogue(data());
   const overcharge = cat.buffs.findIndex((b) => b.id === "overcharge");

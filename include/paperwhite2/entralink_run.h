@@ -47,8 +47,9 @@
 #define ENTRALINK_TYPE_ANY 0xff
 
 // What talking to an NPC does: its battle, an item into the run's bag, (for now only its dialogue) a rest or a buff,
-// healing the Pokémon that haven't fainted, reviving a fainted one, a choice of 3 items, a shop selling for Dream Dust
-// (step 7), an item room's ball, whose item is drawn as the room is entered, and a buff ball (a line for now). Using
+// healing the Pokémon that haven't fainted, reviving a fainted one, a choice of 3 cards (items and buffs), a shop
+// selling items and buffs for Dream Dust (step 7), an item room's ball, whose item is drawn as the room is entered, and
+// a buff ball, the room's offer of buffs (paperwhite2/entralink_buffs.h). Using
 // one of the choice NPCs (ENTRALINK_NPC_HEAL to ENTRALINK_NPC_BUFF_CHOICE; the shop by talking to it) is the room's
 // choice: the room's other choice NPCs go and it is done
 #define ENTRALINK_NPC_BATTLE 0

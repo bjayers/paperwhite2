@@ -24,6 +24,7 @@
 #include "paperwhite2/debug.h"
 #include "paperwhite2/debug_actions.h"
 #include "paperwhite2/debug_commands.h"
+#include "paperwhite2/entralink_buffs.h"
 #include "paperwhite2/flag_watch.h"
 #include "paperwhite2/following_ambient.h"
 #include "paperwhite2/following_data.h"
@@ -114,7 +115,12 @@ enum {
     NUMBER_NAME_OFF,
     // The species whose forms they are
     NUMBER_NAME_FORM_SPECIES,
+    // An Entralink buff's title
+    NUMBER_NAME_BUFF,
 };
+
+// The most a buff's level entry goes to (a blue's count; each card's own highest is the limit)
+#define DEBUG_BUFF_LEVEL_MAX 20
 
 // A kind of number entry: its range (a form's ends at its species' last form), its message and its name
 typedef struct {
@@ -149,6 +155,8 @@ static const DebugNumberKind sDebugNumberKinds[DEBUG_NUMBER_KIND_COUNT] = {
     { 0, LEVEL_MAX, Global10200_Text_DebugNumberWildLevel, NUMBER_NAME_OFF },
     { 0, 0, Global10200_Text_DebugNumberForm, NUMBER_NAME_FORM_SPECIES },
     { 0, 0, Global10200_Text_DebugNumberWildForm, NUMBER_NAME_FORM_SPECIES },
+    { 0, ENTRALINK_BUFF_COUNT - 1, Global10200_Text_DebugNumberBuff, NUMBER_NAME_BUFF },
+    { 0, DEBUG_BUFF_LEVEL_MAX, Global10200_Text_DebugNumberBuffLevel, NUMBER_NAME_NONE },
 };
 
 // The DEBUG_STAT_* stats' names, the last for all six
@@ -420,6 +428,9 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
         return value;
     case DEBUG_ACTION_FORM_COUNT:
         return DebugCommands_GetFormCount(arg1);
+    case DEBUG_ACTION_SET_BUFF:
+        EntralinkBuffs_SetLevel(arg1, pkm != NULL ? PokeParty_GetParam(pkm, PKM_PARAM_TYPE1, NULL) : 0, arg2);
+        return TRUE;
     case DEBUG_ACTION_SET_WILD_LEVEL:
         PaperWhite2_Debug_SetOverride(DEBUG_OVERRIDE_WILD_LEVEL,
                                       sDebugNumber.value == 0 ? DEBUG_OVERRIDE_OFF : sDebugNumber.value);
@@ -758,6 +769,7 @@ static u32 DebugCommands_NumberStart(FieldScriptEnv *env, u32 kind, u32 initial)
 static void DebugCommands_ShowNumber(FieldScriptEnv *env) {
     WordSet *wordSet = ScriptWork_GetWordSet(FieldScriptEnv_GetScriptWork(env));
     u32 value = sDebugNumber.value;
+    EntralinkCard card;
 
     DebugCommands_SetWordNumber(env, NUMBER_WORD_VALUE, value);
     DebugCommands_SetWordNumber(env, NUMBER_WORD_STEP, sDebugNumber.step);
@@ -793,6 +805,12 @@ static void DebugCommands_ShowNumber(FieldScriptEnv *env) {
     case NUMBER_NAME_OFF:
         DebugCommands_SetWordText(env, NUMBER_WORD_NAME,
                                   value == 0 ? Global10200_Text_DebugOffParenthesized : Global10200_Text_DebugEmpty);
+        break;
+    case NUMBER_NAME_BUFF:
+        card.kind = ENTRALINK_CARD_BUFF;
+        card.id = value;
+        card.type = 0;
+        EntralinkBuffs_SetTitleWord(env, NUMBER_WORD_NAME, &card, 1);
         break;
     case NUMBER_NAME_FORM_SPECIES:
         // The species, and its last form in the step's word's place after it

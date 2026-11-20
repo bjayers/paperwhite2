@@ -17,15 +17,33 @@
                 "blue": 10,
                 "purple": 40,
                 "gold": 50
+            },
+            "gift": {
+                "blue": 50,
+                "purple": 40,
+                "gold": 10
+            },
+            "buff_room": {
+                "blue": 40,
+                "purple": 45,
+                "gold": 15
+            },
+            "shop": {
+                "blue": 45,
+                "purple": 40,
+                "gold": 15
             }
         },
         "boss_guaranteed_gold": true,
         "shop_gold_weight": 200,
         "held_theme_weight": 200,
+        "rank_up_weight": 200,
         "gold_slots": 5,
         "max_rank": 3,
         "damage_cap": 60000,
         "skip_dust": 20,
+        "gift_buff_chance": 50,
+        "shop_buffs": 2,
         "type_card_team_weight": 300,
         "prices": {
             "blue": 60,

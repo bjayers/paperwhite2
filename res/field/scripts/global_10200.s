@@ -2,6 +2,7 @@
 #include "text/script/global_10200.h"
 #ifdef PAPERWHITE2_DEBUG_MENU
 #include "paperwhite2/debug_actions.h"
+#include "paperwhite2/entralink_run_actions.h"
 #endif
 
     ScriptEntry Script_1
@@ -736,8 +737,11 @@ L_DebugPlayer:
     ListMenuAdd Global10200_Text_DebugWarpEntralink, 65535, 4
     ListMenuAdd Global10200_Text_DebugWalkThroughWalls, 65535, 2
     ListMenuAdd Global10200_Text_DebugMoney, 65535, 3
+    ListMenuAdd Global10200_Text_DebugBuffs, 65535, 5
     ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
     ListMenuShow
+    WorkCmpConst 0x8020, 5
+    VMJumpIf CMP_EQ, L_DebugBuffs
     WorkCmpConst 0x8020, 0
     VMJumpIf CMP_EQ, L_DebugWarpCenter
     WorkCmpConst 0x8020, 1
@@ -790,6 +794,42 @@ L_DebugNoEntralink:
     SystemMsg Global10200_Text_DebugNoEntralink, 2
     LastKeyWait
     VMJump L_DebugPlayer
+
+L_DebugBuffs:
+    // Entralink buffs...: set a buff to a level (paperwhite2/entralink_buffs.h), its ID and then its count or rank,
+    // and the buffs held, listed as the run's viewer lists them with each one's line in the window
+    SystemMsg Global10200_Text_DebugBuffsTitle, 2
+    ListMenuAnchorTopRight 31, 1, 0, 1, 0x8020
+    ListMenuAdd Global10200_Text_DebugBuffGrant, 65535, 0
+    ListMenuAdd Global10200_Text_DebugBuffShow, 65535, 1
+    ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
+    ListMenuShow
+    WorkCmpConst 0x8020, 0
+    VMJumpIf CMP_EQ, L_DebugBuffGrant
+    WorkCmpConst 0x8020, 1
+    VMJumpIf CMP_EQ, L_DebugBuffShow
+    VMJump L_DebugPlayer
+
+L_DebugBuffGrant:
+    Debug DEBUG_ACTION_NUMBER_BEGIN, DEBUG_NUMBER_BUFF, 0, 0x8025
+    VMCall L_DebugNumber
+    WorkCmpConst 0x8024, 0
+    VMJumpIf CMP_EQ, L_DebugBuffs
+    WorkSet 0x8026, 0x8025
+    Debug DEBUG_ACTION_NUMBER_BEGIN, DEBUG_NUMBER_BUFF_LEVEL, 0, 0x8025
+    VMCall L_DebugNumber
+    WorkCmpConst 0x8024, 0
+    VMJumpIf CMP_EQ, L_DebugBuffs
+    Debug DEBUG_ACTION_SET_BUFF, 0x8026, 0x8025, 0x8025
+    SEPlay SEQ_SE_SELECT1
+    VMJump L_DebugBuffs
+
+L_DebugBuffShow:
+    ListMenuAnchorTopRight 31, 1, 0, 1, 0x8020
+    EntralinkRun ENTRALINK_RUN_ACTION_ADD_CARDS, ENTRALINK_RUN_CARDS_HELD, 0, 0x8025
+    ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
+    ListMenuShow
+    VMJump L_DebugBuffs
 
 L_DebugToggleWalls:
     Debug DEBUG_ACTION_FLAG_TOGGLE, EVENT_FLAG_DEBUG_WALK_THROUGH_WALLS, 0, 0x8025

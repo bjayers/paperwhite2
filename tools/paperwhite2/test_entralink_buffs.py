@@ -104,12 +104,15 @@ def test_broken_catalogues_are_refused(tmp_path):
         (lambda d: entry(d, "attack").update(category="sword"), "isn't one of categories'"),
         (lambda d: d["categories"].append({"id": "sword", "name": "Sword", "description": "A sword"}), "doesn't exist"),
         (lambda d: d["settings"]["tier_odds"]["boss"].update(gold=60), "add up to 100"),
+        (lambda d: d["settings"]["tier_odds"]["shop"].update(blue=0), "add up to 100"),
+        (lambda d: entry(d, "attack").update(description="Attack +10% if "
+                                                         "Supercalifragilisticexpialidocious hits"), "two lines"),
         (lambda d: entry(d, "type_affinity").update(related=["harvest"]), "related theme"),
         (lambda d: d["balance"]["example"].append({"buff": "galvanic", "count": 3}) or
          entry(d, "galvanic").update(ranks=[60, 80], description=["a", "b"]), "has 2 ranks"),
     ]
-    for change, match in cases:
-        directory = copy_data(tmp_path / match.replace(" ", "_").replace("'", ""))
+    for number, (change, match) in enumerate(cases):
+        directory = copy_data(tmp_path / f"{number}_{match.replace(' ', '_').replace(chr(39), '')}")
         edit(directory, change)
         refused(directory, match)
 
@@ -132,6 +135,60 @@ def test_header_is_written_once(tmp_path):
     assert "ENTRALINK_BUFF_THEME_STALL" in output.read_text()
     assert "ENTRALINK_BUFF_CATEGORY_HEAL" in output.read_text()
     assert "ENTRALINK_BUFF_KIND_STATUS_ROLL" in output.read_text()
+
+
+def fixture_catalogue() -> dict:
+    """A small catalogue of the real one's shape: a blue with a soft limit, a type card, a gold of 3 ranks."""
+    data = entralink_buffs.load()
+    keep = [dict(entry(data, "attack")), dict(entry(data, "type_affinity")), dict(entry(data, "galvanic"))]
+    keep[0].update(description="Attack +10%", step=10, soft_limit=6, cap=80, pools=["after_battle", "shop"])
+    keep[1].update(description="Moves of the card's type +15% power", step=15, cap=60, related=["paralysis"])
+    keep[1].pop("soft_limit", None)
+    keep[2].update(description=["+60% damage to paralyzed foes", "+80% damage to paralyzed foes",
+                                "+100% damage to paralyzed foes"], ranks=[60, 80, 100], price=500)
+    data["buffs"] = keep
+    return data
+
+
+def test_cards_text_titles_colored_by_tier_with_numerals_and_types():
+    data = fixture_catalogue()
+    lines, titles, descriptions = entralink_buffs.messages(data)
+    assert lines[:len(entralink_buffs.FIXED_MESSAGES)] == entralink_buffs.FIXED_MESSAGES
+    assert titles == [5, 6, 7] and descriptions == [10, 11, 12]
+    assert lines[5] == "{ff00:2}Attack{ff00:0}"
+    assert lines[6] == "{ff00:478}Type Affinity ({0100:20}){ff00:0}"
+    assert lines[7:10] == ["{ff00:444}Galvanic I{ff00:0}", "{ff00:444}Galvanic II{ff00:0}",
+                           "{ff00:444}Galvanic III{ff00:0}"]
+    # A type card's description names its type; descriptions wrap for the window's two lines
+    assert lines[11] == "Moves of the {0100:20} type +15%\\npower"
+    assert lines[12] == "+60% damage to paralyzed foes"
+    assert entralink_buffs.wrap("+100% damage to paralyzed foes and burned foes") == \
+        "+100% damage to paralyzed foes\\nand burned foes"
+
+
+def test_cards_table_levels_pools_and_prices():
+    data = fixture_catalogue()
+    rows = entralink_buffs.table(data)
+    # attack: 6 picks of 10 and then 5 a pick reach 80 at the 10th; its tier's price; pools after_battle and shop
+    assert rows[0].startswith("    { 5, 10, 60, 0x0, ENTRALINK_BUFF_TIER_BLUE, ENTRALINK_BUFF_THEME_NONE, 10, 0x9, 0x0,")
+    assert rows[0].rstrip().endswith("ENTRALINK_BUFF_TYPE_CARD_NONE }, /* attack */")
+    # type_affinity: 4 picks to 60, related to paralysis (theme 0), type card 0
+    assert ", 4, " in rows[1] and "0x1, ENTRALINK_BUFF_TIER_PURPLE" in rows[1] and rows[1].rstrip().endswith(
+        "0 }, /* type_affinity */")
+    # galvanic: its own price, 3 ranks
+    assert rows[2].startswith("    { 7, 12, 500, 0x0, ENTRALINK_BUFF_TIER_GOLD, ENTRALINK_BUFF_THEME_PARALYSIS, 3,")
+    assert entralink_buffs.max_level(entry(data, "attack")) == 10
+    text = entralink_buffs.header(data, entralink_buffs.effect_kinds())
+    assert "#define ENTRALINK_BUFF_TYPE_CARDS { ENTRALINK_BUFF_TYPE_AFFINITY }" in text
+    assert "#define ENTRALINK_BUFF_SOURCE_SHOP 5" in text
+    assert "#define ENTRALINK_BUFF_ODDS { { " in text
+
+
+def test_real_catalogue_text_fits():
+    data = entralink_buffs.load()
+    lines, titles, descriptions = entralink_buffs.messages(data)
+    assert len(titles) == len(descriptions) == len(data["buffs"])
+    assert all(line.count("\\n") <= 1 for line in lines[descriptions[0]:])
 
 
 def test_one_icon_a_category_in_each_tiers_palette():

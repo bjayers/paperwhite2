@@ -16,15 +16,20 @@ palette is the tier's 16 colors (color i in the 4 by 4 cell i). The game will lo
 and draw it with the card's tier's palette, so one picture serves the three tiers. The icons' own PNG palettes are
 only a preview.
 
-The game reads nothing of it yet (phase 1). The header gives the next phase its numbers: the buffs', categories',
-themes', effect kinds' and tiers' IDs and the settings, as ENTRALINK_BUFF_* values; the tables follow with the C that
-reads them.
+The header gives the game its numbers: the buffs', categories', themes', effect kinds' and tiers' IDs and the settings,
+as ENTRALINK_BUFF_* values, and since phase 2 (the offers) the cards' table, ENTRALINK_BUFF_TABLE (each card's tier,
+theme, related themes, pools, rounds, weight, price, highest level, type card and its text's messages), which overlay
+12's offers read (src/paperwhite2/ov012/paperwhite2_entralink_buff_offers.c). The cards' text is the script text bank
+entralink_buffs (text_lines(), res/text/script/entralink_buffs.txt's \\from{entralink.buffs}): each card's title
+colored by its tier (a gold's one per rank, with its numeral; a type card's with its type's word) and its descriptions,
+wrapped for the description window's two lines.
 
 The checks beyond the schema's: unique IDs; each card's category, each gold's theme and each purple's related themes
 exist, one core gold a theme; a bucket where the effect kind needs one (and none where it doesn't), on the right side;
-a gold's ranks and rank lines agree and fit max_rank; a step within its cap; each category's icon and each tier's
-palette is a 16 by 16 PNG of 16 colors; the tier odds add up to 100. The balance meter (ceiling(), example_hit(); the editor's buffs.ts is the same arithmetic,
-the doc's section 5) warns when the strongest possible hit on the reference passes the damage cap.
+a gold's ranks and rank lines agree and fit max_rank; a step within its cap; each description fits the description
+window's two lines; each category's icon and each tier's palette is a 16 by 16 PNG of 16 colors; every source's tier
+odds add up to 100. The balance meter (ceiling(), example_hit(); the editor's buffs.ts is the same arithmetic, the
+doc's section 5) warns when the strongest possible hit on the reference passes the damage cap.
 """
 import argparse
 import sys
@@ -38,7 +43,38 @@ from tools.data.nitro_2d import read_indexed_png  # noqa: E402
 SOURCE = ROOT / "res" / "paperwhite2" / "entralink"
 GUARD = "POKEBW2_PAPERWHITE2_ENTRALINK_BUFFS_CONFIG_H"
 TIERS = ["blue", "purple", "gold"]
-SOURCES = ["enemy", "challenge", "boss"]
+# The tier odds' sources: after a battle (an enemy or enemy-choice room, a challenge, a boss), a gift NPC, a buff room
+# and a shop
+SOURCES = ["enemy", "challenge", "boss", "gift", "buff_room", "shop"]
+# The pools a card can be offered in, bits of EntralinkBuff's pools in this order
+POOLS = ["after_battle", "gift", "buff_room", "shop"]
+# The cards' text colors by tier, in the field's system and list windows (the font palette: 1 and 2 the black and its
+# gray shadow, 5 and 6 blue, 11 and 12 gold, 13 and 14 magenta): {ff00:2} is the palette's blue pair, and a color of
+# 256 or more is 256 + letter * 16 + shadow (GFL_TextRndExecColorCmd, src/system/printsys.c); {ff00:0} goes back to
+# the window's text color, as the game's messages do after an item's name ({ff00:255}, the renderer's "default", is the
+# last color set)
+TIER_COLORS = {"blue": "{ff00:2}", "purple": "{ff00:478}", "gold": "{ff00:444}"}
+COLOR_RESET = "{ff00:0}"
+RANK_NUMERALS = ["I", "II", "III"]
+# The script word set's words the cards' text uses (ScriptWork's, 28 of 64 characters): a type card's type, then the
+# two words of the list lines' templates (a title and a number)
+WORD_TYPE = 20
+WORD_TITLE = 21
+WORD_NUMBER = 22
+# A type card's text names its type where the catalogue says "the card's type"
+CARD_TYPE = "the card's type"
+TYPE_WORD = "{0100:%d}" % WORD_TYPE
+# The description window (the system window under the list) shows two lines; a line of this many characters fits
+DESCRIPTION_WIDTH = 32
+# The fixed messages at the start of the text bank entralink_buffs, before the cards' titles and descriptions: an empty
+# one, so that no card's is 0; a title alone; a title and a price; a title and a count; an item card's description
+FIXED_MESSAGES = ["", "{0100:%d}" % WORD_TITLE, "{0100:%d} ({0100:%d})" % (WORD_TITLE, WORD_NUMBER),
+                  "{0100:%d} x{0100:%d}" % (WORD_TITLE, WORD_NUMBER), "An item for the run's bag."]
+FIXED_NAMES = ["NONE", "TITLE", "PRICE", "COUNT", "ITEM"]
+# The types a type card rolls, TYPE_NORMAL to TYPE_DARK (decision 9: any of the 17)
+CARD_TYPES = 17
+# A stack's count is a byte
+MAX_STACKS = 255
 ICON_SIZE = 16
 ICON_COLORS = 16
 # The effect kinds that add to a bucket, and must name one; every other kind is "not damage" and names none.
@@ -143,6 +179,89 @@ def example_hit(data: dict, reference: int | None = None) -> dict:
     return {"sums": sums, **hit(data, sums, reference)}
 
 
+# ---- The game's table and text (phase 2) ----------------------------------------------------------------------------
+
+def max_level(entry: dict) -> int:
+    """A card's highest level in a run: a gold's ranks; for a blue or purple, the picks that reach its cap (more add
+    nothing, so it isn't offered after them), at most MAX_STACKS."""
+    if entry["tier"] == "gold":
+        return len(entry["ranks"])
+    picks = 1
+    while picks < MAX_STACKS and picked_value(entry["step"], entry.get("soft_limit"), entry["cap"], picks) != \
+            entry["cap"]:
+        picks += 1
+    return picks
+
+
+def shown_length(text: str) -> int:
+    """A line's length as the game shows it, a type card's type counted as its longest name's, Electric."""
+    return len(text.replace(TYPE_WORD, "Electric"))
+
+
+def wrap(text: str, width: int = DESCRIPTION_WIDTH) -> str:
+    """A description in lines of at most width characters, broken at spaces (the editor's descriptionLines() is the
+    same)."""
+    lines = []
+    for word in text.split(" "):
+        if lines and shown_length(lines[-1] + " " + word) <= width:
+            lines[-1] += " " + word
+        else:
+            lines.append(word)
+    return "\\n".join(lines)
+
+
+def card_text(entry: dict, text: str) -> str:
+    return text.replace(CARD_TYPE, f"the {TYPE_WORD} type") if entry.get("type_card") else text
+
+
+def messages(data: dict) -> tuple[list[str], list[int], list[int]]:
+    """The text bank entralink_buffs: FIXED_MESSAGES, then each card's titles (a gold's one per rank, with its
+    numeral; a type card's with its type), then each card's descriptions (a gold's one per rank), wrapped for the
+    description window. Returns the lines and each card's first title and first description."""
+    lines = list(FIXED_MESSAGES)
+    titles = []
+    for entry in data["buffs"]:
+        titles.append(len(lines))
+        color = TIER_COLORS[entry["tier"]]
+        if entry["tier"] == "gold":
+            lines += [f"{color}{entry['name']} {RANK_NUMERALS[r]}{COLOR_RESET}" for r in range(len(entry["ranks"]))]
+        elif entry.get("type_card"):
+            lines.append(f"{color}{entry['name']} ({TYPE_WORD}){COLOR_RESET}")
+        else:
+            lines.append(f"{color}{entry['name']}{COLOR_RESET}")
+    descriptions = []
+    for entry in data["buffs"]:
+        descriptions.append(len(lines))
+        texts = entry["description"] if isinstance(entry["description"], list) else [entry["description"]]
+        lines += [wrap(card_text(entry, text)) for text in texts]
+    return lines, titles, descriptions
+
+
+def text_lines(directory: Path = SOURCE) -> list[str]:
+    """The text bank entralink_buffs (res/text/script/entralink_buffs.txt's \\from{entralink.buffs})."""
+    return messages(load(directory))[0]
+
+
+def table(data: dict) -> list[str]:
+    """ENTRALINK_BUFF_TABLE, EntralinkBuff's initializer (include/paperwhite2/entralink_buffs.h)."""
+    _, titles, descriptions = messages(data)
+    themes = {t["id"]: i for i, t in enumerate(data["themes"])}
+    type_cards = [e["id"] for e in data["buffs"] if e.get("type_card")]
+    rows = []
+    for i, entry in enumerate(data["buffs"]):
+        tier = entry["tier"]
+        price = entry.get("price", data["settings"]["prices"][tier])
+        related = sum(1 << themes[t] for t in entry.get("related", []))
+        pools = sum(1 << POOLS.index(p) for p in entry["pools"])
+        rounds = sum(1 << (r - 1) for r in entry.get("rounds", []))
+        theme = f"ENTRALINK_BUFF_THEME_{macro(entry['theme'])}" if tier == "gold" else "ENTRALINK_BUFF_THEME_NONE"
+        type_card = type_cards.index(entry["id"]) if entry["id"] in type_cards else "ENTRALINK_BUFF_TYPE_CARD_NONE"
+        rows.append(f"    {{ {titles[i]}, {descriptions[i]}, {price}, {related:#x}, ENTRALINK_BUFF_TIER_{macro(tier)}, "
+                    f"{theme}, {max_level(entry)}, {pools:#x}, {rounds:#x}, {entry['weight']}, {type_card} }}, "
+                    f"/* {entry['id']} */")
+    return rows
+
+
 # ---- The checks -----------------------------------------------------------------------------------------------------
 
 def check_icon(directory: Path, name: str, where: str):
@@ -233,6 +352,10 @@ def problems(data: dict, directory: Path = SOURCE) -> list[str]:
                 error(where, f"the {effect['stat']} stat goes in a bucket of the {side} side")
         if kind == "stab_bonus" and bucket is not None and buckets[bucket].get("vanilla", 100) == 100:
             warnings.append(f"{where}: a stab_bonus in {bucket}, a bucket with no vanilla factor")
+        for text in entry["description"] if isinstance(entry["description"], list) else [entry["description"]]:
+            if wrap(card_text(entry, text)).count("\\n") > 1:
+                error(where, f"{text!r} takes more than the description window's two lines of about "
+                             f"{DESCRIPTION_WIDTH} characters")
         if kind == "stat_stage_on_entry" and entry["tier"] == "gold" and \
                 len(effect["stats_by_rank"]) != len(entry["ranks"]):
             error(where, "stats_by_rank has a list per rank")
@@ -260,6 +383,7 @@ def macro(name: str) -> str:
 
 def header(data: dict, kinds: list[str]) -> str:
     settings = data["settings"]
+    type_cards = [e["id"] for e in data["buffs"] if e.get("type_card")]
     lines = [
         "// Generated by tools/paperwhite2/entralink_buffs.py from res/paperwhite2/entralink/buffs.json; don't edit.",
         f"#ifndef {GUARD}", f"#define {GUARD}", "",
@@ -288,12 +412,38 @@ def header(data: dict, kinds: list[str]) -> str:
         f"#define ENTRALINK_BUFF_BOSS_GUARANTEED_GOLD {int(settings['boss_guaranteed_gold'])}",
         f"#define ENTRALINK_BUFF_SHOP_GOLD_WEIGHT {settings.get('shop_gold_weight', 100)}",
         f"#define ENTRALINK_BUFF_HELD_THEME_WEIGHT {settings.get('held_theme_weight', 100)}",
+        f"#define ENTRALINK_BUFF_RANK_UP_WEIGHT {settings.get('rank_up_weight', 100)}",
+        f"#define ENTRALINK_BUFF_GIFT_BUFF_CHANCE {settings.get('gift_buff_chance', 0)}",
+        f"#define ENTRALINK_BUFF_SHOP_BUFFS {settings.get('shop_buffs', 0)}",
         f"#define ENTRALINK_BUFF_GOLD_SLOTS {settings['gold_slots']}",
         f"#define ENTRALINK_BUFF_MAX_RANK {settings['max_rank']}",
         f"#define ENTRALINK_BUFF_DAMAGE_CAP {settings['damage_cap']}",
         f"#define ENTRALINK_BUFF_SKIP_DUST {settings.get('skip_dust', 0)}",
         f"#define ENTRALINK_BUFF_TYPE_CARD_TEAM_WEIGHT {settings.get('type_card_team_weight', 100)}",
-        *[f"#define ENTRALINK_BUFF_PRICE_{macro(t)} {settings['prices'][t]}" for t in TIERS],
+        *[f"#define ENTRALINK_BUFF_PRICE_{macro(t)} {settings['prices'][t]}" for t in TIERS], "",
+        "// The offers' sources, rows of ENTRALINK_BUFF_ODDS (blue, purple, gold percents)",
+        *[f"#define ENTRALINK_BUFF_SOURCE_{macro(s)} {i}" for i, s in enumerate(SOURCES)],
+        f"#define ENTRALINK_BUFF_SOURCE_COUNT {len(SOURCES)}",
+        "#define ENTRALINK_BUFF_ODDS { " + ", ".join(
+            "{ " + ", ".join(str(settings["tier_odds"][s][t]) for t in TIERS) + " }" for s in SOURCES) + " }",
+        "// The pools, bits of EntralinkBuff's pools",
+        *[f"#define ENTRALINK_BUFF_POOL_{macro(p)} {i}" for i, p in enumerate(POOLS)], "",
+        "// The type cards (a stack a type) and the types they roll, TYPE_NORMAL up to this",
+        f"#define ENTRALINK_BUFF_TYPE_CARD_COUNT {len(type_cards)}",
+        f"#define ENTRALINK_BUFF_TYPE_CARD_SLOTS {max(1, len(type_cards))}",
+        "#define ENTRALINK_BUFF_TYPE_CARDS { " + (", ".join(f"ENTRALINK_BUFF_{macro(i)}" for i in type_cards)
+                                                  or "ENTRALINK_BUFF_NONE") + " }",
+        f"#define ENTRALINK_BUFF_CARD_TYPES {CARD_TYPES}", "",
+        "// The text bank SCRIPT_TEXT_ENTRALINK_BUFFS: its fixed messages, and the words they and the cards' titles use",
+        *[f"#define ENTRALINK_BUFF_MSG_{n} {i}" for i, n in enumerate(FIXED_NAMES)],
+        f"#define ENTRALINK_BUFF_WORD_TYPE {WORD_TYPE}",
+        f"#define ENTRALINK_BUFF_WORD_TITLE {WORD_TITLE}",
+        f"#define ENTRALINK_BUFF_WORD_NUMBER {WORD_NUMBER}", "",
+        "// The cards (EntralinkBuff, paperwhite2/entralink_buffs.h): title, description, price, related themes, tier,",
+        "// theme, highest level, pools, rounds, weight, type card",
+        "#define ENTRALINK_BUFF_TABLE { \\",
+        *[row + " \\" for row in table(data)],
+        "}",
         "", f"#endif // {GUARD}", "",
     ]
     return "\n".join(lines)

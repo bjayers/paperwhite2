@@ -19,7 +19,7 @@ import { NumberBox, Row, Section, Switch, cap } from "./parts.tsx";
 import { ROUNDS, ROUND_NOTES } from "./model.ts";
 import { readIndexedPng } from "../palettes/png.ts";
 import {
-  BUFFS, BUFFS_SCHEMA, BUFF_POOLS, BUFF_POOL_NAMES, BUFF_POOL_NOTES, SOURCES, TIERS, TIER_NOTES, categoryIconPath, ceilingHit,
+  BUFFS, BUFFS_SCHEMA, BUFF_POOLS, BUFF_POOL_NAMES, BUFF_POOL_NOTES, SOURCES, SOURCE_NOTES, TIERS, TIER_NOTES, categoryIconPath, ceilingHit,
   changeTier, checkBuffs, duplicateBuff, effectKinds, exampleHit, fieldOrder, filterBuffs, needsBucket, newBuff, readBuff, readCatalogue,
   tierPalettePath, tintIcon, uniqueId, withFields, type Buff, type BuffPool, type Catalogue, type Hit, type Tier,
 } from "./buffs.ts";
@@ -591,8 +591,8 @@ function SettingsSection({ cat, data, setTop }: { cat: Catalogue; data: JsonMap;
         <span /><span className="muted small">Blue</span><span className="muted small">Purple</span><span className="muted small">Gold</span>
         {SOURCES.map((src) => (
           <Fragment key={src}>
-            <span className="small" title={`The tiers' percents after a ${src} battle (they add up to 100)`}>{cap(src)}</span>
-            {TIERS.map((t) => <NumberBox key={t} value={s.tierOdds[src][t]} min={0} max={100} width={52} onChange={(v) => set(["tier_odds", src, t], v)} title={`Percent after a ${src} battle`} />)}
+            <span className="small" title={`${SOURCE_NOTES[src]}: the tiers' percents (they add up to 100)`}>{cap(src)}</span>
+            {TIERS.map((t) => <NumberBox key={t} value={s.tierOdds[src][t]} min={0} max={100} width={52} onChange={(v) => set(["tier_odds", src, t], v)} title={`${cap(t)}'s percent: ${SOURCE_NOTES[src]}`} />)}
           </Fragment>
         ))}
         <span className="small">Price</span>
@@ -602,10 +602,15 @@ function SettingsSection({ cat, data, setTop }: { cat: Catalogue; data: JsonMap;
         <Row label="Boss gold" hint="A boss's offer has at least one gold card">
           <label className="ow-check small"><input type="checkbox" checked={s.bossGuaranteedGold} onChange={(e) => set(["boss_guaranteed_gold"], e.target.checked)} /> Guaranteed</label>
         </Row>
-        <Row label="Weights" hint="Percent of the others': golds in shops, a held theme's cards, a type card's team types">
-          <NumberBox value={n("shop_gold_weight")} min={100} max={1000} width={56} title="Golds' weight in shops" onChange={(v) => set(["shop_gold_weight"], v)} />
-          <NumberBox value={n("held_theme_weight")} min={100} max={1000} width={56} title="A held theme's golds and related purples" onChange={(v) => set(["held_theme_weight"], v)} />
-          <NumberBox value={n("type_card_team_weight")} min={100} max={1000} width={56} title="A type card's team types" onChange={(v) => set(["type_card_team_weight"], v)} />
+        <Row label="Weights" hint="Percent of the others': golds in shops, a held theme's cards, a held gold that can still rank up, a type card's team types">
+          <NumberBox value={n("shop_gold_weight")} min={100} max={1000} width={56} title="Golds' weight in shops: the shop row's gold percent times this" onChange={(v) => set(["shop_gold_weight"], v)} />
+          <NumberBox value={n("held_theme_weight")} min={100} max={1000} width={56} title="A held theme's other golds and its related purples" onChange={(v) => set(["held_theme_weight"], v)} />
+          <NumberBox value={n("rank_up_weight") || 100} min={100} max={1000} width={56} title="A held gold, offered again until its last rank" onChange={(v) => set(["rank_up_weight"], v)} />
+          <NumberBox value={n("type_card_team_weight")} min={100} max={1000} width={56} title="A type card's types that the team has" onChange={(v) => set(["type_card_team_weight"], v)} />
+        </Row>
+        <Row label="Gifts, shops" hint="A gift card's chance to be a buff rather than an item (percent); the buffs each shop sells">
+          <NumberBox value={n("gift_buff_chance")} min={0} max={100} width={56} title="Percent of a gift NPC's cards that are buffs" onChange={(v) => set(["gift_buff_chance"], v)} />
+          <NumberBox value={n("shop_buffs")} min={0} max={4} width={44} title="Buffs a shop sells beside its items" onChange={(v) => set(["shop_buffs"], v)} />
         </Row>
         <Row label="Limits" hint="Gold slots, max rank, the damage cap">
           <NumberBox value={s.goldSlots} min={1} max={8} width={44} onChange={(v) => set(["gold_slots"], v)} />

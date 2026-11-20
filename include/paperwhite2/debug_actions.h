@@ -178,6 +178,10 @@
 // Changes to the next variant, after the last the first, at once, and returns it
 #define DEBUG_ACTION_FOLLOWER_SHADOW_NEXT 58
 
+// The Entralink run's buffs (paperwhite2/entralink_buffs.h): sets buff arg1 to level arg2 (a blue's or purple's
+// count, a type card's for the target's first type; a gold's rank, in a free slot or else the first; 0 takes it away)
+#define DEBUG_ACTION_SET_BUFF 59
+
 // The kinds of number entry: their ranges and messages are sDebugNumberKinds (paperwhite2_debug_commands.c)
 #define DEBUG_NUMBER_LEVEL 0
 #define DEBUG_NUMBER_NATURE 1
@@ -193,7 +197,10 @@
 #define DEBUG_NUMBER_WILD_LEVEL 11
 #define DEBUG_NUMBER_FORM 12
 #define DEBUG_NUMBER_WILD_FORM 13
-#define DEBUG_NUMBER_KIND_COUNT 14
+// An Entralink buff, by its ID, and its level
+#define DEBUG_NUMBER_BUFF 14
+#define DEBUG_NUMBER_BUFF_LEVEL 15
+#define DEBUG_NUMBER_KIND_COUNT 16
 
 // DEBUG_ACTION_NUMBER_ADJUST's changes, which are the number entry's list entries: plus or minus the step, which
 // clamps at the range's end and wraps from it, and the step times or over ten

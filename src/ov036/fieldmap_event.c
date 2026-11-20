@@ -79,6 +79,7 @@
 #include "system/wipe.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/entralink_run.h"
+#include "paperwhite2/entralink_run_actions.h"
 #include "paperwhite2/field_moves.h"
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/wanderers.h"
@@ -410,6 +411,14 @@ static GameEvent *FieldEventProvider_Grid_CheckForEvent(GameSystem *gsys, Field 
     if ((wk.pressed & PAD_BUTTON_START) && wk.canAct && GFL_WipeIsFinished()) {
         *scriptCalled = TRUE;
         return EventScriptCall_Create(gsys, SCRID_PAPERWHITE2_DEBUG_MENU, NULL, wk.heapId);
+    }
+#endif
+#ifdef PAPERWHITE2
+    // Paper White 2: in an Entralink run, SELECT lists the buffs held (paperwhite2/entralink_buffs.h); the original's
+    // field doesn't use SELECT
+    if ((wk.pressed & PAD_BUTTON_SELECT) && wk.canAct && GFL_WipeIsFinished() && EntralinkRun_IsActive(wk.gameData)) {
+        *scriptCalled = TRUE;
+        return EventScriptCall_Create(gsys, SCRID_ENTRALINK_RUN_BUFFS, NULL, wk.heapId);
     }
 #endif
     if (wk.xPressed && GFL_WipeIsFinished()) {

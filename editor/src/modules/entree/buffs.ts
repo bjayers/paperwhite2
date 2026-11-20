@@ -22,8 +22,18 @@ export const TIER_NOTES: Record<Tier, string> = {
   purple: "Generic mechanics, stacking like blues; may be related to gold themes",
   gold: "A theme's boon in one of the gold slots, ranked up by picking it again",
 };
-export const SOURCES = ["enemy", "challenge", "boss"] as const;
+/** The tier odds' rows (settings.tier_odds): after a battle (enemy, challenge, boss), a gift NPC's buff cards, a buff
+ * room's offer, a shop's buffs (its gold percent then times shop_gold_weight). */
+export const SOURCES = ["enemy", "challenge", "boss", "gift", "buff_room", "shop"] as const;
 export type Source = (typeof SOURCES)[number];
+export const SOURCE_NOTES: Record<Source, string> = {
+  enemy: "After an enemy or enemy-choice battle (and a rest room's bonus battle)",
+  challenge: "After a challenge battle",
+  boss: "After a boss battle; with Boss gold on, at least one gold card",
+  gift: "A gift NPC's buff cards (gift_buff_chance of its cards are buffs)",
+  buff_room: "A buff room's offer",
+  shop: "A shop's buffs; the gold percent is then times golds' shop weight",
+};
 export const BUFF_POOLS = ["after_battle", "gift", "buff_room", "shop"] as const;
 export type BuffPool = (typeof BUFF_POOLS)[number];
 export const BUFF_POOL_NAMES: Record<BuffPool, string> = { after_battle: "After battle", gift: "Gift", buff_room: "Buff room", shop: "Shop" };
@@ -297,6 +307,22 @@ export function exampleHit(cat: Catalogue, picks: BuildPick[] = cat.example, ref
 
 export interface BuffProblem { severity: "error" | "warning"; index?: number; message: string }
 
+/** The game shows a card's description in the system window under its chooser: two lines of about this many
+ * characters (tools/paperwhite2/entralink_buffs.py's DESCRIPTION_WIDTH and wrap(), which this mirrors). */
+export const DESCRIPTION_WIDTH = 32;
+
+/** A description as the game's lines, broken at spaces; a type card's "the card's type" reads "the Electric type"
+ * there, so it counts as that. */
+export function descriptionLines(text: string, typeCard = false): string[] {
+  const shown = typeCard ? text.replace("the card's type", "the Electric type") : text;
+  const lines: string[] = [];
+  for (const word of shown.split(" ")) {
+    if (lines.length && `${lines[lines.length - 1]} ${word}`.length <= DESCRIPTION_WIDTH) lines[lines.length - 1] += ` ${word}`;
+    else lines.push(word);
+  }
+  return lines;
+}
+
 export function checkBuffs(cat: Catalogue): BuffProblem[] {
   const out: BuffProblem[] = [];
   const err = (message: string, index?: number) => out.push({ severity: "error", index, message });
@@ -342,6 +368,9 @@ export function checkBuffs(cat: Catalogue): BuffProblem[] {
     }
     if (b.kind === "stat_stage_on_entry" && b.tier === "gold" && asList(b.effect.get("stats_by_rank")).length !== b.ranks.length)
       err(`${at}: stats by rank has a list per rank.`, i);
+    for (const text of b.description)
+      if (descriptionLines(text, b.typeCard).length > 2)
+        err(`${at}: "${text}" takes more than the game's two description lines of about ${DESCRIPTION_WIDTH} characters.`, i);
   });
   for (const t of cat.themes) if (!cores.has(t.id)) out.push({ severity: "warning", message: `The theme ${t.name || t.id} has no core gold.` });
   for (const p of cat.example) {

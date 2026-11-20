@@ -686,10 +686,10 @@ The new NPC types:
 | --- | --- |
 | `heal` | Heals every Pokémon that hasn't fainted (HP, status, PP; `PokeParty_Recover` on each, eggs and HP 0 skipped), with the Pokémon Center's jingle |
 | `revive` | With no fainted Pokémon: "None of your Pokémon has fainted. No one needs reviving." Else the party screen (`CallPokeSelect`); a Pokémon that hasn't fainted: "That Pokémon hasn't fainted." and the party screen again; a fainted one revived to full HP, its status cleared (PP untouched). B leaves the choice open |
-| `gift` | A list (`ListMenuAnchorTopLeft`) of 3 items drawn from the item table's `gift` pool as the room is entered; the one taken goes into the run's bag ("Riku received ..."). B leaves the choice open. No description line (the item's description is in another bank; a later step) |
+| `gift` | A list (`ListMenuAnchorTopLeft`) of 3 cards drawn as the room is entered: since the buffs' phase 2 each a buff of the gift pool at buffs.json's `gift_buff_chance`, else an item from the item table's `gift` pool; an item taken goes into the run's bag ("Riku received ..."), a buff to the run's buffs (`entralink-buffs.md`, section 9). B leaves the choice open |
 | `shop` | A placeholder: its dialogue or "The shop isn't open yet..." (step 7). Talking counts as used (a shop room is then done), but it isn't the room's choice |
 | `item_choice` | An item ball (`OBJ_CODE_110`) whose item is drawn from the `item_room` pool as the room is entered, the room's balls each another item; its bag icon floats over it. "It's X! Will you take it?" Yes puts it in the run's bag |
-| `buff_choice` | A placeholder: its dialogue or "This nightmare isn't ready for you yet...", and the room's choice. Its sprite is the item ball with the `buff` NPC marker (no palette swap: the ball's palette comes from the archive per sprite, and a tinted copy needs a new sprite) |
+| `buff_choice` | Since the buffs' phase 2: its dialogue, then the room's offer of buffs (drawn on entry, the `buff_room` pool), one taken the room's choice (`entralink-buffs.md`, section 9); the template has one ball. Its sprite is the item ball with the `buff` NPC marker (no palette swap: the ball's palette comes from the archive per sprite, and a tinted copy needs a new sprite) |
 | `rest`, `buff` | Unchanged (their dialogue or the placeholder line) |
 
 **The choice:** using one heal, revive, gift, item_choice or buff_choice NPC (`ENTRALINK_RUN_ACTION_MAKE_CHOICE`) makes
@@ -699,7 +699,7 @@ that stays (heal, revive, gift) says "Go on. The nightmare awaits." A room with 
 NPC is used, as before.
 
 **Templates** (`templates/<name>.json`, the room format, role `room`, type their file's): `rest` (heal, revive, gift),
-`item` (three item_choice balls), `buff` (three buff_choice balls), `shop` (one shop), `pre_boss_rest` (heal, revive,
+`item` (three item_choice balls), `buff` (one buff_choice ball since the buffs' phase 2), `shop` (one shop), `pre_boss_rest` (heal, revive,
 gift, shop) and an optional `event`. Placeholders at x 11-20, z 14, facing down, markers rest/item/shop/buff. They come
 after the rooms in the header's room table (`isTemplate`, never in a pool), `ENTRALINK_TEMPLATE_*`; their NPCs'
 dialogue goes into `entralink_dialogue` after the rooms'. Their battles (none yet) get progress ids but aren't keys of
@@ -895,7 +895,9 @@ call (it would come up at enemy_choice's weight, 8, instead of enemy's, 42).
 - **The stock** is drawn as the room is entered when a shop NPC came up (`EntralinkRun_DrawShop`): `shop_items`
   different items of the item table's `shop` pool by the draw's rules (weights, rounds, the Nightmare Ball only while
   something can be caught, the Dowsing MCHN only while not held), each at its entry's `price`, kept in the state
-  (`shopItems`, `shopPrices`, `shopCount`) for the room. The buffs will join it there.
+  (`shopItems`, `shopPrices`, `shopCount`) for the room. Since the buffs' phase 2 it also draws buffs.json's
+  `shop_buffs` buffs (`shopBuffs`), sold from a list of their own: a shop with buffs left first asks Items (this
+  screen), Buffs or Leave (`entralink-buffs.md`, section 9).
 - **The choice:** the shop is now a choice NPC (`EntralinkRun_IsChoiceType`): talking to it opens the shop, and closing
   it makes the room's choice (`ENTRALINK_RUN_ACTION_MAKE_CHOICE`) whether anything was bought or not, so in the pre-boss
   rest the heal, revive and gift NPCs go, and a shop room is done. The shop that was the choice opens again when talked

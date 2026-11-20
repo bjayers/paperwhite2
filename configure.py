@@ -464,6 +464,8 @@ def script_imports(script: str) -> list[str]:
 TEXT_DATA_DIRS = ["res/pokemon", "res/moves", "res/items", "res/trainers/data", "res/abilities", "res/types",
                   "res/field/trades", "res/trainers/facilities", "res/trainers/classes", "res/natures",
                   "res/field/places", "res/paperwhite2/pokemon_center", "res/paperwhite2/entralink"]
+# The hack's tools that text_sources.py takes messages from (the Entralink run's dialogue and buff cards)
+TEXT_SOURCE_TOOLS = ["tools/paperwhite2/entralink_run.py", "tools/paperwhite2/entralink_buffs.py"]
 
 # Text archives built from source, by tools/text/text_data.py: each maps its path under files/ to the directory of its
 # message files, one text file each, in archive order
@@ -906,7 +908,7 @@ def add_version(n: Writer, version: str, dsd: Path, bugfix: bool, shift: int,
     for path, source_dir in TEXT_ARCHIVES.items():
         archive = files_dir / path
         n.build([archive], "text_pack", sorted(Path(source_dir).glob("*.txt")),
-                implicit=[*DATA_PACK_TOOLS, *text_data_sources, *constant_sources],
+                implicit=[*DATA_PACK_TOOLS, *text_data_sources, *constant_sources, *TEXT_SOURCE_TOOLS],
                 order_only=[files_ok], variables={"dir": source_dir})
         archive_ok = stamp_dir / "files" / f"{path.replace('/', '_')}.ok"
         n.build([archive_ok], "check_file", [archive], implicit=[extract_dir / "config.yaml"],

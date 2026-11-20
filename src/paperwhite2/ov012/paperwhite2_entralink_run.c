@@ -24,6 +24,7 @@
 #include "gfl/heap.h"
 #include "gfl/msg.h"
 #include "gfl/random.h"
+#include "paperwhite2/entralink_buffs.h"
 #include "paperwhite2/entralink_progress.h"
 #include "paperwhite2/entralink_run.h"
 #include "paperwhite2/entralink_run_actions.h"
@@ -37,6 +38,7 @@
 #include "system/game_data.h"
 #include "system/game_event.h"
 #include "system/game_system.h"
+#include "system/str_tool.h"
 #include "system/tpoke_data.h"
 #include "system/vm.h"
 #include "system/wordset.h"
@@ -69,6 +71,9 @@
 #define EAST_EXIT_X 26
 #define SIDE_EXIT_Z 15
 #define SIDE_EXIT_TILES 3
+// The most cards a list of cards has (an offer's, a gift NPC's, a shop's buffs), and the digits of a Dream Dust price
+#define CARDS_MAX 8
+#define DUST_DIGITS 5
 // The tile where a room is entered (sRoomArrivalPos)
 #define ARRIVAL_X 15
 #define ARRIVAL_Z 23
@@ -672,11 +677,15 @@ static BOOL EntralinkRun_HasItemNpc(const EntralinkRoom *room) {
     return FALSE;
 }
 
-// The room's shop's goods, each another item of the shop pool at its price, up to run.json's shop_items. The buffs
-// will join them here (a later step)
+// The room's shop's goods, each another item of the shop pool at its price, up to run.json's shop_items, and its
+// buffs (buffs.json's shop_buffs of the shop pool, sold beside the Mart's screen at their prices)
 static void EntralinkRun_DrawShop(GameData *gameData, EntralinkRunState *state, u32 round) {
     const EntralinkItem *entry;
+    u32 i;
 
+    for (i = 0; i < ENTRALINK_BUFF_SHOP_BUFFS; i++) {
+        EntralinkBuffs_DrawCard(gameData, ENTRALINK_BUFF_SOURCE_SHOP, round, state->shopBuffs, i, &state->shopBuffs[i]);
+    }
     while (state->shopCount < ENTRALINK_RUN_SHOP_ITEMS) {
         entry = EntralinkRun_DrawItemEntry(gameData, ENTRALINK_POOL_SHOP, round, state->shopItems, state->shopCount);
         if (entry == NULL) {
@@ -696,6 +705,7 @@ static void EntralinkRun_DrawRoomItems(GameData *gameData, EntralinkRunState *st
     const EntralinkClearing *clearing = EntralinkRun_GetClearing(EntralinkRun_GetRoomZone(gameData));
     BOOL gift = FALSE;
     BOOL shop = FALSE;
+    BOOL buffBall = FALSE;
     u16 item;
     u32 type;
     u32 i;
@@ -706,6 +716,9 @@ static void EntralinkRun_DrawRoomItems(GameData *gameData, EntralinkRunState *st
     state->shopCount = 0;
     MI_CpuFill16(state->npcItems, ITEM_NONE, sizeof(state->npcItems));
     MI_CpuFill16(state->giftItems, ITEM_NONE, sizeof(state->giftItems));
+    MI_CpuFill8(state->giftBuffs, 0, sizeof(state->giftBuffs));
+    MI_CpuFill8(state->roomOffer, 0, sizeof(state->roomOffer));
+    MI_CpuFill8(state->shopBuffs, 0, sizeof(state->shopBuffs));
     for (i = 0; i < room->npcCount; i++) {
         type = sNpcs[room->firstNpc + i].type;
         if (!(state->npcsSpawned & (1 << i))) {
@@ -718,13 +731,27 @@ static void EntralinkRun_DrawRoomItems(GameData *gameData, EntralinkRunState *st
             gift = TRUE;
         } else if (type == ENTRALINK_NPC_SHOP) {
             shop = TRUE;
+        } else if (type == ENTRALINK_NPC_BUFF_CHOICE) {
+            buffBall = TRUE;
         }
     }
     if (gift) {
+        // Each card a buff of the gift pool at buffs.json's gift_buff_chance, else (or if no buff fits) an item of the
+        // item table's gift pool
         for (i = 0; i < ENTRALINK_RUN_GIFT_ITEMS; i++) {
-            state->giftItems[i] =
-                EntralinkRun_DrawItem(gameData, ENTRALINK_POOL_GIFT, round, state->giftItems, ENTRALINK_RUN_GIFT_ITEMS);
+            if (GFL_RandomLC(100) < ENTRALINK_BUFF_GIFT_BUFF_CHANCE) {
+                EntralinkBuffs_DrawCard(gameData, ENTRALINK_BUFF_SOURCE_GIFT, round, state->giftBuffs, i,
+                                        &state->giftBuffs[i]);
+            }
+            if (state->giftBuffs[i].kind == ENTRALINK_CARD_NONE) {
+                state->giftItems[i] = EntralinkRun_DrawItem(gameData, ENTRALINK_POOL_GIFT, round, state->giftItems,
+                                                            ENTRALINK_RUN_GIFT_ITEMS);
+            }
         }
+    }
+    if (buffBall) {
+        EntralinkBuffs_DrawOffer(gameData, ENTRALINK_BUFF_SOURCE_BUFF_ROOM, round, state->roomOffer,
+                                 ENTRALINK_BUFF_OFFERS);
     }
     if (shop) {
         EntralinkRun_DrawShop(gameData, state, round);
@@ -783,6 +810,7 @@ void EntralinkRun_Start(GameData *gameData) {
     u32 room;
 
     MI_CpuFill8(state, 0, sizeof(EntralinkRunState));
+    EntralinkBuffs_Clear();
     MI_CpuFill8(excluded, 0, sizeof(excluded));
     // The first room, an enemy room if there is one (it is no door's, whose types are drawn); each room draws the
     // rooms behind its doors as the player enters it
@@ -812,9 +840,11 @@ BOOL EntralinkRun_IsActive(GameData *gameData) {
     return EntralinkRun_GetState()->room != 0;
 }
 
-// Ends the run, and puts the real party back with the prestige gained, and the real bag
+// Ends the run, its buffs gone with the rest of its state, and puts the real party back with the prestige gained, and
+// the real bag
 static void EntralinkRun_End(GameData *gameData) {
     MI_CpuFill8(EntralinkRun_GetState(), 0, sizeof(EntralinkRunState));
+    EntralinkBuffs_Clear();
     EntralinkRun_RestoreParty(gameData);
     EntralinkRun_RestoreBag(gameData);
 }
@@ -1271,13 +1301,13 @@ static u32 EntralinkRun_GetBattleDust(EntralinkRunState *state, const EntralinkR
     return DUST[kind] * ROUND_PERCENTS[round - 1] / 100;
 }
 
-// Adds a battle's Dream Dust to the run's, which holds at most ENTRALINK_DUST_MAX
-static void EntralinkRun_AddDust(EntralinkRunState *state, u32 dust) {
+// Adds Dream Dust to the run's, which holds at most ENTRALINK_DUST_MAX; returns what it added
+static u32 EntralinkRun_AddDust(EntralinkRunState *state, u32 dust) {
     if (state->dust + dust > ENTRALINK_DUST_MAX) {
         dust = ENTRALINK_DUST_MAX - state->dust;
     }
     state->dust += dust;
-    state->dustGained = dust;
+    return dust;
 }
 
 // After the room's battle, what the script does next (ENTRALINK_RUN_RESULT_*)
@@ -1296,7 +1326,7 @@ static u16 EntralinkRun_FinishBattle(GameSystem *gsys, const EntralinkRoom *room
     // A capture counts as a win, which gives the room's Dream Dust
     EntralinkProgress_SetBattleWon(progress, battle->progressId);
     EntralinkRun_RecordCatch(gameData);
-    EntralinkRun_AddDust(state, EntralinkRun_GetBattleDust(state, room));
+    state->dustGained = EntralinkRun_AddDust(state, EntralinkRun_GetBattleDust(state, room));
     for (i = 0; i < ENTRALINK_RUN_ENEMIES_MAX; i++) {
         state->catchIds[i] = ENTRALINK_CATCH_NONE;
     }
@@ -1464,9 +1494,198 @@ static BOOL EntralinkRun_TakeHiddenItem(GameData *gameData, HeapID heapId) {
     return TRUE;
 }
 
+// The source of the offer after the room's battle: a boss's, a challenge room's, else an enemy room's (an enemy
+// choice room's, a rest room's bonus battle)
+static u32 EntralinkRun_GetOfferSource(const EntralinkRoom *room) {
+    if (room->role == ENTRALINK_ROLE_BOSS) {
+        return ENTRALINK_BUFF_SOURCE_BOSS;
+    }
+    return room->type == ENTRALINK_TYPE_CHALLENGE ? ENTRALINK_BUFF_SOURCE_CHALLENGE : ENTRALINK_BUFF_SOURCE_ENEMY;
+}
+
+// Draws the offer after the room's battle won; none after the final room's, which ends the run. Returns how many
+// cards it drew
+static u32 EntralinkRun_DrawBattleOffer(GameData *gameData, const EntralinkRoom *room) {
+    EntralinkRunState *state = EntralinkRun_GetState();
+    u32 round;
+
+    MI_CpuFill8(state->offer, 0, sizeof(state->offer));
+    if (room == NULL || EntralinkRun_IsFinalRoom(state)) {
+        return 0;
+    }
+    EntralinkRun_GetPlace(state->room, &round);
+    return EntralinkBuffs_DrawOffer(gameData, EntralinkRun_GetOfferSource(room), round, state->offer,
+                                    ENTRALINK_BUFF_OFFERS);
+}
+
+// The cards of a list (ENTRALINK_RUN_CARDS_*, but the buffs held) into cards, which has room for CARDS_MAX; returns
+// how many places the list has. A gift card is its item, or else its buff
+static u32 EntralinkRun_GetCards(EntralinkRunState *state, u32 list, EntralinkCard *cards) {
+    u32 i;
+
+    switch (list) {
+    case ENTRALINK_RUN_CARDS_OFFER:
+        MI_CpuCopy8(state->offer, cards, sizeof(state->offer));
+        return ENTRALINK_BUFF_OFFERS;
+    case ENTRALINK_RUN_CARDS_BUFF_ROOM:
+        MI_CpuCopy8(state->roomOffer, cards, sizeof(state->roomOffer));
+        return ENTRALINK_BUFF_OFFERS;
+    case ENTRALINK_RUN_CARDS_GIFT:
+        for (i = 0; i < ENTRALINK_RUN_GIFT_ITEMS; i++) {
+            cards[i] = state->giftBuffs[i];
+            if (state->giftItems[i] != ITEM_NONE) {
+                cards[i].kind = ENTRALINK_CARD_ITEM;
+                cards[i].id = state->giftItems[i];
+                cards[i].type = 0;
+            }
+        }
+        return ENTRALINK_RUN_GIFT_ITEMS;
+    case ENTRALINK_RUN_CARDS_SHOP:
+        MI_CpuCopy8(state->shopBuffs, cards, sizeof(state->shopBuffs));
+        return ENTRALINK_BUFF_SHOP_BUFFS;
+    }
+    return 0;
+}
+
+// How many cards a list has left, or how many buffs are held
+static u32 EntralinkRun_CountCards(EntralinkRunState *state, u32 list) {
+    EntralinkCard cards[CARDS_MAX];
+    u8 held[ENTRALINK_BUFF_COUNT];
+    u32 count;
+    u32 left = 0;
+    u32 i;
+
+    if (list == ENTRALINK_RUN_CARDS_HELD) {
+        return EntralinkBuffs_ListHeld(held, ENTRALINK_BUFF_COUNT);
+    }
+    count = EntralinkRun_GetCards(state, list, cards);
+    for (i = 0; i < count; i++) {
+        if (cards[i].kind != ENTRALINK_CARD_NONE) {
+            left++;
+        }
+    }
+    return left;
+}
+
+// Picks a card of a list for ENTRALINK_RUN_ACTION_TAKE_CARD: its title (at the rank it would have) in word 1, a
+// shop's price in word 2. Returns what taking it does (ENTRALINK_RUN_PICK_*)
+static u16 EntralinkRun_PickCard(FieldScriptEnv *env, u32 list, u32 index) {
+    EntralinkRunState *state = EntralinkRun_GetState();
+    EntralinkCard cards[CARDS_MAX];
+    u32 count = EntralinkRun_GetCards(state, list, cards);
+    u32 price;
+
+    state->picked.kind = ENTRALINK_CARD_NONE;
+    if (index >= count || cards[index].kind == ENTRALINK_CARD_NONE) {
+        return ENTRALINK_RUN_PICK_NONE;
+    }
+    state->picked = cards[index];
+    state->pickedList = list;
+    state->pickedIndex = index;
+    EntralinkBuffs_SetTitleWord(env, 1, &state->picked, EntralinkBuffs_GetShownRank(&state->picked, FALSE));
+    if (list == ENTRALINK_RUN_CARDS_SHOP) {
+        price = EntralinkBuffs_GetPrice(&state->picked);
+        WordSetNumber(ScriptWork_GetWordSet(FieldScriptEnv_GetScriptWork(env)), 2, price, DUST_DIGITS, NUM_PAD_NONE,
+                      TRUE);
+        if (state->dust < price) {
+            return ENTRALINK_RUN_PICK_NO_DUST;
+        }
+    }
+    return EntralinkBuffs_GetTakeKind(&state->picked);
+}
+
+// Takes the card picked: an item into the run's bag, a buff (a shop's for its price; a new gold with every slot full
+// in place of the gold in a slot, whose title goes in word 2). The card leaves its list, and its title at the rank now
+// held goes in word 1. FALSE if the bag had no room, the Dream Dust wasn't enough or no slot was given
+static BOOL EntralinkRun_TakeCard(FieldScriptEnv *env, u32 slot) {
+    EntralinkRunState *state = EntralinkRun_GetState();
+    EntralinkCard card = state->picked;
+    EntralinkCard replaced;
+    u32 price = 0;
+
+    if (card.kind == ENTRALINK_CARD_NONE) {
+        return FALSE;
+    }
+    if (card.kind == ENTRALINK_CARD_ITEM) {
+        if (!BagSave_AddItem(GameData_GetBag(FieldScriptEnv_GetGameData(env)), card.id, 1,
+                             FieldScriptEnv_GetHeapID(env))) {
+            return FALSE;
+        }
+    } else {
+        if (state->pickedList == ENTRALINK_RUN_CARDS_SHOP) {
+            price = EntralinkBuffs_GetPrice(&card);
+        }
+        if (state->dust < price) {
+            return FALSE;
+        }
+        if (EntralinkBuffs_GetTakeKind(&card) == ENTRALINK_TAKE_REPLACE) {
+            if (EntralinkBuffs_GetGoldSlot(slot) == ENTRALINK_BUFF_NONE) {
+                return FALSE;
+            }
+            replaced.kind = ENTRALINK_CARD_BUFF;
+            replaced.id = EntralinkBuffs_GetGoldSlot(slot);
+            replaced.type = 0;
+            EntralinkBuffs_SetTitleWord(env, 2, &replaced, EntralinkBuffs_GetShownRank(&replaced, TRUE));
+        }
+        state->dust -= price;
+        EntralinkBuffs_Take(&card, slot);
+    }
+    switch (state->pickedList) {
+    case ENTRALINK_RUN_CARDS_OFFER:
+        MI_CpuFill8(state->offer, 0, sizeof(state->offer));
+        break;
+    case ENTRALINK_RUN_CARDS_BUFF_ROOM:
+        MI_CpuFill8(state->roomOffer, 0, sizeof(state->roomOffer));
+        break;
+    case ENTRALINK_RUN_CARDS_SHOP:
+        state->shopBuffs[state->pickedIndex].kind = ENTRALINK_CARD_NONE;
+        break;
+    }
+    EntralinkBuffs_SetTitleWord(env, 1, &card, EntralinkBuffs_GetShownRank(&card, TRUE));
+    state->picked.kind = ENTRALINK_CARD_NONE;
+    return TRUE;
+}
+
+// The buff actions' part of the script command (ENTRALINK_RUN_ACTION_OFFER and on)
+static void EntralinkRun_BuffAction(FieldScriptEnv *env, const EntralinkRoom *room, u16 action, u16 arg, u16 arg2,
+                                    u16 *result) {
+    EntralinkRunState *state = EntralinkRun_GetState();
+    EntralinkCard cards[CARDS_MAX];
+    u32 count;
+
+    switch (action) {
+    case ENTRALINK_RUN_ACTION_OFFER:
+        *result = EntralinkRun_DrawBattleOffer(FieldScriptEnv_GetGameData(env), room);
+        break;
+    case ENTRALINK_RUN_ACTION_ADD_CARDS:
+        if (arg == ENTRALINK_RUN_CARDS_HELD || arg == ENTRALINK_RUN_CARDS_GOLDS) {
+            *result = EntralinkBuffs_AddHeldOptions(env, arg == ENTRALINK_RUN_CARDS_GOLDS);
+            break;
+        }
+        count = EntralinkRun_GetCards(state, arg, cards);
+        *result = EntralinkBuffs_AddCardOptions(env, cards, count, arg == ENTRALINK_RUN_CARDS_SHOP);
+        break;
+    case ENTRALINK_RUN_ACTION_PICK_CARD:
+        *result = EntralinkRun_PickCard(env, arg, arg2);
+        break;
+    case ENTRALINK_RUN_ACTION_TAKE_CARD:
+        *result = EntralinkRun_TakeCard(env, arg);
+        break;
+    case ENTRALINK_RUN_ACTION_SKIP_OFFER:
+        EntralinkRun_AddDust(state, ENTRALINK_BUFF_SKIP_DUST);
+        MI_CpuFill8(state->offer, 0, sizeof(state->offer));
+        *result = state->dust;
+        break;
+    case ENTRALINK_RUN_ACTION_COUNT_CARDS:
+        *result = EntralinkRun_CountCards(state, arg);
+        break;
+    }
+}
+
 BOOL Scrcmd_PaperWhite2_EntralinkRun(VM *vm, FieldScriptEnv *env) {
     u16 action = ScriptReadAny(vm, env);
     u16 arg = ScriptReadAny(vm, env);
+    u16 arg2 = ScriptReadAny(vm, env);
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
     EntralinkRunState *state = EntralinkRun_GetState();
     const EntralinkRoom *room = EntralinkRun_GetRoom();
@@ -1476,8 +1695,6 @@ BOOL Scrcmd_PaperWhite2_EntralinkRun(VM *vm, FieldScriptEnv *env) {
     u32 count;
     u16 *result;
 
-    // The second argument, which no action takes yet
-    ScriptReadAny(vm, env);
     result = ScriptReadVar(vm, env);
     if (room != NULL && state->talkedNpc < room->npcCount) {
         npc = &sNpcs[room->firstNpc + state->talkedNpc];
@@ -1579,7 +1796,28 @@ BOOL Scrcmd_PaperWhite2_EntralinkRun(VM *vm, FieldScriptEnv *env) {
         *result = EntralinkRun_TakeHiddenItem(GSYS_GetGameData(gsys), FieldScriptEnv_GetHeapID(env));
         return FALSE;
     case ENTRALINK_RUN_ACTION_GET_DUST:
-        *result = arg != 0 ? state->dust : state->dustGained;
+        switch (arg) {
+        case 0:
+            *result = state->dustGained;
+            break;
+        case 1:
+            *result = state->dust;
+            break;
+        case 2:
+            *result = ENTRALINK_BUFF_SKIP_DUST;
+            break;
+        default:
+            *result = EntralinkBuffs_GetPrice(&state->picked);
+            break;
+        }
+        return FALSE;
+    case ENTRALINK_RUN_ACTION_OFFER:
+    case ENTRALINK_RUN_ACTION_ADD_CARDS:
+    case ENTRALINK_RUN_ACTION_PICK_CARD:
+    case ENTRALINK_RUN_ACTION_TAKE_CARD:
+    case ENTRALINK_RUN_ACTION_SKIP_OFFER:
+    case ENTRALINK_RUN_ACTION_COUNT_CARDS:
+        EntralinkRun_BuffAction(env, room, action, arg, arg2, result);
         return FALSE;
     case ENTRALINK_RUN_ACTION_WARP_HUB:
         ScriptWork_CallEvent(FieldScriptEnv_GetScriptWork(env), EntralinkRun_CreateHubWarp(gsys));

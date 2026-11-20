@@ -2,6 +2,31 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-20: Entralink buffs, phase 2: choosing buffs in the game (ROM session, on a branch)
+
+- **The run holds buffs** (`include/paperwhite2/entralink_buffs.h`): in `EntralinkRunState`, a level a card (a blue's
+  or purple's count, a gold's rank), 5 gold slots, a type card's count a type; emptied at every run's start and end.
+  Read functions in ARM9 main for phase 3 (`EntralinkBuffs_GetCount`, `_GetTypeCount`, `_GetGoldRank`, `_GetGoldSlot`,
+  `_ListHeld`).
+- **Offers** (`src/paperwhite2/ov012/paperwhite2_entralink_buff_offers.c`, the cards' table now in the generated
+  header): 3 cards after every battle won but the final one's, right after its Dust message (row by the room: enemy,
+  challenge, boss with a gold guaranteed), drawn by weight in the tier with the pools, rounds, held themes
+  (`held_theme_weight`), held golds' rank-ups (`rank_up_weight`, new) and the team's types for type cards; Skip gives
+  `skip_dust`. Gift NPCs mix items and buffs (`gift_buff_chance`, new, 50%); buff rooms offer a chooser (the template
+  now has one ball); shops sell `shop_buffs` (new, 2) buffs from a list of their own (Items / Buffs / Leave; the
+  Mart's screen shows only items). New tier-odds rows gift, buff_room, shop; the Buffs tab's Offers section edits all
+  of it, and the packer and the editor refuse a description longer than the window's two lines.
+- **The chooser:** a list menu, each card's title coloured by tier (`{ff00:2}` blue, `{ff00:478}` magenta,
+  `{ff00:444}` gold) with a gold's numeral ("Galvanic II") and its line in the window below as the cursor moves; a new
+  gold with 5 held asks which to replace (Cancel back to the cards). **SELECT** in a run lists the buffs held.
+  **Debug:** Player... > Entralink buffs... (Set a buff..., Show held).
+- **Tested** in py-desmume (scratchpad `buffs2/`; `entralink-buffs.md` section 9.4): enemy, challenge and boss offers,
+  the colours, a rank-up, the replace flow, Skip, a gift, a buff room, a shop's buff bought and refused, buffs gone at
+  the run's end, the viewer, the debug entries, type cards toward the team's types. Hack build clean,
+  `verify_dsi_rom.py` intact, plain modules match, Python and editor tests pass.
+- **Memory:** run state +208 bytes (main BSS); overlay 12 +6.5 KB, the main arena 43 KB to 36 KB free.
+- **Next (phase 3):** the battle effects reading the levels.
+
 ## 2026-11-19: Entralink buffs, phase 1: the catalogue as data and the Entree page's Buffs tab (ROM session, on a branch)
 
 - **The doc** (`design/entralink-buffs.md`) has the user's decisions (section 6, the open questions answered), Spectral

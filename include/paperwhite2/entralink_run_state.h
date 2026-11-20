@@ -2,6 +2,7 @@
 #define PAPERWHITE2_ENTRALINK_RUN_STATE_H
 
 #include "types.h"
+#include "paperwhite2/entralink_buffs.h"
 #include "struct_decls.h"
 
 // Paper White 2: the Entralink run's state and its bag (paperwhite2/entralink_run.h), in ARM9 main
@@ -31,8 +32,10 @@
 #define ENTRALINK_RUN_GROUND_ITEM_NPC 16
 // A gift NPC's choice of items
 #define ENTRALINK_RUN_GIFT_ITEMS 3
-// The most goods a shop has (run.json's shop_items, 5 by default)
+// The most goods a shop has (run.json's shop_items, 5 by default), and the most buffs beside them (buffs.json's
+// shop_buffs, 2 by default)
 #define ENTRALINK_RUN_SHOP_MAX 8
+#define ENTRALINK_RUN_SHOP_BUFFS_MAX 4
 
 // The run bag's slots in each pocket it has
 #define ENTRALINK_RUN_BAG_ITEMS 32
@@ -89,10 +92,27 @@ typedef struct {
     u16 dust;
     u16 dustGained;
     // The room's shop's goods and their prices in Dream Dust, drawn as the player entered it (run.json's shop_items
-    // of the item table's shop pool), and how many. The buffs will join them (a later step)
+    // of the item table's shop pool), and how many. Its buffs are shopBuffs, below
     u16 shopItems[ENTRALINK_RUN_SHOP_MAX];
     u16 shopPrices[ENTRALINK_RUN_SHOP_MAX];
     u8 shopCount;
+    // The buffs (paperwhite2/entralink_buffs.h, phase 2), none at the run's start and gone at its end like the rest:
+    // each card's level (a blue's or purple's count, a gold's rank, 0 if not held), the golds in their slots
+    // (ENTRALINK_BUFF_NONE for a free one), and each type card's count for each type
+    u8 buffLevels[ENTRALINK_BUFF_COUNT];
+    u8 goldSlots[ENTRALINK_BUFF_GOLD_SLOTS];
+    u8 typeCounts[ENTRALINK_BUFF_TYPE_CARD_SLOTS][ENTRALINK_BUFF_CARD_TYPES];
+    // The cards on offer: after the battle won, the room's buff ball's (drawn as the room is entered), the gift NPC's
+    // buffs (a gift card is its giftItems item, or else its buff here) and the shop's buffs, a bought one gone
+    EntralinkCard offer[ENTRALINK_BUFF_OFFERS];
+    EntralinkCard roomOffer[ENTRALINK_BUFF_OFFERS];
+    EntralinkCard giftBuffs[ENTRALINK_RUN_GIFT_ITEMS];
+    EntralinkCard shopBuffs[ENTRALINK_RUN_SHOP_BUFFS_MAX];
+    // The card picked from a list (ENTRALINK_RUN_CARDS_*), which the script takes once the player has confirmed it
+    // and, with every gold slot full, chosen the gold it replaces
+    EntralinkCard picked;
+    u8 pickedList;
+    u8 pickedIndex;
 } EntralinkRunState;
 
 // The run's state, which overlay 12's run code keeps

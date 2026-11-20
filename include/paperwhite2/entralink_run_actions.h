@@ -66,8 +66,57 @@
 // Puts the hidden item in the run's bag, which takes it from the room; returns 0 if the bag had no room, which leaves
 // it
 #define ENTRALINK_RUN_ACTION_TAKE_HIDDEN_ITEM 21
-// Step 7: arg1 0: returns the Dream Dust the last battle won gave (0 for none), 1: the run's Dream Dust
+// Step 7: arg1 0: returns the Dream Dust the last battle won gave (0 for none), 1: the run's Dream Dust; 2: what
+// skipping a buff offer gives (buffs.json's skip_dust), 3: the price of the card picked
 #define ENTRALINK_RUN_ACTION_GET_DUST 22
+
+// The buffs (paperwhite2/entralink_buffs.h, phase 2). After a battle won (or a capture) in a room other than the
+// final one: draws its offer of cards (buffs.json's offers) by the room (a boss's, a challenge room's, else an enemy
+// room's odds), and returns how many it drew
+#define ENTRALINK_RUN_ACTION_OFFER 23
+// Adds the cards of list arg1 (ENTRALINK_RUN_CARDS_*) to the open list menu, each valued by its place in the list
+// (a gold by its slot in ENTRALINK_RUN_CARDS_GOLDS), with its description in the system window as the cursor is on
+// it; returns how many it added
+#define ENTRALINK_RUN_ACTION_ADD_CARDS 24
+// Picks card arg2 of list arg1, which ENTRALINK_RUN_ACTION_TAKE_CARD takes, and puts its title (at the rank it would
+// have) in word 1 and, from a shop, its price in word 2. Returns what taking it does, ENTRALINK_RUN_PICK_*
+#define ENTRALINK_RUN_ACTION_PICK_CARD 25
+// Takes the card picked, in place of the gold in slot arg1 for ENTRALINK_RUN_PICK_REPLACE (the replaced gold's title
+// in word 2): an item into the run's bag, a shop's buff for its price; the card leaves its list (an offer, the buff
+// room's, a shop's goods). Puts its title at the rank now held in word 1, and returns 0 if the bag had no room or the
+// Dream Dust wasn't enough, else 1
+#define ENTRALINK_RUN_ACTION_TAKE_CARD 26
+// Skips the offer for buffs.json's skip_dust in Dream Dust; returns the run's Dream Dust
+#define ENTRALINK_RUN_ACTION_SKIP_OFFER 27
+// Returns how many cards list arg1 has left (ENTRALINK_RUN_CARDS_HELD: how many buffs are held)
+#define ENTRALINK_RUN_ACTION_COUNT_CARDS 28
+
+// The lists of cards: the offer after a battle, the buff room's, the gift NPC's (items and buffs), the shop's buffs,
+// the buffs held (the viewer), and the golds held (the choice of the one a new gold replaces)
+#define ENTRALINK_RUN_CARDS_OFFER 0
+#define ENTRALINK_RUN_CARDS_BUFF_ROOM 1
+#define ENTRALINK_RUN_CARDS_GIFT 2
+#define ENTRALINK_RUN_CARDS_SHOP 3
+#define ENTRALINK_RUN_CARDS_HELD 4
+#define ENTRALINK_RUN_CARDS_GOLDS 5
+// A list's own last option (Skip, Cancel, Close), which no card's value is
+#define ENTRALINK_RUN_CARD_OTHER 100
+// No gold slot to replace
+#define ENTRALINK_RUN_SLOT_NONE 255
+
+// What taking a picked card does (ENTRALINK_TAKE_*, paperwhite2/entralink_buffs.h): a stack more, a gold ranked up, a
+// new gold in a free slot, a new gold that replaces one (every slot full), an item; or a shop's card the Dream Dust
+// isn't enough for, or no card
+#define ENTRALINK_RUN_PICK_STACK 0
+#define ENTRALINK_RUN_PICK_RANK_UP 1
+#define ENTRALINK_RUN_PICK_NEW_GOLD 2
+#define ENTRALINK_RUN_PICK_REPLACE 3
+#define ENTRALINK_RUN_PICK_ITEM 4
+#define ENTRALINK_RUN_PICK_NO_DUST 5
+#define ENTRALINK_RUN_PICK_NONE 6
+
+// The script that SELECT runs in a run, the buffs held (global_10490.s's Script_11)
+#define SCRID_ENTRALINK_RUN_BUFFS 10500
 
 #define ENTRALINK_RUN_RESULT_LOST 0
 #define ENTRALINK_RUN_RESULT_CLEARED 1

@@ -16,6 +16,7 @@
 #ifdef PAPERWHITE2
     ScriptEntry Script_9
     ScriptEntry Script_10
+    ScriptEntry Script_11
 #endif
     ScriptEntriesEnd
 
@@ -482,53 +483,76 @@ L_RunNpcEnd:
     VMHalt
 
 L_RunGiftNpc:
-    // Paper White 2: a gift NPC's choice of 3 items in a list; the one taken goes into the run's bag, which is the
-    // room's choice, and B leaves the choice open
+    // Paper White 2: a gift NPC's choice of 3 cards in a list, items and buffs (buffs.json's gift_buff_chance); the
+    // one taken, an item into the run's bag or a buff, is the room's choice, and B leaves the choice open. A full bag
+    // or a gold replacement cancelled shows the cards again
     WorkSetConst 0x8002, 0
     VMCall L_RunDialogue
-    EntralinkRun ENTRALINK_RUN_ACTION_GET_GIFT_ITEM, 0, 0, 0x8004
-    EntralinkRun ENTRALINK_RUN_ACTION_GET_GIFT_ITEM, 1, 0, 0x8005
-    EntralinkRun ENTRALINK_RUN_ACTION_GET_GIFT_ITEM, 2, 0, 0x8006
-    WordSetItemName 0, 0x8004
-    WordSetItemName 1, 0x8005
-    WordSetItemName 2, 0x8006
+
+L_RunGiftMenu:
     SystemMsg Global10490_Text_RunGiftWhich, 2
     ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8000
-    ListMenuAdd Global10490_Text_RunGiftItem0, 65535, 0
-    WorkCmpConst 0x8005, 0
-    VMJumpIf CMP_EQ, L_RunGiftShow
-    ListMenuAdd Global10490_Text_RunGiftItem1, 65535, 1
-    WorkCmpConst 0x8006, 0
-    VMJumpIf CMP_EQ, L_RunGiftShow
-    ListMenuAdd Global10490_Text_RunGiftItem2, 65535, 2
-
-L_RunGiftShow:
+    EntralinkRun ENTRALINK_RUN_ACTION_ADD_CARDS, ENTRALINK_RUN_CARDS_GIFT, 0, 0x8001
     ListMenuShow
     SystemMsgClose
     WorkCmpConst 0x8000, 65534
     VMJumpIf CMP_EQ, L_RunNpcEnd
-    EntralinkRun ENTRALINK_RUN_ACTION_GET_GIFT_ITEM, 0x8000, 0, 0x8004
-    EntralinkRun ENTRALINK_RUN_ACTION_GIVE_GIFT, 0x8000, 0, 0x8000
+    WorkSetConst 0x8003, ENTRALINK_RUN_CARDS_GIFT
+    VMCall L_RunTakeCard
     WorkCmpConst 0x8000, 0
-    VMJumpIf CMP_EQ, L_RunBagFull
-    WordSetPlayerName 0
-    WordSetItemName 1, 0x8004
-    MEPlay SEQ_ME_ITEM
-    SystemMsg Global10490_Text_RunReceivedItem, 2
-    MEWait
-    LastKeyWait
-    SystemMsgClose
+    VMJumpIf CMP_EQ, L_RunGiftMenu
     EntralinkRun ENTRALINK_RUN_ACTION_MAKE_CHOICE, 0, 0, 0x8000
     VMJump L_RunNpcEnd
 
 L_RunShopNpc:
     // Paper White 2: a shop (step 7): its dialogue, then the Poké Mart's screen with the room's goods for Dream Dust,
-    // bought into the run's bag. Talking to it is the room's choice, whether anything is bought or not
+    // bought into the run's bag, and its buffs (phase 2) in a list of their own, a choice of Items, Buffs or Leave
+    // while it has buffs left. Talking to it is the room's choice, whether anything is bought or not
     WorkSetConst 0x8002, 0
     VMCall L_RunDialogue
+
+L_RunShopMenu:
+    EntralinkRun ENTRALINK_RUN_ACTION_COUNT_CARDS, ENTRALINK_RUN_CARDS_SHOP, 0, 0x8000
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_EQ, L_RunShopMart
+    SystemMsg Global10490_Text_RunShopWhat, 2
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8000
+    ListMenuAdd Global10490_Text_RunShopItems, 65535, 0
+    ListMenuAdd Global10490_Text_RunShopBuffs, 65535, 1
+    ListMenuAdd Global10490_Text_RunShopLeave, 65535, 2
+    ListMenuShow
+    SystemMsgClose
+    WorkCmpConst 0x8000, 1
+    VMJumpIf CMP_EQ, L_RunShopBuffs
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_NE, L_RunShopDone
     CallFriendlyShopBuy ENTRALINK_RUN_SHOP_ID, 0x8000
+    VMJump L_RunShopMenu
+
+L_RunShopMart:
+    CallFriendlyShopBuy ENTRALINK_RUN_SHOP_ID, 0x8000
+
+L_RunShopDone:
     EntralinkRun ENTRALINK_RUN_ACTION_MAKE_CHOICE, 0, 0, 0x8000
     VMJump L_RunNpcEnd
+
+L_RunShopBuffs:
+    // Paper White 2: the shop's buffs with their prices; one bought (asked first) leaves the list
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_DUST, 1, 0, 0x8005
+    WordSetNumber 0, 0x8005, 5
+    SystemMsg Global10490_Text_RunShopBuffWhich, 2
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8000
+    EntralinkRun ENTRALINK_RUN_ACTION_ADD_CARDS, ENTRALINK_RUN_CARDS_SHOP, 0, 0x8001
+    ListMenuAdd Global10490_Text_RunShopBack, Global10490_Text_RunShopBackInfo, ENTRALINK_RUN_CARD_OTHER
+    ListMenuShow
+    SystemMsgClose
+    WorkCmpConst 0x8000, 65534
+    VMJumpIf CMP_EQ, L_RunShopMenu
+    WorkCmpConst 0x8000, ENTRALINK_RUN_CARD_OTHER
+    VMJumpIf CMP_EQ, L_RunShopMenu
+    WorkSetConst 0x8003, ENTRALINK_RUN_CARDS_SHOP
+    VMCall L_RunTakeCard
+    VMJump L_RunShopMenu
 
 L_RunItemChoice:
     // Paper White 2: an item room's ball: Yes takes its item into the run's bag, which is the room's choice
@@ -552,18 +576,157 @@ L_RunItemChoice:
     VMJump L_RunNpcEnd
 
 L_RunBuffChoice:
-    // Paper White 2: a buff ball, a placeholder until the buffs: its dialogue or a line, and the room's choice
+    // Paper White 2: a buff ball: its dialogue, then the room's offer of cards (drawn as the room was entered, from the
+    // buff room pool); the one taken is the room's choice, and B leaves it open. With no card (none fitted), the ball
+    // says so and is the choice
     WorkSetConst 0x8002, 0
     VMCall L_RunDialogue
-    WorkCmpConst 0x8001, ENTRALINK_RUN_NO_MESSAGE
-    VMJumpIf CMP_NE, L_RunBuffChosen
-    SystemMsg Global10490_Text_RunNotReady, 2
-    LastKeyWait
+    EntralinkRun ENTRALINK_RUN_ACTION_COUNT_CARDS, ENTRALINK_RUN_CARDS_BUFF_ROOM, 0, 0x8000
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_EQ, L_RunBuffRoomEmpty
+
+L_RunBuffRoomMenu:
+    SystemMsg Global10490_Text_RunBuffRoomWhich, 2
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8000
+    EntralinkRun ENTRALINK_RUN_ACTION_ADD_CARDS, ENTRALINK_RUN_CARDS_BUFF_ROOM, 0, 0x8001
+    ListMenuShow
     SystemMsgClose
+    WorkCmpConst 0x8000, 65534
+    VMJumpIf CMP_EQ, L_RunNpcEnd
+    WorkSetConst 0x8003, ENTRALINK_RUN_CARDS_BUFF_ROOM
+    VMCall L_RunTakeCard
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_EQ, L_RunBuffRoomMenu
 
 L_RunBuffChosen:
     EntralinkRun ENTRALINK_RUN_ACTION_MAKE_CHOICE, 0, 0, 0x8000
     VMJump L_RunNpcEnd
+
+L_RunBuffRoomEmpty:
+    SystemMsg Global10490_Text_RunBuffRoomEmpty, 2
+    LastKeyWait
+    SystemMsgClose
+    VMJump L_RunBuffChosen
+
+L_RunTakeCard:
+    // Paper White 2: takes card 0x8000 of list 0x8003 (ENTRALINK_RUN_CARDS_*): a shop's asked first, and refused
+    // without the Dream Dust; a new gold with every slot full replaces a gold the player chooses (Cancel or B back to
+    // the cards); then what was gained. Returns with 0x8000 1 for taken, 0 for not
+    EntralinkRun ENTRALINK_RUN_ACTION_PICK_CARD, 0x8003, 0x8000, 0x8001
+    WorkCmpConst 0x8001, ENTRALINK_RUN_PICK_NONE
+    VMJumpIf CMP_EQ, L_RunTakeCardNot
+    WorkCmpConst 0x8001, ENTRALINK_RUN_PICK_NO_DUST
+    VMJumpIf CMP_EQ, L_RunTakeCardNoDust
+    WorkSetConst 0x8004, ENTRALINK_RUN_SLOT_NONE
+    WorkCmpConst 0x8003, ENTRALINK_RUN_CARDS_SHOP
+    VMJumpIf CMP_NE, L_RunTakeCardSlot
+    SystemMsg Global10490_Text_RunShopBuy, 2
+    YesNoWin 0x8002
+    SystemMsgClose
+    WorkCmpConst 0x8002, 0
+    VMJumpIf CMP_NE, L_RunTakeCardNot
+
+L_RunTakeCardSlot:
+    WorkCmpConst 0x8001, ENTRALINK_RUN_PICK_REPLACE
+    VMJumpIf CMP_NE, L_RunTakeCardNow
+    SystemMsg Global10490_Text_RunBuffSlotsFull, 2
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8004
+    EntralinkRun ENTRALINK_RUN_ACTION_ADD_CARDS, ENTRALINK_RUN_CARDS_GOLDS, 0, 0x8002
+    ListMenuAdd Global10490_Text_RunBuffCancel, Global10490_Text_RunBuffCancelInfo, ENTRALINK_RUN_CARD_OTHER
+    ListMenuShow
+    SystemMsgClose
+    WorkCmpConst 0x8004, ENTRALINK_RUN_CARD_OTHER
+    VMJumpIf CMP_EQ, L_RunTakeCardNot
+    WorkCmpConst 0x8004, 65534
+    VMJumpIf CMP_EQ, L_RunTakeCardNot
+
+L_RunTakeCardNow:
+    EntralinkRun ENTRALINK_RUN_ACTION_TAKE_CARD, 0x8004, 0, 0x8002
+    WorkCmpConst 0x8002, 0
+    VMJumpIf CMP_EQ, L_RunTakeCardFailed
+    WordSetPlayerName 0
+    MEPlay SEQ_ME_ITEM
+    WorkCmpConst 0x8001, ENTRALINK_RUN_PICK_ITEM
+    VMJumpIf CMP_EQ, L_RunTakeCardItem
+    WorkCmpConst 0x8001, ENTRALINK_RUN_PICK_RANK_UP
+    VMJumpIf CMP_EQ, L_RunTakeCardRankUp
+    WorkCmpConst 0x8001, ENTRALINK_RUN_PICK_REPLACE
+    VMJumpIf CMP_EQ, L_RunTakeCardReplaced
+    SystemMsg Global10490_Text_RunBuffGained, 2
+    VMJump L_RunTakeCardDone
+
+L_RunTakeCardItem:
+    SystemMsg Global10490_Text_RunReceivedItem, 2
+    VMJump L_RunTakeCardDone
+
+L_RunTakeCardRankUp:
+    SystemMsg Global10490_Text_RunBuffRankedUp, 2
+    VMJump L_RunTakeCardDone
+
+L_RunTakeCardReplaced:
+    SystemMsg Global10490_Text_RunBuffReplaced, 2
+
+L_RunTakeCardDone:
+    MEWait
+    LastKeyWait
+    SystemMsgClose
+    WorkSetConst 0x8000, 1
+    VMReturn
+
+L_RunTakeCardNoDust:
+    SystemMsg Global10490_Text_RunShopNoDust, 2
+    LastKeyWait
+    SystemMsgClose
+    VMJump L_RunTakeCardNot
+
+L_RunTakeCardFailed:
+    // Only an item can fail here: the bag is full
+    SystemMsg Global10490_Text_RunBagFull, 2
+    LastKeyWait
+    SystemMsgClose
+
+L_RunTakeCardNot:
+    WorkSetConst 0x8000, 0
+    VMReturn
+
+L_RunBuffOffer:
+    // Paper White 2: the buffs offered after a battle won (phase 2), right after its Dream Dust: a card to keep, or
+    // Skip for buffs.json's skip_dust. B shows the cards again: the offer is taken or skipped. Nothing after the final
+    // room's battle, which ends the run, or if no card fitted
+    EntralinkRun ENTRALINK_RUN_ACTION_OFFER, 0, 0, 0x8000
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_EQ, L_RunBuffOfferDone
+
+L_RunBuffOfferMenu:
+    SystemMsg Global10490_Text_RunBuffChoose, 2
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8000
+    EntralinkRun ENTRALINK_RUN_ACTION_ADD_CARDS, ENTRALINK_RUN_CARDS_OFFER, 0, 0x8001
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_DUST, 2, 0, 0x8001
+    WordSetNumber 0, 0x8001, 3
+    ListMenuAdd Global10490_Text_RunBuffSkip, Global10490_Text_RunBuffSkipInfo, ENTRALINK_RUN_CARD_OTHER
+    ListMenuShow
+    SystemMsgClose
+    WorkCmpConst 0x8000, 65534
+    VMJumpIf CMP_EQ, L_RunBuffOfferMenu
+    WorkCmpConst 0x8000, ENTRALINK_RUN_CARD_OTHER
+    VMJumpIf CMP_EQ, L_RunBuffOfferSkip
+    WorkSetConst 0x8003, ENTRALINK_RUN_CARDS_OFFER
+    VMCall L_RunTakeCard
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_EQ, L_RunBuffOfferMenu
+
+L_RunBuffOfferDone:
+    VMReturn
+
+L_RunBuffOfferSkip:
+    EntralinkRun ENTRALINK_RUN_ACTION_SKIP_OFFER, 0, 0, 0x8006
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_DUST, 2, 0, 0x8005
+    WordSetNumber 0, 0x8005, 3
+    WordSetNumber 1, 0x8006, 5
+    SystemMsg Global10490_Text_RunBuffSkipped, 2
+    LastKeyWait
+    SystemMsgClose
+    VMReturn
 
 L_RunChoiceDone:
     // Paper White 2: a choice NPC once the room's choice is made
@@ -610,6 +773,7 @@ L_RunToHub:
 
 L_RunRoomCleared:
     VMCall L_RunDust
+    VMCall L_RunBuffOffer
     WorkSetConst 0x8002, 1
     VMCall L_RunDialogue
     EntralinkRun ENTRALINK_RUN_ACTION_CLEAR_ROOM, 0, 0, 0x8000
@@ -666,6 +830,32 @@ Script_10:
     LastKeyWait
     SystemMsgClose
     FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+Script_11:
+    // Paper White 2: SELECT in a run (SCRID_ENTRALINK_RUN_BUFFS, src/ov036/fieldmap_event.c): the buffs held, the golds
+    // with their ranks then the blues and purples with their counts, each one's line in the window as the cursor is
+    // on it, and the run's Dream Dust; any choice closes it
+    ActorsPauseAll
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_DUST, 1, 0, 0x8005
+    WordSetNumber 0, 0x8005, 5
+    EntralinkRun ENTRALINK_RUN_ACTION_COUNT_CARDS, ENTRALINK_RUN_CARDS_HELD, 0, 0x8000
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_EQ, L_RunBuffsNone
+    SystemMsg Global10490_Text_RunBuffsTitle, 2
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8000
+    EntralinkRun ENTRALINK_RUN_ACTION_ADD_CARDS, ENTRALINK_RUN_CARDS_HELD, 0, 0x8001
+    ListMenuAdd Global10490_Text_RunBuffsClose, Global10490_Text_RunBuffsTitle, ENTRALINK_RUN_CARD_OTHER
+    ListMenuShow
+    SystemMsgClose
+    ActorsUnpauseAll
+    VMHalt
+
+L_RunBuffsNone:
+    SystemMsg Global10490_Text_RunBuffsNone, 2
+    LastKeyWait
+    SystemMsgClose
     ActorsUnpauseAll
     VMHalt
 #endif

@@ -3,7 +3,8 @@
 First draft, 2026-11-19, marked up by the user the same day: their answers are the decisions of section 6, and the
 Stall theme (4.13) replaces Tag team and Harvest. The catalogue is data since phase 1 (section 7):
 `res/paperwhite2/entralink/buffs.json`, edited on the Entree page's Buffs tab and checked by
-`tools/paperwhite2/entralink_buffs.py`; the game reads none of it yet. The mode itself is in `entralink-roguelike.md`
+`tools/paperwhite2/entralink_buffs.py`. Since phase 2 (section 9) the game offers the cards and the run holds them;
+their battle effects are phase 3. The mode itself is in `entralink-roguelike.md`
 (sections 1-2 for the design, 3.8 for the damage pipeline); how the hack adds battle effects is in
 `moves-and-abilities.md`. Every number below is a starting value to tune in playtests.
 
@@ -414,13 +415,13 @@ is new. Icons are one per category, coloured by tier (section 7); the later phas
 `res/paperwhite2/entralink/buffs.json` holds the whole catalogue, against `buffs.schema.json` beside it. The Entree
 page's **Buffs** tab edits it; `tools/paperwhite2/entralink_buffs.py` checks it in the hack's build and writes
 `paperwhite2/entralink_buffs_config.h` (the buffs', categories', themes', buckets', effect kinds' and tiers' IDs and the
-settings as `ENTRALINK_BUFF_*` values), which nothing includes yet: the next phase adds the tables with the C that
-reads them.
+settings as `ENTRALINK_BUFF_*` values, and since phase 2 the cards' table and the offers' sources, section 9).
 
-- **settings:** `offers` (3), `tier_odds` by source, `boss_guaranteed_gold`, `shop_gold_weight` and
-  `held_theme_weight` (percent of the others' weight), `gold_slots` (5), `max_rank` (3), `damage_cap` (60,000),
-  `skip_dust` (Dream Dust for skipping an offer, 20), `type_card_team_weight`, and the tiers' default `prices` in Dream
-  Dust (blue 60, purple 150, gold 400; tunable).
+- **settings:** `offers` (3), `tier_odds` by source (enemy, challenge, boss, and since phase 2 gift, buff_room,
+  shop), `boss_guaranteed_gold`, `shop_gold_weight`, `held_theme_weight` and (phase 2) `rank_up_weight` (percent of
+  the others' weight), `gold_slots` (5), `max_rank` (3), `damage_cap` (60,000), `skip_dust` (Dream Dust for skipping
+  an offer, 20), (phase 2) `gift_buff_chance` (50) and `shop_buffs` (2), `type_card_team_weight`, and the tiers'
+  default `prices` in Dream Dust (blue 60, purple 150, gold 400; tunable). Section 9 says how the offers use them.
 - **buckets:** section 1's table: `id`, `name`, `side` (attack, defense), `vanilla` (the factor the sum adds to in
   hundredths: STAB 150, CRIT 200), `cap`, `critical_only` (CRIT), `reduces` (GUARD), `event`. A bucket's factor is
   (vanilla + sum) / vanilla, or / 100 for a critical-only one; a reducing one's (100 − sum) / 100.
@@ -508,3 +509,105 @@ Recorded now, built later; none of it is in phase 1.
   **40,000**; the clamp stays at 60,000 (`damage_cap`).
 - **Enemy scaling** is tunable data; a later phase simulates runs outside the game to suggest its starting values.
 - **A separate later project:** the C-Gear's run display, the hub and Dream Shards.
+
+## 9. Phase 2: choosing buffs (2026-11-20)
+
+The game now offers the cards and the run holds them; what they do in battle is phase 3. Code:
+`include/paperwhite2/entralink_buffs.h`, `src/paperwhite2/main/paperwhite2_entralink_buffs.c` (what the run holds, ARM9
+main, for the battle), `src/paperwhite2/ov012/paperwhite2_entralink_buff_offers.c` (the offers, the cards' text and
+lists, overlay 12), the run's actions in `paperwhite2_entralink_run.c` (`ENTRALINK_RUN_ACTION_OFFER` to
+`_COUNT_CARDS`, `paperwhite2/entralink_run_actions.h`) and the scripts in `res/field/scripts/global_10490.s`.
+
+### 9.1 What the run holds
+
+In `EntralinkRunState` (RAM only, like the rest of the run): `buffLevels[]`, one byte a card (a blue's or purple's
+count, a gold's rank, 0 not held), `goldSlots[5]` (a gold's ID or free), and `typeCounts[type card][type]` (a type card's
+count is the sum of its types'). `EntralinkRun_Start` and `EntralinkRun_End` empty them (`EntralinkBuffs_Clear`), so
+every way a run ends (a win, a loss, the forfeit, the back door, a warp away, any map outside the forest) loses them,
+and a reset finds none. Phase 3 reads them with `EntralinkBuffs_GetCount`, `_GetTypeCount`, `_GetGoldRank`,
+`_GetGoldSlot`, `_GetLevel` and `_ListHeld`; the soft limits, steps and caps apply there (here a count stops at the
+picks that reach a card's cap: past them a card isn't offered).
+
+### 9.2 Offers
+
+- **After a battle won** (a capture counts) in any room but the final one, right after the battle's Dream Dust
+  message and before the room opens: `offers` cards (3). The row of `tier_odds`: a boss's, a challenge room's, else
+  `enemy` (enemy and enemy-choice rooms, a rest room's bonus battle). With `boss_guaranteed_gold`, a boss's offer
+  without a gold has one card (at random) redrawn as a gold.
+- **A card:** its tier rolled by the row (a tier with no card left to draw doesn't count), then a card of that tier by
+  weight among those whose `pools` hold the source's pool and whose `rounds` fit, below their highest level, and not
+  already in the offer. Weights: the card's `weight`; a gold held that can still rank up times `rank_up_weight` (200);
+  another gold of a held gold's theme, or a purple related to one, times `held_theme_weight` (200). A gold not held is
+  offered whatever the slots: taking it with all five full asks for the gold it replaces. A type card's type is drawn
+  among the 17 (Normal to Dark), the team's types (the run party's first and second types) weighted
+  `type_card_team_weight` (300), never guaranteed; a type at the card's highest count isn't drawn.
+- **Gift NPCs** (the rest room's and the pre-boss rest's): 3 cards drawn as the room is entered, each a buff of the
+  gift pool at `gift_buff_chance` (50%, row `gift`), else (or if no buff fits) an item of the item table's gift pool.
+  Blues have no gift pool, so a gift's buffs are purples and golds.
+- **Buff rooms:** the room's offer of 3 (pool and row `buff_room`) is drawn as it is entered; talking to the buff ball
+  shows it, taking one is the room's choice (B leaves it open), and no card left says so and makes the choice. The
+  buff template has one ball now (it had three, which all showed the same offer).
+- **Shops:** each stock adds `shop_buffs` (2) buffs of the shop pool (row `shop`, its gold percent times
+  `shop_gold_weight`, 200), each at its `price` or the tier's. The Mart's screen shows only items, so a shop with buffs
+  left asks first: **Items** (the Mart, as before), **Buffs** (a list with prices, a buy asked with Yes/No and refused
+  without the Dust; a bought one leaves the list), **Leave**. With none left it opens the Mart at once, as before.
+  Talking to it is still the room's choice.
+
+### 9.3 The chooser and the viewer
+
+- **A list menu** (`ListMenuAnchorTopLeft`), its lines built in C (`EntralinkBuffs_AddCardOptions` with
+  `AppendListMenuOption`): each card's title in its tier's colour, a gold's with its rank's numeral (the rank taking it
+  gives: "Galvanic II" for a held Galvanic I), a type card's with its type ("Type Affinity (Fire)"), a shop's with its
+  price. The description is the game's own list description: the system window under the list shows the card's line
+  (its rank's, wrapped to two lines; the packer and the editor refuse one that needs three) as the cursor moves.
+  After a battle the last line is **Skip (+20 Dream Dust)**; B shows the cards again.
+- **Colours:** the text's colour codes, `{ff00:2}` (the font palette's blue, 5 and 6), `{ff00:478}` (purple: the
+  palette's magenta, 13 with 14 as its shadow, in the hack's colour code of 256 + letter × 16 + shadow) and
+  `{ff00:444}` (gold: 11 with 12), and `{ff00:0}` back to the window's text colour. They read on the list's white and
+  in the message window's dark alike. No rarity word.
+- **Taking:** a blue or purple adds a stack ("Riku gained Big Root!"), a gold held ranks up ("Riku's buff rose to
+  Galvanic II!"), a new gold takes a free slot or, with all five held, a second list of the five golds (each with its
+  line) and Cancel (back to the cards) asks which it replaces ("Nightmare Field I made way for Overcharge I!").
+- **The viewer:** SELECT in a run (`fieldmap_event.c`; the original's field doesn't use SELECT) lists the golds with
+  their ranks, then the blues and purples with their counts (a type card a line a type), each one's line in the window,
+  and the run's Dream Dust; or says none is held.
+- **Debug:** Player... > Entralink buffs...: **Set a buff...** (its ID, the number entry showing its title, then a level:
+  a count, or a gold's rank in its slot, a free one or else the first; 0 takes it away; a type card's count for the
+  target Pokémon's first type) and **Show held** (the viewer's list).
+- **Text:** the cards' titles and descriptions are the script text bank `entralink_buffs`, generated from buffs.json
+  (`text_lines()`, `\from{entralink.buffs}`); the messages are global_10490's.
+
+### 9.4 Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `buffs2/`)
+
+- **An enemy room's battle** (Dialga, room 1): the chooser after the Dust message, Big Root (purple), Sp. Atk and Guard
+  (blue) with Skip; taking Big Root set its count to 1 and emptied the offer; the room opened after. Skip gave 20 Dust
+  (40 to 60) and no card; B showed the cards again.
+- **Ranking up:** Galvanic held at I and offered showed "Galvanic II" with its rank II line; taking it made rank 2.
+- **Replacing:** five golds held, a new gold (Overcharge) taken: the list of the five and Cancel; Cancel went back to
+  the offer with nothing changed; slot 2 then made Overcharge rank 1 there and Nightmare Field gone (level 0).
+- **A boss:** the room's role poked to boss and the boss row to 100/0/0: two blues and one gold (the guarantee).
+  **A challenge:** the room's type poked to challenge and its row to 0/0/100: three golds (the row by the room).
+- **A gift:** cards mixed (for example Climate, Cold Snap I and a Super Potion); a buff taken was the room's choice.
+- **A buff room:** its offer of 3 on entry, B left it open, a card taken made the choice and emptied the offer.
+- **A shop:** Items / Buffs / Leave; Attack bought for 60 (500 to 440 Dust, the list keeping Technique); with 1 Dust
+  "You don't have enough Dream Dust" and nothing changed.
+- **The run's end:** after buying, the back door ended the run with every buff gone; a new run started with none, and
+  SELECT said none is held. **The viewer** with golds, stacks and a type card ("Type Affinity (Fire) x2").
+- **Debug:** Set a buff made Type Affinity 2 (Fire, the first Pokémon's type) and Galvanic rank 3 in a slot.
+- **Type cards:** 10 buff rooms with every other purple poked out of the pool: 18 of 20 type cards rolled a team type
+  (team of 8 types, weight 300: about 73% expected), never Normal or a NULL type.
+- Build clean (no warnings in the hack's files), `verify_dsi_rom.py` intact, the plain build's modules match, Python
+  tests (`test_entralink_buffs.py`, `test_entralink_run.py`) and the editor's (`tsc`, `npm test`) pass.
+
+### 9.5 Memory
+
+`EntralinkRunState` grew by 208 bytes (360 now, ARM9 main's BSS); the read functions are about 0.2 KB of main's code.
+Overlay 12 grew by about 6.5 KB (the table, 113 cards of 20 bytes, and the offers' code), which overlay 12 being the
+field's largest set moves the main arena's start: 43 KB were left before 0x023e0000, 36 KB now. The lists' strings are
+heap allocations freed with the list (four of 128 characters while one is built). No VRAM.
+
+### 9.6 Left for later
+
+- Phase 3: the battle effects (the buckets' handlers reading the levels here).
+- Icons on the cards (the category icons in the tier palettes) wait for a screen of their own; the list shows text.
+- The C-Gear's run display (a later project).

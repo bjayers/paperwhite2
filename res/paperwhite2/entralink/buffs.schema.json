@@ -41,9 +41,12 @@
           "required": [
             "enemy",
             "challenge",
-            "boss"
+            "boss",
+            "gift",
+            "buff_room",
+            "shop"
           ],
-          "description": "Each card's tier odds by the battle's source",
+          "description": "Each card's tier odds by its source: after a battle (enemy, challenge, boss), a gift, a buff room, a shop",
           "properties": {
             "enemy": {
               "type": "object",
@@ -53,7 +56,7 @@
                 "purple",
                 "gold"
               ],
-              "description": "After a enemy battle",
+              "description": "After an enemy or enemy-choice battle (and a rest room's bonus battle)",
               "properties": {
                 "blue": {
                   "type": "integer",
@@ -134,6 +137,96 @@
                   "description": "gold's percent"
                 }
               }
+            },
+            "gift": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "blue",
+                "purple",
+                "gold"
+              ],
+              "description": "A gift NPC's buff cards",
+              "properties": {
+                "blue": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "blue's percent"
+                },
+                "purple": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "purple's percent"
+                },
+                "gold": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "gold's percent"
+                }
+              }
+            },
+            "buff_room": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "blue",
+                "purple",
+                "gold"
+              ],
+              "description": "A buff room's choice",
+              "properties": {
+                "blue": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "blue's percent"
+                },
+                "purple": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "purple's percent"
+                },
+                "gold": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "gold's percent"
+                }
+              }
+            },
+            "shop": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "blue",
+                "purple",
+                "gold"
+              ],
+              "description": "A shop's buffs, the gold percent then times shop_gold_weight",
+              "properties": {
+                "blue": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "blue's percent"
+                },
+                "purple": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "purple's percent"
+                },
+                "gold": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "gold's percent"
+                }
+              }
             }
           }
         },
@@ -145,13 +238,19 @@
           "type": "integer",
           "minimum": 100,
           "maximum": 1000,
-          "description": "Golds' weight in shops, in percent of the others'"
+          "description": "Golds' weight in shops: the shop row's gold percent times this, in percent"
         },
         "held_theme_weight": {
           "type": "integer",
           "minimum": 100,
           "maximum": 1000,
           "description": "The weight of golds and related purples of a theme held, in percent"
+        },
+        "rank_up_weight": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 1000,
+          "description": "A held gold's weight while it can still rank up, in percent"
         },
         "gold_slots": {
           "type": "integer",
@@ -176,6 +275,18 @@
           "minimum": 0,
           "maximum": 999,
           "description": "Dream Dust for skipping an offer"
+        },
+        "gift_buff_chance": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Each gift card's chance to be a buff rather than an item, in percent"
+        },
+        "shop_buffs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4,
+          "description": "Buffs each shop sells beside its items"
         },
         "type_card_team_weight": {
           "type": "integer",

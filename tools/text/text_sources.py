@@ -279,6 +279,8 @@ SOURCES = {
     "wonder_trade.names": lambda: wonder_trade_names(),
     # Paper White 2: the Entralink roguelike's NPCs' dialogue, from its rooms (tools/paperwhite2/entralink_run.py)
     "entralink.dialogue": lambda: entralink_dialogue(),
+    # Paper White 2: the Entralink roguelike's buff cards, from buffs.json (tools/paperwhite2/entralink_buffs.py)
+    "entralink.buffs": lambda: entralink_buffs(),
 }
 
 
@@ -290,6 +292,11 @@ def wonder_trade_names() -> list[str]:
 def entralink_dialogue() -> list[str]:
     from tools.paperwhite2.entralink_run import dialogue_lines
     return dialogue_lines()
+
+
+def entralink_buffs() -> list[str]:
+    from tools.paperwhite2.entralink_buffs import text_lines
+    return text_lines()
 
 
 def facility_lines(source: str) -> list[str] | None:
