@@ -217,9 +217,12 @@ def check_room(directory: Path, where: str, room: dict):
         battles[battle["id"]] = battle
         wanted = ENEMY_COUNTS[battle["format"]]
         count = len(battle["enemies"])
+        # (a warning, not an error: the editor shows it as an error, and the game plays such a battle as the format
+        # its enemies fill, so a room in progress doesn't stop the build)
         if count != wanted:
-            error(where, f"battles[{i}]: a {battle['format']} battle takes {wanted} "
-                  f"{'enemy' if wanted == 1 else 'enemies'}, not {count}")
+            print(f"warning: {where}: battles[{i}]: a {battle['format']} battle takes {wanted} "
+                  f"{'enemy' if wanted == 1 else 'enemies'}, not {count}; it plays as the format its enemies fill",
+                  file=sys.stderr)
         for j, enemy in enumerate(battle["enemies"]):
             ability = enemy.get("ability")
             if ability is not None and ability != "hidden" and not (

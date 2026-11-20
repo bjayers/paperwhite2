@@ -35,15 +35,16 @@ def test_real_data_packs():
     assert entralink_run.dialogue_lines()[0] == ""
 
 
-def test_raid_takes_one_enemy(tmp_path):
+def test_raid_takes_one_enemy(tmp_path, capsys):
     directory = copy_data(tmp_path)
     edit(room(directory, "rayquaza_raid"), lambda data: data["battles"][0]["enemies"].append(
         dict(data["battles"][0]["enemies"][0])))
-    with pytest.raises(datajson.DataError, match="raid"):
-        entralink_run.tables(directory)
+    # (a warning, not an error: the game plays such a battle as the format its enemies fill)
+    entralink_run.tables(directory)
+    assert "a raid battle takes 1 enemy, not 2" in capsys.readouterr().err
 
 
-def test_formats_take_exactly_their_enemies(tmp_path):
+def test_formats_take_exactly_their_enemies(tmp_path, capsys):
     directory = copy_data(tmp_path)
     path = directory / "rooms" / "short_triple.json"
     path.write_text(json.dumps({
@@ -51,8 +52,8 @@ def test_formats_take_exactly_their_enemies(tmp_path):
         "battles": [{"id": "battle", "progress_id": 1000, "format": "triple",
                      "enemies": [{"species": "SPECIES_PIKACHU"}]}],
         "npcs": [{"type": "battle", "battle": "battle", "x": 15, "z": 14, "facing": "DIR_DOWN"}]}))
-    with pytest.raises(datajson.DataError, match="a triple battle takes 3 enemies, not 1"):
-        entralink_run.check_room(directory, "rooms/short_triple.json", json.loads(path.read_text()))
+    entralink_run.check_room(directory, "rooms/short_triple.json", json.loads(path.read_text()))
+    assert "a triple battle takes 3 enemies, not 1" in capsys.readouterr().err
 
 
 def test_battle_npc_default_sprite():
