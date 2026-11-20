@@ -6,7 +6,8 @@
 // is: Room, Battles, NPCs, with the run's own settings (run.json) above the list. Step 6: the rooms' types, the
 // templates every generated room of a type is (templates/, a group under the rooms, edited as rooms are), the new NPC
 // types, the rounds' type weights and the run's chances, the clearings' flower tiles on the grid (flower_tiles.json) and
-// the Items tab (the item table, items.json: ItemsPage.tsx). Every room file is held in the
+// the Items tab (the item table, items.json: ItemsPage.tsx); the buffs' phase 1, the Buffs tab (the buff catalogue,
+// buffs.json: BuffsPage.tsx). Every room file is held in the
 // document store, so undo, the build's check on Save and changes on disk work as for any file. Save first gives the
 // new battles and catchable enemies their progress ids (model.ts, assignProgressIds; progress_ids.json); renaming a
 // battle or a room renames what every room's catches and spawn conditions name of it.
@@ -28,6 +29,8 @@ import { weatherLabel, weatherNote } from "../weather/weathers.ts";
 import { useToolActive } from "../active.ts";
 import type { ToolProps } from "../types.ts";
 import { ItemsPage } from "./ItemsPage.tsx";
+import { BuffsPage } from "./BuffsPage.tsx";
+import { BUFFS } from "./buffs.ts";
 import { NumberBox, Row, Section, Switch, cap } from "./parts.tsx";
 import {
   ARRIVAL, CLEARINGS_PREFIX, exitAt, ROUNDS, ROUND_NOTES, clearingName, inRound, DEFAULT_CHANCE, DEFAULT_COUNT, DEFAULT_LEVEL, EXIT_SCRIPTS, FACINGS, FORMAT_ENEMIES, FORMATS, ID_PATTERN,
@@ -82,8 +85,9 @@ const FLOWER_COLOR = 0xff3fb4;
 const RUN = "res/paperwhite2/entralink/run.json";
 const RUN_SCHEMA = "res/paperwhite2/entralink/run.schema.json";
 const TINTS = "res/paperwhite2/field_tints/tints.json";
-/** The files the page's Save saves: the rooms, the templates, the run, the item table and the flower tiles. */
-const isPageFile = (p: string) => p.startsWith(`${ROOMS_DIR}/`) || isTemplateFile(p) || p === RUN || p === ITEMS || p === FLOWER_TILES;
+/** The files the page's Save saves: the rooms, the templates, the run, the item table, the flower tiles and the buff
+ * catalogue. */
+const isPageFile = (p: string) => p.startsWith(`${ROOMS_DIR}/`) || isTemplateFile(p) || p === RUN || p === ITEMS || p === FLOWER_TILES || p === BUFFS;
 /** The schema's own complaint about a battle or catch with no progress id yet: Save gives it one. */
 const awaitsId = (e: { path: JsonPath; message: string }) => e.message === "progress_id is missing";
 const zoneFile = (zone: string) => zone.replace(/^ZONE_/, "").toLowerCase();
@@ -129,9 +133,9 @@ interface Listed { id: string; path: string; room: Room; dirty: boolean; data: J
 
 /** The page's tab, remembered in this browser. */
 const VIEW_KEY = "entree.view";
-type View = "rooms" | "items";
+type View = "rooms" | "items" | "buffs";
 function readView(): View {
-  try { return localStorage.getItem(VIEW_KEY) === "items" ? "items" : "rooms"; } catch { return "rooms"; }
+  try { const v = localStorage.getItem(VIEW_KEY); return v === "items" || v === "buffs" ? v : "rooms"; } catch { return "rooms"; }
 }
 
 export function EntreeEditor({ constants }: ToolProps) {
@@ -271,13 +275,15 @@ export function EntreeEditor({ constants }: ToolProps) {
       const key = e.key.toLowerCase();
       if (key === "s") { e.preventDefault(); e.stopPropagation(); void save(); return; }
       const inField = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
-      if (!path || inField || (key !== "z" && key !== "y")) return;
+      // The Buffs tab undoes the catalogue; the others the chosen room
+      const target = view === "buffs" ? BUFFS : path;
+      if (!target || inField || (key !== "z" && key !== "y")) return;
       e.preventDefault(); e.stopPropagation();
-      if (key === "y" || e.shiftKey) documents.redo(path); else documents.undo(path);
+      if (key === "y" || e.shiftKey) documents.redo(target); else documents.undo(target);
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [save, toolActive, path]);
+  }, [save, toolActive, path, view]);
 
   const taken = useMemo(() => new Set(rooms.map((r) => r.id)), [rooms]);
   const create = (name: string, data: JsonValue) => {
@@ -357,7 +363,7 @@ export function EntreeEditor({ constants }: ToolProps) {
   const listed = rooms.filter((r) => (roundFilter === "all" || inRound(r.room, Number(roundFilter) as Round)) && (roleFilter === "all" || r.room.role === roleFilter) &&
     (typeFilter === "all" || (r.room.role === "room" && (r.room.type ?? DEFAULT_ROOM_TYPE) === typeFilter)) &&
     (!text.trim() || `${r.id} ${r.room.name}`.toLowerCase().includes(text.trim().toLowerCase())));
-  const unsaved = [...everything.filter((r) => r.dirty).map((r) => r.path), ...[RUN, ITEMS, FLOWER_TILES].filter((p) => docs.get(p)?.dirty)];
+  const unsaved = [...everything.filter((r) => r.dirty).map((r) => r.path), ...[RUN, ITEMS, FLOWER_TILES, BUFFS].filter((p) => docs.get(p)?.dirty)];
 
   // The shown clearing's flower tiles (flower_tiles.json), drawn over the grid and toggled in the Flower tiles mode
   const flowerDoc = docs.get(FLOWER_TILES);
@@ -416,11 +422,12 @@ export function EntreeEditor({ constants }: ToolProps) {
     <div className="en-editor">
       <header className="en-header">
         <h2>Entree</h2>
-        <Switch<View> value={view} options={["rooms", "items"]} onChange={setView}
-                      titles={{ rooms: "The rooms, the templates and the run", items: "The item table (items.json): what item rooms, gifts, shops and the ground hand out" }} />
+        <Switch<View> value={view} options={["rooms", "items", "buffs"]} onChange={setView}
+                      titles={{ rooms: "The rooms, the templates and the run", items: "The item table (items.json): what item rooms, gifts, shops and the ground hand out",
+                                buffs: "The buff catalogue (buffs.json): the blue, purple and gold cards, their themes and the balance meter" }} />
         <span className="muted en-lead">{view === "rooms"
           ? "The Entralink roguelike's rooms: their battles, what stands in them and the markers in front of the doors leading to them."
-          : "The items a run hands out, by pool."}</span>
+          : view === "items" ? "The items a run hands out, by pool." : "The buff cards a run offers, their effects and the strongest hit they allow."}</span>
         <span className="spacer" />
         {unsaved.length > 0 && <span className="muted">{unsaved.length} unsaved</span>}
         <button onClick={() => unsaved.forEach((p) => void documents.reload(p))} disabled={!unsaved.length}>Revert</button>
@@ -428,7 +435,7 @@ export function EntreeEditor({ constants }: ToolProps) {
       </header>
       {error && <p className="ow-error ow-bar">{error}</p>}
       {unsaved.filter((p) => docs.get(p)?.saveError).map((p) => <p key={p} className="ow-error ow-bar">{p}: {docs.get(p)?.saveError}</p>)}
-      {view === "items" ? <ItemsPage constants={constants} rooms={rooms} /> : <div className="en-body">
+      {view === "buffs" ? <BuffsPage constants={constants} /> : view === "items" ? <ItemsPage constants={constants} rooms={rooms} /> : <div className="en-body">
         <aside className="en-list">
           <RunSection rooms={rooms} templates={templateIds} />
           <div className="en-list-section">

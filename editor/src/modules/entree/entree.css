@@ -146,3 +146,45 @@
 .en-type-switch { min-width: 0; max-width: 100%; }
 .en-type-switch .view-switch { flex-wrap: wrap; }
 .en-type-switch .view-switch button { padding: 3px 9px; }
+
+/* The Buffs tab: the cards' list, the chosen card's sections, and the meter, themes and offers beside them */
+.en-buffs-body { grid-template-columns: 300px minmax(0, 1fr) 440px; }
+.en-buffs-main { min-width: 0; overflow-y: auto; padding: 8px 14px; display: flex; flex-direction: column; gap: 12px; }
+.en-buffs-side { min-width: 0; overflow-y: auto; padding: 8px 14px 8px 0; display: flex; flex-direction: column; gap: 12px; }
+.en-buffs-main .ow-condition, .en-buffs-side .ow-condition { grid-template-columns: 92px 1fr; }
+.en-buff-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.en-buff-icon { width: auto; height: auto; }
+.en-buff-kind { margin-left: auto; font-family: var(--mono); font-size: 11px; }
+.en-tier-blue { color: #4f86f7; border-color: #4f86f7; }
+.en-tier-purple { color: #b061e6; border-color: #b061e6; }
+.en-tier-gold { color: #d9a520; border-color: #d9a520; }
+.en-tier-switch .view-switch button:nth-child(1).active { box-shadow: inset 0 0 0 1px #4f86f7; color: #4f86f7; }
+.en-tier-switch .view-switch button:nth-child(2).active { box-shadow: inset 0 0 0 1px #b061e6; color: #b061e6; }
+.en-tier-switch .view-switch button:nth-child(3).active { box-shadow: inset 0 0 0 1px #d9a520; color: #d9a520; }
+.en-rank-label { flex: none; width: 46px; }
+.en-icon-pick { display: flex; align-items: center; gap: 10px; }
+.en-icon-frame { display: inline-flex; padding: 4px; border: 1px solid var(--border); border-radius: 6px; background: var(--hover); line-height: 0; }
+.en-param { display: block; flex: 1 1 0; min-width: 0; }
+.en-buffs-main .ow-condition-label { align-self: start; padding-top: 6px; }
+.en-param .object .row:last-child { border-bottom: none; }
+.en-buff-item .en-item-detail { white-space: nowrap; overflow: hidden; }
+.en-ranks { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.en-rank { display: inline-flex; align-items: center; gap: 4px; }
+.en-meter-table { display: flex; flex-direction: column; margin: 4px 0 8px; font-size: 13px; }
+.en-meter-row { display: grid; grid-template-columns: minmax(0, 1fr) 90px 60px; gap: 8px; padding: 2px 0; border-top: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+.en-meter-head { border-top: none; }
+.en-meter-row span:not(:first-child) { text-align: right; }
+.en-gauge-row { display: grid; grid-template-columns: 110px minmax(0, 1fr) 64px; gap: 8px; align-items: center; margin: 4px 0; }
+.en-gauge { height: 8px; border-radius: 4px; background: var(--hover); overflow: hidden; }
+.en-gauge span { display: block; height: 100%; background: var(--accent); }
+.en-gauge-over span { background: var(--error); }
+.en-gauge-num { text-align: right; font-variant-numeric: tabular-nums; }
+.en-example { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+.en-example-row { display: grid; grid-template-columns: minmax(0, 1fr) 40px 52px 24px; gap: 6px; align-items: center; font-size: 13px; }
+.en-example-row .search-select { grid-column: 1 / -1; }
+.en-themes { display: flex; flex-direction: column; gap: 8px; }
+.en-theme { display: flex; flex-direction: column; gap: 4px; padding-top: 8px; border-top: 1px solid var(--border); }
+.en-theme-head { display: flex; align-items: center; gap: 6px; }
+.en-theme-head input { flex: 1; min-width: 0; }
+.en-theme-foot { display: flex; align-items: center; gap: 8px; }
+.en-odds { display: grid; grid-template-columns: 80px repeat(3, 60px); gap: 4px 8px; align-items: center; margin-bottom: 10px; }

@@ -4,7 +4,8 @@ says and runs `check` on what an artist imports).
 
     entralink_marker_art.py list
         # a JSON list of the markers' art (res/paperwhite2/entralink/markers/<type>.png, 32 by 32, and
-        # npc_markers/<name>.png, 16 by 16): name, title, path, tool, toolArgs, width, height, description
+        # npc_markers/<name>.png, 16 by 16, and the buff icons, buff_icons/<name>.png, 16 by 16): name, title, path,
+        # tool, toolArgs, width, height, description
     entralink_marker_art.py check PNG --size N [--palette HEX,...] [--preview OUT] [--output OUT] [--info OUT]
         # PNG is an indexed PNG of N by N pixels (colors 0 to 15, index 0 clear), or an RGB(A) PNG of at most 15 colors
         # besides the transparent pixels, which is made indexed. --palette replaces the 16 colors (#rrggbb each, in the
@@ -36,6 +37,13 @@ NPC_ABOUT = (
     "The marker that floats over an NPC's head in an Entralink room (an NPC's `marker` in the room's file names it), "
     "one tile wide, facing the camera. Index 0 is clear; up to 15 more colors. The build packs this PNG as a 16×16 "
     "16-color texture. A new one is a new PNG in npc_markers/, named for the marker.")
+# The buff cards' icons (buffs.json, entralink_buffs.py): one a tier (blue, purple, gold) and one a gold theme
+# (theme_<id>), and any a buff names
+BUFF_ICON_SIZE = 16
+BUFF_ABOUT = (
+    "A buff card's icon (res/paperwhite2/entralink/buffs.json): a tier's (blue, purple, gold), a gold theme's "
+    "(theme_<id>) or one a buff names in its `icon`, 16 by 16. Index 0 is clear; up to 15 more colors. The game shows "
+    "none yet (the buffs' later phase); entralink_buffs.py checks the size and colors.")
 
 
 def relative(path: Path) -> str:
@@ -57,6 +65,13 @@ def sheets() -> list[dict]:
                     "path": relative(entralink_run.SOURCE / "npc_markers" / f"{name}.png"), "tool": TOOL,
                     "toolArgs": ["--size", str(entralink_run.NPC_MARKER_SIZE)], "width": entralink_run.NPC_MARKER_SIZE,
                     "height": entralink_run.NPC_MARKER_SIZE, "description": NPC_ABOUT, "palette": True})
+    for path in sorted((entralink_run.SOURCE / "buff_icons").glob("*.png")):
+        name = path.stem
+        title = f"Buff icon: theme {name.removeprefix('theme_').replace('_', ' ')}" if name.startswith("theme_") \
+            else f"Buff icon: {name.replace('_', ' ')}"
+        out.append({"name": f"buff_icon_{name}", "title": title, "path": relative(path), "tool": TOOL,
+                    "toolArgs": ["--size", str(BUFF_ICON_SIZE)], "width": BUFF_ICON_SIZE, "height": BUFF_ICON_SIZE,
+                    "description": BUFF_ABOUT, "palette": True})
     return out
 
 

@@ -1,0 +1,1606 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Entralink buff catalogue",
+  "description": "The buffs of the Entralink roguelike (docs/paperwhite2/design/entralink-buffs.md): three tiers of cards, the damage buckets they add to, the gold themes, the offers' settings and the balance meter's example. Each buff's effect is one of a fixed list of effect kinds (the effect_* definitions), so the game implements kinds, not entries. tools/paperwhite2/entralink_buffs.py checks it and writes the generated header.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "settings",
+    "buckets",
+    "themes",
+    "buffs"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "offers",
+        "tier_odds",
+        "boss_guaranteed_gold",
+        "gold_slots",
+        "max_rank",
+        "damage_cap",
+        "prices"
+      ],
+      "description": "The offers and the limits",
+      "properties": {
+        "offers": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "description": "Cards offered after each battle, of which the player picks 1"
+        },
+        "tier_odds": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enemy",
+            "challenge",
+            "boss"
+          ],
+          "description": "Each card's tier odds by the battle's source",
+          "properties": {
+            "enemy": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "blue",
+                "purple",
+                "gold"
+              ],
+              "description": "After a enemy battle",
+              "properties": {
+                "blue": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "blue's percent"
+                },
+                "purple": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "purple's percent"
+                },
+                "gold": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "gold's percent"
+                }
+              }
+            },
+            "challenge": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "blue",
+                "purple",
+                "gold"
+              ],
+              "description": "After a challenge battle",
+              "properties": {
+                "blue": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "blue's percent"
+                },
+                "purple": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "purple's percent"
+                },
+                "gold": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "gold's percent"
+                }
+              }
+            },
+            "boss": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "blue",
+                "purple",
+                "gold"
+              ],
+              "description": "After a boss battle",
+              "properties": {
+                "blue": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "blue's percent"
+                },
+                "purple": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "purple's percent"
+                },
+                "gold": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "gold's percent"
+                }
+              }
+            }
+          }
+        },
+        "boss_guaranteed_gold": {
+          "type": "boolean",
+          "description": "A boss's offer has at least one gold card"
+        },
+        "shop_gold_weight": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 1000,
+          "description": "Golds' weight in shops, in percent of the others'"
+        },
+        "held_theme_weight": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 1000,
+          "description": "The weight of golds and related purples of a theme held, in percent"
+        },
+        "gold_slots": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8,
+          "description": "Gold slots; with all full, a new gold replaces one"
+        },
+        "max_rank": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3,
+          "description": "Golds' highest rank"
+        },
+        "damage_cap": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "The final clamp on a hit's damage (the number shows MAX)"
+        },
+        "type_card_team_weight": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 1000,
+          "description": "A type card's weight for the team's own types, in percent of the others'"
+        },
+        "prices": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "blue",
+            "purple",
+            "gold"
+          ],
+          "description": "The tiers' default prices in Dream Dust",
+          "properties": {
+            "blue": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9999,
+              "description": "A blue card's"
+            },
+            "purple": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9999,
+              "description": "A purple card's"
+            },
+            "gold": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9999,
+              "description": "A gold card's"
+            }
+          }
+        }
+      }
+    },
+    "buckets": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": {
+        "$ref": "#/$defs/bucket"
+      },
+      "description": "The damage buckets: bonuses in one add, buckets multiply each other"
+    },
+    "balance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reference_hit"
+      ],
+      "description": "The balance meter's inputs (the editor's Buffs tab, the packer's check)",
+      "properties": {
+        "reference_hit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999,
+          "description": "A strong hit on a tanky boss before buffs (STAB, super effective and the top roll included)"
+        },
+        "example": {
+          "type": "array",
+          "maxItems": 40,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "buff",
+              "count"
+            ],
+            "properties": {
+              "buff": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]+$",
+                "description": "A buff's id"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20,
+                "description": "Picks of a blue or purple, a gold's rank"
+              }
+            }
+          },
+          "description": "A typical build, for the meter's second number"
+        }
+      }
+    },
+    "themes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {
+        "$ref": "#/$defs/theme"
+      },
+      "description": "The gold themes"
+    },
+    "buffs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 255,
+      "items": {
+        "$ref": "#/$defs/buff"
+      },
+      "description": "Every card"
+    }
+  },
+  "$defs": {
+    "bucket": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "side",
+        "cap"
+      ],
+      "description": "A damage bucket. Its factor is (vanilla + the sum, at most cap) / vanilla, or / 100 for a critical_only bucket, whose vanilla factor the reference hit leaves out; a reducing one's is (100 - the sum) / 100",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$",
+          "description": "Its id, which buffs' bucket names"
+        },
+        "name": {
+          "type": "string",
+          "description": "Its name in the tables"
+        },
+        "description": {
+          "type": "string",
+          "description": "What feeds it"
+        },
+        "side": {
+          "enum": [
+            "attack",
+            "defense"
+          ],
+          "description": "The team attacking or defending"
+        },
+        "vanilla": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 1000,
+          "description": "Vanilla's factor in hundredths that the sum adds to (STAB 150, critical 200); left out, 100"
+        },
+        "cap": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "The cap of the sum, in hundredths of the factor"
+        },
+        "critical_only": {
+          "type": "boolean",
+          "description": "Only on a critical hit"
+        },
+        "reduces": {
+          "type": "boolean",
+          "description": "The sum lowers the damage (GUARD)"
+        },
+        "event": {
+          "type": "string",
+          "pattern": "^BATTLE_EVENT_[A-Z_]+$",
+          "description": "The host event of its handler (include/battle/btl_event.h)"
+        }
+      }
+    },
+    "theme": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "description"
+      ],
+      "description": "A gold theme",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$",
+          "description": "Its stable id, which golds' theme names"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^.{1,24}$",
+          "description": "Its name"
+        },
+        "description": {
+          "type": "string",
+          "pattern": "^.{1,80}$",
+          "description": "One line"
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+\\.png$",
+          "description": "A 16 by 16 PNG in buff_icons/; left out, the theme's (golds) or the tier's"
+        }
+      }
+    },
+    "buff": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/stacking"
+        },
+        {
+          "$ref": "#/$defs/gold"
+        }
+      ],
+      "description": "A card: blue or purple (stacking) or gold"
+    },
+    "stacking": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "tier",
+        "description",
+        "weight",
+        "pools",
+        "step",
+        "cap",
+        "effect"
+      ],
+      "description": "A blue or purple card: each pick adds its step, halved past the soft limit, up to its cap; it leaves the pool at its cap",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$",
+          "description": "The buff's stable ID; renaming it doesn't change it"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^.{1,24}$",
+          "description": "Its name on the card"
+        },
+        "tier": {
+          "enum": [
+            "blue",
+            "purple"
+          ],
+          "description": "blue, stats; purple, mechanics"
+        },
+        "description": {
+          "type": "string",
+          "pattern": "^.{1,60}$",
+          "description": "One menu line"
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+\\.png$",
+          "description": "A 16 by 16 PNG in buff_icons/; left out, the theme's (golds) or the tier's"
+        },
+        "weight": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 255,
+          "description": "Its weight in the draw among the cards of its tier"
+        },
+        "rounds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "enum": [
+              1,
+              2,
+              3
+            ]
+          },
+          "description": "The rounds it is offered in; left out, every round"
+        },
+        "price": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999,
+          "description": "Its price in Dream Dust in a shop; left out, settings.prices' for its tier"
+        },
+        "pools": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": {
+            "enum": [
+              "after_battle",
+              "gift",
+              "buff_room",
+              "shop"
+            ]
+          },
+          "description": "Where it is offered: after_battle, the 1 of 3 after a battle; gift, a gift NPC; buff_room, a buff room's choice; shop, a shop's goods"
+        },
+        "step": {
+          "type": "integer",
+          "minimum": -100,
+          "maximum": 1000,
+          "description": "What one pick adds, in the effect kind's unit"
+        },
+        "soft_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "description": "Picks at the full step; later picks add half; left out, every pick is full"
+        },
+        "cap": {
+          "type": "integer",
+          "minimum": -100,
+          "maximum": 1000,
+          "description": "The most its picks add up to, in the effect kind's unit"
+        },
+        "bucket": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$",
+          "description": "The damage bucket it adds to (buckets' ids); left out, none (not damage)"
+        },
+        "related": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "description": "Gold themes it is related to: offered more while one is held (purples)"
+        },
+        "type_card": {
+          "type": "boolean",
+          "description": "The card rolls a type when offered, weighted toward the team's types"
+        },
+        "effect": {
+          "$ref": "#/$defs/effect"
+        }
+      }
+    },
+    "gold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "tier",
+        "description",
+        "weight",
+        "pools",
+        "theme",
+        "ranks",
+        "effect"
+      ],
+      "description": "A gold card: a theme's boon in one of the gold slots, ranked up by picking it again",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$",
+          "description": "The buff's stable ID; renaming it doesn't change it"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^.{1,24}$",
+          "description": "Its name on the card"
+        },
+        "tier": {
+          "enum": [
+            "gold"
+          ],
+          "description": "gold, a theme's boon"
+        },
+        "description": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "type": "string",
+            "pattern": "^.{1,60}$"
+          },
+          "description": "One menu line per rank"
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+\\.png$",
+          "description": "A 16 by 16 PNG in buff_icons/; left out, the theme's (golds) or the tier's"
+        },
+        "weight": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 255,
+          "description": "Its weight in the draw among the cards of its tier"
+        },
+        "rounds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "enum": [
+              1,
+              2,
+              3
+            ]
+          },
+          "description": "The rounds it is offered in; left out, every round"
+        },
+        "price": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999,
+          "description": "Its price in Dream Dust in a shop; left out, settings.prices' for its tier"
+        },
+        "pools": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": {
+            "enum": [
+              "after_battle",
+              "gift",
+              "buff_room",
+              "shop"
+            ]
+          },
+          "description": "Where it is offered: after_battle, the 1 of 3 after a battle; gift, a gift NPC; buff_room, a buff room's choice; shop, a shop's goods"
+        },
+        "theme": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$",
+          "description": "Its theme (themes' ids)"
+        },
+        "core": {
+          "type": "boolean",
+          "description": "The theme's centrepiece, the gold it is built around (one a theme)"
+        },
+        "ranks": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "type": "integer",
+            "minimum": -100,
+            "maximum": 1000,
+            "description": "A rank's value"
+          },
+          "description": "Its value at rank 1, 2 and 3, in the effect kind's unit (not added together)"
+        },
+        "bucket": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$",
+          "description": "The damage bucket it adds to (buckets' ids); left out, none (not damage)"
+        },
+        "effect": {
+          "$ref": "#/$defs/effect"
+        }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A situation: every field given must hold (any: one of its conditions)",
+      "properties": {
+        "defender_status": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": {
+            "enum": [
+              "paralysis",
+              "sleep",
+              "poison",
+              "burn",
+              "freeze",
+              "frostbite",
+              "confusion",
+              "any_major"
+            ]
+          },
+          "description": "The target has one of these (any_major: any major status)"
+        },
+        "attacker_status": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": {
+            "enum": [
+              "paralysis",
+              "sleep",
+              "poison",
+              "burn",
+              "freeze",
+              "frostbite",
+              "confusion",
+              "any_major"
+            ]
+          },
+          "description": "The attacker has one of these (for GUARD, the foe attacking)"
+        },
+        "move_type": {
+          "type": "string",
+          "x-constant": "TYPE_",
+          "description": "The move is of this type"
+        },
+        "card_type": {
+          "type": "boolean",
+          "description": "The move is of the type the card rolled (type cards)"
+        },
+        "category": {
+          "enum": [
+            "physical",
+            "special",
+            "status"
+          ],
+          "description": "The move's category"
+        },
+        "stab": {
+          "type": "boolean",
+          "description": "The move gets STAB"
+        },
+        "super_effective": {
+          "type": "boolean",
+          "description": "The hit is super effective"
+        },
+        "resisted": {
+          "type": "boolean",
+          "description": "The hit is resisted"
+        },
+        "critical": {
+          "type": "boolean",
+          "description": "The hit is critical"
+        },
+        "attacker_hp_below": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "description": "The attacker's HP is below this percent"
+        },
+        "contact": {
+          "type": "boolean",
+          "description": "The move makes contact"
+        },
+        "punch": {
+          "type": "boolean",
+          "description": "A punching move"
+        },
+        "recoil_move": {
+          "type": "boolean",
+          "description": "A move with recoil"
+        },
+        "drain_move": {
+          "type": "boolean",
+          "description": "A draining move (MOVE_QUALITY_DAMAGE_DRAIN)"
+        },
+        "priority": {
+          "type": "boolean",
+          "description": "A move of positive priority"
+        },
+        "power_at_most": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 250,
+          "description": "The move's power is at most this"
+        },
+        "weather": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": {
+            "enum": [
+              "sun",
+              "rain",
+              "sand",
+              "hail",
+              "any"
+            ]
+          },
+          "description": "One of these weathers"
+        },
+        "weather_boosted": {
+          "type": "boolean",
+          "description": "The weather boosts the move (Fire in sun, Water in rain, Rock, Ground and Steel in sand, Ice in hail)"
+        },
+        "first_turn": {
+          "type": "boolean",
+          "description": "The attacker's first turn out"
+        },
+        "boss": {
+          "type": "boolean",
+          "description": "The target is a boss or a raid target"
+        },
+        "any": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/condition"
+          },
+          "description": "One of these conditions holds"
+        }
+      }
+    },
+    "effect": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/effect_damage_ratio"
+        },
+        {
+          "$ref": "#/$defs/effect_stat_ratio"
+        },
+        {
+          "$ref": "#/$defs/effect_max_hp"
+        },
+        {
+          "$ref": "#/$defs/effect_stab_bonus"
+        },
+        {
+          "$ref": "#/$defs/effect_crit_stage"
+        },
+        {
+          "$ref": "#/$defs/effect_crit_damage"
+        },
+        {
+          "$ref": "#/$defs/effect_accuracy"
+        },
+        {
+          "$ref": "#/$defs/effect_residual_ratio"
+        },
+        {
+          "$ref": "#/$defs/effect_residual_fraction"
+        },
+        {
+          "$ref": "#/$defs/effect_heal_per_turn"
+        },
+        {
+          "$ref": "#/$defs/effect_heal_after_battle"
+        },
+        {
+          "$ref": "#/$defs/effect_heal_on_damage"
+        },
+        {
+          "$ref": "#/$defs/effect_heal_ratio"
+        },
+        {
+          "$ref": "#/$defs/effect_recoil_ratio"
+        },
+        {
+          "$ref": "#/$defs/effect_added_effect_chance"
+        },
+        {
+          "$ref": "#/$defs/effect_flinch_chance"
+        },
+        {
+          "$ref": "#/$defs/effect_multi_hit"
+        },
+        {
+          "$ref": "#/$defs/effect_pp_save_chance"
+        },
+        {
+          "$ref": "#/$defs/effect_status_chance_on_hit"
+        },
+        {
+          "$ref": "#/$defs/effect_status_duration"
+        },
+        {
+          "$ref": "#/$defs/effect_status_resist"
+        },
+        {
+          "$ref": "#/$defs/effect_status_cure_chance"
+        },
+        {
+          "$ref": "#/$defs/effect_status_roll"
+        },
+        {
+          "$ref": "#/$defs/effect_type_chart"
+        },
+        {
+          "$ref": "#/$defs/effect_weather_turns"
+        },
+        {
+          "$ref": "#/$defs/effect_screen_turns"
+        },
+        {
+          "$ref": "#/$defs/effect_endure_chance"
+        },
+        {
+          "$ref": "#/$defs/effect_endure_once"
+        },
+        {
+          "$ref": "#/$defs/effect_stat_stage_on_entry"
+        },
+        {
+          "$ref": "#/$defs/effect_ability_like"
+        },
+        {
+          "$ref": "#/$defs/effect_custom"
+        }
+      ],
+      "description": "What it does: one of the effect kinds, with its parameters; the number comes from the step and cap (blue, purple) or the ranks (gold), in the kind's unit"
+    },
+    "effect_damage_ratio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "description": "Adds its value to its bucket while the condition holds. The bucket decides the host event and the side: POW and COND on the move's power, MATCH, CRIT and FINAL on the damage, GUARD on the damage the player's Pokémon take. Value: percent added to the bucket (GUARD: percent less damage taken)",
+      "properties": {
+        "kind": {
+          "enum": [
+            "damage_ratio"
+          ],
+          "description": "The effect kind"
+        },
+        "condition": {
+          "$ref": "#/$defs/condition",
+          "description": "When it applies; left out, always. Every field given must hold"
+        },
+        "scale": {
+          "enum": [
+            "missing_hp",
+            "speed_gap",
+            "attack_stage"
+          ],
+          "description": "Scales the value: missing_hp, the full value at 1 HP and none at full HP (linear in the HP missing); speed_gap, the full value at twice the target's Speed (linear from equal Speed); attack_stage, the value per positive stage of the attacking stat"
+        },
+        "exempt_from_bucket_cap": {
+          "type": "boolean",
+          "description": "Not held to the bucket's cap (a resisted hit stays under a neutral one); the balance meter leaves it out of the strongest hit"
+        },
+        "hp_cost": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50,
+          "description": "Each attack also costs this percent of the user's max HP (vanilla Life Orb: 10)"
+        },
+        "halves_recoil_at_rank": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3,
+          "description": "From this rank on, the moves' recoil is halved too"
+        },
+        "immune_to": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": {
+            "enum": [
+              "paralysis",
+              "sleep",
+              "poison",
+              "burn",
+              "freeze",
+              "frostbite",
+              "confusion"
+            ]
+          },
+          "description": "The team also can't be given these statuses, from rank 1"
+        }
+      }
+    },
+    "effect_stat_ratio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "stat"
+      ],
+      "description": "Raises a stat of the team's Pokémon in battle (ATK and DEF buckets for the attacking and defending stats; Speed outside the buckets). Value: percent of the stat",
+      "properties": {
+        "kind": {
+          "enum": [
+            "stat_ratio"
+          ],
+          "description": "The effect kind"
+        },
+        "stat": {
+          "enum": [
+            "attack",
+            "sp_attack",
+            "defense",
+            "sp_defense",
+            "speed",
+            "attacking",
+            "defending"
+          ],
+          "description": "The stat; attacking is the one the move uses (Attack or Sp. Atk), defending the one a hit on them uses (Defense or Sp. Def)"
+        },
+        "condition": {
+          "$ref": "#/$defs/condition",
+          "description": "When it applies; left out, always. Every field given must hold"
+        },
+        "scale": {
+          "enum": [
+            "missing_hp",
+            "speed_gap",
+            "attack_stage"
+          ],
+          "description": "Scales the value: missing_hp, the full value at 1 HP and none at full HP (linear in the HP missing); speed_gap, the full value at twice the target's Speed (linear from equal Speed); attack_stage, the value per positive stage of the attacking stat"
+        },
+        "ignore_burn_drop": {
+          "type": "boolean",
+          "description": "A burned Pokémon also keeps its full Attack (vanilla Guts)"
+        }
+      }
+    },
+    "effect_max_hp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "description": "Raises the run's copies' max HP, healing the gain. Value: percent of max HP",
+      "properties": {
+        "kind": {
+          "enum": [
+            "max_hp"
+          ],
+          "description": "The effect kind"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 999,
+          "description": "Max HP never goes above this (the gauge shows 3 digits)"
+        }
+      }
+    },
+    "effect_stab_bonus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "description": "Adds to the same-type bonus (vanilla x1.5). Value: hundredths added to the multiplier (5 is +0.05)",
+      "properties": {
+        "kind": {
+          "enum": [
+            "stab_bonus"
+          ],
+          "description": "The effect kind"
+        },
+        "condition": {
+          "$ref": "#/$defs/condition",
+          "description": "When it applies; left out, always. Every field given must hold"
+        },
+        "non_stab": {
+          "type": "boolean",
+          "description": "The value is instead the STAB multiplier that moves of none of the user's types get, in hundredths (125 is x1.25); the balance meter leaves it out"
+        }
+      }
+    },
+    "effect_crit_stage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "description": "Raises the critical-hit stage (Gen 5: 1/16, 1/8, 1/4, 1/3, 1/2). Value: stages; 5 or more is a sure critical hit",
+      "properties": {
+        "kind": {
+          "enum": [
+            "crit_stage"
+          ],
+          "description": "The effect kind"
+        },
+        "condition": {
+          "$ref": "#/$defs/condition",
+          "description": "When it applies; left out, always. Every field given must hold"
+        }
+      }
+    },
+    "effect_crit_damage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "description": "Adds to critical hits' damage (vanilla x2), the CRIT bucket. Value: hundredths added to the multiplier (10 is x2.1)",
+      "properties": {
+        "kind": {
+          "enum": [
+            "crit_damage"
+          ],
+          "description": "The effect kind"
+        }
+      }
+    },
+    "effect_accuracy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "description": "Raises the moves' accuracy. Value: percent of the accuracy",
+      "properties": {
+        "kind": {
+          "enum": [
+            "accuracy"
+          ],
+          "description": "The effect kind"
+        },
+        "condition": {
+          "$ref": "#/$defs/condition",
+          "description": "When it applies; left out, always. Every field given must hold"
+        }
+      }
+    },
+    "effect_residual_ratio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "source"
+      ],
+      "description": "Multiplies residual damage the team's foes take (not a hit: no bucket). Value: percent added to the tick (50 is x1.5)",
+      "properties": {
+        "kind": {
+          "enum": [
+            "residual_ratio"
+          ],
+          "description": "The effect kind"
+        },
+        "source": {
+          "enum": [
+            "any",
+            "poison",
+            "burn",
+            "sleep",
+            "frostbite",
+            "weather",
+            "leech_seed"
+          ],
+          "description": "Which ticks"
+        },
+        "team_immune": {
+          "type": "boolean",
+          "description": "The team takes none of it (weather)"
+        }
+      }
+    },
+    "effect_residual_fraction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "source"
+      ],
+      "description": "Sets a residual tick's share of max HP on foes (one health bar on a boss). Value: the denominator: 8 is 1/8 of max HP a turn",
+      "properties": {
+        "kind": {
+          "enum": [
+            "residual_fraction"
+          ],
+          "description": "The effect kind"
+        },
+        "source": {
+          "enum": [
+            "sleeping_foes",
+            "leech_seed"
+          ],
+          "description": "sleeping_foes, a new tick on sleeping foes (vanilla Bad Dreams); leech_seed, Leech Seed's drain (vanilla 1/8)"
+        },
+        "spreads_at_rank": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3,
+          "description": "From this rank on, it spreads to the target's neighbours when the target faints"
+        }
+      }
+    },
+    "effect_heal_per_turn": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "description": "Heals the team's Pokémon in battle at each turn's end (vanilla Leftovers). Value: the denominator: 16 is 1/16 of max HP",
+      "properties": {
+        "kind": {
+          "enum": [
+            "heal_per_turn"
+          ],
+          "description": "The effect kind"
+        }
+      }
+    },
+    "effect_heal_after_battle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "description": "Heals the team after each battle won (run code). Value: percent of max HP",
+      "properties": {
+        "kind": {
+          "enum": [
+            "heal_after_battle"
+          ],
+          "description": "The effect kind"
+        }
+      }
+    },
+    "effect_heal_on_damage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "description": "Heals the attacker by a share of the damage it deals (vanilla Shell Bell). Value: percent of the damage dealt",
+      "properties": {
+        "kind": {
+          "enum": [
+            "heal_on_damage"
+          ],
+          "description": "The effect kind"
+        }
+      }
+    },
+    "effect_heal_ratio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "source"
+      ],
+      "description": "Makes a kind of healing heal more. Value: percent more",
+      "properties": {
+        "kind": {
+          "enum": [
+            "heal_ratio"
+          ],
+          "description": "The effect kind"
+        },
+        "source": {
+          "enum": [
+            "drain",
+            "recovery_moves"
+          ],
+          "description": "drain, draining moves and Leech Seed (vanilla Big Root); recovery_moves, Recover, Roost, Synthesis and the like"
+        }
+      }
+    },
+    "effect_recoil_ratio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "description": "Lowers recoil damage (vanilla Rock Head). Value: percent less",
+      "properties": {
+        "kind": {
+          "enum": [
+            "recoil_ratio"
+          ],
+          "description": "The effect kind"
+        }
+      }
+    },
+    "effect_added_effect_chance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "description": "Multiplies the added-effect chances of the team's moves (vanilla Serene Grace). Value: percent added to the chance's multiplier (20 is x1.2)",
+      "properties": {
+        "kind": {
+          "enum": [
+            "added_effect_chance"
+          ],
+          "description": "The effect kind"
+        }
+      }
+    },
+    "effect_flinch_chance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "description": "Raises the flinch chance of moves that flinch. Value: percentage points",
+      "properties": {
+        "kind": {
+          "enum": [
+            "flinch_chance"
+          ],
+          "description": "The effect kind"
+        }
+      }
+    },
+    "effect_multi_hit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "description": "Multi-hit moves hit at least this many more times (vanilla Skill Link at 3). Value: hits",
+      "properties": {
+        "kind": {
+          "enum": [
+            "multi_hit"
+          ],
+          "description": "The effect kind"
+        }
+      }
+    },
+    "effect_pp_save_chance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "description": "A chance that a move uses no PP (PP carries between rooms). Value: percent",
+      "properties": {
+        "kind": {
+          "enum": [
+            "pp_save_chance"
+          ],
+          "description": "The effect kind"
+        }
+      }
+    },
+    "effect_status_chance_on_hit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "status"
+      ],
+      "description": "The team's hits give a status by chance, after the hit. Value: percent",
+      "properties": {
+        "kind": {
+          "enum": [
+            "status_chance_on_hit"
+          ],
+          "description": "The effect kind"
+        },
+        "status": {
+          "enum": [
+            "paralysis",
+            "sleep",
+            "poison",
+            "burn",
+            "freeze",
+            "frostbite",
+            "confusion"
+          ],
+          "description": "The status given"
+        },
+        "condition": {
+          "$ref": "#/$defs/condition",
+          "description": "When it applies; left out, always. Every field given must hold"
+        },
+        "replaces_freeze": {
+          "type": "boolean",
+          "description": "The moves' own freeze chance gives this status instead"
+        },
+        "ignores_immunity_at_rank": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3,
+          "description": "From this rank on, the type that is immune to the status (Fire to burn) isn't"
+        }
+      }
+    },
+    "effect_status_duration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "statuses",
+        "target"
+      ],
+      "description": "Lengthens or shortens a status' turns. Value: turns (own: fewer turns for the team's; foes: more for what the team inflicts)",
+      "properties": {
+        "kind": {
+          "enum": [
+            "status_duration"
+          ],
+          "description": "The effect kind"
+        },
+        "statuses": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "items": {
+            "enum": [
+              "sleep",
+              "confusion"
+            ]
+          },
+          "description": "The statuses"
+        },
+        "target": {
+          "enum": [
+            "foes",
+            "own"
+          ],
+          "description": "Whose"
+        }
+      }
+    },
+    "effect_status_resist": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "description": "Lowers the chance that the team is given a status. Value: percent less",
+      "properties": {
+        "kind": {
+          "enum": [
+            "status_resist"
+          ],
+          "description": "The effect kind"
+        }
+      }
+    },
+    "effect_status_cure_chance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "description": "A chance at each turn's end to cure the Pokémon's own major status (vanilla Shed Skin). Value: percent",
+      "properties": {
+        "kind": {
+          "enum": [
+            "status_cure_chance"
+          ],
+          "description": "The effect kind"
+        }
+      }
+    },
+    "effect_status_roll": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "roll"
+      ],
+      "description": "Replaces a status' fixed roll on the team's foes. Value: percent (vanilla 25 and 50)",
+      "properties": {
+        "kind": {
+          "enum": [
+            "status_roll"
+          ],
+          "description": "The effect kind"
+        },
+        "roll": {
+          "enum": [
+            "full_paralysis",
+            "confusion_self_hit"
+          ],
+          "description": "full_paralysis, the chance a paralyzed foe can't move (vanilla 25); confusion_self_hit, the chance a confused foe hits itself (vanilla 50)"
+        }
+      }
+    },
+    "effect_type_chart": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "mode"
+      ],
+      "description": "Changes the type chart for the team's hits. Value: percent chance a hit is affected",
+      "properties": {
+        "kind": {
+          "enum": [
+            "type_chart"
+          ],
+          "description": "The effect kind"
+        },
+        "mode": {
+          "enum": [
+            "super_effective_chance"
+          ],
+          "description": "super_effective_chance, the hit ignores the chart and is super effective (x2)"
+        },
+        "overrides_immunity": {
+          "type": "boolean",
+          "description": "Also on a type that is immune to the move (the draft says no)"
+        }
+      }
+    },
+    "effect_weather_turns": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "mode"
+      ],
+      "description": "Changes how long the weather the team sets lasts. Value: turns; 255 is until the battle ends",
+      "properties": {
+        "kind": {
+          "enum": [
+            "weather_turns"
+          ],
+          "description": "The effect kind"
+        },
+        "mode": {
+          "enum": [
+            "add",
+            "set"
+          ],
+          "description": "add to vanilla's 5, or set the count"
+        }
+      }
+    },
+    "effect_screen_turns": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "description": "Lengthens the team's Reflect and Light Screen (vanilla Light Clay). Value: turns",
+      "properties": {
+        "kind": {
+          "enum": [
+            "screen_turns"
+          ],
+          "description": "The effect kind"
+        }
+      }
+    },
+    "effect_endure_chance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "description": "A chance to survive a KO with 1 HP (vanilla Focus Band). Value: percent",
+      "properties": {
+        "kind": {
+          "enum": [
+            "endure_chance"
+          ],
+          "description": "The effect kind"
+        }
+      }
+    },
+    "effect_endure_once": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "description": "Once a battle, each Pokémon survives a KO with 1 HP (vanilla Sturdy). Value: the percent of max HP it must have when hit (100 is from full HP, 0 always)",
+      "properties": {
+        "kind": {
+          "enum": [
+            "endure_once"
+          ],
+          "description": "The effect kind"
+        }
+      }
+    },
+    "effect_stat_stage_on_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "stats_by_rank"
+      ],
+      "description": "Raises stat stages when each Pokémon first enters a battle. Value: stages",
+      "properties": {
+        "kind": {
+          "enum": [
+            "stat_stage_on_entry"
+          ],
+          "description": "The effect kind"
+        },
+        "stats_by_rank": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5,
+            "items": {
+              "enum": [
+                "attack",
+                "sp_attack",
+                "defense",
+                "sp_defense",
+                "speed"
+              ]
+            }
+          },
+          "description": "The stats raised at each rank"
+        }
+      }
+    },
+    "effect_ability_like": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "ability"
+      ],
+      "description": "The team's Pokémon act as if they also had an ability; the handler adds the gold's rank extras. Value: the rank's level (1 to 3) for the handler",
+      "properties": {
+        "kind": {
+          "enum": [
+            "ability_like"
+          ],
+          "description": "The effect kind"
+        },
+        "ability": {
+          "type": "string",
+          "x-constant": "ABILITY_",
+          "description": "The vanilla ability"
+        }
+      }
+    },
+    "effect_custom": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "handler"
+      ],
+      "description": "A one-off with its own handler, named here; the description says what it does. Value: the handler's number for the rank (its description says which)",
+      "properties": {
+        "kind": {
+          "enum": [
+            "custom"
+          ],
+          "description": "The effect kind"
+        },
+        "handler": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$",
+          "description": "The handler's name"
+        }
+      }
+    }
+  }
+}

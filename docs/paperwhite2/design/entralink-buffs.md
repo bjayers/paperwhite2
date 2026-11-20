@@ -1,8 +1,11 @@
 # Entralink roguelike: the buff catalogue
 
-First draft, 2026-11-19, for the user to mark up. Nothing here is built. The mode itself is in
-`entralink-roguelike.md` (sections 1-2 for the design, 3.8 for the damage pipeline); how the hack adds battle effects
-is in `moves-and-abilities.md`. Every number below is a starting value to tune in playtests.
+First draft, 2026-11-19, marked up by the user the same day: their answers are the decisions of section 6, and the
+Stall theme (4.13) replaces Tag team and Harvest. The catalogue is data since phase 1 (section 7):
+`res/paperwhite2/entralink/buffs.json`, edited on the Entree page's Buffs tab and checked by
+`tools/paperwhite2/entralink_buffs.py`; the game reads none of it yet. The mode itself is in `entralink-roguelike.md`
+(sections 1-2 for the design, 3.8 for the damage pipeline); how the hack adds battle effects is in
+`moves-and-abilities.md`. Every number below is a starting value to tune in playtests.
 
 ## 1. How it works
 
@@ -14,14 +17,15 @@ is in `moves-and-abilities.md`. Every number below is a starting value to tune i
 | Challenge | 40% | 45% | 15% |
 | Boss | 10% | 40% | 50%, and at least one gold card |
 
-Shops sell golds more often. There is no pity counter.
+Shops sell golds more often, and their rank-ups are the lever for more gold ranks in a run (decision 4). There is no
+pity counter. Cards are also offered by gift NPCs and buff rooms, and sold in shops (each card's pools).
 
 - **Blue:** stat buffs, team-wide, stacking freely (section 2).
-- **Purple:** generic mechanics that most teams can use, stacking like blues (section 3). Some are **related** to a gold
-  theme and are offered more while the player holds a gold of that theme.
+- **Purple:** generic mechanics that most teams can use, stacking like blues, with no slots (section 3). Some are
+  **related** to a gold theme and are offered more while the player holds a gold of that theme.
 - **Gold:** themed boons that change a mechanic (section 4). There are **5 gold slots**. Each gold has ranks 1-3, and
   picking a gold already held ranks it up. With all five slots full, a new gold replaces one. The themes held make
-  their golds and related purples come up more often.
+  their golds and related purples come up more often (they steer the run's theme).
 
 **Damage buckets.** Bonuses in the same bucket **add**; buckets **multiply** each other. Each bucket has a hard cap on
 its sum, whatever the sources, and the caps are what keep the strongest build under the 60,000 target (section 5).
@@ -42,8 +46,9 @@ its sum, whatever the sources, and the caps are what keep the strongest build un
   calls `BattleEventVar_MulValue` once per bucket. Vanilla handlers (abilities, items, stat stages, weather) keep
   multiplying on top, outside the buckets. Section 5 shows what that means for the cap.
 - **Residual damage** (poison, burn, sleep ticks, weather, Leech Seed) is not a hit and has no bucket. Its buffs
-  multiply the tick. Against 50,000-HP bosses, vanilla's "1/8 of max HP" is far too strong, so the draft assumes a rule
-  (open question 2): a tick on an enemy is its fraction of `min(max HP, 6,000)`.
+  multiply the tick. Against 50,000-HP bosses, vanilla's "1/8 of max HP" is far too strong, so (decision 2) bosses get
+  several health bars, visual layers of one HP pool, and a tick on a boss is its fraction of **one bar**. The bars'
+  design is pending; the numbers below take 6,000 for one bar.
 - **Not damage** in the tables marks chances, priority, healing, durations and the like.
 
 **Feasibility.** "Easy" is one handler on an existing event, usually with a vanilla precedent ("vanilla: X" names the
@@ -95,41 +100,42 @@ Related themes are the gold themes of section 4.
 | 5 | Kinship | STAB +0.05 (×1.5 → ×1.55) | +0.25 | STAB | Type mastery | Easy: `SAME_TYPE_BONUS`; vanilla Adaptability |
 | 6 | Keen Edge | critical stage +1 | +2 | not damage (chance) | Critical | Easy: `CHECK_CRITICAL`; vanilla Super Luck |
 | 7 | Heavy Crit | critical damage +0.1 (×2 → ×2.1) | +0.3 | CRIT | Critical | Easy: vanilla Sniper |
-| 8 | Lingering Ailment | your residual damage on foes +15% | +60% | residual | Poison, Burn, Sleep, Weather | Easy: `CONDITION_DAMAGE`; vanilla Poison Heal (reverse) |
+| 8 | Lingering Ailment | your residual damage on foes +15% | +60% | residual | Poison, Burn, Sleep, Weather, Stall | Easy: `CONDITION_DAMAGE`; vanilla Poison Heal (reverse) |
 | 9 | Serene Touch | added-effect chances of your moves ×1.2 | ×2 | not damage | every status theme | Easy: vanilla Serene Grace |
 | 10 | Sure Hand | status moves +10% accuracy | 100% | not damage | Paralysis, Sleep, Poison, Confusion | Easy: `GET_MOVE_ACCURACY` |
 | 11 | Opportunist | +12% damage to foes with a major status | +36% | COND | every status theme | Easy: read the defender's condition |
-| 12 | Hardy | −15% chance to be given a status | −60% | not damage (defence) | none | Medium: `CHECK_MOVE_ADD_CONDITION` on the target (unsure the target side is exposed) |
+| 12 | Hardy | −15% chance to be given a status | −60% | not damage (defence) | Stall | Medium: `CHECK_MOVE_ADD_CONDITION` on the target (unsure the target side is exposed) |
 | 13 | Quick Recovery | your sleep and confusion last 1 turn less | −2 turns | not damage | Sleep, Confusion | Medium: Early Bird is hard-coded in `BattleMon_TickSleep`; `#ifdef` hook |
 | 14 | Damp Rock | weather you set +2 turns | +6 | not damage | Weather | Easy: `INCREASE_MOVE_WEATHER_TURNS`; vanilla Damp Rock |
 | 15 | Climate | +10% to the moves your weather boosts (Fire in sun, Water in rain, Rock/Ground/Steel in sand, Ice in hail) | +40% | COND | Weather | Easy: vanilla Sand Force |
 | 16 | Overcoat (once) | no damage from sand and hail | once | not damage | Weather | Easy: `CHECK_WEATHER_DAMAGE`; vanilla Overcoat |
-| 17 | Tough Claws | contact moves +10% power | +30% | POW | Last stand, Tag team | Easy: move flag check in `MOVE_POWER_RATIO` |
+| 17 | Tough Claws | contact moves +10% power | +30% | POW | Last stand | Easy: move flag check in `MOVE_POWER_RATIO` |
 | 18 | Iron Fist | punching moves +15% power | +45% | POW | none | Easy: vanilla Iron Fist |
 | 19 | Technique | moves of power 60 or less +20% | +60% | POW | Speed | Easy: vanilla Technician |
 | 20 | Swift Hand | priority moves +20% power | +60% | POW | Speed | Easy: `MOVE_POWER_RATIO` on the move's priority |
 | 21 | Second Hit | multi-hit moves hit at least one more time (2 → 3 → 4 → 5) | 5 hits | not damage (hits) | Critical | Easy: `CHECK_MULTIHIT_HITS`; vanilla Skill Link |
-| 22 | Big Root | draining moves heal +25% | +75% | not damage | Last stand | Easy: `CALC_DRAIN_AMOUNT`; vanilla Big Root |
-| 23 | Vampiric | heal 3% of the damage you deal | 15% | not damage | Last stand | Medium: after-damage heal; vanilla Shell Bell (item). Big hits heal to full, which is fine |
+| 22 | Big Root | draining moves heal +25% | +75% | not damage | Last stand, Stall | Easy: `CALC_DRAIN_AMOUNT`; vanilla Big Root |
+| 23 | Vampiric | heal 3% of the damage you deal | 15% | not damage | Last stand, Stall | Medium: after-damage heal; vanilla Shell Bell (item). Big hits heal to full, which is fine |
 | 24 | Rock Skin | recoil −20% | −100% | not damage | Last stand | Easy: `CALC_RECOIL`; vanilla Rock Head |
 | 25 | Flinch Edge | +5% flinch chance on moves that flinch | +20% | not damage | Speed | Easy: `GET_FLINCH_CHANCE`. Bosses may need to ignore it |
 | 26 | Pinch Power | +12% damage while below 50% HP | +36% | COND | Last stand | Easy: read the attacker's HP |
-| 27 | Focus Band | 8% chance to survive a KO with 1 HP | 32% | not damage | Last stand | Easy: `CHECK_ENDURE`; vanilla Focus Band |
-| 28 | Light Clay | your screens last +2 turns | +4 | not damage | Weather (field play), Tag team | Easy: vanilla Light Clay |
+| 27 | Focus Band | 8% chance to survive a KO with 1 HP | 32% | not damage | Last stand, Stall | Easy: `CHECK_ENDURE`; vanilla Focus Band |
+| 28 | Light Clay | your screens last +2 turns | +4 | not damage | Weather (field play), Stall | Easy: vanilla Light Clay |
 | 29 | Clear Amulet | the first stat drop on each of your Pokémon each battle is blocked; a 2nd pick blocks two | 2 | not damage | Stat stages | Medium: `CHECK_STAT_CHANGE` plus a counter; vanilla Clear Body |
 | 30 | Tempo | 15% chance your stat-raising moves give +1 more stage | 60% | not damage | Stat stages | Easy: `STAT_CHANGE_AMOUNT` with a roll; vanilla Simple |
 | 31 | Momentum Strike | +5% damage per positive stage of the attacking stat | +30% | COND | Stat stages | Easy: read the stage |
-| 32 | First Blood | +15% damage on each Pokémon's first turn out | +45% | COND | Tag team, Speed | Medium: a flag per Pokémon |
+| 32 | First Blood | +15% damage on each Pokémon's first turn out | +45% | COND | Speed | Medium: a flag per Pokémon |
 | 33 | Giant Slayer | +10% damage to bosses and raid targets | +20% | FINAL | Last stand | Easy: the battle's setup flags the boss |
 | 34 | Thrifty | 15% chance a move uses no PP (PP carries between rooms) | 45% | not damage | none | Medium: `CALC_PP_DECREMENT`; vanilla Pressure (reverse) |
-| 35 | Shed Skin | 10% chance each turn's end to cure your own major status | 30% | not damage | Sleep, Paralysis | Easy: `TURN_CHECK_EARLY`; vanilla Shed Skin |
+| 35 | Shed Skin | 10% chance each turn's end to cure your own major status | 30% | not damage | Sleep, Paralysis, Stall | Easy: `TURN_CHECK_EARLY`; vanilla Shed Skin |
 
-35 purples, 2 of them rolling a type (17 variants each).
+35 purples, 2 of them rolling a type (17 variants each), weighted toward the team's types but any of them possible
+(decision 9).
 
 ## 4. Gold: themed boons
 
-Values at rank 1 / 2 / 3. **Core** marks the theme's centrepiece, the one gold the theme is built around. 14 themes,
-72 golds.
+Values at rank 1 / 2 / 3. **Core** marks the theme's centrepiece, the one gold the theme is built around. 13 themes,
+68 golds.
 
 ### 4.1 Paralysis (the user's set)
 
@@ -139,7 +145,7 @@ Values at rank 1 / 2 / 3. **Core** marks the theme's centrepiece, the one gold t
 | Overcharge | Electric moves +40% / +70% / +100% power | POW | Easy: vanilla Technician's shape | The user's "Electric 2×" at rank 3; fills POW alone |
 | Magnetised | paralyzed foes float (Ground moves miss) and count as Flying for your Electric moves / for all your moves / and a paralyzed Ground type loses its Electric immunity | type chart | Medium (unsure): `CHECK_FLOATING` is Easy (vanilla Levitate); adding Flying's matchup means recomputing effectiveness in `CHECK_TYPE_EFFECTIVENESS` with `poke_type_pair.c` | Turns neutral hits into super-effective ones; covered by the reference hit (section 5) |
 | Static Field | your contact and Electric hits paralyze 10% / 20% / 30% | not damage | Medium: add the condition after the hit (`DAMAGE_PROCESS_END_HIT_REAL`); vanilla Static is the defender's version | Feeds Galvanic |
-| Lockjaw | paralyzed foes are fully paralyzed 30% / 35% / 40% of turns (vanilla 25%) | not damage | Medium: fixed `RollEffectChance(0x19)` at `btl_server_flow.c:2718`, `#ifdef` hook | Strong on bosses: open question 6 |
+| Lockjaw | paralyzed foes are fully paralyzed 30% / 35% / 40% of turns (vanilla 25%) | not damage | Medium: fixed `RollEffectChance(0x19)` at `btl_server_flow.c:2718`, `#ifdef` hook | Halved on bosses (decision 6) |
 
 Related purples: Type Affinity (Electric), Opportunist, Serene Touch, Sure Hand. Pairs with Speed (Slipstream) and Stat
 stages (Simple), as in the user's example; Adaptability is in Type mastery.
@@ -149,7 +155,7 @@ stages (Simple), as in the user's example; Adaptability is in Type mastery.
 | Gold | Effect (r1 / r2 / r3) | Bucket | Feasibility | Notes |
 | --- | --- | --- | --- | --- |
 | **Nightmare Field** (core) | sleeping foes lose 1/16 / 1/10 / 1/8 of their max HP each turn | residual | Easy: `TURN_CHECK`; vanilla Bad Dreams | Under the residual rule: at most 750 a turn on a boss before buffs |
-| Deep Sleep | sleep you inflict lasts +1 / +2 / +3 turns | not damage | Medium (unsure): the turn count is set when the condition is added; Early Bird shows the counter is plain data | Boss sleep needs a limit (open question 6) |
+| Deep Sleep | sleep you inflict lasts +1 / +2 / +3 turns | not damage | Medium (unsure): the turn count is set when the condition is added; Early Bird shows the counter is plain data | On bosses sleep lasts 2 turns at most (decision 6) |
 | Dream Eater | +30% / +50% / +75% damage to sleeping foes | COND | Easy | |
 | Lullaby | STAB +0.25 / +0.4 / +0.5 against sleeping foes | STAB | Easy: `SAME_TYPE_BONUS`, reading the defender | The user's "bigger STAB vs sleeping foes" |
 | Sandman | your sleep moves never miss / and your damaging moves sleep 5% / 10% | not damage | Easy (accuracy, `GET_MOVE_ACCURACY`); Medium (the added sleep) | |
@@ -158,7 +164,7 @@ stages (Simple), as in the user's example; Adaptability is in Type mastery.
 
 | Gold | Effect (r1 / r2 / r3) | Bucket | Feasibility | Notes |
 | --- | --- | --- | --- | --- |
-| **Virulence** (core) | poison damage ×1.5 / ×2 / ×2.5 | residual | Easy: `CONDITION_DAMAGE`; vanilla Poison Heal | Toxic's ramp vs bosses: open question 2 |
+| **Virulence** (core) | poison damage ×1.5 / ×2 / ×2.5 | residual | Easy: `CONDITION_DAMAGE`; vanilla Poison Heal | Ticks on bosses are fractions of one bar (decision 2) |
 | Venom Strike | +30% / +50% / +75% damage to poisoned foes | COND | Easy; vanilla Venoshock is the move version | |
 | Corrosion | you can poison Steel and Poison types / and your poison is always bad poison / and bad poison starts at 2/16 | not damage | Medium (unsure): the type immunity sits in the add-condition check | Gen 7's Corrosion |
 | Merciless | +2 / +3 critical stages against poisoned foes / always critical | not damage (crit chance) | Easy: `CHECK_CRITICAL` | Gen 7's Merciless; with the Critical theme it guarantees the CRIT bucket |
@@ -178,7 +184,7 @@ stages (Simple), as in the user's example; Adaptability is in Type mastery.
 
 | Gold | Effect (r1 / r2 / r3) | Bucket | Feasibility | Notes |
 | --- | --- | --- | --- | --- |
-| **Frostbite** (core) | your Ice moves frostbite 10% / 20% / 30% instead of freezing: 1/16 HP a turn, Sp. Atk halved | residual | Hard: a new condition with its icon and messages; Syrup Bomb's condition slot is the precedent (`moves-and-abilities.md` 4.1) | Legends: Arceus's frostbite. Keeps Ice viable without freeze-locking bosses |
+| **Frostbite** (core) | your Ice moves frostbite 10% / 20% / 30% instead of freezing: 1/16 HP a turn, Sp. Atk halved | residual | Hard: a new condition with its icon and messages; Syrup Bomb's condition slot is the precedent (`moves-and-abilities.md` 4.1) | Legends: Arceus's frostbite, a later phase (decision 8). Until then it gives freeze with a sure thaw after one turn; bosses are never frozen |
 | Shatter | +30% / +50% / +75% damage to frostbitten or frozen foes | COND | Easy | |
 | Cold Snap | Ice moves +40% / +70% / +100% power | POW | Easy | |
 | Permafrost | frostbitten foes lose 1 Speed / 1 Speed and 1 Attack / 1 Speed, Attack and Sp. Atk each turn | not damage | Easy: `TURN_CHECK`; vanilla Moody's shape | |
@@ -199,18 +205,18 @@ stages (Simple), as in the user's example; Adaptability is in Type mastery.
 | Gold | Effect (r1 / r2 / r3) | Bucket | Feasibility | Notes |
 | --- | --- | --- | --- | --- |
 | **Stormcaller** (core) | weather you set lasts 8 / 12 turns / until the battle ends | not damage | Easy: `INCREASE_MOVE_WEATHER_TURNS` (r1-2); Medium for r3 | |
-| Forecast | pick a weather when taking this gold; every battle starts in it for 3 / 5 / 8 turns | not damage | Medium: `MEMBER_IN` as vanilla Drought, plus a choice menu when picked | Rooms with a set weather override it? (open) |
+| Forecast | pick a weather when taking this gold; every battle starts in it for 3 / 5 / 8 turns | not damage | Medium: `MEMBER_IN` as vanilla Drought, plus a choice menu when picked | A room's set weather wins at battle start (decision 10) |
 | Heatwave | the weather boost on your moves +25% / +40% / +60% (on top of vanilla ×1.5) | COND | Easy: `MOVE_POWER_RATIO` reading the weather; vanilla Sand Force | One gold for all four weathers |
 | Sandblast | sand and hail hurt foes ×2 / ×3 / ×4 and never your team | residual | Easy: `CHECK_WEATHER_DAMAGE`; vanilla Overcoat, Sand Force | |
 | Weather Ward | in any weather, your Pokémon take −10% / −20% / −30% damage | GUARD | Easy | |
 | Storm Speed | in any weather, your Speed ×1.25 / ×1.5 / ×2 | not damage | Easy: `CALCULATE_SPEED`; vanilla Swift Swim, Chlorophyll | |
 
-### 4.8 Type mastery (the Ghost chart, STAB)
+### 4.8 Type mastery (the type chart, STAB)
 
 | Gold | Effect (r1 / r2 / r3) | Bucket | Feasibility | Notes |
 | --- | --- | --- | --- | --- |
 | **Adaptability** (core) | STAB ×2.0 / ×2.15 / ×2.25 | STAB | Easy: vanilla Adaptability | The user's "STAB twice as effective"; fills STAB at r3 |
-| Spectral | Ghost moves are super effective on Normal / and Fighting / and neutral on Dark | type chart | Medium (unsure): `CHECK_TYPE_EFFECTIVENESS`; vanilla Scrappy only sets the ignore flag, so writing the effectiveness itself needs checking | The user's example |
+| Spectral | 20% / 40% / 60% chance that a hit ignores the type chart and is super effective (×2) | type chart | Medium: `CHECK_TYPE_EFFECTIVENESS` (`ServerEvent_CheckTypeEffectiveness`, `btl_server_flow.c:6724`) only offers the ignore-immunity and force-neutral flags, so ×2 needs an `#ifdef` hook where the defender's types' results are combined, rolled once a hit | Generic since 2026-11-19 (it was Ghost's chart). It doesn't override an immunity: a Normal move still misses a Ghost. On a resisted matchup it lifts ×0.5 to ×2, never above the reference hit (5.1) |
 | Expert | super-effective hits +15% / +25% / +40% | MATCH | Easy: vanilla Expert Belt | Fills MATCH at r3 |
 | Tinted | resisted hits ×1.5 / ×1.75 / ×2 | MATCH (exempt from the cap) | Easy: vanilla Tinted Lens | |
 | Coverage | your non-STAB moves get a STAB of ×1.25 / ×1.35 / ×1.5 | STAB | Medium: `CHECK_SAME_TYPE` and `SAME_TYPE_BONUS` | For mixed movesets |
@@ -258,28 +264,24 @@ Other per-type themes (Dragon, Fighting...) can copy this pattern later: a type'
 | Follow-through | a critical hit gives +1 to the attacking stat / and +1 Speed / +2 to the attacking stat | stages | Medium (unsure): needs the critical flag after the hit; vanilla Anger Point is the defender's version | |
 | Shattering Blow | a critical hit lowers the target's Defense or Sp. Def (the one hit) by 1 / 1 and the other by 1 / 2 | not damage | Medium | |
 
-### 4.13 Tag team (switching, doubles and raids)
+### 4.13 Stall (heal, protect, drain)
+
+Added 2026-11-19 in place of Tag team and Harvest, which the user removed. Its payoff is the core: healing that would
+pass max HP isn't lost but hits a foe, so every heal of the theme (and the related purples Big Root, Vampiric, Focus
+Band, Light Clay, Shed Skin, Hardy and Lingering Ailment) feeds it.
 
 | Gold | Effect (r1 / r2 / r3) | Bucket | Feasibility | Notes |
 | --- | --- | --- | --- | --- |
-| **Relay** (core) | a Pokémon switching in gets +1 to its higher attacking stat / and +1 Speed / and heals 10% | stages | Medium: `MEMBER_IN`, telling a switch from the battle's start | |
-| Regenerator | switching out heals 1/6 / 1/4 / 1/3 HP | not damage | Easy: vanilla Regenerator | |
-| Fresh Entry | the first move after switching in +25% / +40% / +60% damage | COND | Medium: a flag per Pokémon | |
-| Natural Cure | switching out cures status / and resets negative stages / and the incoming Pokémon takes −30% damage that turn | GUARD (r3) | Easy: vanilla Natural Cure; Medium for r2-3 | |
-| Teamwork | in doubles, triples and raids: +10% / +20% / +30% damage when an ally already hit the same target this turn | COND | Medium: a per-turn record of hits | Gives the 3v1 raids their own build |
+| **Overflow** (core) | healing past max HP deals 50% / 75% / 100% of the excess to a foe (the one opposite, else the first) | not damage (fixed damage) | Medium: every heal passes `ServerControl_RecoverHPCore` (`btl_server_flow.c:4436`, from `BattleHandler_RecoverHP` :8145 and `ServerControl_RecoverHP` :4407), where an `#ifdef` hook sees the amount against the missing HP and pushes a damage work for the rest. A heal at full HP is refused earlier (`ServerControl_RecoverHPCheckFail`'s `IsMonFullHP`, :4415), so only heals that cross the max overflow, unless the hook goes there too | Fixed damage of at most a few hundred (999 HP at most), so no bucket and nothing for the cap. On bosses it is plain damage to the pool |
+| Parasite | Leech Seed drains 1/6 / 1/5 / 1/4 of the foe's max HP (vanilla 1/8), and at r3 a seeded foe that faints seeds the foes beside it | residual | Medium: the 1/8 is fixed, `DivideMaxHPZeroCheck(mon, 8)` in `ConditionEndTurnLeechSeed` (`src/ov169/condition_effects.c:141`), an `#ifdef` hook; the spread Medium (unsure): adding `CONDITION_LEECH_SEED` from a faint handler | On bosses a fraction of one bar (decision 2). Its drain heals, so it feeds Overflow |
+| Thorn Guard | Protect and Detect also heal 1/8 / 1/6 / 1/4 of max HP when they block a move, and a blocked contact move costs its user 1/8 of its max HP (one bar on a boss) | not damage | Medium (unsure): the block is `GetTurnFlag(target, 7)` at `btl_server_flow.c:2335`, which asks `CHECK_PROTECT_BREAK` (`ServerEvent_CheckProtectBreak`, :6313) for each blocked target; a handler there, or an `#ifdef` hook after the blocked message (:2337), heals and hurts. Vanilla Rough Skin (`DAMAGE_REACTION`, `ability_handlers.c:2125`) shows the contact damage | The user's "Protect heals and damages attackers that are blocked" |
+| Mending | recovery moves (Recover, Roost, Synthesis, Wish, Rest's heal) heal 25% / 50% / 100% more | not damage | Easy: `CALC_MOVE_HEAL_AMOUNT` (0x8f), as vanilla Swallow and Morning Sun; Wish and Rest (unsure: whether they pass that event) | Past 50% of max HP every Recover overflows: the theme's engine with Overflow |
+| Regrowth | heal 1/16 / 1/12 / 1/8 of max HP each turn's end | not damage | Easy: `TURN_CHECK`, as vanilla Leftovers (`item_handlers.c`, `EventAddLeftovers`) | At full HP it heals nothing (and overflows nothing) unless Overflow's hook takes refused heals |
+| Siphon | draining moves (Giga Drain, Drain Punch, Horn Leech...) +20% / +35% / +50% power, so they heal more too | POW | Easy: `MOVE_POWER_RATIO` on `MOVE_QUALITY_DAMAGE_DRAIN` (`include/constants/battle.h`) | The user's "drain stronger"; Big Root (purple) is its heal side |
 
-### 4.14 Harvest (berries and held items)
-
-| Gold | Effect (r1 / r2 / r3) | Bucket | Feasibility | Notes |
-| --- | --- | --- | --- | --- |
-| **Ripen** (core) | HP berries heal double / all berries' effects doubled / and pinch berries trigger at 50% HP | not damage | Easy: the hack's Ripen (`moves-and-abilities.md` 15); r3 Medium (vanilla Gluttony has no handler table, its check is in the item code) | |
-| Harvest | an eaten berry regrows at the turn's end 25% / 50% / 100% of the time | not damage | Easy: vanilla Harvest (`TURN_CHECK`) | |
-| Recycler | used berries / all used held items come back after each battle / and once mid-battle | not damage | Easy: run code; r3 Medium | |
-| Booster | held items' damage boosts (Charcoal, plates, Life Orb, Expert Belt) count ×1.25 / ×1.5 / ×2 | POW | Medium (unsure): scaling another handler's ratio means wrapping the item handlers | Pushes vanilla extras; watch it (section 5) |
-| Cheek Pouch | eating a berry also heals 1/6 / 1/4 / 1/3 HP | not damage | Medium: the item reaction (`CHECK_ITEM_REACTION`) | Gen 6's Cheek Pouch |
-
-**Considered, not drafted:** a status-move and stall theme (Prankster, Leech Seed ×2, Protect heals); a separate Dragon
-theme. Both fit the patterns above if wanted.
+Left out: Wish-style delayed heals of the theme's own (Wish exists; Mending covers it) and Leech Seed on Grass types
+(the immunity check wasn't looked at). **Considered, not drafted:** a separate Dragon theme; it fits the patterns above
+if wanted.
 
 ## 5. Balance check
 
@@ -328,7 +330,7 @@ lands after one setup move. With Simple, one Nasty Plot is +4 (×3).
 A run of 30-45 minutes is about 20 rewarded battles; say 12 enemies, 5 challenges and 3 bosses. The chance that a
 reward shows at least one gold: enemy 1 − 0.95³ = 14%, challenge 1 − 0.85³ = 39%, boss 100%.
 Expected gold picks: 12 × 0.14 + 5 × 0.39 + 3 = **about 6.6**, plus what shops sell. So a run ends with about four golds,
-mostly at ranks 1-2. Rank 3 everywhere is out of reach in one run; that is open question 4.
+mostly at ranks 1-2. Rank 3 everywhere is out of reach in one run; shops selling rank-ups are the lever (decision 4).
 
 ### 5.5 Vanilla extras on top
 
@@ -337,10 +339,16 @@ Life Orb ×1.3, Expert Belt ×1.2, weather ×1.5, Helping Hand ×1.5, a 4× weak
 - The ceiling with one +2 stage: 35,400-47,300 × 2 = **70,800-94,600**, over the cap: the final clamp shows **MAX**.
 - The typical build (5.3) with +2 and Life Orb: 4,500-6,100 × 2.6 = **11,700-15,900**, well under.
 - So the cap holds for buffs alone, and for typical builds with setup; only a near-ceiling build plus setup reaches MAX,
-  which matches "a boss can be one-shot only with an extremely good combination". Open question 1 is whether vanilla
-  boosts should count inside the buckets instead.
-- **Entries to watch:** Booster (it scales the vanilla extras themselves), Simple with Opening Gambit and Baton (stages
-  ×4 come cheaply), Merciless and Focus (a sure CRIT bucket). Trim those first if playtests overshoot.
+  which matches "a boss can be one-shot only with an extremely good combination". Vanilla boosts stay on top of the
+  buckets (decision 1): MAX should be very hard to reach, not impossible.
+- **Entries to watch:** Simple with Opening Gambit and Baton (stages ×4 come cheaply), Merciless and Focus (a sure CRIT
+  bucket), Spectral (super effective on any matchup). Trim those first if playtests overshoot.
+- **The balance meter** (the Buffs tab; `ceiling()` in `entralink_buffs.py`) computes 5.2 and 5.3 from the data: each
+  attack bucket's entries at their most (a blue's or purple's cap, a gold's top rank), held to the bucket's cap,
+  multiplied, times the reference hit. It leaves out the resisted-only bonuses (Glancing Blow, Tinted) and Coverage, as
+  the strongest hit is super effective with STAB, and counts every other entry whether or not its conditions can hold
+  together, so it is an upper bound. With today's data every attack bucket reaches its cap: ×23.6, **14,175** on 600,
+  and **35,438** on a critical hit (47,250 on 800), under 60,000; the example build (5.3) gives ×7.56, **4,538**.
 
 ### 5.6 The engine's limits
 
@@ -362,32 +370,111 @@ Life Orb ×1.3, Expert Belt ×1.2, weather ×1.5, Helping Hand ×1.5, a 4× weak
 | Source | Max |
 | --- | --- |
 | DEF (blues +80%, Bulwark up to +100%) | ×2.0: damage ×0.5 |
-| GUARD (Guard blues −40%, Type Ward, Prism, Smoulder, Weather Ward, Natural Cure; conditional ones only when they hold) | −50%: ×0.5 |
+| GUARD (Guard blues −40%, Type Ward, Prism, Smoulder, Weather Ward, Thaw-proof; conditional ones only when they hold) | −50%: ×0.5 |
 | HP (+50%, but 999 at most) | about ×1.4 for a typical 500-HP Pokémon |
 
 - Buffs alone: 0.5 × 0.5 = **25% of the damage**, or about **18% of the HP share** with the HP bonus. Never immunity.
 - With vanilla extras (Reflect ×0.5, +6 Defense ×0.25, Multiscale ×0.5): 0.25 × 0.5 × 0.25 = 3%, close to a wall.
   Vanilla answers exist (critical hits ignore screens and defensive boosts), and bosses could carry an Unaware-like
-  aura: open question 7.
+  aura; for now there is no defence-ceiling rule (decision 7).
 - **Enemy damage scaling** should be set against an expected defence: if the typical late run has about ×0.7 (three
   defensive blues), enemies scaled to that hurt a balanced team as early ones did, and a team with no defence takes
   about 1.4× the share: hits that already took half its HP then one-shot it, as decided.
 - **Enemy Defense scaling** divides every number in 5.2-5.5. The draft assumes the bosses' Defense and Sp. Def grow at
-  most ×1.3 and HP carries the rest (open question 3).
+  most ×1.3 and HP carries the rest (decision 3).
 
-## 6. Open questions
+## 6. Decisions (the user, 2026-11-19)
 
-1. **Vanilla boosts:** stay on top of the buckets (as drafted; MAX reachable with setup), or count inside them (stages,
-   held items and Huge Power add into ATK, FINAL...)?
-2. **Residual damage on enemies:** the drafted rule, a fraction of `min(max HP, 6,000)`? Toxic's ramp on bosses too
-   (stop at 4/16?). Also Super Fang, Endeavor, Pain Split, Night Shade and OHKO moves against 50,000-HP bosses.
-3. **Enemy Defense scaling:** how much of the depth scaling goes to Defense and Sp. Def rather than HP?
-4. **Gold count:** about 6-7 gold picks a run. Enough, or raise gold odds, give a held gold's rank-up more weight, or
-   sell rank-ups in shops?
-5. **The clamp:** at 60,000 or 65,535 (the u16 limit)? Does the damage number show the full computed hit (overkill) or
-   the HP actually lost?
-6. **Status on bosses:** limits for sleep (at most 2 turns?), freeze (never?), full paralysis (halved?), confusion?
-7. **Defence ceiling:** do bosses get an Unaware-like aura, or does an enemy hit have a minimum share of HP?
-8. **Frost:** worth a new condition (Hard), or keep freeze and give it a sure thaw after one turn?
-9. **Type cards:** do Type Affinity and Type Ward roll any of 17 types, or the team's types more often?
-10. **Forecast vs rooms:** does a room's set weather win over the player's Forecast weather?
+The draft's open questions, answered:
+
+1. **Vanilla boosts** stay on top of the buckets, outside their caps. MAX stays reachable with setup, but very hard.
+2. **Bosses get several health bars** (design pending): visual layers of one HP pool, and damage over time is a
+   fraction of one bar, not of the whole pool. Bosses are mostly triple and raid battles (content). Fixed-damage moves
+   (Super Fang, Endeavor, OHKO moves, Night Shade and the like) are blocked or capped on bosses.
+3. **Enemy Defense and Sp. Def** grow at most ×1.3 with depth; HP carries the rest of the scaling.
+4. **About four golds a run** is right; shops selling golds' rank-ups are the lever for more ranks.
+5. **The clamp** is at 60,000, and the damage number shows the full computed hit (overkill), not the HP lost.
+6. **Incapacitating statuses are limited on bosses:** sleep lasts 2 turns at most, they are never frozen, and full
+   paralysis is halved (Lockjaw's chances too).
+7. **No defence-ceiling rule** for now (no Unaware-like aura, no minimum share of HP).
+8. **Frostbite** becomes a new condition in a later phase; meanwhile the Frost theme gives freeze with a sure thaw after
+   one turn.
+9. **Type cards** (Type Affinity, Type Ward) roll any of the 17 types, weighted toward the team's types, never
+   guaranteed (`type_card_team_weight`).
+10. **Weather:** a room's set weather wins at battle start (over Forecast); weathers set in battle work normally.
+
+Also decided: purples stack like blues, with no slots; golds have 5 slots and ranks; each battle offers 1 of 3 cards,
+their tiers by source (enemy 70/25/5, challenge 40/45/15, boss 10/40/50 with at least one gold); golds are more common
+in shops; no pity; the golds held steer the themes offered; purples can be marked related to gold themes. Type
+mastery's Spectral is generic (4.8); Tag team and Harvest are gone and Stall (4.13) is new.
+
+## 7. The data (phase 1)
+
+`res/paperwhite2/entralink/buffs.json` holds the whole catalogue, against `buffs.schema.json` beside it. The Entree
+page's **Buffs** tab edits it; `tools/paperwhite2/entralink_buffs.py` checks it in the hack's build and writes
+`paperwhite2/entralink_buffs_config.h` (the buffs', themes', buckets', effect kinds' and tiers' IDs and the settings as
+`ENTRALINK_BUFF_*` values), which nothing includes yet: the next phase adds the tables with the C that reads them.
+
+- **settings:** `offers` (3), `tier_odds` by source, `boss_guaranteed_gold`, `shop_gold_weight` and
+  `held_theme_weight` (percent of the others' weight), `gold_slots` (5), `max_rank` (3), `damage_cap` (60,000),
+  `type_card_team_weight`, and the tiers' default `prices` in Dream Dust (blue 60, purple 150, gold 400).
+- **buckets:** section 1's table: `id`, `name`, `side` (attack, defense), `vanilla` (the factor the sum adds to in
+  hundredths: STAB 150, CRIT 200), `cap`, `critical_only` (CRIT), `reduces` (GUARD), `event`. A bucket's factor is
+  (vanilla + sum) / vanilla, or / 100 for a critical-only one; a reducing one's (100 − sum) / 100.
+- **balance:** the meter's `reference_hit` (600) and its `example` build (5.3's picks; a gold's count is its rank).
+- **themes:** `id` (stable), `name`, `description`, `icon`.
+- **buffs:** every card. All have `id` (stable snake_case; renaming the card keeps it), `name`, `tier`, `description`
+  (one menu line; a line per rank for golds), `icon` (optional, `buff_icons/<name>.png`; left out, the theme's or the
+  tier's), `weight`, `rounds` (optional), `price` (optional; the tier's default), `pools` (`after_battle`, `gift`,
+  `buff_room`, `shop`), `bucket` (where the kind adds to one) and `effect`. Blues and purples have `step`,
+  `soft_limit` (optional: picks past it add half), `cap`, and purples `related` (gold themes) and `type_card`. Golds have
+  `theme`, `core` and `ranks` (1-3 values, each rank's own).
+- **Icons:** `buff_icons/` has placeholder 16 by 16 icons, one per tier and one per theme (`theme_<id>.png`), listed on
+  Graphics & Palettes' Sprite sheets page with the markers (`entralink_marker_art.py`).
+
+### 7.1 Effect kinds
+
+Each card's `effect` is one kind with its parameters, so the game implements kinds, not cards. The number is the
+card's step and cap (blue, purple) or its ranks (gold), in the kind's unit. A `condition` (where a kind takes one) is
+every field given holding: `defender_status` and `attacker_status` (lists, `any_major` for any major status),
+`move_type`, `card_type` (the type the card rolled), `category`, `stab`, `super_effective`, `resisted`, `critical`,
+`attacker_hp_below`, `contact`, `punch`, `recoil_move`, `drain_move`, `priority`, `power_at_most`, `weather` (a list,
+`any`), `weather_boosted`, `first_turn`, `boss`, and `any` (one of several conditions). A `scale` is `missing_hp` (the
+full value at 1 HP), `speed_gap` (at twice the target's Speed) or `attack_stage` (per positive stage).
+
+| Kind | Unit | Parameters | Cards |
+| --- | --- | --- | --- |
+| `damage_ratio` | percent added to the bucket (GUARD: less damage taken) | condition, scale, exempt_from_bucket_cap, hp_cost, halves_recoil_at_rank, immune_to | Guard, Power, Type Affinity, Type Ward, Expert Edge, Glancing Blow, Opportunist, Climate, Tough Claws, Iron Fist, Technique, Swift Hand, Pinch Power, Momentum Strike, First Blood, Giant Slayer, Galvanic, Overcharge, Dream Eater, Venom Strike, Kindling, Smoulder, Shatter, Cold Snap, Thaw-proof, Dizzy Strike, Heatwave, Weather Ward, Expert, Tinted, Prism, Last Stand, Blood Price, Reckless, Slipstream, Siphon |
+| `stat_ratio` | percent of the stat | stat (attack, sp_attack, defense, sp_defense, speed, attacking, defending), condition, scale, ignore_burn_drop | Attack, Sp. Atk, Defense, Sp. Def, Speed, Fire Within, Storm Speed, Bulwark |
+| `max_hp` | percent of max HP | limit (999) | HP |
+| `stab_bonus` | hundredths added to ×1.5 | condition, non_stab (then the STAB non-STAB moves get) | Kinship, Lullaby, Adaptability, Coverage |
+| `crit_stage` | stages; 5 or more is a sure critical | condition | Keen Edge, Merciless, Keen Eye |
+| `crit_damage` | hundredths added to ×2 | | Heavy Crit, Sniper |
+| `accuracy` | percent of the accuracy | condition | Accuracy, Sure Hand |
+| `residual_ratio` | percent added to the tick | source (any, poison, burn, sleep, frostbite, weather, leech_seed), team_immune | Lingering Ailment, Virulence, Searing, Sandblast |
+| `residual_fraction` | the denominator (8 is 1/8 a turn; one bar on a boss) | source (sleeping_foes, leech_seed), spreads_at_rank | Nightmare Field, Parasite |
+| `heal_per_turn` | the denominator | | Regrowth |
+| `heal_after_battle` | percent of max HP | | Vigor |
+| `heal_on_damage` | percent of the damage dealt | | Vampiric |
+| `heal_ratio` | percent more | source (drain, recovery_moves) | Big Root, Mending |
+| `recoil_ratio` | percent less | | Rock Skin |
+| `added_effect_chance` | percent added to the multiplier | | Serene Touch |
+| `flinch_chance` | percentage points | | Flinch Edge |
+| `multi_hit` | hits | | Second Hit |
+| `pp_save_chance` | percent | | Thrifty |
+| `status_chance_on_hit` | percent | status, condition, replaces_freeze, ignores_immunity_at_rank | Static Field, Wildfire, Frostbite, Daze |
+| `status_duration` | turns | statuses (sleep, confusion), target (foes, own) | Quick Recovery, Deep Sleep, Vertigo |
+| `status_resist` | percent less | | Hardy |
+| `status_cure_chance` | percent a turn | | Shed Skin |
+| `status_roll` | percent (vanilla 25, 50) | roll (full_paralysis, confusion_self_hit) | Lockjaw, Madness |
+| `type_chart` | percent chance a hit is affected | mode (super_effective_chance), overrides_immunity | Spectral |
+| `weather_turns` | turns; 255 is the whole battle | mode (add, set) | Damp Rock, Stormcaller |
+| `screen_turns` | turns | | Light Clay |
+| `endure_chance` | percent | | Focus Band |
+| `endure_once` | the percent of max HP needed (100 from full, 0 always) | | Second Wind |
+| `stat_stage_on_entry` | stages | stats_by_rank | Opening Gambit |
+| `ability_like` | the rank's level for the handler | ability (`ABILITY_*`) | Overcoat, Simple, Unaware, Defiance, Speed Boost (`ABILITY_SPEED_BOOST`), Afterburner (`ABILITY_MOXIE`) |
+| `custom` | the handler's number for the rank | handler | Clear Amulet, Tempo, Magnetised, Sandman, Corrosion, Contagion, Permafrost, Self-harm, Forecast, Baton, First Strike, Quick Draw, Focus, Follow-through, Shattering Blow, Overflow, Thorn Guard |
+
+A new kind is a new `effect_<kind>` definition in the schema (the editor's kind picker and parameter rows read it from
+there), a number in the header, and its handler in the game.

@@ -1,5 +1,6 @@
-// The Entralink markers' art on the Sprite sheets page: the tool lists every marker in res/ (the ground markers by type,
-// the NPC markers by file), and its check enforces what the packer needs (the size, 16 colors, index 0 clear).
+// The Entralink markers' art and the buff icons on the Sprite sheets page: the tool lists every marker in res/ (the ground
+// markers by type, the NPC markers and buff icons by file), and its check enforces what the packer needs (the size, 16
+// colors, index 0 clear).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
@@ -23,6 +24,7 @@ test("every marker's PNG is listed with its size", () => {
   const files = [
     ...readdirSync(join(MARKERS, "markers")).map((f) => `res/paperwhite2/entralink/markers/${f}`),
     ...readdirSync(join(MARKERS, "npc_markers")).map((f) => `res/paperwhite2/entralink/npc_markers/${f}`),
+    ...readdirSync(join(MARKERS, "buff_icons")).map((f) => `res/paperwhite2/entralink/buff_icons/${f}`),
   ];
   assert.deepEqual(sheets.map((s) => s.path).sort(), files.sort());
   for (const sheet of sheets) {

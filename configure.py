@@ -1300,6 +1300,16 @@ def main():
                           "generated/items.txt", "generated/abilities.txt", "generated/zones.txt",
                           "generated/obj_codes.txt", "include/constants/battle.h", "include/constants/directions.h"])
         constant_headers.append(output)
+        # Paper White 2: the Entralink roguelike's buff catalogue (docs/paperwhite2/design/entralink-buffs.md), checked
+        # with its balance meter; the game reads none of it yet, the header gives the next phase its IDs and settings
+        n.rule("entralink_buffs", "$python tools/paperwhite2/entralink_buffs.py $out", "Generating $out", restat="1")
+        output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "entralink_buffs_config.h"
+        n.build([output], "entralink_buffs",
+                ["res/paperwhite2/entralink/buffs.json", "res/paperwhite2/entralink/buffs.schema.json",
+                 *sorted(str(path) for path in Path("res/paperwhite2/entralink/buff_icons").glob("*.png"))],
+                implicit=["tools/paperwhite2/entralink_buffs.py", *script_imports("tools/paperwhite2/entralink_buffs.py"),
+                          "tools/data/datajson.py", "generated/abilities.txt", "generated/types.txt"])
+        constant_headers.append(output)
         # Paper White 2: the hack's forms' sprite groups, icon palettes and forms that never evolve, and the added
         # species' bases, from res/pokemon (include/paperwhite2/pokemon_forms.h, include/paperwhite2/species.h)
         n.rule("pokemon_forms", "$python tools/paperwhite2/pokemon_forms.py $out", "Generating $out", restat="1")
