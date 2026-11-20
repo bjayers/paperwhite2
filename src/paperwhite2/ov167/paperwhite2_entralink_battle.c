@@ -10,14 +10,18 @@
 #include "constants/abilities.h"
 #include "constants/battle.h"
 #include "constants/moves.h"
+#include "constants/pokemon.h"
 #include "constants/types.h"
 #include "gfl/std.h"
 #include "nitro/fx.h"
 #include "nitro/mi.h"
+#include "paperwhite2/entralink_bars.h"
 #include "paperwhite2/entralink_battle.h"
 #include "paperwhite2/entralink_buffs.h"
 #include "paperwhite2/entralink_run_battle.h"
+#include "paperwhite2/entralink_run_state.h"
 #include "pml/move.h"
+#include "pml/poke_party.h"
 
 // Paper White 2: the Entralink run's buffs in battle and the bosses' protections (entralink-buffs.md, phases 3 and 4).
 // See include/paperwhite2/entralink_battle.h. The effects are kinds (ENTRALINK_BUFF_KIND_*) read from the catalogue's
@@ -1713,10 +1717,81 @@ u32 EntralinkBattle_GetLastHitDamage(u8 *monId, BOOL *clamped) {
 u32 EntralinkBattle_GetResidualMaxHP(BattleMon *mon) {
     u32 maxHP = GetBattleMonStat(mon, BATTLEMON_MAX_HP);
 
-    if (IsFoeMon(GetMonID(mon)) && maxHP > ENTRALINK_BUFF_BOSS_BAR_HP) {
-        return ENTRALINK_BUFF_BOSS_BAR_HP;
+    if (IsFoeMon(GetMonID(mon))) {
+        return EntralinkBars_GetBarHP(maxHP);
     }
     return maxHP;
+}
+
+// ---- Phase 5: the enemies' scaling ---------------------------------------------------------------------------------
+
+void EntralinkBattle_ScaleMon(BtlMainModule *mainModule, BattleMon *mon, u32 clientId, u32 index) {
+    if (!BtlSetup_IsBattleType(mainModule, ENTRALINK_RUN_BTL_SETUP_FLAG) ||
+        IsAllyClientID(clientId, GetPlayerClientID(mainModule)) || index >= ENTRALINK_RUN_ENEMIES_MAX) {
+        return;
+    }
+    mon->core.entralinkScale = index + 1;
+    EntralinkBattle_ScaleHP(mon);
+    EntralinkBattle_ScaleStats(mon);
+}
+
+// A value times a percent, at least 1 and at most 0xffff
+static u32 ScaleByPercent(u32 value, u32 percent) {
+    value = value * percent / 100;
+    if (value == 0) {
+        return 1;
+    }
+    return value < 0xffff ? value : 0xffff;
+}
+
+// The multipliers of a scaled enemy, or NULL
+static const u16 *GetScale(BattleMon *mon) {
+    if (mon->core.entralinkScale == 0) {
+        return NULL;
+    }
+    return EntralinkRun_GetState()->enemyScale[mon->core.entralinkScale - 1];
+}
+
+void EntralinkBattle_ScaleHP(BattleMon *mon) {
+    const u16 *scale = GetScale(mon);
+    u32 maxHP;
+
+    if (scale == NULL) {
+        return;
+    }
+    maxHP = ScaleByPercent(mon->core.maxHP, scale[ENTRALINK_STAT_HP]);
+    // Its share of the max HP, rounded up so that only 0 HP is fainted
+    if (mon->core.hp >= mon->core.maxHP) {
+        mon->core.hp = maxHP;
+    } else {
+        mon->core.hp = (mon->core.hp * maxHP + mon->core.maxHP - 1) / mon->core.maxHP;
+    }
+    mon->core.maxHP = maxHP;
+}
+
+void EntralinkBattle_ScaleStats(BattleMon *mon) {
+    const u16 *scale = GetScale(mon);
+
+    if (scale == NULL) {
+        return;
+    }
+    mon->attack = ScaleByPercent(mon->attack, scale[ENTRALINK_STAT_ATTACK]);
+    mon->defense = ScaleByPercent(mon->defense, scale[ENTRALINK_STAT_DEFENSE]);
+    mon->spAttack = ScaleByPercent(mon->spAttack, scale[ENTRALINK_STAT_SP_ATTACK]);
+    mon->spDefense = ScaleByPercent(mon->spDefense, scale[ENTRALINK_STAT_SP_DEFENSE]);
+    mon->speed = ScaleByPercent(mon->speed, scale[ENTRALINK_STAT_SPEED]);
+}
+
+u32 EntralinkBattle_GetSrcHP(BattleMon *mon) {
+    u32 srcMaxHP;
+    u32 hp;
+
+    if (GetScale(mon) == NULL || mon->core.hp == 0) {
+        return mon->core.hp;
+    }
+    srcMaxHP = PokeParty_GetParam(mon->core.src, PKM_PARAM_MAX_HP, NULL);
+    hp = mon->core.hp * srcMaxHP / mon->core.maxHP;
+    return hp != 0 ? hp : 1;
 }
 
 u32 EntralinkBattle_DivideResidualHP(BattleMon *mon, u32 divisor) {

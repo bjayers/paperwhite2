@@ -2,6 +2,26 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-20: Entralink buffs, phase 5: enemy scaling and health bars (ROM session, on a branch)
+
+- **A run simulator** (`tools/paperwhite2/entralink_sim.py`, stdlib): picks per place from the tier odds, three builds
+  (balanced, glass cannon, defensive), the buckets' maths and Gen 5's damage formula; `--fit` proposes curves, and its
+  table is in `entralink-buffs.md` section 12.1. Finding: with today's 3-room rounds the 50,000-HP final takes 21-30
+  strong hits of one attacker; lowering HP's final `boss` value is the lever if playtests agree.
+- **Enemy scaling:** `run.json`'s `enemy_scaling` (each stat: first room, a step a room, boss; a round each; the
+  editor's Run section has a small table per stat) and each room enemy's `scale` (the enemy card's Scale). Applied to
+  the foes' BattleMons as they are made and each time stats are re-read; a caught foe keeps its own stats and its HP
+  share. Starting curves: room HP ×2.6-7.4, Attack ×1-1.5, defences ≤×1.3, Speed ≤×1.5; bosses ×27.5 / ×66 / ×224 HP.
+- **Health bars:** a foe past `boss_bar_hp` (now 5,000) shows up to 10 equal bars (buffs.json's `bar_colors`, the
+  Buffs tab), the current one draining over the next one's colour, "×N" under it; damage over time is a fraction of one
+  bar; bars drain about half a second each.
+- **Tested** in py-desmume (scratchpad `buffs5/`, section 12.4): multipliers at room 1, round 1 and round 3 rooms, the
+  final room and round 2's triple; the per-enemy scale; a 9-bar Darkrai drained through four colours; poison 597 a
+  turn (a bar's 1/8); a caught Dialga with normal stats. Hack build clean, DSi ROM intact, plain modules match, Python
+  and editor tests pass.
+- **Memory:** main +64 bytes, overlay 12 +0.4 KB, 167 +0.5 KB, 168 +1.4 KB; a BattleMon +4 bytes; no VRAM.
+- **For the user:** playtest the curves (the final's length, Darkrai's `scale`); the calls in section 12.6.
+
 ## 2026-11-20: Entralink buffs, phase 4: the harder effects (ROM session, on a branch)
 
 - **Every card works now** (`entralink-buffs.md` section 11): the HP blue (run copies' max HP through

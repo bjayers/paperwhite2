@@ -76,6 +76,10 @@ void setupBySrcData(BattleMon *mon, PartyPkm *src, BOOL readHP, BOOL readAbility
     if (readHP) {
         mon->core.hp = PokeParty_GetParam(src, PKM_PARAM_HP, NULL);
         mon->core.maxHP = PokeParty_GetParam(src, PKM_PARAM_MAX_HP, NULL);
+#ifdef PAPERWHITE2
+        // Paper White 2: an Entralink run's enemy's HP, scaled by the run's depth
+        EntralinkBattle_ScaleHP(mon);
+#endif
     }
     mon->core.exp = PokeParty_GetParam(src, PKM_PARAM_EXP, NULL);
     setupBySrcDataBase(mon, src, readAbility);
@@ -230,6 +234,10 @@ void setupBySrcDataBase(BattleMon *mon, PartyPkm *src, BOOL readTypes) {
     mon->spAttack = PokeParty_GetParam(src, PKM_PARAM_SP_ATTACK, NULL);
     mon->spDefense = PokeParty_GetParam(src, PKM_PARAM_SP_DEFENSE, NULL);
     mon->speed = PokeParty_GetParam(src, PKM_PARAM_SPEED, NULL);
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink run's enemy's stats, scaled by the run's depth
+    EntralinkBattle_ScaleStats(mon);
+#endif
 }
 
 void ClearFormChange(BattleMon *mon) {
@@ -1697,7 +1705,12 @@ void BattleMon_WriteToSrc(BattleMon *mon, BOOL keepBaseForm) {
     u32 form;
 
     PokeParty_SetParam(src, PKM_PARAM_EXP, mon->core.exp);
+#ifdef PAPERWHITE2
+    // Paper White 2: a scaled Entralink run enemy (one caught) keeps its share of its own max HP
+    PokeParty_SetParam(src, PKM_PARAM_HP, EntralinkBattle_GetSrcHP(mon));
+#else
     PokeParty_SetParam(src, PKM_PARAM_HP, mon->core.hp);
+#endif
     if (mon->core.hp != 0) {
         PokeParty_SetStatusCond(src, GetBattleMonStatus(mon));
     } else {

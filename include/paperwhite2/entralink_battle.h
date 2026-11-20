@@ -25,8 +25,21 @@ u32 EntralinkBattle_ClampDamage(BattleMon *defender, u32 damage);
 // The last hit's full damage before the clamp, its target, and whether the clamp cut it (the damage numbers, phase 6)
 u32 EntralinkBattle_GetLastHitDamage(u8 *monId, BOOL *clamped);
 
-// The max HP that damage over time on a Pokémon is a fraction of: a run battle's foe's is at most one bar's
-// (settings' boss_bar_hp, until phase 5's bars exist), anyone else's its max HP
+// Phase 5: the enemies' scaling (entralink-buffs.md, section 12). A BattleMon was created from its party's source
+// (PokeCon_CreateClientParty, for the server's and the client's copies): in a run battle, an enemy's place in its party
+// is kept in it (BattleMonCore's entralinkScale) and its stats and HP are scaled by the run's multipliers for it
+// (EntralinkRunState's enemyScale, set by the run as it starts the battle)
+void EntralinkBattle_ScaleMon(BtlMainModule *mainModule, BattleMon *mon, u32 clientId, u32 index);
+// Its HP and max HP as just read from its source (setupBySrcData), scaled; its max HP at most 65,535
+void EntralinkBattle_ScaleHP(BattleMon *mon);
+// Its Attack, Defense, Sp. Atk, Sp. Def and Speed as just read from its source (setupBySrcDataBase), scaled
+void EntralinkBattle_ScaleStats(BattleMon *mon);
+// The HP BattleMon_WriteToSrc gives its source: a scaled enemy's its share of the source's own max HP (a caught one
+// keeps its normal stats and that share of its HP), anyone else's its HP
+u32 EntralinkBattle_GetSrcHP(BattleMon *mon);
+
+// The max HP that damage over time on a Pokémon is a fraction of: a run battle's foe's one health bar's
+// (paperwhite2/entralink_bars.h: its max HP with a single bar), anyone else's its max HP
 u32 EntralinkBattle_GetResidualMaxHP(BattleMon *mon);
 // DivideMaxHPZeroCheck on that max HP
 u32 EntralinkBattle_DivideResidualHP(BattleMon *mon, u32 divisor);

@@ -37,6 +37,15 @@
 #define ENTRALINK_RUN_SHOP_MAX 8
 #define ENTRALINK_RUN_SHOP_BUFFS_MAX 4
 
+// The enemies' stats the run scales (phase 5), the order of run.json's enemy_scaling and of the state's enemyScale
+#define ENTRALINK_STAT_HP 0
+#define ENTRALINK_STAT_ATTACK 1
+#define ENTRALINK_STAT_DEFENSE 2
+#define ENTRALINK_STAT_SP_ATTACK 3
+#define ENTRALINK_STAT_SP_DEFENSE 4
+#define ENTRALINK_STAT_SPEED 5
+#define ENTRALINK_STAT_COUNT 6
+
 // The run bag's slots in each pocket it has
 #define ENTRALINK_RUN_BAG_ITEMS 32
 #define ENTRALINK_RUN_BAG_MEDICINE 16
@@ -116,6 +125,9 @@ typedef struct {
     EntralinkCard picked;
     u8 pickedList;
     u8 pickedIndex;
+    // Phase 5: the battle being fought's enemies' stat multipliers in percent, by their place in its party and
+    // ENTRALINK_STAT_* (the room's depth's times the enemy's own scale), which the battle applies at its start
+    u16 enemyScale[ENTRALINK_RUN_ENEMIES_MAX][ENTRALINK_STAT_COUNT];
 } EntralinkRunState;
 
 // The run's state, which overlay 12's run code keeps

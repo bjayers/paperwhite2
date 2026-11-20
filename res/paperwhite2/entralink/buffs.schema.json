@@ -274,7 +274,14 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 65535,
-          "description": "One health bar's HP: damage over time on a boss is its fraction of the smaller of its max HP and this (until the bars exist, phase 5)"
+          "description": "The most HP of one health bar (phase 5): a foe with more max HP shows ceil(max HP / this) bars of equal size, at most one more than bar_colors has, and damage over time on a foe is its fraction of one bar (of its max HP with a single bar)"
+        },
+        "bar_colors": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 9,
+          "items": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+          "description": "The health bars' colours from bar 2 up (bar 1, the last to empty, is the vanilla bar: green, yellow, red), each to contrast with the one before; the bar's dark rows are its colour at 55%. Their count + 1 is the most bars a foe shows"
         },
         "boss_sleep_turns": {
           "type": "integer",

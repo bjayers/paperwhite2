@@ -131,6 +131,12 @@ typedef struct {
     // The IDs of up to 24 Pokémon, each recorded once
     u8 unkD0Count;
     u8 unkD1[24];
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink run's enemy, its place in the battle's party + 1, whose stats and HP the run's depth
+    // scales each time they are read from its source (paperwhite2/entralink_battle.h); 0 for any other Pokémon. In the
+    // core, which Transform keeps (a Pokémon transformed into an enemy copies its scaled stats but stays unscaled)
+    u8 entralinkScale;
+#endif
 } BattleMonCore;
 
 // A Pokémon in battle, 0x1f8 bytes from BattleMon_Create. Offsets are from btl_pokeparam.c's accessors.

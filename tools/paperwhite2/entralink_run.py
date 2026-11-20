@@ -61,6 +61,11 @@ DUST_KINDS = ["enemy", "enemy_choice", "challenge", "boss", "final"]
 DEFAULT_DUST = {"enemy": 40, "enemy_choice": 50, "challenge": 80, "boss": 150, "final": 0}
 DEFAULT_DUST_ROUND_PERCENT = [100, 150, 200]
 DEFAULT_SHOP_ITEMS = 5
+# Phase 5 (entralink-buffs.md, section 12): the enemies' stat multipliers by depth, in EntralinkScaling's order
+# (ENTRALINK_STAT_*), each a round's first room, its step a later room and its boss; and an enemy's own scale
+SCALED_STATS = ["hp", "attack", "defense", "sp_attack", "sp_defense", "speed"]
+SCALING_DEFAULTS = {"rooms": 100, "room_step": 0, "boss": 100}
+DEFAULT_SCALE = 100
 # The item table's pools (ENTRALINK_POOL_*, bits)
 POOLS = {"item_room": 0, "gift": 1, "shop": 2, "ground": 3}
 # An item without a bag icon in the model table
@@ -554,6 +559,7 @@ def room_row(name: str, room: dict, template: bool, rooms: dict[str, dict], tabl
                 else constants[ability],
                 "form": enemy.get("form", 0),
                 "level": enemy.get("level", DEFAULT_LEVEL),
+                "scale": enemy.get("scale", DEFAULT_SCALE),
                 "gender": GENDERS[enemy.get("gender")],
                 "shiny": int(enemy.get("shiny", False)),
                 "catchId": NONE16 if catch is None else enemy["progress_id"],
@@ -697,6 +703,7 @@ def tables(directory: Path) -> dict:
         "hidden_item_chance": run.get("hidden_item_chance", DEFAULT_HIDDEN_ITEM_CHANCE),
         "dust": [{**DEFAULT_DUST, **run.get("dust", {})}[kind] for kind in DUST_KINDS],
         "dust_round_percent": round_percents(run.get("dust_round_percent", DEFAULT_DUST_ROUND_PERCENT)),
+        "enemy_scaling": enemy_scaling(run),
         "shop_items": run.get("shop_items", DEFAULT_SHOP_ITEMS),
         "type_templates": type_templates,
         "marker_spots": [tuple(spots[door]) for door in DOORS],
@@ -706,6 +713,20 @@ def tables(directory: Path) -> dict:
         "clearings": clearings,
         "flower_tiles": flower_tiles,
     }
+
+
+def enemy_scaling(run: dict) -> dict[str, dict[str, list[int]]]:
+    """run.json's enemy_scaling with its defaults: each stat's rooms, room_step and boss, one value for each of the 3
+    rounds (a round left out takes the last one given)."""
+    table = run.get("enemy_scaling", {})
+    out = {}
+    for stat in SCALED_STATS:
+        entry = table.get(stat, {})
+        out[stat] = {}
+        for key, default in SCALING_DEFAULTS.items():
+            values = entry.get(key) or [default]
+            out[stat][key] = [values[min(i, len(values) - 1)] for i in range(3)]
+    return out
 
 
 def round_percents(percents: list[int]) -> list[int]:
@@ -725,7 +746,8 @@ def header(directory: Path) -> str:
     battles = [f"/* {b['name']} */ {{ {b['format']}, {b['enemyCount']}, {b['firstEnemy']}, {b['progressId']} }}"
                for b in data["battles"]]
     enemies = [f"/* {e['name']} */ {{ {e['species']}, {e['item']}, {{ {', '.join(map(str, e['moves']))} }}, "
-               f"0x{e['ability']:x}, 0x{e['catchId']:x}, {e['firstRequirement']}, {e['form']}, {e['level']}, "
+               f"0x{e['ability']:x}, 0x{e['catchId']:x}, {e['firstRequirement']}, {e['scale']}, {e['form']}, "
+               f"{e['level']}, "
                f"{e['gender']}, {e['shiny']}, {e['catchOnce']}, {e['requirementCount']} }}" for e in data["enemies"]]
     npcs = [f"/* {n['name']} */ {{ {n['item']}, {n['sprite']}, {n['firstRequirement']}, "
             f"0x{n['before']:x}, 0x{n['after']:x}, {n['type']}, {n['battle']}, {n['enemy']}, {n['count']}, "
@@ -768,6 +790,11 @@ def header(directory: Path) -> str:
         f"#define ENTRALINK_RUN_DUST {{ {', '.join(map(str, data['dust']))} }}",
         f"#define ENTRALINK_RUN_DUST_ROUND_PERCENT {{ {', '.join(map(str, data['dust_round_percent']))} }}",
         f"#define ENTRALINK_RUN_SHOP_ITEMS {data['shop_items']}",
+        "// EntralinkScaling (phase 5), a stat each (ENTRALINK_STAT_* order): the percent in a round's first room, the",
+        "// step a later room of the round adds, the round's boss's (and its raids'); a round each",
+        "#define ENTRALINK_RUN_ENEMY_SCALING { " + ", ".join(
+            "{ " + ", ".join("{ " + ", ".join(map(str, data["enemy_scaling"][stat][key])) + " }"
+                             for key in SCALING_DEFAULTS) + " }" for stat in SCALED_STATS) + " }",
         "// Each room type's template (ENTRALINK_TYPE_* order), or ENTRALINK_RUN_ROOM_NONE",
         f"#define ENTRALINK_RUN_TYPE_TEMPLATES {{ {', '.join(f'0x{t:02x}' for t in data['type_templates'])} }}",
         "// The ground markers' spots, the top-left tiles of 2 by 2, in ENTRALINK_DOOR_* order (north, east, west)",
@@ -785,8 +812,8 @@ def header(directory: Path) -> str:
         f"#define ENTRALINK_RUN_ROOMS {initializer(rooms)}",
         "// EntralinkBattle: format, enemy count, first enemy, progress id",
         f"#define ENTRALINK_RUN_BATTLES {initializer(battles)}",
-        "// EntralinkEnemy: species, item, moves, ability, catch id, first requirement, form, level, gender, shiny,",
-        "// catch once, requirement count",
+        "// EntralinkEnemy: species, item, moves, ability, catch id, first requirement, scale, form, level, gender,",
+        "// shiny, catch once, requirement count",
         f"#define ENTRALINK_RUN_ENEMIES {initializer(enemies)}",
         "// EntralinkNpc: item, sprite, first requirement, before and after messages, type, battle, enemy, count,",
         "// chance, x, z, direction, requirement count, before and after styles, marker",

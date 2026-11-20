@@ -227,7 +227,7 @@ def test_battle_tables_carry_kinds_conditions_and_numbers():
     assert values[2].startswith("    { { 60, 80, 100 }, 1, ENTRALINK_BUFF_KIND_STATUS_CHANCE_ON_HIT }")
     text = entralink_buffs.header(data, entralink_buffs.effect_kinds())
     assert "#define ENTRALINK_BUFF_BUCKET_CAPS { 100, 100, 75, 40, 125, 50, 25, 100, 50 }" in text
-    assert "#define ENTRALINK_BUFF_BOSS_BAR_HP 6000" in text
+    assert f"#define ENTRALINK_BUFF_BOSS_BAR_HP {data['settings']['boss_bar_hp']}" in text
 
 
 def test_game_handlers_keep_their_numbers_and_the_phase_4_settings():
@@ -255,3 +255,15 @@ def test_an_id_that_spells_another_name_is_refused():
     entry(data, "attack")["id"] = "stat_speed"
     with pytest.raises(datajson.DataError, match="ENTRALINK_BUFF_STAT_SPEED is defined twice"):
         entralink_buffs.header(data, entralink_buffs.effect_kinds())
+
+
+def test_bar_colors(tmp_path):
+    """Phase 5: the health bars' colours as RGB555, a light one and its dark rows at 55%; the most bars one more."""
+    data = fixture_catalogue()
+    data["settings"]["bar_colors"] = ["#f80000", "#0000f8"]
+    assert entralink_buffs.bar_colors(data["settings"]) == [(0x001f, 0x0011), (0x7c00, 0x4400)]
+    assert "#define ENTRALINK_BUFF_BAR_MAX 3" in entralink_buffs.header(data, entralink_buffs.effect_kinds())
+    directory = copy_data(tmp_path)
+    edit(directory, lambda data: data["settings"].update(bar_colors=["red"]))
+    with pytest.raises(datajson.DataError, match="bar_colors"):
+        entralink_buffs.load(directory)

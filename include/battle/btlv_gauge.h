@@ -81,6 +81,13 @@ typedef struct {
     u32 expChars;         // 0x38
     u32 expCellAnims;     // 0x3c
     BtlvGaugeMon mon;     // 0x40
+#ifdef PAPERWHITE2
+    // Paper White 2: the health bars (paperwhite2/health_bars.h): the bar whose colours the gauge's palette holds (0
+    // vanilla's), the entries the bar behind took, and vanilla's colours of the two pairs of entries
+    u8 paletteBar;
+    u8 paletteBehind;
+    u16 vanillaBarColors[4];
+#endif
 } BtlvGaugeEntry;
 
 // The gauges' work, 0x46c bytes

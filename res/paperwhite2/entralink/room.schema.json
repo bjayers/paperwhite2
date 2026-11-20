@@ -67,7 +67,8 @@
       "properties": {
         "species": { "type": "string", "x-constant": "SPECIES_" },
         "form": { "type": "integer", "minimum": 0, "maximum": 255, "description": "0 if left out" },
-        "level": { "type": "integer", "minimum": 1, "maximum": 100, "description": "Its base level, 70 if left out; the run will scale it with the rooms visited" },
+        "level": { "type": "integer", "minimum": 1, "maximum": 100, "description": "Its level, 70 if left out; the run scales its stats with the run's depth (run.json's enemy_scaling)" },
+        "scale": { "type": "integer", "minimum": 10, "maximum": 1000, "description": "Its own multiplier in percent on top of run.json's enemy_scaling, on every stat, for an enemy that comes out too easy or too hard; 100 if left out" },
         "moves": {
           "type": "array", "minItems": 1, "maxItems": 4,
           "items": { "type": "string", "x-constant": "MOVE_" },

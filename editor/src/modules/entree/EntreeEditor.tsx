@@ -39,7 +39,7 @@ import {
   DEFAULT_ONCE, PROGRESS_IDS, PROGRESS_IDS_SCHEMA, RUN_COMPLETED, assignProgressIds, battleKey, battleKeys, renameKeys, withoutProgressIds,
   MESSAGE_STYLES, MESSAGE_STYLE_NOTES, readRun, roundSummary, runProblems, type MessageStyle,
   DOORS, MARKER_NOTES, MARKER_TYPES, NPC_MARKERS_DIR, markerArt, npcMarkerArt, type Door,
-  BALL_TYPES, DEFAULT_ROOM_TYPE, DEFAULT_TYPE_WEIGHTS, DUST_KINDS, DUST_NOTES, MAX_SHOP_ITEMS, FLOWER_TILES, FLOWER_TILES_SCHEMA, ITEMS, LADY_SPRITE, NPC_DEFAULT_MARKERS, NPC_TYPE_NOTES,
+  BALL_TYPES, DEFAULT_ROOM_TYPE, DEFAULT_TYPE_WEIGHTS, DUST_KINDS, DUST_NOTES, MAX_SHOP_ITEMS, DEFAULT_ENEMY_SCALE, SCALED_STATS, SCALED_STAT_NAMES, SCALING_KEYS, SCALING_KEY_NAMES, FLOWER_TILES, FLOWER_TILES_SCHEMA, ITEMS, LADY_SPRITE, NPC_DEFAULT_MARKERS, NPC_TYPE_NOTES,
   ROOM_TYPES, ROOM_TYPE_NOTES, TEMPLATES, TEMPLATES_DIR, TEMPLATE_NOTES, TEMPLATE_TYPES, WEIGHT_ORDER, checkTemplates, defaultMarker,
   isTemplateFile, newTemplateData, percent, readFlowerTiles, setFlowerTiles, templatePath, typeChances, type RoomType,
   type Round, type Exit, type MapInfo, type NpcType, type Problem, type ProgressCounters, type Role, type Room,
@@ -742,6 +742,31 @@ function RunSection({ rooms, templates }: { rooms: { id: string; room: Room }[];
         </div>
         <span className="muted small">How many different items of the shop pool a shop sells, drawn as its room is entered, at their prices in Dream Dust (the Items tab)</span>
 
+        <h6 className="en-sub en-run-head">Enemy scaling <span className="muted">stats in percent, by depth</span></h6>
+        <span className="muted small">A round's room n (from 0) multiplies its enemies' stat by First + n × Step, its boss (round 3's: the final room) and any raid in it by Boss; then each enemy's own Scale. tools/paperwhite2/entralink_sim.py simulates a run with them</span>
+        {SCALED_STATS.map((stat) => (
+          <table key={stat} className="en-scaling">
+            <caption>{SCALED_STAT_NAMES[stat]}</caption>
+            <thead>
+              <tr><th />{SCALING_KEYS.map((key) => <th key={key} className="muted small">{SCALING_KEY_NAMES[key]}</th>)}</tr>
+            </thead>
+            <tbody>
+              {run.rounds.map((_, i) => (
+                <tr key={i}>
+                  <td className="muted small" title={i === run.rounds.length - 1 ? `Round ${i + 1}; its Boss is the final room` : `Round ${i + 1}`}>R{i + 1}</td>
+                  {SCALING_KEYS.map((key) => (
+                    <td key={key}>
+                      <NumberBox value={run.enemyScaling[stat][key][i]} min={key === "room_step" ? 0 : 10} max={key === "room_step" ? 1000 : 50000} width={76}
+                                 onChange={(n) => setKey("enemy_scaling", fromPlain(Object.fromEntries(SCALED_STATS.map((s) => [s, Object.fromEntries(SCALING_KEYS.map((k) => [k,
+                                   run.enemyScaling[s][k].slice(0, run.rounds.length).map((v, j) => (s === stat && k === key && j === i ? n : v))]))]))))} />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ))}
+
         <h6 className="en-sub en-run-head">Rounds <span className="muted">then the final room</span></h6>
         <div className="en-list-actions">
           <button onClick={() => setKey("rounds", [...rounds, new Map<string, JsonValue>([["rooms", 3]])])} disabled={rounds.length >= maxRounds}
@@ -1063,10 +1088,15 @@ function EnemyCard({ at, index, over, constants, get, set, setField, remove, bat
         {remove && <button className="icon" title="Remove the enemy" onClick={remove}>×</button>}
       </div>
       <div className="ow-condition">
-        <Row label="Level" hint="Its base level: the run will scale it with the rooms visited">
+        <Row label="Level" hint="Its level; the run scales its stats with the run's depth (the Run section's Enemy scaling)">
           <NumberBox value={Number(e.get("level") ?? DEFAULT_LEVEL)} min={1} max={100} onChange={(n) => f("level", n)} />
           <span className="muted">Form</span>
           <NumberBox value={Number(e.get("form") ?? 0)} min={0} max={255} onChange={(n) => f("form", n || undefined)} />
+        </Row>
+        <Row label="Scale" hint="Its own multiplier on every stat, on top of the run's scaling by depth, for an enemy that comes out too easy or too hard (100: none)">
+          <NumberBox value={Number(e.get("scale") ?? DEFAULT_ENEMY_SCALE)} min={10} max={1000} width={64}
+                     onChange={(n) => f("scale", n === DEFAULT_ENEMY_SCALE ? undefined : n)} />
+          <span className="muted small">%</span>
         </Row>
         <Row label="Moves" hint={moves.length ? undefined : "Left empty: the moves of its level"}>
           <span className="en-moves">

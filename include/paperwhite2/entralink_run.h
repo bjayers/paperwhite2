@@ -43,6 +43,8 @@
 #define ENTRALINK_TYPE_EVENT 6
 #define ENTRALINK_TYPE_ENEMY_CHOICE 7
 #define ENTRALINK_TYPE_COUNT 8
+// The most rounds a run has (run.json's rounds)
+#define ENTRALINK_RUN_ROUNDS_MAX 3
 // Any type: a boss or final room's draw
 #define ENTRALINK_TYPE_ANY 0xff
 
@@ -147,6 +149,8 @@ typedef struct {
     // Its catch's progress id, or ENTRALINK_NONE if it can't be caught; its catch's requirements in the table
     u16 catchId;
     u16 firstRequirement;
+    // Its own multiplier in percent on its stats, on top of the run's depth's (phase 5)
+    u16 scale;
     u8 form;
     u8 level;
     // ENTRALINK_GENDER_*
@@ -227,6 +231,15 @@ typedef struct {
     // The weight of each room type (ENTRALINK_TYPE_*) its doors draw
     u8 typeWeights[ENTRALINK_TYPE_COUNT];
 } EntralinkRound;
+
+// A stat's multipliers in percent by the run's depth (run.json's enemy_scaling, phase 5), a round each: in the round's
+// first room, the step each later room of the round adds, and for its boss (the last round's: the final room) and its
+// raids
+typedef struct {
+    u16 rooms[ENTRALINK_RUN_ROUNDS_MAX];
+    u16 roomStep[ENTRALINK_RUN_ROUNDS_MAX];
+    u16 boss[ENTRALINK_RUN_ROUNDS_MAX];
+} EntralinkScaling;
 
 // An entry of the item table (items.json)
 typedef struct {

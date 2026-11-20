@@ -154,7 +154,8 @@ same tiles (x 15-16 z 9, x 15-16 z 24, x 5 and x 26 at z 15-17) and only some of
 faintly behind the grid, switchable, and checks each NPC against all nine: on an exit of any clearing is an error, on a
 tile blocked in any is a warning, as is standing where the player arrives (x 15 z 23).
 
-**Levels are base values:** the run will scale the enemies with the number of rooms visited (designed later).
+**Levels are base values:** since phase 5 of the buffs (`entralink-buffs.md` section 12) the run scales the enemies' stats
+with its depth (run.json's `enemy_scaling`, each enemy's `scale`); their levels stay as given.
 
 The editor's other checks: a battle NPC naming no battle or a missing one, a battle no NPC starts, more enemies than the
 format takes, a battle NPC showing an enemy its battle doesn't have, an item NPC without an item, two NPCs on one tile,

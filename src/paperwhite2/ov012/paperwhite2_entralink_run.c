@@ -24,6 +24,7 @@
 #include "gfl/heap.h"
 #include "gfl/msg.h"
 #include "gfl/random.h"
+#include "nitro/math.h"
 #include "paperwhite2/entralink_buffs.h"
 #include "paperwhite2/entralink_progress.h"
 #include "paperwhite2/entralink_run.h"
@@ -263,6 +264,23 @@ static u32 EntralinkRun_GetPlace(u32 place, u32 *round) {
         return ENTRALINK_ROLE_PRE_BOSS;
     }
     return ENTRALINK_ROLE_FINAL;
+}
+
+// A place's index among its round's rooms (from 0), or 0 for a pre-boss rest, a boss or the final room
+static u32 EntralinkRun_GetRoundRoomIndex(u32 place) {
+    u32 count = 0;
+    u32 i;
+
+    for (i = 0; i < ENTRALINK_RUN_ROUND_COUNT; i++) {
+        if (place <= count + sRounds[i].rooms) {
+            return place - count - 1;
+        }
+        count += sRounds[i].rooms + 2 * sRounds[i].boss;
+        if (place <= count) {
+            return 0;
+        }
+    }
+    return 0;
 }
 
 // How many rooms a run has: each round's rooms, and its pre-boss rest and boss, then the pre-boss rest and the final
@@ -1219,6 +1237,45 @@ static void EntralinkRun_AddEnemy(GameData *gameData, PokeParty *party, const En
 // the Nightmare Ball on its catchable enemies (ENTRALINK_RUN_BTL_SETUP_FLAG). A raid is a triple battle whose two sides
 // are fainted copies of its enemy, so the enemy stands in the center and the battle plays as any triple with two foes
 // down
+// The battle's enemies' stat multipliers (phase 5), which the battle applies at its start: the room's depth's (a
+// round's room by its place in the round; a boss, the final room and a raid by the round's boss values) times each
+// enemy's own scale, at most 0xffff
+static void EntralinkRun_SetEnemyScale(EntralinkRunState *state, const EntralinkRoom *room,
+                                       const EntralinkBattle *battle) {
+    static const EntralinkScaling SCALING[ENTRALINK_STAT_COUNT] = ENTRALINK_RUN_ENEMY_SCALING;
+    const EntralinkScaling *scaling;
+    const EntralinkEnemy *enemy;
+    u32 round;
+    u32 index = EntralinkRun_GetRoundRoomIndex(state->room);
+    BOOL boss = room->role == ENTRALINK_ROLE_BOSS || room->role == ENTRALINK_ROLE_FINAL ||
+                battle->format == ENTRALINK_FORMAT_RAID;
+    u32 percent;
+    u32 stat;
+    u32 i;
+
+    EntralinkRun_GetPlace(state->room, &round);
+    for (stat = 0; stat < ENTRALINK_STAT_COUNT; stat++) {
+        scaling = &SCALING[stat];
+        if (boss) {
+            percent = scaling->boss[round - 1];
+        } else {
+            percent = scaling->rooms[round - 1] + index * scaling->roomStep[round - 1];
+        }
+        for (i = 0; i < ENTRALINK_RUN_ENEMIES_MAX; i++) {
+            // A raid's three are its one enemy
+            if (battle->format == ENTRALINK_FORMAT_RAID) {
+                enemy = &sEnemies[battle->firstEnemy];
+            } else if (i < battle->enemyCount) {
+                enemy = &sEnemies[battle->firstEnemy + i];
+            } else {
+                state->enemyScale[i][stat] = 100;
+                continue;
+            }
+            state->enemyScale[i][stat] = MATH_MIN(percent * enemy->scale / 100, 0xffff);
+        }
+    }
+}
+
 static GameEvent *EntralinkRun_CreateBattle(GameSystem *gsys, const EntralinkRoom *room,
                                             const EntralinkBattle *battle) {
     static const u8 FORMAT_STYLES[] = { BTL_STYLE_SINGLE, BTL_STYLE_DOUBLE, BTL_STYLE_TRIPLE, BTL_STYLE_TRIPLE };
@@ -1234,6 +1291,7 @@ static GameEvent *EntralinkRun_CreateBattle(GameSystem *gsys, const EntralinkRoo
         state->catchIds[i] = ENTRALINK_CATCH_NONE;
     }
     state->caught = FALSE;
+    EntralinkRun_SetEnemyScale(state, room, battle);
     if (battle->format == ENTRALINK_FORMAT_RAID) {
         for (i = 0; i < 3; i++) {
             EntralinkRun_AddEnemy(gameData, party, &sEnemies[battle->firstEnemy], i, i != RAID_CENTER_SLOT);

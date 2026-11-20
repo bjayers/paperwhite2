@@ -48,8 +48,8 @@ its sum, whatever the sources, and the caps are what keep the strongest build un
   multiplying on top, outside the buckets. Section 5 shows what that means for the cap.
 - **Residual damage** (poison, burn, sleep ticks, weather, Leech Seed) is not a hit and has no bucket. Its buffs
   multiply the tick. Against 50,000-HP bosses, vanilla's "1/8 of max HP" is far too strong, so (decision 2) bosses get
-  several health bars, visual layers of one HP pool, and a tick on a boss is its fraction of **one bar**. The bars'
-  design is pending; the numbers below take 6,000 for one bar.
+  several health bars, visual layers of one HP pool, and a tick on a boss is its fraction of **one bar**. The bars
+  are built since phase 5 (section 12: at most `boss_bar_hp`, 5,000, a bar); the numbers below took 6,000 for one bar.
 - **Not damage** in the tables marks chances, priority, healing, durations and the like.
 
 **Feasibility.** "Easy" is one handler on an existing event, usually with a vanilla precedent ("vanilla: X" names the
@@ -687,7 +687,7 @@ Overflow and Thorn Guard.
 ### 10.3 Bosses (decisions 2 and 6)
 
 - **Damage over time** on any foe of a run battle is a fraction of the smaller of its max HP and `boss_bar_hp` (6,000,
-  until phase 5's bars): poison, burn, bad poison, Nightmare, Curse (`BattleMon_GetResidualDamage`), Leech Seed and
+  until phase 5's bars; since phase 5, of one bar, section 12.3): poison, burn, bad poison, Nightmare, Curse (`BattleMon_GetResidualDamage`), Leech Seed and
   binding (`condition_effects.c`), sand and hail (`BtlCalc_GetWeatherDamage`), Nightmare Field. A foe under 6,000 HP is
   unchanged, so in effect only bosses' pools are touched. Bad poison's ramp on a boss stops at `boss_toxic_cap` (4/16).
 - **Fixed damage** (Super Fang, Endeavor, Night Shade...) on a boss is capped at `boss_fixed_damage` (50%) of one bar,
@@ -811,3 +811,125 @@ of OBJ VRAM where they're loaded. Two new texts in bank 0018 (6 lines), nine in 
 - Spectral skips Wonder Guard targets (a super-effective hit would pass it); Magnetised's float affects every Ground
   move on the paralyzed foe, the foes' too.
 - Forecast is chosen once, the first time it is taken; a rank-up keeps the choice.
+
+## 12. Phase 5: enemy scaling and health bars (2026-11-20)
+
+The run's enemies now grow with its depth, and a foe whose HP passes one bar shows stacked health bars. Code: the
+simulator `tools/paperwhite2/entralink_sim.py`; the curves in `run.json` (`enemy_scaling`) and each enemy's `scale`
+(room data), packed by `entralink_run.py`; the multipliers chosen in overlay 12 (`EntralinkRun_SetEnemyScale`, into
+`EntralinkRunState.enemyScale`); the scaling in overlay 167 (`EntralinkBattle_ScaleMon`, `_ScaleHP`, `_ScaleStats`,
+`_GetSrcHP`, hooks in `btl_main.c` and `btl_pokeparam.c`); the bars' rule in `include/paperwhite2/entralink_bars.h`;
+their drawing in overlay 168 (`src/paperwhite2/ov168/paperwhite2_health_bars.c`, hooks in `btlv_gauge.c`).
+
+### 12.1 The simulator and the starting curves
+
+`entralink_sim.py` models a run from the data (its docstring has the model): run.json's rounds and room-type weights,
+the expected picks a place gives (buffs.json's tier odds by source, gifts, buff rooms, a shop half the time), three
+builds taking them (balanced: attack and defence in turn; glass cannon: section 5.3's themed attack only; defensive),
+the buckets' maths, and Gen 5's damage formula at level 100 (a dedicated attacker, base 110 and full EVs; the rest base
+90) against the rooms' level-70 enemies (base 95). `--fit` proposes curves from the decisions: Defense and Sp. Def to
+×1.3 by the final room; Speed so the final room's enemy is about as fast as the unbuffed team; room HP so a balanced
+build needs 2.5 typical hits in the first room growing to 4; bosses 6 and 9 of its strong hits, the final room 50,000;
+Attack and Sp. Atk so a room enemy's hit costs a balanced build the share it costs in the first room (about 17%) and a
+boss's three times that. The curves in run.json are its proposal, rounded and smoothed by hand. `--markdown` prints:
+
+| Place | Picks | Enemy HP | HP, Atk, Def, Spe % | Balanced: hit, hits (strong) | Balanced: hit taken | Glass cannon: hits (strong) | Glass cannon: hit taken | Defensive: hit taken |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| R1 room 1 | 0 | 580 | 260, 100, 100, 100 | 228, 2.5 (0.6) | 17% | 2.5 (0.6) | 17% | 17% |
+| R1 room 2 | 0 | 658 | 295, 105, 105, 105 | 218, 3.0 (0.8) | 17% | 3.0 (0.8) | 17% | 17% |
+| R1 room 3 | 2 | 736 | 330, 110, 110, 110 | 255, 2.9 (0.7) | 18% | 2.9 (0.7) | 18% | 16% |
+| R1 boss | 2 | 6,132 | 2750, 300, 110, 115 | 255, 24.1 (6.0) | 49% | 24.1 (6.0) | 49% | 44% |
+| R2 room 1 | 4 | 1,226 | 550, 110, 110, 115 | 408, 3.0 (0.8) | 17% | 2.8 (0.7) | 18% | 12% |
+| R2 room 2 | 4 | 1,260 | 565, 120, 115, 120 | 388, 3.2 (0.8) | 19% | 3.0 (0.7) | 20% | 13% |
+| R2 room 3 | 5 | 1,293 | 580, 130, 120, 125 | 372, 3.5 (0.9) | 20% | 2.9 (0.7) | 22% | 13% |
+| R2 boss | 6 | 14,718 | 6600, 330, 120, 130 | 406, 36.2 (9.1) | 49% | 30.4 (7.6) | 54% | 31% |
+| R3 room 1 | 6 | 1,450 | 650, 120, 120, 135 | 406, 3.6 (0.9) | 18% | 3.0 (0.7) | 20% | 12% |
+| R3 room 2 | 7 | 1,550 | 695, 135, 125, 140 | 431, 3.6 (0.9) | 20% | 3.0 (0.8) | 22% | 12% |
+| R3 room 3 | 9 | 1,650 | 740, 150, 130, 145 | 414, 4.0 (1.0) | 16% | 2.8 (0.7) | 25% | 11% |
+| R3 final | 9 | 49,952 | 22400, 450, 130, 150 | 414, 120.5 (30.1) | 46% | 84.1 (21.0) | 73% | 33% |
+
+"Hits" are a lone attacker's typical hits to faint the enemy, "strong" a super-effective hit after one +2 setup;
+"hit taken" is the enemy's typical hit as a share of the build's HP. What it shows:
+- Room enemies stay at 2.5-4 hits and about 17-20% a hit for a balanced build all run; a defensive build takes 11-13%,
+  a glass cannon up to 25%. A boss hits a balanced build for about half its HP and a glass cannon for 73% at the end,
+  so a boss's super-effective hit one-shots a team without defence, as decided.
+- **The final room at 50,000 is long with today's run.json:** 3 rooms a round give only about 9 picks, so a strong
+  late hit is about 1,600-2,400, and the final takes 21-30 strong hits of one attacker (7-10 turns of a raid's three).
+  The decision's "a few turns of a strong build" assumed section 5.4's ~20 picks; `--rooms 5` (a 20-place run) gives
+  14 picks and still 21-32 strong hits. Lowering `boss[2]` of HP (22,400%) is the one-number lever if playtests
+  agree; I kept 50,000 as decided.
+- The model is deliberately plain: real enemies differ in base stats and moves, and players pick for their team.
+
+### 12.2 Scaling in battle
+
+- **The data:** `enemy_scaling` in run.json, for each of HP, Attack, Defense, Sp. Atk, Sp. Def and Speed, three
+  values a round: `rooms` (the round's first room), `room_step` (added for each later room of the round) and `boss`
+  (the round's boss; round 3's is the final room; also any raid in the round). Each room enemy has `scale` (percent,
+  100 by default) on top, on every stat: the lever for Darkrai.
+- **In the run (overlay 12):** `EntralinkRun_CreateBattle` works out each enemy's six percents (the place's round and
+  its index in the round, or the boss values; times its scale; at most 65,535) into `EntralinkRunState.enemyScale`.
+- **In the battle (overlay 167):** `PokeCon_CreateClientParty` creates the battle's Pokémon for the server's and the
+  client's copies; for a run battle's foe it marks the `BattleMon` with its party slot (`BattleMonCore.entralinkScale`)
+  and scales its max HP, HP and stats. `setupBySrcData` and `setupBySrcDataBase` re-read them from the party data
+  (switch-ins, form changes) and scale them again, so they stay scaled. The marker is in the core, which Transform
+  keeps: a Pokémon transformed into an enemy copies its scaled stats (vanilla's rule) but isn't scaled itself.
+- **Caught foes keep their own stats:** the party data is never scaled; `BattleMon_WriteToSrc` gives a scaled foe's
+  source its share of its own max HP (777 of 1,591 became 111 of 229).
+- **HP past 999:** the battle's HP is 16 bits throughout (max 65,535; the server's HP commands carry 16 bits; the
+  damage clamp is 60,000), the gauge's sums fit in 32 bits, and the foe's HP numbers (vanilla's three digits, never
+  shown for a foe) are skipped past 999.
+
+### 12.3 Health bars
+
+- **The rule (the simplest readable):** a foe with more max HP than `boss_bar_hp` (now **5,000**) shows ceil(max HP /
+  5,000) bars, at most 10, of equal size: ceil(max HP / bars). A 50,000-HP boss has 10 bars of 5,000, a 15,000 one 3
+  bars, a 43,000 one 9 of 4,779. Bar 1 (the last) may hold a little less, so that the top bar is full at full HP.
+- **Drawing:** the current bar fills the gauge's 48 pixels and drains; behind it, where vanilla shows the empty white
+  and gray, the next bar's colour. Bar 1 is vanilla's bar by its own HP (green, yellow, red). Bars 2-10 take
+  `bar_colors` (buffs.json, 9 colours, editable on the Buffs tab's Offers section; each bar's dark rows its colour at
+  55%): blue, purple, orange, cyan, magenta, gold, indigo, teal, white, chosen so each contrasts with the one below,
+  and without red or yellow, which read as low HP. The colours go into the gauge's own palette (each gauge has one):
+  the current bar in the green bar's entries, the bar behind in the red bar's, or for a female foe (whose sign is red)
+  in the Exp. bar's blue. The yellow entries are the level's "Lv", left alone.
+- **The count:** "×N", the bars left with the current one, from 2 up, in the gauge's HP-numbers actor (unused on a
+  foe's gauge) under the bar's right end; gone on the last bar.
+- **Speed:** past 999 max HP the bar drains a bar in about 32 frames (vanilla: 1 HP a frame, which at 50,000 HP would
+  take minutes). The lost HP's blink is left out on a gauge with bars.
+- **Damage over time:** a fraction of one bar (`EntralinkBattle_GetResidualMaxHP`: the bar's HP; a foe with one bar,
+  its max HP), so poison on a 43,008-HP Darkrai (9 bars of 4,779) ticks 597; the fixed-damage cap is half a bar.
+
+### 12.4 Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `buffs5/`)
+
+Battles started from the run's room 1 through a door to a chosen room, with the run's place set by hand; the foe's
+stats in battle against its party data:
+- **Room 1** (the Rayquaza raid, round 1's boss values): max HP 6,627 (×27.5), Attack and Sp. Atk ×3.
+- **Round 1, room 2** (Dialga): HP 234 to 690 (×2.95), the others ×1.05. **Round 3, room 2:** 1,626 (×6.95), Attack and
+  Sp. Atk ×1.35, Defense and Sp. Def ×1.25, Speed ×1.4. Both copies (server and client) the same.
+- **The final room** (Darkrai, place 15): 43,008 / 41,888 HP in two runs (×224), Sp. Atk 792-967 (×4.5), defences ×1.3,
+  Speed ×1.5. **Its `scale` at 150** (poked in the room table): ×336 → 64,512 HP, ×6.75, ×1.95, ×2.25.
+- **Round 2's boss** (the Dialga, Giratina, Palkia triple): 15,114 HP each, ×66; three gauges with 4, 5 and 3 bars,
+  each in its own colours (screenshot `shots/tri_menu.png`).
+- **Draining:** the lead at 65,535 Attack hit Darkrai four times (Arm Thrust, about 6,000 each): the gauge drained from
+  9 bars (teal) through indigo, gold and pink to 5, "×9" to "×7", the "Lv" kept its gold (`shots/dk2_*.png`).
+- **Poison per bar:** Darkrai at 43,008 (9 bars) lost 597 a turn, one bar's 1/8.
+- **A catch:** Dialga in round 3's room 2, made catchable, at 777 / 1,591: caught at level 70 with 111 / 229 HP and its
+  own stats (229, 171, 194, 150, 236, 146).
+- Hack build clean, `verify_dsi_rom.py` intact, the plain build's modules match, Python tests (the packers', the new
+  simulator's) and the editor's tests pass; the editor's Run section and enemy card checked in a screenshot.
+
+### 12.5 Memory
+
+ARM9 main +64 bytes (the run state's 36-byte `enemyScale`), overlay 12 +0.4 KB (the curves and their code), overlay
+167 +0.5 KB, overlay 168 +1.4 KB (the bars); the DS main arena's start moved 0.5 KB, 34 KB left before 0x023e0000. A
+`BattleMon` +4 bytes (the marker; up to 24 a copy, from the battle's heap), a gauge +10 bytes. No VRAM: the bars reuse
+the gauge's tiles, palettes and HP-numbers actor.
+
+### 12.6 Calls made, for the user
+
+- Raids take their round's boss values wherever they are (room 1's raid is a boss-sized fight).
+- The per-enemy `scale` multiplies every stat (Defense and Speed too), as a plain "harder/easier" knob.
+- The bars' rule is a fixed most HP a bar (5,000) with equal bars, at most 10; the count is "×N" under the bar.
+- The final room's ~50,000 is kept though the simulator says it is long for today's run length (12.1).
+- Speed scales to ×1.5 by the end: late enemies match an unbuffed team, the Speed blue wins it back.
+- Not done: a Pokémon transformed into a scaled enemy copies its scaled stats (vanilla Transform); the bar count in a
+  triple battle sits tight between the stacked gauges.

@@ -39,6 +39,7 @@
 #include "system/str_tool.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/battle_type_icons.h"
+#include "paperwhite2/health_bars.h"
 #endif
 
 // A gauge's animated value before its first step
@@ -709,11 +710,20 @@ void BtlvGauge_SetPos(BtlvGauge *gauge, int index, const ClActorPos *offset) {
         pos.y = y + 21;
         ClActor_SetSurfacePos(gauge->entries[index].expActor, &pos, CLACT_SURFACE_MAIN);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: a big foe's bar count, under its bar (paperwhite2/health_bars.h)
+    PaperWhite2_HealthBarsSetPos(&gauge->entries[index], x, y);
+#endif
 }
 
 void BtlvGauge_StartHpChange(BtlvGauge *gauge, int index, s32 hp) {
     BtlvGauge_SetHpTarget(gauge, &gauge->entries[index], hp);
+#ifdef PAPERWHITE2
+    // Paper White 2: past 999 HP, a bar drains in about half a second (paperwhite2/health_bars.h)
+    gauge->entries[index].mon.hpSpeed = PaperWhite2_HealthBarsSpeed(&gauge->entries[index]);
+#else
     gauge->entries[index].mon.hpSpeed = 1;
+#endif
 }
 
 void BtlvGauge_SetHpAtOnce(BtlvGauge *gauge, int index, s32 hp) {
@@ -851,7 +861,12 @@ static void BtlvGauge_SetHpTarget(BtlvGauge *gauge, BtlvGaugeEntry *entry, s32 h
         entry->mon.hp = entry->mon.maxHp;
     }
     entry->mon.hpMoving = TRUE;
+#ifdef PAPERWHITE2
+    // Paper White 2: health bars leave out the lost HP's blink (paperwhite2/health_bars.h)
+    if (entry->mon.hpDelta > 0 && !PaperWhite2_HealthBarsActive(entry)) {
+#else
     if (entry->mon.hpDelta > 0) {
+#endif
         BtlvGauge_CalcHpDots(entry);
         if (entry->hpBarActor != NULL) {
             ClActor_GetSurfacePos(entry->hpBarActor, &pos, CLACT_SURFACE_MAIN);
@@ -878,7 +893,11 @@ static void BtlvGauge_UpdateHp(BtlvGauge *gauge, int index) {
         BtlvGauge_DrawHpNumbers(gauge, entry, entry->mon.hp);
         entry->mon.hpMoving = FALSE;
         entry->mon.hpAnim = 0;
+#ifdef PAPERWHITE2
+        if (entry->mon.hpDelta > 0 && !PaperWhite2_HealthBarsActive(entry)) {
+#else
         if (entry->mon.hpDelta > 0) {
+#endif
             entry->mon.blinkCount = 18;
             entry->mon.blinking = TRUE;
         }
@@ -1159,6 +1178,12 @@ static void BtlvGauge_DrawBar(BtlvGauge *gauge, int index, int bar) {
         if (gauge->showNumbers && !(index & 1)) {
             return;
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: a big foe's health bars (paperwhite2/health_bars.h)
+        if (PaperWhite2_HealthBarsDraw(gauge, index)) {
+            break;
+        }
+#endif
         ClActor_GetImageProxy(entry->hpBarActor, &proxy);
         dots =
             BtlvGauge_CalcBarTiles(entry->mon.maxHp, entry->mon.hp, entry->mon.hpDelta, &entry->mon.hpAnim, tiles, 6);
@@ -1245,6 +1270,12 @@ static void BtlvGauge_DrawHpNumbers(BtlvGauge *gauge, BtlvGaugeEntry *entry, s32
     if (entry->hpNumActor == NULL) {
         return;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: a foe past 999 HP shows its health bars left instead (paperwhite2/health_bars.h)
+    if (PaperWhite2_HealthBarsDrawNumbers(gauge, entry)) {
+        return;
+    }
+#endif
     ClActor_GetImageProxy(entry->hpNumActor, &proxy);
     for (i = 0; i < 3; i++) {
         hpTiles[i] = GAUGE_TILE_BLANK;

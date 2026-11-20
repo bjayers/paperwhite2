@@ -339,3 +339,21 @@ def test_icon_shift():
     moved = entralink_run.shift_picture(pixels, 32, 4, 8)
     assert moved[8 * 32 + 4] == 1 and moved[8 * 32 + 3] == 0 and moved[7 * 32 + 4] == 0
     assert sum(moved) == (32 - 4) * (32 - 8)
+
+
+def test_enemy_scaling_and_scale(tmp_path):
+    """Phase 5: run.json's enemy_scaling, a stat each, each row three rounds (the last given for the others, the
+    defaults for what is left out), and an enemy's own scale (100 if left out), in the header."""
+    directory = copy_data(tmp_path)
+    edit(directory / "run.json", lambda data: data.update(enemy_scaling={"hp": {"rooms": [200, 400], "boss": [5000]}}))
+    edit(room(directory, "dialga"), lambda data: data["battles"][0]["enemies"][0].update(scale=150))
+    data = entralink_run.tables(directory)
+    assert data["enemy_scaling"]["hp"] == {"rooms": [200, 400, 400], "room_step": [0, 0, 0],
+                                           "boss": [5000, 5000, 5000]}
+    assert data["enemy_scaling"]["speed"] == {"rooms": [100] * 3, "room_step": [0] * 3, "boss": [100] * 3}
+    assert {e["scale"] for e in data["enemies"] if e["name"].startswith("dialga/")} == {150}
+    text = entralink_run.header(directory)
+    assert "#define ENTRALINK_RUN_ENEMY_SCALING { { { 200, 400, 400 }, { 0, 0, 0 }, { 5000, 5000, 5000 } }, " in text
+    edit(room(directory, "dialga"), lambda data: data["battles"][0]["enemies"][0].update(scale=5))
+    with pytest.raises(datajson.DataError, match="scale"):
+        entralink_run.tables(directory)

@@ -55,6 +55,7 @@
 #include "text/system/ability_handlers_btl_main.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/battle_weather.h"
+#include "paperwhite2/entralink_battle.h"
 #include "paperwhite2/entralink_run_battle.h"
 #endif
 
@@ -2532,6 +2533,10 @@ void PokeCon_CreateClientParty(BtlPokeCon *pokeCon, BtlMainModule *mainModule, u
     for (monId = firstMonId, i = 0; i < count; i++) {
         pkm = PokeParty_GetPkm(srcParty, i);
         pokeCon->mons[monId] = BattleMon_Create(pkm, monId, HEAPID_BATTLE);
+#ifdef PAPERWHITE2
+        // Paper White 2: an Entralink run's enemies' stats scale with the run's depth (paperwhite2/entralink_battle.h)
+        EntralinkBattle_ScaleMon(mainModule, pokeCon->mons[monId], clientId, i);
+#endif
         AddBattleMonToParty(battleParty, pokeCon->mons[monId]);
         monId++;
     }

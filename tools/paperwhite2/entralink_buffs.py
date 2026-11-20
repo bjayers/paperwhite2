@@ -437,6 +437,23 @@ def weather_choice_cards(data: dict) -> list[int]:
     return cards or [0xff]
 
 
+DEFAULT_BAR_COLORS = ["#3890f8", "#b060f0", "#f89830", "#30d0e8", "#f050b0", "#f0d820", "#6868f8", "#20b8a0",
+                      "#f0f0f0"]
+# A bar's dark rows (its top and bottom) are its colour at this share, as vanilla's green bar's are
+BAR_DARK_SHARE = 0.55
+
+
+def bar_colors(settings: dict) -> list[tuple[int, int]]:
+    """The health bars' colours from bar 2 up as RGB555 (light, dark)."""
+    out = []
+    for text in settings.get("bar_colors", DEFAULT_BAR_COLORS):
+        rgb = [int(text[i:i + 2], 16) for i in (1, 3, 5)]
+        light = rgb[0] >> 3 | (rgb[1] >> 3) << 5 | (rgb[2] >> 3) << 10
+        dark = [int(c * BAR_DARK_SHARE) >> 3 for c in rgb]
+        out.append((light, dark[0] | dark[1] << 5 | dark[2] << 10))
+    return out
+
+
 def max_hp_limit(data: dict) -> int:
     """The highest max HP the max_hp kind's cards allow (the smallest of their limits; 999 without one): the game's
     gauge shows three digits."""
@@ -629,6 +646,10 @@ def header(data: dict, kinds: list[str], directory: Path = SOURCE) -> str:
         f"#define ENTRALINK_BUFF_MAX_RANK {settings['max_rank']}",
         f"#define ENTRALINK_BUFF_DAMAGE_CAP {settings['damage_cap']}",
         f"#define ENTRALINK_BUFF_BOSS_BAR_HP {settings.get('boss_bar_hp', 6000)}",
+        "// The health bars (phase 5): the most a foe shows, and the colours of bars 2 up as RGB555 { light, dark }",
+        f"#define ENTRALINK_BUFF_BAR_MAX {len(bar_colors(settings)) + 1}",
+        "#define ENTRALINK_BUFF_BAR_COLORS { " + ", ".join(
+            f"{{ 0x{light:04x}, 0x{dark:04x} }}" for light, dark in bar_colors(settings)) + " }",
         f"#define ENTRALINK_BUFF_MAX_HP_LIMIT {max_hp_limit(data)}",
         "// The cards that choose the battles' weather when taken (handler forecast, phase 4)",
         f"#define ENTRALINK_BUFF_WEATHER_CHOICE_COUNT {len(weather_choice_cards(data))}",
