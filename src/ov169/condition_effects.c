@@ -107,6 +107,11 @@ static s32 GetConditionDamageMessage(u32 condition) {
         return 0x144;
     case CONDITION_CURSE:
         return 0x42f;
+#ifdef PAPERWHITE2
+    // Paper White 2: "[The Pokémon] was hurt by its frostbite!" (the Entralink run's)
+    case CONDITION_FROSTBITE:
+        return Bank0018_Text_HurtByFrostbite;
+#endif
     }
     return -1;
 }
@@ -140,8 +145,9 @@ static void ConditionEndTurnLeechSeed(BtlServerFlow *flow, BattleMon *mon, u8 mo
     sourceId = BtlServerFlow_GetMonIDAtPos(flow, pos);
     if (sourceId != 0x1f) {
 #ifdef PAPERWHITE2
-        // Paper White 2: on an Entralink run's foe, a fraction of at most one bar's HP (paperwhite2_entralink_battle.c)
-        amount = EntralinkBattle_DivideResidualHP(mon, 8);
+        // Paper White 2: on an Entralink run's foe, a fraction of at most one bar's HP, Parasite's and the residual
+        // buffs' (paperwhite2_entralink_battle.c)
+        amount = EntralinkBattle_GetLeechSeedDamage(mon);
 #else
         amount = DivideMaxHPZeroCheck(mon, 8);
 #endif
@@ -376,6 +382,10 @@ static s32 GetConditionAddMessage(s32 condition, BattleCondition value) {
     // Paper White 2: "[The Pokémon] got covered in sticky candy syrup!"
     case CONDITION_SYRUP:
         message = Bank0018_Text_CoveredInSyrup;
+        break;
+    // Paper White 2: "[The Pokémon] got frostbite!" (the Entralink run's)
+    case CONDITION_FROSTBITE:
+        message = Bank0018_Text_GotFrostbite;
         break;
 #endif
     case CONDITION_BURN:

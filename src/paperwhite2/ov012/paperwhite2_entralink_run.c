@@ -1716,6 +1716,14 @@ static void EntralinkRun_BuffAction(FieldScriptEnv *env, const EntralinkRoom *ro
     case ENTRALINK_RUN_ACTION_COUNT_CARDS:
         *result = EntralinkRun_CountCards(state, arg);
         break;
+    case ENTRALINK_RUN_ACTION_FORECAST:
+        if (arg == 0) {
+            *result = EntralinkBuffs_NeedsWeather();
+        } else {
+            state->forecastWeather = arg;
+            *result = arg;
+        }
+        break;
     }
 }
 
@@ -1854,6 +1862,7 @@ BOOL Scrcmd_PaperWhite2_EntralinkRun(VM *vm, FieldScriptEnv *env) {
     case ENTRALINK_RUN_ACTION_TAKE_CARD:
     case ENTRALINK_RUN_ACTION_SKIP_OFFER:
     case ENTRALINK_RUN_ACTION_COUNT_CARDS:
+    case ENTRALINK_RUN_ACTION_FORECAST:
         EntralinkRun_BuffAction(env, room, action, arg, arg2, result);
         return FALSE;
     case ENTRALINK_RUN_ACTION_WARP_HUB:

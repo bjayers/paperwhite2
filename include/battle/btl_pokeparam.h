@@ -100,8 +100,9 @@ static inline void BattleMonDamageRecord_Init(BattleMonDamageRecord *record, u8 
 // keeps a local of this type in a register where it folds an integer one into each use, as HandlerChatter's status
 typedef enum {
 #ifdef PAPERWHITE2
-    // Paper White 2: with its own after CONDITION_ANY_STATUS (36, unused here), Syrup Bomb's CONDITION_SYRUP
-    CONDITION_ID_COUNT = 38,
+    // Paper White 2: with its own after CONDITION_ANY_STATUS (36, unused here), Syrup Bomb's CONDITION_SYRUP and the
+    // Entralink run's CONDITION_FROSTBITE
+    CONDITION_ID_COUNT = 39,
 #else
     CONDITION_ID_COUNT = 36,
 #endif

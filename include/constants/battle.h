@@ -192,5 +192,11 @@
 // Paper White 2: Syrup Bomb's sticky syrup, which lowers the Pokémon's Speed at the end of each turn while the user
 // stays in (the hack's battle build counts 38 conditions, 36 unused)
 #define CONDITION_SYRUP 37
+// Paper White 2: frostbite (Legends: Arceus's), which only the Entralink run's Frost buffs give: it loses 1/16 of its
+// max HP each turn and its Sp. Atk is halved (paperwhite2_entralink_battle.c). It stands in for a major status: it
+// isn't given to a Pokémon with one, nor one to a frostbitten Pokémon
+#define CONDITION_FROSTBITE 38
+// Paper White 2: frostbite's status on the battle's gauge (SC_SET_GAUGE_STATUS's), after bad poison's 6
+#define GAUGE_FROSTBITE_STATUS 7
 
 #endif // POKEBW2_CONSTANTS_BATTLE_H

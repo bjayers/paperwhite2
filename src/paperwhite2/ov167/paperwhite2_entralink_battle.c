@@ -2,8 +2,10 @@
 #include "battle/btl_calc.h"
 #include "battle/btl_event.h"
 #include "battle/btl_handler.h"
+#include "battle/btl_handler_work.h"
 #include "battle/btl_main.h"
 #include "battle/btl_pokeparam.h"
+#include "battle/btl_pospoke.h"
 #include "battle/btl_server_flow.h"
 #include "constants/abilities.h"
 #include "constants/battle.h"
@@ -17,9 +19,9 @@
 #include "paperwhite2/entralink_run_battle.h"
 #include "pml/move.h"
 
-// Paper White 2: the Entralink run's buffs in battle and the bosses' protections (entralink-buffs.md, phase 3). See
-// include/paperwhite2/entralink_battle.h. The effects are kinds (ENTRALINK_BUFF_KIND_*) read from the catalogue's data
-// (ENTRALINK_BUFF_EFFECTS, generated from buffs.json), not one handler a card
+// Paper White 2: the Entralink run's buffs in battle and the bosses' protections (entralink-buffs.md, phases 3 and 4).
+// See include/paperwhite2/entralink_battle.h. The effects are kinds (ENTRALINK_BUFF_KIND_*) read from the catalogue's
+// data (ENTRALINK_BUFF_EFFECTS, generated from buffs.json), not one handler a card
 
 // The battle's Pokémon IDs, 6 for each of 4 clients
 #define BATTLE_MONS 24
@@ -44,6 +46,8 @@
 #define MESSAGE_LOST_HP 0x3f5
 #define MESSAGE_TORMENTED 0x1e4
 #define MESSAGE_DOESNT_AFFECT 0xd2
+// "[the Pokémon] was hurt!" (Rough Skin's)
+#define MESSAGE_WAS_HURT 0x1ae
 // A weather move's turns (ServerControl_ChangeWeather's caller adds the event's to them), and the count of a weather
 // that lasts the whole battle (btl_field.c)
 #define WEATHER_TURNS_BASE 5
@@ -53,6 +57,9 @@
 #define MON_SECOND_WIND_USED (1 << 1)
 #define MON_FOCUSED (1 << 2)
 #define MON_FIRST_BOOST_DONE (1 << 3)
+// The battle positions (6 at most) and the stat stages (Attack to evasion) Baton keeps
+#define BATTLE_POSITIONS 6
+#define STAT_STAGES 7
 // No type of a type card
 #define BUFF_TYPE_ANY 0xff
 
@@ -92,6 +99,12 @@ static struct {
     u32 lastDamage;
     u8 lastTarget;
     u8 lastClamped;
+    // Phase 4: whether Forecast's weather was tried (the team's first entry), the hits Spectral made super effective,
+    // and Baton's stages kept from a switch-out for the Pokémon that enters at the position (0 for none kept: a stage
+    // is kept as BATTLEMON_STAT_STAGE_NEUTRAL-based, 1 to 13)
+    u8 forecastDone;
+    u8 spectralHits;
+    u8 batonStages[BATTLE_POSITIONS][STAT_STAGES];
 } sBattle;
 
 static const EntralinkBuffEffect sEffects[ENTRALINK_BUFF_COUNT] = ENTRALINK_BUFF_EFFECTS;
@@ -106,10 +119,10 @@ static const u8 sStatusBits[] = {
     1 << ENTRALINK_BUFF_STATUS_BURN,
     1 << ENTRALINK_BUFF_STATUS_POISON,
 };
-// The condition of each ENTRALINK_BUFF_STATUS_* a hit may give (frostbite has none yet: phase 4)
+// The condition of each ENTRALINK_BUFF_STATUS_* a hit may give
 static const u8 sStatusConditions[] = {
-    CONDITION_PARALYSIS, CONDITION_SLEEP, CONDITION_POISON,    CONDITION_BURN,
-    CONDITION_FREEZE,    CONDITION_NONE,  CONDITION_CONFUSION,
+    CONDITION_PARALYSIS, CONDITION_SLEEP,     CONDITION_POISON,    CONDITION_BURN,
+    CONDITION_FREEZE,    CONDITION_FROSTBITE, CONDITION_CONFUSION,
 };
 // The MOVE_CATEGORY_* of each ENTRALINK_BUFF_MOVE_CATEGORY_*
 static const u8 sCategories[] = { MOVE_CATEGORY_PHYSICAL, MOVE_CATEGORY_SPECIAL, MOVE_CATEGORY_STATUS };
@@ -198,6 +211,10 @@ static u32 GetStatusBits(BattleMon *mon) {
 
     if (status < NELEMS(sStatusBits) && status != 0) {
         statuses = sStatusBits[status] | (1 << ENTRALINK_BUFF_STATUS_ANY_MAJOR);
+    }
+    // Frostbite stands in for a major status
+    if (CheckCondition(mon, CONDITION_FROSTBITE)) {
+        statuses |= (1 << ENTRALINK_BUFF_STATUS_FROSTBITE) | (1 << ENTRALINK_BUFF_STATUS_ANY_MAJOR);
     }
     if (CheckCondition(mon, CONDITION_CONFUSION)) {
         statuses |= 1 << ENTRALINK_BUFF_STATUS_CONFUSION;
@@ -429,12 +446,15 @@ static void GetEventHit(BtlServerFlow *flow, EntralinkHit *hit) {
 
 // ---- The damage buckets --------------------------------------------------------------------------------------------
 
-// ATK: the team's attacking stat
+// ATK: the team's attacking stat; a frostbitten Pokémon's Sp. Atk is halved
 static void HandlerAttackStat(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
     EntralinkHit hit;
 
+    GetEventHit(flow, &hit);
+    if (hit.category == MOVE_CATEGORY_SPECIAL && CheckCondition(hit.attacker, CONDITION_FROSTBITE)) {
+        BattleEventVar_MulValue(BATTLE_EVENT_VAR_RATIO, FX32_ONE / 2);
+    }
     if (IsTeamMon(BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACKER))) {
-        GetEventHit(flow, &hit);
         BattleEventVar_MulValue(BATTLE_EVENT_VAR_RATIO,
                                 GetBucketFactor(ENTRALINK_BUFF_BUCKET_ATK,
                                                 SumBucket(flow, ENTRALINK_BUFF_BUCKET_ATK, hit.attacker, &hit, NULL)));
@@ -644,6 +664,10 @@ static BOOL IsResidualOf(u32 source, u32 condition) {
         return condition == CONDITION_NIGHTMARE;
     case ENTRALINK_BUFF_RESIDUAL_WEATHER:
         return condition == CONDITION_NONE;
+    case ENTRALINK_BUFF_RESIDUAL_FROSTBITE:
+        return condition == CONDITION_FROSTBITE;
+    case ENTRALINK_BUFF_RESIDUAL_LEECH_SEED:
+        return condition == CONDITION_LEECH_SEED;
     }
     return FALSE;
 }
@@ -741,8 +765,24 @@ static void HandlerTurnCheckEarly(BattleEventItem *item, BtlServerFlow *flow, u8
     }
 }
 
+// Permafrost: a frostbitten foe loses Speed each turn (rank 2 and Attack, rank 3 and Sp. Atk)
+static void LowerFrostbitten(BtlServerFlow *flow, u32 mon) {
+    u32 level = GetHandlerLevel(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_PERMAFROST);
+
+    if (level == 0) {
+        return;
+    }
+    PushStatChange(flow, mon, BATTLEMON_SPEED_STAGE, -1);
+    if (level >= 2) {
+        PushStatChange(flow, mon, BATTLEMON_ATTACK_STAGE, -1);
+    }
+    if (level >= 3) {
+        PushStatChange(flow, mon, BATTLEMON_SP_ATTACK_STAGE, -1);
+    }
+}
+
 // The turn's end: the team's Regrowth heals, Speed Boost raises Speed (rank 1 every second turn); a sleeping foe
-// takes Nightmare Field's damage
+// takes Nightmare Field's damage, a frostbitten one Permafrost's drops
 static void HandlerTurnCheck(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
     u32 mon = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON);
     BattleMon *battleMon;
@@ -769,9 +809,12 @@ static void HandlerTurnCheck(BattleEventItem *item, BtlServerFlow *flow, u8 monI
         if (level != 0 && GetAdditionalConditionFlag(battleMon, 0) && (level >= 2 || sBattle.turns[mon] % 2 == 0)) {
             PushStatChange(flow, mon, BATTLEMON_SPEED_STAGE, 1);
         }
-    } else if (IsFoeMon(mon) && CheckCondition(battleMon, CONDITION_SLEEP)) {
-        buff = FindKind(ENTRALINK_BUFF_KIND_RESIDUAL_FRACTION);
-        if (buff != NULL && sEffects[buff->buff].param == ENTRALINK_BUFF_FRACTION_SLEEPING_FOES && buff->value > 0) {
+    } else if (IsFoeMon(mon) && CheckCondition(battleMon, CONDITION_FROSTBITE)) {
+        LowerFrostbitten(flow, mon);
+    }
+    if (IsFoeMon(mon) && CheckCondition(battleMon, CONDITION_SLEEP)) {
+        buff = FindHandler(ENTRALINK_BUFF_KIND_RESIDUAL_FRACTION, ENTRALINK_BUFF_FRACTION_SLEEPING_FOES);
+        if (buff != NULL && buff->value > 0) {
             param = BattleHandler_PushWork(flow, BATTLE_HANDLER_DAMAGE, mon);
             param->targetIndex = mon;
             param->amount = EntralinkBattle_DivideResidualHP(battleMon, buff->value);
@@ -833,6 +876,28 @@ static void HandlerAddedEffectChance(BattleEventItem *item, BtlServerFlow *flow,
             chance = BattleEventVar_GetValue(BATTLE_EVENT_VAR_ADDED_EFFECT_CHANCE) * (100 + more) / 100;
             BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_ADDED_EFFECT_CHANCE, chance > 100 ? 100 : chance);
         }
+    }
+}
+
+// Whether the team holds a card whose status replaces the moves' own freeze (Frostbite)
+static BOOL ReplacesFreeze(void) {
+    u32 i;
+
+    for (i = 0; i < sBattle.count; i++) {
+        if (sEffects[sBattle.buffs[i].buff].flags & ENTRALINK_BUFF_FLAG_REPLACES_FREEZE) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+// A move's added status: Serene Touch's chance, and with Frostbite held the team's moves frostbite instead of freezing
+static void HandlerMoveAddCondition(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
+    HandlerAddedEffectChance(item, flow, monId, work);
+    if (IsTeamMon(BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACKER)) &&
+        BattleEventVar_GetValue(BATTLE_EVENT_VAR_CONDITION) == CONDITION_FREEZE && ReplacesFreeze()) {
+        BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_CONDITION, CONDITION_FROSTBITE);
+        BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_CONDITION_PARAM, MakeConditionPermanent().raw);
     }
 }
 
@@ -936,8 +1001,101 @@ static const u8 sStatStages[] = {
     BATTLEMON_SP_DEFENSE_STAGE, BATTLEMON_SPEED_STAGE,
 };
 
+// Forecast: the team's first entry starts its weather for the rank's turns, unless the battle has one already (a
+// room's set weather wins, decision 10). A weather never chosen (a card set by the debug menu) is sun
+static void StartForecast(BtlServerFlow *flow, u32 mon) {
+    const EntralinkBattleBuff *buff = FindHandler(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_FORECAST);
+    BattleHandlerChangeWeatherParam *param;
+    u32 weather;
+
+    if (buff == NULL || sBattle.forecastDone) {
+        return;
+    }
+    sBattle.forecastDone = TRUE;
+    if (ServerEvent_GetWeather(flow) != BTL_WEATHER_NONE) {
+        return;
+    }
+    weather = EntralinkBuffs_GetForecastWeather();
+    param = BattleHandler_PushWork(flow, BATTLE_HANDLER_CHANGE_WEATHER, mon);
+    param->weather = weather != BTL_WEATHER_NONE ? weather : BTL_WEATHER_SUN;
+    param->duration = buff->value;
+    BattleHandler_PopWork(flow, param);
+}
+
+// Baton: a Pokémon of the team switching out keeps its stages for the one entering at its position: its boosts at
+// the rank's percent (rank 1 half), rank 2 its drops too (as Baton Pass), rank 3 only its boosts in full
+static void KeepBatonStages(BtlServerFlow *flow, u32 mon) {
+    const EntralinkBattleBuff *buff = FindHandler(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_BATON);
+    BattleMon *battleMon = GetBattleMon(flow, mon);
+    u32 pos = GetBattlePos(&flow->posPoke, mon);
+    u32 i;
+    s32 stage;
+
+    if (buff == NULL || pos >= BATTLE_POSITIONS || IsFainted(battleMon)) {
+        return;
+    }
+    for (i = 0; i < STAT_STAGES; i++) {
+        stage = (s32)GetBattleMonStat(battleMon, BATTLEMON_ATTACK_STAGE + i) - BATTLEMON_STAT_STAGE_NEUTRAL;
+        if (stage > 0) {
+            stage = stage * buff->value / 100;
+        } else if (buff->level != 2) {
+            stage = 0;
+        }
+        sBattle.batonStages[pos][i] = BATTLEMON_STAT_STAGE_NEUTRAL + stage;
+    }
+}
+
+// The Pokémon entering at a position gets the stages kept there, each where it is higher than its own (a drop where
+// it has none), by a set of stages as Psych Up gives
+static void RestoreBatonStages(BtlServerFlow *flow, u32 mon) {
+    BattleMon *battleMon = GetBattleMon(flow, mon);
+    u32 pos = GetBattlePos(&flow->posPoke, mon);
+    u8 stages[STAT_STAGES];
+    u32 i;
+    u32 own;
+    BOOL changed;
+    BattleHandlerSetStatStageParam *param;
+
+    if (pos >= BATTLE_POSITIONS || sBattle.batonStages[pos][0] == 0) {
+        return;
+    }
+    changed = FALSE;
+    for (i = 0; i < STAT_STAGES; i++) {
+        own = GetBattleMonStat(battleMon, BATTLEMON_ATTACK_STAGE + i);
+        stages[i] = own;
+        if (sBattle.batonStages[pos][i] > own ||
+            (sBattle.batonStages[pos][i] < own && own == BATTLEMON_STAT_STAGE_NEUTRAL)) {
+            stages[i] = sBattle.batonStages[pos][i];
+            changed = TRUE;
+        }
+    }
+    MI_CpuFill8(sBattle.batonStages[pos], 0, STAT_STAGES);
+    if (!changed) {
+        return;
+    }
+    param = BattleHandler_PushWork(flow, BATTLE_HANDLER_SET_STAT_STAGE, mon);
+    param->monIndex = mon;
+    param->attack = stages[0];
+    param->defense = stages[1];
+    param->spAttack = stages[2];
+    param->spDefense = stages[3];
+    param->speed = stages[4];
+    param->accuracy = stages[5];
+    param->evasion = stages[6];
+    BattleHandler_PopWork(flow, param);
+}
+
+static void HandlerSwitchOut(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
+    u32 mon = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON);
+
+    if (IsTeamMon(mon)) {
+        KeepBatonStages(flow, mon);
+    }
+}
+
 // A Pokémon of the team enters: on its first entry Opening Gambit raises its rank's stats and Speed Boost's rank 3
-// its Speed; Focus's rank 2 readies a sure critical hit on every entry
+// its Speed; Focus's rank 2 readies a sure critical hit on every entry; the team's first entry starts Forecast's
+// weather, and Baton's stages kept at the position go to the Pokémon entering
 static void HandlerMemberIn(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
     u32 mon = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON);
     const EntralinkBattleBuff *buff;
@@ -947,6 +1105,8 @@ static void HandlerMemberIn(BattleEventItem *item, BtlServerFlow *flow, u8 monId
     if (!IsTeamMon(mon)) {
         return;
     }
+    StartForecast(flow, mon);
+    RestoreBatonStages(flow, mon);
     if (GetHandlerLevel(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_FOCUS) >= 2) {
         sBattle.monFlags[mon] |= MON_FOCUSED;
     }
@@ -998,13 +1158,36 @@ static void HandlerStatChangeAmount(BattleEventItem *item, BtlServerFlow *flow, 
     BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_VOLUME, volume);
 }
 
-// Clear Amulet: the first stat drops a foe gives each Pokémon of the team each battle are blocked
+// Defiance's raise for a foe's drop on the team: +2 Attack (rank 2 on: +2 to the higher of Attack and Sp. Atk)
+static void PushDefiance(BattleEventItem *item, BtlServerFlow *flow, u32 mon, u32 level) {
+    BattleMon *battleMon = GetBattleMon(flow, mon);
+    u32 stat = BATTLEMON_ATTACK_STAGE;
+
+    if (level >= 2 &&
+        GetBattleMonStat(battleMon, BATTLEMON_SP_ATTACK) > GetBattleMonStat(battleMon, BATTLEMON_ATTACK)) {
+        stat = BATTLEMON_SP_ATTACK_STAGE;
+    }
+    // Its own item amounts the boost (Simple)
+    BattleEventItem_SetRecallEnable(item);
+    PushStatChange(flow, mon, stat, 2);
+}
+
+// Clear Amulet: the first stat drops a foe gives each Pokémon of the team each battle are blocked. Defiance's rank 3
+// blocks every one and still raises
 static void HandlerCheckStatChange(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
     u32 mon = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON);
     s32 blocks;
+    u32 defiance;
 
     if (IsTeamMon(mon) && (s32)BattleEventVar_GetValue(BATTLE_EVENT_VAR_VOLUME) < 0 &&
         IsFoeMon(BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACKER))) {
+        defiance = GetHandlerLevel(ENTRALINK_BUFF_KIND_ABILITY_LIKE, ABILITY_DEFIANT);
+        if (defiance >= 3) {
+            if (BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_FAIL_FLAG, TRUE)) {
+                PushDefiance(item, flow, mon, defiance);
+            }
+            return;
+        }
         blocks = SumKind(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_BLOCK_STAT_DROPS);
         if (sBattle.dropsBlocked[mon] < blocks && BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_FAIL_FLAG, TRUE)) {
             sBattle.dropsBlocked[mon]++;
@@ -1016,8 +1199,6 @@ static void HandlerCheckStatChange(BattleEventItem *item, BtlServerFlow *flow, u
 static void HandlerStatChangeApplied(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
     u32 mon = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON);
     u32 level;
-    BattleMon *battleMon;
-    u32 stat;
 
     if (!IsTeamMon(mon) || (s32)BattleEventVar_GetValue(BATTLE_EVENT_VAR_VOLUME) >= 0 ||
         !IsFoeMon(BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACKER))) {
@@ -1025,15 +1206,7 @@ static void HandlerStatChangeApplied(BattleEventItem *item, BtlServerFlow *flow,
     }
     level = GetHandlerLevel(ENTRALINK_BUFF_KIND_ABILITY_LIKE, ABILITY_DEFIANT);
     if (level != 0) {
-        battleMon = GetBattleMon(flow, mon);
-        stat = BATTLEMON_ATTACK_STAGE;
-        if (level >= 2 &&
-            GetBattleMonStat(battleMon, BATTLEMON_SP_ATTACK) > GetBattleMonStat(battleMon, BATTLEMON_ATTACK)) {
-            stat = BATTLEMON_SP_ATTACK_STAGE;
-        }
-        // Its own item amounts the boost (Simple)
-        BattleEventItem_SetRecallEnable(item);
-        PushStatChange(flow, mon, stat, 2);
+        PushDefiance(item, flow, mon, level);
     }
 }
 
@@ -1140,6 +1313,10 @@ static void GiveHitStatuses(BtlServerFlow *flow, u32 attacker, BattleMon *target
     if (buff != NULL && buff->value > 0 && BattleRandom(100) < buff->value) {
         PushAddCondition(flow, attacker, target, CONDITION_SLEEP);
     }
+    buff = FindHandler(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_CONTAGION);
+    if (buff != NULL && buff->value > 0 && hit->moveType == TYPE_POISON && BattleRandom(100) < buff->value) {
+        PushAddCondition(flow, attacker, target, CONDITION_POISON);
+    }
 }
 
 // After the team's hit: the hit's statuses on each foe hit, Afterburner for each KO, Vampiric's heal and Blood Price's
@@ -1228,21 +1405,32 @@ static u32 GetConditionStatusBit(u32 condition) {
     if (condition == CONDITION_CONFUSION) {
         return 1 << ENTRALINK_BUFF_STATUS_CONFUSION;
     }
+    if (condition == CONDITION_FROSTBITE) {
+        return 1 << ENTRALINK_BUFF_STATUS_FROSTBITE;
+    }
     return condition < NELEMS(sStatusBits) ? sStatusBits[condition] : 0;
 }
 
-// A status that would be given fails: a boss is never frozen; the team isn't given the statuses its buffs make it
-// immune to (Thaw-proof), and Hardy is a chance to resist a foe's
+// A status that would be given fails: frostbite and a major status exclude each other (and Ice types don't get
+// frostbite), a boss is never frozen; the team isn't given the statuses its buffs make it immune to (Thaw-proof), and
+// Hardy is a chance to resist a foe's
 static void HandlerConditionCheckFail(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
     u32 defender = BattleEventVar_GetValue(BATTLE_EVENT_VAR_DEFENDER);
     u32 condition = BattleEventVar_GetValue(BATTLE_EVENT_VAR_CONDITION);
     u32 status = GetConditionStatusBit(condition);
+    BattleMon *mon;
     u32 i;
     s32 chance;
     BOOL fail;
 
     fail = FALSE;
-    if (IsBossMon(defender) && condition == CONDITION_FREEZE) {
+    mon = GetBattleMon(flow, defender);
+    if (condition == CONDITION_FROSTBITE &&
+        (GetBattleMonStatus(mon) != 0 || DoesMonHaveType(mon, TYPE_ICE) || CheckCondition(mon, CONDITION_FROSTBITE))) {
+        fail = TRUE;
+    } else if (condition < CONDITION_CONFUSION && CheckCondition(mon, CONDITION_FROSTBITE)) {
+        fail = TRUE;
+    } else if (IsBossMon(defender) && condition == CONDITION_FREEZE) {
         fail = TRUE;
     } else if (IsTeamMon(defender) && status != 0) {
         for (i = 0; i < sBattle.count; i++) {
@@ -1289,6 +1477,140 @@ static void HandlerBossNoEffect(BattleEventItem *item, BtlServerFlow *flow, u8 m
     }
 }
 
+// ---- Phase 4: the type chart, faints, critical hits, Protect, overhealing
+// --------------------------------------------
+
+// The foes beside a Pokémon (its own side's Pokémon at the next positions), at most 2
+static u32 GetNeighbours(BtlServerFlow *flow, u32 monId, u8 *neighbours) {
+    u32 pos = GetBattlePos(&flow->posPoke, monId);
+    u32 other;
+    u32 id;
+    u32 count = 0;
+    s32 gap;
+
+    if (pos >= BATTLE_POSITIONS) {
+        return 0;
+    }
+    for (other = pos & 1; other < BATTLE_POSITIONS; other += 2) {
+        gap = (s32)(other >> 1) - (s32)(pos >> 1);
+        if (gap != 1 && gap != -1) {
+            continue;
+        }
+        id = BtlServerFlow_GetMonIDAtPos(flow, other);
+        if (id < BATTLE_MONS && !IsFainted(GetBattleMon(flow, id))) {
+            neighbours[count++] = id;
+        }
+    }
+    return count;
+}
+
+// The team's Pokémon on the field facing a foe, else the first of them (for statuses the team gives without a move)
+static u32 GetTeamMonOnField(BtlServerFlow *flow, u32 foe) {
+    u8 ids[BATTLE_POSITIONS];
+
+    return BtlServerFlow_GetOpposingMonIDs(flow, foe, ids) != 0 ? ids[0] : BATTLE_MONS;
+}
+
+// A foe faints: Contagion poisons the foes beside a poisoned one, Parasite's rank 3 seeds those beside a seeded one
+static void HandlerBeforeFaint(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
+    u32 mon = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON);
+    BattleMon *battleMon;
+    const EntralinkBattleBuff *parasite;
+    u8 neighbours[2];
+    u32 count;
+    u32 team;
+    u32 i;
+    BattleHandlerAddConditionParam *param;
+
+    if (!IsFoeMon(mon)) {
+        return;
+    }
+    battleMon = GetBattleMon(flow, mon);
+    if (!IsFainted(battleMon)) {
+        return;
+    }
+    count = GetNeighbours(flow, mon, neighbours);
+    team = GetTeamMonOnField(flow, mon);
+    if (count == 0 || team >= BATTLE_MONS) {
+        return;
+    }
+    if (GetBattleMonStatus(battleMon) == CONDITION_POISON &&
+        GetHandlerLevel(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_CONTAGION) != 0) {
+        for (i = 0; i < count; i++) {
+            PushAddCondition(flow, team, GetBattleMon(flow, neighbours[i]), CONDITION_POISON);
+        }
+    }
+    parasite = FindHandler(ENTRALINK_BUFF_KIND_RESIDUAL_FRACTION, ENTRALINK_BUFF_FRACTION_LEECH_SEED);
+    if (parasite != NULL && sEffects[parasite->buff].rankParam != 0 &&
+        parasite->level >= sEffects[parasite->buff].rankParam && CheckCondition(battleMon, CONDITION_LEECH_SEED)) {
+        for (i = 0; i < count; i++) {
+            // The seed drains to the same position as the fainted foe's
+            param = BattleHandler_PushWork(flow, BATTLE_HANDLER_ADD_CONDITION, team);
+            param->condition = CONDITION_LEECH_SEED;
+            param->value = GetConditionContinuationParam(battleMon, CONDITION_LEECH_SEED);
+            param->showFail = FALSE;
+            param->targetIndex = neighbours[i];
+            BattleHandler_PopWork(flow, param);
+        }
+    }
+}
+
+// Magnetised: a paralyzed foe floats (Ground moves miss)
+static void HandlerFloating(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
+    u32 mon = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MON);
+
+    if (IsFoeMon(mon) && GetBattleMonStatus(GetBattleMon(flow, mon)) == CONDITION_PARALYSIS &&
+        GetHandlerLevel(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_MAGNETISED) != 0) {
+        BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_GENERAL_FLAG, TRUE);
+    }
+}
+
+// A team's critical hit on a foe: Follow-through raises the attacking stat (rank 2 and Speed, rank 3 the stat by 2);
+// Shattering Blow lowers the defence it hit (rank 2 and the other by 1, rank 3 the one hit by 2)
+static void HandlerDamageReaction(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
+    u32 attacker = BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACKER);
+    u32 defender = BattleEventVar_GetValue(BATTLE_EVENT_VAR_DEFENDER);
+    BOOL special = BattleEventVar_GetValue(BATTLE_EVENT_VAR_MOVE_CATEGORY) == MOVE_CATEGORY_SPECIAL;
+    u32 level;
+
+    if (!IsTeamMon(attacker) || !IsFoeMon(defender) || !BattleEventVar_GetValue(BATTLE_EVENT_VAR_CRITICAL_FLAG)) {
+        return;
+    }
+    level = GetHandlerLevel(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_FOLLOW_THROUGH);
+    if (level != 0 && !IsFainted(GetBattleMon(flow, attacker))) {
+        PushStatChange(flow, attacker, special ? BATTLEMON_SP_ATTACK_STAGE : BATTLEMON_ATTACK_STAGE,
+                       level >= 3 ? 2 : 1);
+        if (level >= 2) {
+            PushStatChange(flow, attacker, BATTLEMON_SPEED_STAGE, 1);
+        }
+    }
+    level = GetHandlerLevel(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_SHATTERING_BLOW);
+    if (level != 0 && !BattleEventVar_GetValue(BATTLE_EVENT_VAR_SUBSTITUTE_FLAG) &&
+        !IsFainted(GetBattleMon(flow, defender))) {
+        PushStatChange(flow, defender, special ? BATTLEMON_SP_DEFENSE_STAGE : BATTLEMON_DEFENSE_STAGE,
+                       level >= 3 ? -2 : -1);
+        if (level >= 2) {
+            PushStatChange(flow, defender, special ? BATTLEMON_DEFENSE_STAGE : BATTLEMON_SP_DEFENSE_STAGE, -1);
+        }
+    }
+}
+
+// Corrosion's rank 3: the team's bad poison starts at 2/16 (its counter one turn on)
+static void HandlerConditionConfirmed(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
+    u32 defender = BattleEventVar_GetValue(BATTLE_EVENT_VAR_DEFENDER);
+    BattleMon *mon;
+
+    if (BattleEventVar_GetValue(BATTLE_EVENT_VAR_CONDITION) != CONDITION_POISON || !IsFoeMon(defender) ||
+        !IsTeamMon(BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACKER)) ||
+        GetHandlerLevel(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_CORROSION) < 3) {
+        return;
+    }
+    mon = GetBattleMon(flow, defender);
+    if (Condition_IsBadlyPoisoned(GetConditionContinuationParam(mon, CONDITION_POISON))) {
+        mon->core.conditionCounters[CONDITION_POISON] = 1;
+    }
+}
+
 static const BattleEventHandlerEntry sHandlers[] = {
     { BATTLE_EVENT_ATTACK_STAT, HandlerAttackStat },
     { BATTLE_EVENT_DEFENSE_STAT, HandlerDefenseStat },
@@ -1304,7 +1626,7 @@ static const BattleEventHandlerEntry sHandlers[] = {
     { BATTLE_EVENT_TURN_CHECK, HandlerTurnCheck },
     { BATTLE_EVENT_CALC_DRAIN_AMOUNT, HandlerDrainAmount },
     { BATTLE_EVENT_CALC_RECOIL, HandlerRecoil },
-    { BATTLE_EVENT_CHECK_MOVE_ADD_CONDITION, HandlerAddedEffectChance },
+    { BATTLE_EVENT_CHECK_MOVE_ADD_CONDITION, HandlerMoveAddCondition },
     { BATTLE_EVENT_ADDED_STAT_CHANGE_CHANCE, HandlerAddedEffectChance },
     { BATTLE_EVENT_CHECK_MULTIHIT_HITS, HandlerMultiHit },
     { BATTLE_EVENT_CALC_PP_DECREMENT, HandlerPPDecrement },
@@ -1321,6 +1643,10 @@ static const BattleEventHandlerEntry sHandlers[] = {
     { BATTLE_EVENT_DAMAGE_PROCESS_END_HIT_REAL, HandlerHitEnd },
     { BATTLE_EVENT_FIXED_DAMAGE, HandlerFixedDamage },
     { BATTLE_EVENT_CHECK_NO_EFFECT_AFTER_PROTECT, HandlerBossNoEffect },
+    { BATTLE_EVENT_SWITCH_OUT, HandlerSwitchOut },
+    { BATTLE_EVENT_BEFORE_FAINT, HandlerBeforeFaint },
+    { BATTLE_EVENT_CHECK_FLOATING, HandlerFloating },
+    { BATTLE_EVENT_DAMAGE_REACTION, HandlerDamageReaction },
 };
 
 // The events that the main item's own stat changes and statuses call while its handler runs (an item isn't called
@@ -1330,6 +1656,7 @@ static const BattleEventHandlerEntry sReactionHandlers[] = {
     { BATTLE_EVENT_CHECK_STAT_CHANGE, HandlerCheckStatChange },
     { BATTLE_EVENT_STAT_CHANGE_APPLIED, HandlerStatChangeApplied },
     { BATTLE_EVENT_MOVE_CONDITION_CHECK_FAIL, HandlerConditionCheckFail },
+    { BATTLE_EVENT_CONDITION_CONFIRMED, HandlerConditionConfirmed },
 };
 
 // ---- The battle's start and the hooks ------------------------------------------------------------------------------
@@ -1442,6 +1769,10 @@ BattleCondition EntralinkBattle_GetConditionValue(BattleMon *target, BattleMon *
     u32 i;
     const EntralinkBuffEffect *effect;
 
+    if (condition == CONDITION_POISON && IsFoeMon(targetId) && attacker != NULL && IsTeamMon(GetMonID(attacker)) &&
+        GetHandlerLevel(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_CORROSION) >= 2) {
+        return MakeConditionBadlyPoisoned();
+    }
     if (!sBattle.run || (condition != CONDITION_SLEEP && condition != CONDITION_CONFUSION) || value.common.turns == 0) {
         return value;
     }
@@ -1505,4 +1836,180 @@ BOOL EntralinkBattle_IgnoresBurnDrop(BattleMon *mon) {
         }
     }
     return FALSE;
+}
+
+// ---- Phase 4's hooks -----------------------------------------------------------------------------------------------
+
+// Magnetised's chart on a paralyzed foe: rank 3 takes away a Ground type's immunity to Electric (the Ground type
+// counts as neutral), and the foe counts as Flying too for the team's Electric moves (rank 2: all its moves)
+static u32 GetMagnetisedEffectiveness(BattleMon *target, u32 type, u32 effectiveness) {
+    u32 level = GetHandlerLevel(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_MAGNETISED);
+    PokeTypePair types;
+
+    if (level == 0 || GetBattleMonStatus(target) != CONDITION_PARALYSIS) {
+        return effectiveness;
+    }
+    if (level >= 3 && type == TYPE_ELECTRIC && DoesMonHaveType(target, TYPE_GROUND)) {
+        types = GetPokeType(target);
+        effectiveness = TYPE_EFFECTIVENESS_NORMAL;
+        if (PokeTypePair_GetType1(types) != TYPE_GROUND) {
+            effectiveness = GetTypeEffectiveness(type, PokeTypePair_GetType1(types));
+        } else if (!PokeTypePair_IsMonotype(types) && PokeTypePair_GetType2(types) != TYPE_GROUND) {
+            effectiveness = GetTypeEffectiveness(type, PokeTypePair_GetType2(types));
+        }
+    }
+    if ((level >= 2 || type == TYPE_ELECTRIC) && !DoesMonHaveType(target, TYPE_FLYING) &&
+        effectiveness != TYPE_EFFECTIVENESS_IMMUNE) {
+        effectiveness = GetTypeEffectivenessMultiplier(effectiveness, GetTypeEffectiveness(type, TYPE_FLYING));
+    }
+    return effectiveness;
+}
+
+u32 EntralinkBattle_GetEffectiveness(BtlServerFlow *flow, BattleMon *attacker, BattleMon *target, u16 move, u32 type,
+                                     u32 effectiveness, BOOL roll) {
+    u32 i;
+    s32 chance;
+    BOOL overrides;
+    const EntralinkBuffEffect *effect;
+
+    if (!IsTeamMon(GetMonID(attacker)) || !IsFoeMon(GetMonID(target))) {
+        return effectiveness;
+    }
+    effectiveness = GetMagnetisedEffectiveness(target, type, effectiveness);
+    if (!roll || !PML_MoveIsDamaging(move) || effectiveness >= TYPE_EFFECTIVENESS_DOUBLE ||
+        GetBattleMonStat(target, BATTLEMON_EFFECTIVE_ABILITY) == ABILITY_WONDER_GUARD) {
+        return effectiveness;
+    }
+    chance = 0;
+    overrides = FALSE;
+    for (i = 0; i < sBattle.count; i++) {
+        effect = &sEffects[sBattle.buffs[i].buff];
+        if (effect->kind == ENTRALINK_BUFF_KIND_TYPE_CHART) {
+            chance += sBattle.buffs[i].value;
+            if (effect->flags & ENTRALINK_BUFF_FLAG_OVERRIDES_IMMUNITY) {
+                overrides = TRUE;
+            }
+        }
+    }
+    // Spectral: a chance that the hit is super effective whatever the chart says, a type's immunity included
+    if (chance > 0 && (effectiveness != TYPE_EFFECTIVENESS_IMMUNE || overrides) && BattleRandom(100) < chance) {
+        if (sBattle.spectralHits < 0xff) {
+            sBattle.spectralHits++;
+        }
+        return TYPE_EFFECTIVENESS_DOUBLE;
+    }
+    return effectiveness;
+}
+
+BOOL EntralinkBattle_IgnoresStatusImmunity(BattleMon *target, BattleMon *attacker, u32 condition) {
+    u32 i;
+    u32 status = GetConditionStatusBit(condition);
+    const EntralinkBuffEffect *effect;
+
+    if (attacker == NULL || !IsTeamMon(GetMonID(attacker)) || !IsFoeMon(GetMonID(target))) {
+        return FALSE;
+    }
+    // Corrosion: Steel and Poison types can be poisoned
+    if (condition == CONDITION_POISON &&
+        GetHandlerLevel(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_CORROSION)) {
+        return TRUE;
+    }
+    // A status_chance_on_hit card from its rank parameter on (Wildfire's rank 3: Fire types can be burned)
+    for (i = 0; i < sBattle.count; i++) {
+        effect = &sEffects[sBattle.buffs[i].buff];
+        if (effect->kind == ENTRALINK_BUFF_KIND_STATUS_CHANCE_ON_HIT && effect->rankParam != 0 &&
+            sBattle.buffs[i].level >= effect->rankParam && effect->param < NELEMS(sStatusConditions) &&
+            (GetConditionStatusBit(sStatusConditions[effect->param]) & status)) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+u32 EntralinkBattle_GetConfusionPower(BattleMon *mon, u32 power) {
+    s32 percent;
+
+    if (IsFoeMon(GetMonID(mon))) {
+        percent = SumKind(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_CONFUSION_SELF_HIT_POWER);
+        if (percent > 0) {
+            return power * percent / 100;
+        }
+    }
+    return power;
+}
+
+u32 EntralinkBattle_GetLeechSeedDamage(BattleMon *mon) {
+    const EntralinkBattleBuff *parasite;
+    u32 divisor = 8;
+
+    if (!IsFoeMon(GetMonID(mon))) {
+        return DivideMaxHPZeroCheck(mon, divisor);
+    }
+    parasite = FindHandler(ENTRALINK_BUFF_KIND_RESIDUAL_FRACTION, ENTRALINK_BUFF_FRACTION_LEECH_SEED);
+    if (parasite != NULL && parasite->value > 0) {
+        divisor = parasite->value;
+    }
+    return GetResidualDamage(CONDITION_LEECH_SEED, EntralinkBattle_DivideResidualHP(mon, divisor));
+}
+
+// Damage the team's buffs deal outside a hit, "[the Pokémon] was hurt!"
+static void PushDamage(BtlServerFlow *flow, u32 source, u32 target, u32 amount) {
+    BattleHandlerDamageParam *param = BattleHandler_PushWork(flow, BATTLE_HANDLER_DAMAGE, source);
+
+    param->targetIndex = target;
+    param->amount = amount != 0 ? amount : 1;
+    BattleHandler_StrSetup(&param->string, BATTLE_HANDLER_STR_SET, MESSAGE_WAS_HURT);
+    BattleHandler_AddArg(&param->string, target);
+    BattleHandler_PopWork(flow, param);
+}
+
+void EntralinkBattle_Overheal(BtlServerFlow *flow, BattleMon *mon, u32 excess) {
+    u32 monId = GetMonID(mon);
+    s32 percent;
+    u32 pos;
+    u32 target;
+    u8 ids[BATTLE_POSITIONS];
+    u32 state;
+
+    if (!IsTeamMon(monId)) {
+        return;
+    }
+    percent = SumKind(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_OVERHEAL_DAMAGE);
+    if (percent <= 0) {
+        return;
+    }
+    // The foe opposite, else the first on the field
+    pos = GetBattlePos(&flow->posPoke, monId);
+    target = BATTLE_MONS;
+    if (pos < BATTLE_POSITIONS) {
+        target = BtlServerFlow_GetMonIDAtPos(flow, GetFacingPos(BtlSetup_GetBattleStyle(flow->mainModule), pos));
+    }
+    if (target >= BATTLE_MONS || !IsFoeMon(target) || IsFainted(GetBattleMon(flow, target))) {
+        target = BtlServerFlow_GetOpposingMonIDs(flow, monId, ids) != 0 ? ids[0] : BATTLE_MONS;
+    }
+    if (target >= BATTLE_MONS) {
+        return;
+    }
+    state = PushState(&flow->actionState, 0);
+    PushDamage(flow, monId, target, excess * percent / 100);
+    PopState(&flow->actionState, state, 0);
+}
+
+void EntralinkBattle_ProtectBlocked(BtlServerFlow *flow, BattleMon *attacker, BattleMon *target, u16 move) {
+    const EntralinkBattleBuff *buff = FindHandler(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_PROTECT_THORNS);
+    u32 targetId = GetMonID(target);
+    u32 attackerId = GetMonID(attacker);
+    u32 state;
+
+    if (buff == NULL || buff->value <= 0 || !IsTeamMon(targetId)) {
+        return;
+    }
+    state = PushState(&flow->actionState, 0);
+    if (!IsMonFullHP(target)) {
+        PushRecoverHP(flow, targetId, GetBattleMonStat(target, BATTLEMON_MAX_HP) / buff->value);
+    }
+    if (IsFoeMon(attackerId) && getMoveFlag(move, MOVE_FLAG_BIT_CONTACT) && !IsFainted(attacker)) {
+        PushDamage(flow, targetId, attackerId, EntralinkBattle_DivideResidualHP(attacker, 8));
+    }
+    PopState(&flow->actionState, state, 0);
 }

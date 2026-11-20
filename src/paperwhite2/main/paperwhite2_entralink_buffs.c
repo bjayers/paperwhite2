@@ -15,6 +15,28 @@ void EntralinkBuffs_Clear(void) {
     MI_CpuFill8(state->buffLevels, 0, sizeof(state->buffLevels));
     MI_CpuFill8(state->goldSlots, ENTRALINK_BUFF_NONE, sizeof(state->goldSlots));
     MI_CpuFill8(state->typeCounts, 0, sizeof(state->typeCounts));
+    state->forecastWeather = 0;
+}
+
+u32 EntralinkBuffs_GetForecastWeather(void) {
+    return EntralinkRun_GetState()->forecastWeather;
+}
+
+// The cards that choose the battles' weather when taken (Forecast)
+static const u8 sWeatherChoiceCards[] = ENTRALINK_BUFF_WEATHER_CHOICE;
+
+BOOL EntralinkBuffs_NeedsWeather(void) {
+    u32 i;
+
+    if (EntralinkRun_GetState()->forecastWeather != 0) {
+        return FALSE;
+    }
+    for (i = 0; i < NELEMS(sWeatherChoiceCards); i++) {
+        if (EntralinkBuffs_GetLevel(sWeatherChoiceCards[i]) != 0) {
+            return TRUE;
+        }
+    }
+    return FALSE;
 }
 
 u32 EntralinkBuffs_GetLevel(u32 buff) {

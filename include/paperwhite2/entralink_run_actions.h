@@ -90,6 +90,9 @@
 #define ENTRALINK_RUN_ACTION_SKIP_OFFER 27
 // Returns how many cards list arg1 has left (ENTRALINK_RUN_CARDS_HELD: how many buffs are held)
 #define ENTRALINK_RUN_ACTION_COUNT_CARDS 28
+// Forecast's weather (phase 4): arg1 0 returns 1 if a card that chooses the weather is held with none chosen yet;
+// arg1 a BTL_WEATHER_* (1 sun, 2 rain, 3 hail, 4 sandstorm) chooses it
+#define ENTRALINK_RUN_ACTION_FORECAST 29
 
 // The lists of cards: the offer after a battle, the buff room's, the gift NPC's (items and buffs), the shop's buffs,
 // the buffs held (the viewer), and the golds held (the choice of the one a new gold replaces)

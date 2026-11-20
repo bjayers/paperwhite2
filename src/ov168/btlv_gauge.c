@@ -59,6 +59,10 @@
 
 // The status icon's sequence for no status
 #define GAUGE_STATUS_NONE 8
+#ifdef PAPERWHITE2
+// Paper White 2: frostbite's icon, the sequence after the empty one the hack adds as 8 (app_menu_common's 016-018)
+#define GAUGE_SEQUENCE_FROSTBITE 9
+#endif
 
 // The red flash of the gauges losing HP
 typedef struct {
@@ -278,6 +282,10 @@ void BtlvGauge_SetBattleMon(BtlvGauge *gauge, BtlMainModule *mainModule, BattleM
         status = GetBattleMonStatus(mon);
     }
 #ifdef PAPERWHITE2
+    // Paper White 2: the Entralink run's frostbite, which stands in for a major status
+    if (status == 0 && CheckCondition(mon, CONDITION_FROSTBITE)) {
+        status = GAUGE_FROSTBITE_STATUS;
+    }
     // Paper White 2: Type Icons hides its wedge under a status
     PaperWhite2_TypeIconsSetStatus(gauge, status, index);
 #else
@@ -1419,7 +1427,12 @@ static void BtlvGauge_UpdateShake(BtlvGauge *gauge, int index) {
 }
 
 void BtlvGauge_SetStatus(BtlvGauge *gauge, u32 status, int index) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the Entralink run's frostbite (GAUGE_FROSTBITE_STATUS)
+    const u32 sequences[8] = { GAUGE_STATUS_NONE, 1, 3, 2, 5, 4, 7, GAUGE_SEQUENCE_FROSTBITE };
+#else
     const u32 sequences[7] = { GAUGE_STATUS_NONE, 1, 3, 2, 5, 4, 7 };
+#endif
 
     if (gauge->mode == 2) {
         gauge->entries[index].mon.status = sequences[status];

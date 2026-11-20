@@ -8,6 +8,7 @@
 #include "gfl/random.h"
 #include "gfl/str.h"
 #include "paperwhite2/entralink_buffs.h"
+#include "paperwhite2/entralink_run_party.h"
 #include "paperwhite2/entralink_run_state.h"
 #include "pml/poke_party.h"
 #include "system/bmp_menuwork.h"
@@ -325,7 +326,7 @@ u32 EntralinkBuffs_GetTakeKind(const EntralinkCard *card) {
     return EntralinkBuffs_GetFreeSlot() < ENTRALINK_BUFF_GOLD_SLOTS ? ENTRALINK_TAKE_NEW_GOLD : ENTRALINK_TAKE_REPLACE;
 }
 
-void EntralinkBuffs_Take(const EntralinkCard *card, u32 slot) {
+static void EntralinkBuffs_TakeCore(const EntralinkCard *card, u32 slot) {
     EntralinkRunState *state = EntralinkRun_GetState();
     u32 buff = card->id;
     u32 typeCard;
@@ -360,7 +361,7 @@ void EntralinkBuffs_Take(const EntralinkCard *card, u32 slot) {
     state->buffLevels[buff] = 1;
 }
 
-void EntralinkBuffs_SetLevel(u32 buff, u32 type, u32 level) {
+static void EntralinkBuffs_SetLevelCore(u32 buff, u32 type, u32 level) {
     EntralinkRunState *state = EntralinkRun_GetState();
     u32 typeCard;
     u32 slot;
@@ -400,6 +401,17 @@ void EntralinkBuffs_SetLevel(u32 buff, u32 type, u32 level) {
     }
     state->goldSlots[slot] = level != 0 ? buff : ENTRALINK_BUFF_NONE;
     state->buffLevels[buff] = level;
+}
+
+// The HP buff raises the run's copies' max HP: their stats are worked out again after any change (phase 4)
+void EntralinkBuffs_Take(const EntralinkCard *card, u32 slot) {
+    EntralinkBuffs_TakeCore(card, slot);
+    EntralinkRun_RefreshMaxHP();
+}
+
+void EntralinkBuffs_SetLevel(u32 buff, u32 type, u32 level) {
+    EntralinkBuffs_SetLevelCore(buff, type, level);
+    EntralinkRun_RefreshMaxHP();
 }
 
 u32 EntralinkBuffs_GetPrice(const EntralinkCard *card) {

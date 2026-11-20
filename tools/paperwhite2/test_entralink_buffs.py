@@ -230,6 +230,26 @@ def test_battle_tables_carry_kinds_conditions_and_numbers():
     assert "#define ENTRALINK_BUFF_BOSS_BAR_HP 6000" in text
 
 
+def test_game_handlers_keep_their_numbers_and_the_phase_4_settings():
+    # The fixture has no custom card: the game's handlers are still numbered, in GAME_HANDLERS' order, and a
+    # handler the game doesn't have comes after them
+    data = fixture_catalogue()
+    lines = entralink_buffs.header(data, entralink_buffs.effect_kinds()).splitlines()
+    for i, handler in enumerate(entralink_buffs.GAME_HANDLERS):
+        assert f"#define ENTRALINK_BUFF_HANDLER_{handler.upper()} {i}" in lines
+    entry(data, "galvanic")["effect"] = {"kind": "custom", "handler": "not_in_the_game"}
+    assert entralink_buffs.custom_handlers(data)[-1] == "not_in_the_game"
+    # No max_hp card: 999; no forecast card: a placeholder the game reads as no card
+    assert "#define ENTRALINK_BUFF_MAX_HP_LIMIT 999" in lines
+    assert "#define ENTRALINK_BUFF_WEATHER_CHOICE { 255 }" in lines
+    entry(data, "attack")["effect"] = {"kind": "max_hp", "limit": 800}
+    entry(data, "galvanic")["effect"] = {"kind": "custom", "handler": "forecast"}
+    lines = entralink_buffs.header(data, entralink_buffs.effect_kinds()).splitlines()
+    assert "#define ENTRALINK_BUFF_MAX_HP_LIMIT 800" in lines
+    assert "#define ENTRALINK_BUFF_WEATHER_CHOICE_COUNT 1" in lines
+    assert "#define ENTRALINK_BUFF_WEATHER_CHOICE { 2 }" in lines
+
+
 def test_an_id_that_spells_another_name_is_refused():
     data = fixture_catalogue()
     entry(data, "attack")["id"] = "stat_speed"

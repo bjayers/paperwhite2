@@ -51,4 +51,13 @@ Global10490_Text_RunShopNoDust = You don't have enough Dream Dust.
 Global10490_Text_RunBuffsTitle = Your buffs. Dream Dust: {0205:0}
 Global10490_Text_RunBuffsNone = You hold no buffs yet.\nWin battles to earn them.
 Global10490_Text_RunBuffsClose = Close
+Global10490_Text_RunForecastAsk = Which weather will your battles\nstart in?
+Global10490_Text_RunForecastSun = Harsh sunlight
+Global10490_Text_RunForecastSunInfo = Fire moves stronger, Water moves weaker.
+Global10490_Text_RunForecastRain = Rain
+Global10490_Text_RunForecastRainInfo = Water moves stronger, Fire moves weaker.
+Global10490_Text_RunForecastSand = Sandstorm
+Global10490_Text_RunForecastSandInfo = Hurts all but Rock, Ground and Steel types.
+Global10490_Text_RunForecastHail = Hail
+Global10490_Text_RunForecastHailInfo = Hurts all but Ice types.
 \pad{d6}

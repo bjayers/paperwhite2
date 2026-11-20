@@ -1166,4 +1166,10 @@ Bank0018_Text_FoesGoingAllOut = The foe's {0102:0} is going all out\nfor this at
 Bank0018_Text_CraftyShieldProtected = Crafty Shield protected\n{0102:0}!
 Bank0018_Text_CraftyShieldProtectedWild = Crafty Shield protected\nthe wild {0102:0}!
 Bank0018_Text_CraftyShieldProtectedFoes = Crafty Shield protected\nthe foe's {0102:0}!
+Bank0018_Text_GotFrostbite = {0102:0} got\nfrostbite!
+Bank0018_Text_WildGotFrostbite = The wild {0102:0} got\nfrostbite!
+Bank0018_Text_FoesGotFrostbite = The foe's {0102:0} got\nfrostbite!
+Bank0018_Text_HurtByFrostbite = {0102:0} was hurt\nby its frostbite!
+Bank0018_Text_WildHurtByFrostbite = The wild {0102:0} was hurt\nby its frostbite!
+Bank0018_Text_FoesHurtByFrostbite = The foe's {0102:0} was hurt\nby its frostbite!
 \pad{54}

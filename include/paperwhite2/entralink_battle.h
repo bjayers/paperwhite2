@@ -50,4 +50,24 @@ u32 EntralinkBattle_GetMoveHealAmount(BattleMon *mon, u32 amount);
 // Whether a burned Pokémon of the team ignores burn's Attack drop (Fire Within)
 BOOL EntralinkBattle_IgnoresBurnDrop(BattleMon *mon);
 
+// Phase 4 (entralink-buffs.md, section 11)
+// A move's effectiveness on a target as ServerControl_CheckMoveEffectiveness works it out, for the team's moves on a
+// foe: Magnetised's chart on a paralyzed foe, and with roll (the move's own check, once a use and target) Spectral's
+// chance that a damaging hit is super effective, past a type's immunity (abilities' immunities still hold: Levitate
+// after this, Wonder Guard's target isn't rolled)
+u32 EntralinkBattle_GetEffectiveness(BtlServerFlow *flow, BattleMon *attacker, BattleMon *target, u16 move, u32 type,
+                                     u32 effectiveness, BOOL roll);
+// Whether the team gives a foe a status past its type's immunity to it (Corrosion's poison, Wildfire's rank 3 burn)
+BOOL EntralinkBattle_IgnoresStatusImmunity(BattleMon *target, BattleMon *attacker, u32 condition);
+// The power of a confused Pokémon's hit on itself (vanilla 40): a foe's by Self-harm
+u32 EntralinkBattle_GetConfusionPower(BattleMon *mon, u32 power);
+// Leech Seed's drain on a Pokémon: a foe's a fraction of one bar, Parasite's (vanilla 1/8), times the residual buffs
+u32 EntralinkBattle_GetLeechSeedDamage(BattleMon *mon);
+// A heal of the team went past max HP by excess: Overflow deals its percent of it to the foe opposite (else the
+// first)
+void EntralinkBattle_Overheal(BtlServerFlow *flow, BattleMon *mon, u32 excess);
+// Protect or Detect blocked a move: Thorn Guard heals the team's protected Pokémon and hurts a foe's contact move's
+// user by 1/8 of its max HP (one bar's on a boss)
+void EntralinkBattle_ProtectBlocked(BtlServerFlow *flow, BattleMon *attacker, BattleMon *target, u16 move);
+
 #endif // PAPERWHITE2_ENTRALINK_BATTLE_H

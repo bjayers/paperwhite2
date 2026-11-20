@@ -1307,6 +1307,9 @@ u32 BattleMon_GetResidualDamage(BattleMon *mon, u32 index) {
             break;
         case 10:
             return EntralinkBattle_DivideResidualHP(mon, 4);
+        // Paper White 2: frostbite, 1/16 a turn (one bar's on a boss)
+        case CONDITION_FROSTBITE:
+            return EntralinkBattle_DivideResidualHP(mon, 16);
 #else
         case 5:
             if (Condition_IsBadlyPoisoned(mon->core.conditions[index])) {

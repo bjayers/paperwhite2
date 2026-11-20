@@ -23,6 +23,9 @@
 #include "system/str_tool.h"
 #include "system/version.h"
 #include "text/system/species_names.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/entralink_run_party.h"
+#endif
 
 // Pokémon: creating them, their forms, moves and stats, their encryption and their fields, and the cache of the
 // species data read last. The file's name is the ROM's string; the functions' names are swan's
@@ -1369,6 +1372,10 @@ static void PokeParty_RecalcStatsCore(PartyPkm *pkm) {
         maxHP = 1;
     } else {
         maxHP = (2 * personal->hp + hpIV + hpEV / 4) * level / 100 + level + 10;
+#ifdef PAPERWHITE2
+        // Paper White 2: the Entralink run's HP buff raises its copies' max HP (paperwhite2_entralink_run_party.c)
+        maxHP = EntralinkRun_GetMaxHP(pkm, maxHP);
+#endif
     }
     PokeParty_SetParam(pkm, PKM_PARAM_MAX_HP, maxHP);
 

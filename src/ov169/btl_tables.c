@@ -222,8 +222,9 @@ static const u32 sConditionsAll[] = { 35,
                                       34 };
 
 #ifdef PAPERWHITE2
-// Paper White 2: the hack's own conditions, at the end of the turn after the original's (Syrup Bomb's)
-static const u32 sConditionsAdded[] = { CONDITION_SYRUP };
+// Paper White 2: the hack's own conditions, at the end of the turn after the original's (Syrup Bomb's, the Entralink
+// run's frostbite)
+static const u32 sConditionsAdded[] = { CONDITION_SYRUP, CONDITION_FROSTBITE };
 #endif
 
 u32 GetConditionByIndex(u32 index) {

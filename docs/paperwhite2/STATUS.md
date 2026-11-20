@@ -2,6 +2,22 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-20: Entralink buffs, phase 4: the harder effects (ROM session, on a branch)
+
+- **Every card works now** (`entralink-buffs.md` section 11): the HP blue (run copies' max HP through
+  `PokeParty_RecalcStats`, gain healed, 999 at most), Spectral (super effective past type immunities, rolled once a use
+  and target), Magnetised, **frostbite** as a new condition (`CONDITION_FROSTBITE` 38: 1/16 a turn, Sp. Atk halved,
+  its messages and a placeholder "FRB" gauge icon in app_menu_common 012-018), Permafrost, Corrosion, Wildfire r3,
+  Contagion, Self-harm, Forecast (a weather list when first taken; a room's weather wins), Baton, Follow-through,
+  Shattering Blow, Defiance r3, Parasite (and its spread), Overflow, Thorn Guard.
+- The packer numbers the game's custom handlers in a fixed order (a catalogue without one still builds); Nightmare Field
+  finds its own card beside Parasite.
+- **Tested** in py-desmume (scratchpad `buffs4/`, section 11.3), each with numbers; screenshots of a Spectral hit on a
+  Normal type, frostbite's icon and messages, Forecast's menu and rain. Hack build clean, `verify_dsi_rom.py` intact,
+  plain modules match, Python and editor tests pass.
+- **Memory:** overlay 167 +2.9 KB, main +0.25 KB, a BattleMon +4 bytes.
+- **For the user:** redraw the FRB icon (row 8 of app_menu_common/012.png); the calls in section 11.5.
+
 ## 2026-11-20: Entralink buffs, phase 3: the battle effects (ROM session, on a branch)
 
 - **The buffs work in run battles** (`src/paperwhite2/ov167/paperwhite2_entralink_battle.c`,

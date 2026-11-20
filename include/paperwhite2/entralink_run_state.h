@@ -102,6 +102,9 @@ typedef struct {
     u8 buffLevels[ENTRALINK_BUFF_COUNT];
     u8 goldSlots[ENTRALINK_BUFF_GOLD_SLOTS];
     u8 typeCounts[ENTRALINK_BUFF_TYPE_CARD_SLOTS][ENTRALINK_BUFF_CARD_TYPES];
+    // The weather Forecast starts the battles in, a BTL_WEATHER_* chosen when the card is taken (phase 4), or
+    // BTL_WEATHER_NONE before the choice
+    u8 forecastWeather;
     // The cards on offer: after the battle won, the room's buff ball's (drawn as the room is entered), the gift NPC's
     // buffs (a gift card is its giftItems item, or else its buff here) and the shop's buffs, a bought one gone
     EntralinkCard offer[ENTRALINK_BUFF_OFFERS];

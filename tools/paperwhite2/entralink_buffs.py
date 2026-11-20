@@ -305,9 +305,17 @@ def condition_tests(directory: Path = SOURCE) -> list[str]:
     return [name for name in defs["condition"]["properties"] if name != "any"]
 
 
+# The custom handlers the game implements (src/paperwhite2/ov167/paperwhite2_entralink_battle.c), numbered in this
+# order whatever the catalogue holds, so the game's code always finds its ENTRALINK_BUFF_HANDLER_* names
+GAME_HANDLERS = ["block_stat_drops", "extra_stage_chance", "magnetised", "sandman", "corrosion", "contagion",
+                 "permafrost", "confusion_self_hit_power", "forecast", "baton", "first_strike", "quick_draw", "focus",
+                 "follow_through", "shattering_blow", "overheal_damage", "protect_thorns"]
+
+
 def custom_handlers(data: dict) -> list[str]:
-    """The custom effects' handlers, in the order the catalogue first names them."""
-    names = []
+    """The custom effects' handlers: the game's (GAME_HANDLERS), then any other the catalogue names, in the order it
+    first names them (a handler the game doesn't have yet does nothing in battle)."""
+    names = list(GAME_HANDLERS)
     for entry in data["buffs"]:
         handler = entry["effect"].get("handler")
         if handler is not None and handler not in names:
@@ -420,6 +428,20 @@ def values_table(data: dict) -> list[str]:
         rows.append(f"    {{ {{ {numbers[0]}, {numbers[1]}, {numbers[2]} }}, {int(entry['tier'] == 'gold')}, {kind} }}, "
                     f"/* {entry['id']} */")
     return rows
+
+
+def weather_choice_cards(data: dict) -> list[int]:
+    """The IDs of the cards whose effect is the forecast handler: taking one asks for the weather it starts battles in
+    (an empty list gives the game a placeholder 0xff)."""
+    cards = [i for i, b in enumerate(data["buffs"]) if b["effect"].get("handler") == "forecast"]
+    return cards or [0xff]
+
+
+def max_hp_limit(data: dict) -> int:
+    """The highest max HP the max_hp kind's cards allow (the smallest of their limits; 999 without one): the game's
+    gauge shows three digits."""
+    limits = [b["effect"].get("limit", 999) for b in data["buffs"] if b["effect"]["kind"] == "max_hp"]
+    return min(limits) if limits else 999
 
 
 def effect_lines(data: dict, directory: Path = SOURCE) -> list[str]:
@@ -607,6 +629,10 @@ def header(data: dict, kinds: list[str], directory: Path = SOURCE) -> str:
         f"#define ENTRALINK_BUFF_MAX_RANK {settings['max_rank']}",
         f"#define ENTRALINK_BUFF_DAMAGE_CAP {settings['damage_cap']}",
         f"#define ENTRALINK_BUFF_BOSS_BAR_HP {settings.get('boss_bar_hp', 6000)}",
+        f"#define ENTRALINK_BUFF_MAX_HP_LIMIT {max_hp_limit(data)}",
+        "// The cards that choose the battles' weather when taken (handler forecast, phase 4)",
+        f"#define ENTRALINK_BUFF_WEATHER_CHOICE_COUNT {len(weather_choice_cards(data))}",
+        "#define ENTRALINK_BUFF_WEATHER_CHOICE { " + ", ".join(str(i) for i in weather_choice_cards(data)) + " }",
         f"#define ENTRALINK_BUFF_BOSS_SLEEP_TURNS {settings.get('boss_sleep_turns', 2)}",
         f"#define ENTRALINK_BUFF_BOSS_TOXIC_CAP {settings.get('boss_toxic_cap', 4)}",
         f"#define ENTRALINK_BUFF_BOSS_FULL_PARALYSIS {settings.get('boss_full_paralysis', 50)}",

@@ -129,6 +129,10 @@ u32 EntralinkBuffs_ListHeld(u8 *buffs, u32 max);
 s32 EntralinkBuffs_GetValue(u32 buff, u32 level);
 // A buff's effect's kind, ENTRALINK_BUFF_KIND_*
 u32 EntralinkBuffs_GetKind(u32 buff);
+// The weather Forecast starts battles in (BTL_WEATHER_*), or BTL_WEATHER_NONE if none was chosen (phase 4)
+u32 EntralinkBuffs_GetForecastWeather(void);
+// Whether a card that chooses the weather (ENTRALINK_BUFF_WEATHER_CHOICE, Forecast) is held with no weather chosen
+BOOL EntralinkBuffs_NeedsWeather(void);
 
 // ---- Overlay 12: the offers -----------------------------------------------------------------------------------------
 

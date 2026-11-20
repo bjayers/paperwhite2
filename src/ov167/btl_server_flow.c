@@ -2341,6 +2341,11 @@ void ServerControl_RemoveNoEffectTargets(BtlServerFlow *flow, BtlFlowMoveParam *
             if (GetTurnFlag(target, 7) && !ServerEvent_CheckProtectBreak(flow, mon, target, param->move)) {
                 BtlMonSet_Remove(targets, target);
                 BtlServerCmdQueue_PutMsg(flow->queue, SC_MSG_SET, 0x20b, GetMonID(target), SC_MSG_ARG_END);
+#ifdef PAPERWHITE2
+                // Paper White 2: an Entralink run's Thorn Guard heals the protected and hurts a contact move's user
+                // (paperwhite2_entralink_battle.c)
+                EntralinkBattle_ProtectBlocked(flow, mon, target, param->move);
+#endif
             }
         }
     }
@@ -4019,6 +4024,13 @@ BOOL ServerControl_AddConditionCheckFail(BtlServerFlow *flow, BattleMon *target,
     BOOL failed;
     u32 cause = AddConditionCheckFailOverwrite(flow, target, condition, value, overwrite);
 
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink run's Corrosion and Wildfire give their status past the type that is immune to it
+    // (cause 2, paperwhite2_entralink_battle.c)
+    if (cause == 2 && EntralinkBattle_IgnoresStatusImmunity(target, attacker, condition)) {
+        cause = 0;
+    }
+#endif
     if (cause != 0) {
         if (showFail) {
             AddConditionCheckFailStandard(flow, target, cause, condition);
@@ -4097,6 +4109,12 @@ void ServerControl_AddCondition(BtlServerFlow *flow, BattleMon *target, BattleMo
     case 2:
         ServerDisplay_AddEffectAtPosition(flow, target, 0x256);
         break;
+#ifdef PAPERWHITE2
+    // Paper White 2: the Entralink run's frostbite shows freeze's animation
+    case CONDITION_FROSTBITE:
+        ServerDisplay_AddEffectAtPosition(flow, target, 0x259);
+        break;
+#endif
     case 6:
         ServerDisplay_AddEffectAtPosition(flow, target, 0x25b);
         break;
@@ -4468,10 +4486,21 @@ BOOL ServerControl_RecoverHPCheckFailSpecial(BtlServerFlow *flow, BattleMon *mon
 
 void ServerControl_RecoverHPCore(BtlServerFlow *flow, BattleMon *mon, u16 amount) {
     u8 pos = GetBattlePos(&flow->posPoke, GetMonID(mon));
+#ifdef PAPERWHITE2
+    u32 missing = GetBattleMonStat(mon, BATTLEMON_MAX_HP) - GetBattleMonStat(mon, BATTLEMON_HP);
+#endif
+
     if (pos != 6) {
         BtlServerCmdQueue_Put(flow->queue, SC_EFFECT_BY_POS, pos, 0x263);
     }
     ServerDisplay_SimpleHP(flow, mon, amount, TRUE);
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink run's Overflow turns the heal past max HP into damage to a foe
+    // (paperwhite2_entralink_battle.c)
+    if (amount > missing) {
+        EntralinkBattle_Overheal(flow, mon, amount - missing);
+    }
+#endif
 }
 
 void ServerControl_OHKO(BtlServerFlow *flow, BtlFlowMoveParam *param, BattleMon *mon, BtlMonSet *targets) {
@@ -5992,6 +6021,12 @@ void ServerDisplay_AddCondition(BtlServerFlow *flow, BattleMon *mon, s32 conditi
         }
         BtlServerCmdQueue_Put(flow->queue, SC_SET_GAUGE_STATUS, monId, condition);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the Entralink run's frostbite has an icon of its own, after bad poison's (btlv_gauge.c)
+    if (condition == CONDITION_FROSTBITE) {
+        BtlServerCmdQueue_Put(flow->queue, SC_SET_GAUGE_STATUS, monId, GAUGE_FROSTBITE_STATUS);
+    }
+#endif
 }
 
 void AddConditionCheckFailStandard(BtlServerFlow *flow, BattleMon *mon, u32 cause, u32 condition) {
@@ -6257,7 +6292,13 @@ u16 ServerControl_ConfusionDamage(BtlServerFlow *flow, BattleMon *mon) {
 
     attack = GetBattleMonStat(mon, BATTLEMON_ATTACK);
     defense = GetBattleMonStat(mon, BATTLEMON_DEFENSE);
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink run's Self-harm raises a foe's power (paperwhite2_entralink_battle.c)
+    damage = CalcBaseDamage(EntralinkBattle_GetConfusionPower(mon, 40), attack, GetBattleMonStat(mon, BATTLEMON_LEVEL),
+                            defense);
+#else
     damage = CalcBaseDamage(40, attack, GetBattleMonStat(mon, BATTLEMON_LEVEL), defense);
+#endif
     damage = damage * (100 - BattleRandom(16)) / 100;
     if (damage == 0) {
         damage = 1;
@@ -6698,6 +6739,13 @@ u32 ServerControl_CheckMoveEffectiveness(BtlServerFlow *flow, BattleMon *attacke
             effectiveness,
             ServerEvent_CheckTypeEffectiveness(flow, attacker, target, param->type, PokeTypePair_GetType2(types)));
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink run's Magnetised and Spectral change the chart for the team's moves, Spectral rolled
+    // once a move's use and target (flag: the move's own check, not the AI's or the menu's)
+    // (paperwhite2_entralink_battle.c)
+    effectiveness =
+        EntralinkBattle_GetEffectiveness(flow, attacker, target, param->move, param->type, effectiveness, flag);
+#endif
     if (effectiveness != TYPE_EFFECTIVENESS_IMMUNE) {
         if (param->type != TYPE_GROUND) {
             return effectiveness;

@@ -2,6 +2,7 @@
 #include "constants/items.h"
 #include "constants/pokemon.h"
 #include "constants/species.h"
+#include "paperwhite2/entralink_buffs.h"
 #include "paperwhite2/entralink_run_party.h"
 #include "paperwhite2/prestige.h"
 #include "pml/poke_party.h"
@@ -124,4 +125,41 @@ BOOL EntralinkRun_CanGainPrestige(BoxPkm *pkm) {
 
 PokeParty *EntralinkRun_GetCatchParty(GameData *gameData) {
     return sRealParty != NULL ? sRealParty : GameData_GetParty(gameData);
+}
+
+u32 EntralinkRun_GetMaxHP(PartyPkm *pkm, u32 maxHP) {
+    u32 percent;
+    u32 buff;
+    u32 raised;
+
+    if (sRealParty == NULL || (u8 *)pkm >= (u8 *)sRealParty && (u8 *)pkm < (u8 *)(sRealParty + 1) ||
+        EntralinkRun_FindPkm(&sRunParty, PokeParty_GetParam(pkm, PKM_PARAM_PID, NULL)) == NULL) {
+        return maxHP;
+    }
+    percent = 0;
+    for (buff = 0; buff < ENTRALINK_BUFF_COUNT; buff++) {
+        if (EntralinkBuffs_GetKind(buff) == ENTRALINK_BUFF_KIND_MAX_HP) {
+            percent += EntralinkBuffs_GetValue(buff, EntralinkBuffs_GetLevel(buff));
+        }
+    }
+    raised = maxHP * (100 + percent) / 100;
+    if (raised > ENTRALINK_BUFF_MAX_HP_LIMIT) {
+        raised = ENTRALINK_BUFF_MAX_HP_LIMIT;
+    }
+    return raised > maxHP ? raised : maxHP;
+}
+
+void EntralinkRun_RefreshMaxHP(void) {
+    int i;
+    PartyPkm *pkm;
+
+    if (sRealParty == NULL) {
+        return;
+    }
+    for (i = 0; i < PokeParty_GetPkmCount(&sRunParty); i++) {
+        pkm = PokeParty_GetPkm(&sRunParty, i);
+        if (!PokeParty_GetParam(pkm, PKM_PARAM_IS_EGG, NULL)) {
+            PokeParty_RecalcStats(pkm);
+        }
+    }
 }

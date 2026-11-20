@@ -23,5 +23,12 @@ BOOL EntralinkRun_CanGainPrestige(BoxPkm *pkm);
 // The party a caught Pokémon joins: the real one in a run, which keeps it after the run at its own level, never the
 // copies (EventBattleReturn_Main)
 PokeParty *EntralinkRun_GetCatchParty(GameData *gameData);
+// The max HP of a Pokémon as PokeParty_RecalcStats works it out: a run's copy (the copies and the battle's copies of
+// them, by PID) gets the max_hp buffs' percent (entralink-buffs.md, phase 4), at most ENTRALINK_BUFF_MAX_HP_LIMIT and
+// never below its own; anyone else's is as it was
+u32 EntralinkRun_GetMaxHP(PartyPkm *pkm, u32 maxHP);
+// Works the run's copies' stats out again after the max_hp buffs changed: a raise heals the HP it adds (a fainted
+// Pokémon stays fainted), a fall keeps the HP within the new max
+void EntralinkRun_RefreshMaxHP(void);
 
 #endif // PAPERWHITE2_ENTRALINK_RUN_PARTY_H

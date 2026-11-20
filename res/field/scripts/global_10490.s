@@ -670,6 +670,25 @@ L_RunTakeCardDone:
     MEWait
     LastKeyWait
     SystemMsgClose
+    EntralinkRun ENTRALINK_RUN_ACTION_FORECAST, 0, 0, 0x8002
+    WorkCmpConst 0x8002, 0
+    VMJumpIf CMP_EQ, L_RunTakeCardEnd
+
+L_RunForecastMenu:
+    // Paper White 2: Forecast's weather, chosen once when the card is first taken (phase 4); B asks again
+    SystemMsg Global10490_Text_RunForecastAsk, 2
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8004
+    ListMenuAdd Global10490_Text_RunForecastSun, Global10490_Text_RunForecastSunInfo, 1
+    ListMenuAdd Global10490_Text_RunForecastRain, Global10490_Text_RunForecastRainInfo, 2
+    ListMenuAdd Global10490_Text_RunForecastSand, Global10490_Text_RunForecastSandInfo, 4
+    ListMenuAdd Global10490_Text_RunForecastHail, Global10490_Text_RunForecastHailInfo, 3
+    ListMenuShow
+    SystemMsgClose
+    WorkCmpConst 0x8004, 65534
+    VMJumpIf CMP_EQ, L_RunForecastMenu
+    EntralinkRun ENTRALINK_RUN_ACTION_FORECAST, 0x8004, 0, 0x8002
+
+L_RunTakeCardEnd:
     WorkSetConst 0x8000, 1
     VMReturn
 

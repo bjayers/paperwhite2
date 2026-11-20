@@ -4,7 +4,7 @@ First draft, 2026-11-19, marked up by the user the same day: their answers are t
 Stall theme (4.13) replaces Tag team and Harvest. The catalogue is data since phase 1 (section 7):
 `res/paperwhite2/entralink/buffs.json`, edited on the Entree page's Buffs tab and checked by
 `tools/paperwhite2/entralink_buffs.py`. Since phase 2 (section 9) the game offers the cards and the run holds them;
-since phase 3 (section 10) most of them work in battle. The mode itself is in `entralink-roguelike.md`
+since phase 3 (section 10) most of them work in battle, and since phase 4 (section 11) all of them. The mode itself is in `entralink-roguelike.md`
 (sections 1-2 for the design, 3.8 for the damage pipeline); how the hack adds battle effects is in
 `moves-and-abilities.md`. Every number below is a starting value to tune in playtests.
 
@@ -185,7 +185,7 @@ stages (Simple), as in the user's example; Adaptability is in Type mastery.
 
 | Gold | Effect (r1 / r2 / r3) | Bucket | Feasibility | Notes |
 | --- | --- | --- | --- | --- |
-| **Frostbite** (core) | your Ice moves frostbite 10% / 20% / 30% instead of freezing: 1/16 HP a turn, Sp. Atk halved | residual | Hard: a new condition with its icon and messages; Syrup Bomb's condition slot is the precedent (`moves-and-abilities.md` 4.1) | Legends: Arceus's frostbite, a later phase (decision 8). Until then it gives freeze with a sure thaw after one turn; bosses are never frozen |
+| **Frostbite** (core) | your Ice moves frostbite 10% / 20% / 30% instead of freezing: 1/16 HP a turn, Sp. Atk halved | residual | Hard: a new condition with its icon and messages; Syrup Bomb's condition slot is the precedent (`moves-and-abilities.md` 4.1) | Legends: Arceus's frostbite, built in phase 4 (section 11); bosses are never frozen, but get frostbite |
 | Shatter | +30% / +50% / +75% damage to frostbitten or frozen foes | COND | Easy | |
 | Cold Snap | Ice moves +40% / +70% / +100% power | POW | Easy | |
 | Permafrost | frostbitten foes lose 1 Speed / 1 Speed and 1 Attack / 1 Speed, Attack and Sp. Atk each turn | not damage | Easy: `TURN_CHECK`; vanilla Moody's shape | |
@@ -680,10 +680,9 @@ The run's buffs now work in its battles. Code: `src/paperwhite2/ov167/paperwhite
 | `ability_like` | Overcoat (weather damage), Simple (doubled boosts; rank 2 halves a foe's drops; rank 3 the first boost +1), Defiance (a foe's drop: +2 Attack; rank 2 the higher attacking stat), Speed Boost (rank 1 every second turn, rank 3 +1 on entry), Afterburner (a KO: +1 Speed, rank 2 the higher attacking stat, rank 3 heals 10%), Unaware (vanilla's three events: the foe's defending stages, rank 2 its attacking ones, rank 3 accuracy and evasion) | Overcoat, Simple, Defiance, Speed Boost, Afterburner, Unaware |
 | `custom` | Clear Amulet (`CHECK_STAT_CHANGE`, a count a Pokémon), Tempo (`STAT_CHANGE_AMOUNT`), Sandman (sleep moves never miss; ranks 2-3 sleep on a hit), First Strike (`GET_MOVE_PRIORITY` on the first move(s) a battle, rank 2's +25% in COND), Quick Draw (`CHECK_SPECIAL_PRIORITY`), Focus (a status move, rank 2 entering, rank 3 being hit ready a sure critical hit for the next attack) | |
 
-**Left for phase 4:** the HP blue (`max_hp`: the run copies' max HP), the type chart (Spectral, Magnetised), Frostbite
-(the condition; meanwhile its card does nothing), Permafrost, Corrosion, Wildfire's rank 3 (burning Fire types),
-Contagion, Self-harm, Forecast (its choice menu), Baton, Follow-through, Shattering Blow, Defiance's rank 3 (the drop
-blocked), Parasite, Overflow and Thorn Guard (the Stall theme's hooks).
+**Left for phase 4** (built there, section 11): the HP blue, Spectral, Magnetised, Frostbite, Permafrost, Corrosion,
+Wildfire's rank 3, Contagion, Self-harm, Forecast, Baton, Follow-through, Shattering Blow, Defiance's rank 3, Parasite,
+Overflow and Thorn Guard.
 
 ### 10.3 Bosses (decisions 2 and 6)
 
@@ -724,3 +723,91 @@ state) with the battle's table written; the damage as the clamp sees it:
 Overlay 167 grew 0x2e80 (11.6 KB: 3.2 KB of effects table, the code, 0.5 KB of BSS for the battle's table); ARM9 main
 +1 KB (the values table and two functions), overlay 12 +0.2 KB (Vigor). The DS main arena's start moved 1.2 KB: 35 KB
 left before 0x023e0000. Two of the battle's 0x84 event items. No heap, no VRAM.
+
+## 11. Phase 4: the harder effects (2026-11-20)
+
+Every card of the catalogue now works. Code: the same files as phase 3 (`paperwhite2_entralink_battle.c`, its header's
+new hooks), the max HP in ARM9 main (`paperwhite2_entralink_run_party.c`, a hook in `PokeParty_RecalcStats`), Forecast's
+weather in the run state and script, and the new condition in the battle's original code (`#ifdef PAPERWHITE2`).
+
+### 11.1 What was built
+
+| Card | How |
+| --- | --- |
+| HP (blue, `max_hp`) | `PokeParty_RecalcStats` (poke_tool.c, hook) gives a run copy, found by PID while a run is on (the copies and the battle's own copies of them, never the real party), max HP × (100 + the cards' percent) / 100, at most `ENTRALINK_BUFF_MAX_HP_LIMIT` (the cards' `limit`, 999) and never below its own. Taking a card (or the debug menu's Set) works the copies' stats out again, so the gain is healed and a fainted Pokémon stays fainted; every later recalculation (the battle's switches and write-back) keeps it |
+| Spectral (`type_chart`) | `ServerControl_CheckMoveEffectiveness` (hook after the two types are combined, before the immune check): the team's damaging move on a foe, with the move's own check (`flag`, once a use and target; the AI's and the menu's checks aren't rolled), rolls the cards' summed chance: a hit is super effective (×2), a type's immunity included with `overrides_immunity`. Never lowers a ×4 hit. Abilities' immunities hold: Levitate and the floats come after it (a Ground move still misses), a Wonder Guard target isn't rolled |
+| Magnetised (custom) | `CHECK_FLOATING`: a paralyzed foe floats (Ground moves "doesn't affect"); in the same hook a paralyzed foe that isn't Flying counts as Flying too for the team's Electric moves (rank 2 all its moves); rank 3 a paralyzed Ground type's type counts as neutral to Electric |
+| Frostbite (`status_chance_on_hit`, `replaces_freeze`) | A new condition, `CONDITION_FROSTBITE` 38 (the battle counts 39, as Syrup Bomb's 37 did: `BattleMonCore` +5 bytes): 1/16 of max HP a turn (one bar's on a boss), Sp. Atk halved (`ATTACK_STAT`, anyone's), messages "got frostbite!" and "was hurt by its frostbite!" (bank 0018), freeze's animation, and its own gauge icon "FRB" (**placeholder art**, see 11.2). It stands in for a major status: not given to a Pokémon with one (nor to Ice types, or twice), and none given to a frostbitten one. It is volatile: it ends when the foe leaves, and a caught foe keeps nothing. With the card held, the team's freezes become frostbite (`CHECK_MOVE_ADD_CONDITION`), and its Ice moves frostbite by the rank's chance after the hit. The `frostbite` status and residual source of the conditions and `residual_ratio` now mean it |
+| Permafrost (custom) | `TURN_CHECK`: a frostbitten foe -1 Speed (rank 2 and Attack, rank 3 and Sp. Atk) |
+| Shatter | its condition (frostbitten or frozen) now holds on frostbite |
+| Corrosion (custom) | `ServerControl_AddConditionCheckFail` (hook on the type-immunity cause): the team poisons Steel and Poison types (Toxic too); rank 2 the team's poison is bad poison (`EntralinkBattle_GetConditionValue`); rank 3 its counter starts a turn on (2/16 first, `CONDITION_CONFIRMED`) |
+| Wildfire rank 3 | the same hook: a `status_chance_on_hit` card from its `ignores_immunity_at_rank` gives its status past the type's immunity (Fire types burned) |
+| Contagion (custom) | `BEFORE_FAINT`: a poisoned foe that faints poisons the foes beside it (its side's next positions; as the team's poison, so Corrosion applies); ranks 2-3 the team's Poison moves poison by the rank's percent after the hit |
+| Self-harm (custom) | `ServerControl_ConfusionDamage` (hook): a foe's self-hit power 40 × the rank's percent |
+| Forecast (custom) | Taking it the first time asks for the weather (a list after the "gained" message: Harsh sunlight, Rain, Sandstorm, Hail, each with its line; B asks again), kept in the run state (`forecastWeather`, emptied with the buffs; `ENTRALINK_RUN_ACTION_FORECAST`). The team's first entry in a battle starts it for the rank's turns (3 / 5 / 8) unless the battle has a weather already, so a room's set weather (or the zone's) wins (decision 10). A card set by the debug menu, with no choice, gives sun |
+| Baton (custom) | `SWITCH_OUT` keeps a team Pokémon's stages for its position, `MEMBER_IN` gives them to the one entering (`BATTLE_HANDLER_SET_STAT_STAGE`, no message, not amounted by Simple): rank 1 its boosts at half, rank 2 every stage (as Baton Pass: drops too), rank 3 its boosts in full (drops dropped), as the cards' lines say. A stage higher than the entering Pokémon's own replaces it; a fainted Pokémon keeps nothing |
+| Follow-through, Shattering Blow (custom) | `DAMAGE_REACTION` on the team's critical hit on a foe: the attacking stat +1 (rank 2 and Speed +1, rank 3 the stat +2); the defence it hit -1 (rank 2 and the other -1, rank 3 the one hit -2; not through a substitute) |
+| Defiance rank 3 | `CHECK_STAT_CHANGE`: a foe's drop on the team is blocked and still gives the +2 |
+| Parasite (`residual_fraction`, leech_seed) | `ConditionEndTurnLeechSeed` (hook, `EntralinkBattle_GetLeechSeedDamage`): a foe's drain is the rank's fraction of one bar (vanilla 1/8), times the residual buffs (`leech_seed` and `any` sources); rank 3 a seeded foe that faints seeds the foes beside it, draining to the same position |
+| Overflow (custom) | `ServerControl_RecoverHPCore` (hook): every heal of the team (moves, drain, Leech Seed, items, Regrowth, Vampiric...) that passes max HP deals the rank's percent of the excess to the foe opposite (else the first), "[foe] was hurt!". A heal at full HP is still refused before it, so only heals that cross the max overflow |
+| Thorn Guard (custom) | After Protect's block message (`ServerControl_RemoveNoEffectTargets`, hook): the team's protected Pokémon heals 1/the rank's value of max HP (which can overflow), and a foe's blocked contact move costs it 1/8 of its max HP (one bar's on a boss) |
+
+Also: the packer numbers the game's custom handlers in a fixed order (`GAME_HANDLERS`), so a catalogue without one of
+them still builds (one the game doesn't know is numbered after them and does nothing); Nightmare Field now finds its own
+card when Parasite (the other `residual_fraction`) is held too.
+
+### 11.2 The frostbite icon (placeholder)
+
+The status icons are app_menu_common's 012 (characters, a row of 4 tiles an icon), 013-015 (cells, one a VRAM mapping)
+and 016-018 (animations). Row 8 is new, "FRB" from FRZ's colours with BRN's B; the cells and animations gain an empty
+cell and sequence 8 (the screens' "no status" sequence had none) and the icon's 9. The battle's gauge shows it
+(`GAUGE_FROSTBITE_STATUS` 7 to sequence 9). The summary and party screens never see frostbite (it is volatile). The user
+may redraw row 8 on the Sprite sheets page.
+
+### 11.3 Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `buffs4/`)
+
+Darkrai's single battle (room 2) from one command menu each, the lead Pignite with test movesets set on its run copy,
+Darkrai's moves set in the room table, the battle's table written; Ho-Oh's double battle for the spreads:
+
+- **Spectral:** Shadow Ball on a Normal-typed foe: no damage without, 138 (super effective, "It's super effective!",
+  screenshot) at 100%; a neutral Thundershock became ×2.
+- **Magnetised:** Thundershock on a paralyzed Ground type: none without or at I, 70 at III (×2: neutral Ground, Flying);
+  Mud-Slap on a paralyzed foe: 18 without, missed at I; Thundershock on a paralyzed Dark type 35, 70 at I.
+- **Frostbite:** Powder Snow with Frostbite III: frostbitten, "got frostbite!", 375 a turn (6,000 / 16), "was hurt by
+  its frostbite!", the FRB icon (screenshot); Powder Snow's own freeze (Serene Touch ×10) became frostbite with the card
+  and stayed freeze without; Permafrost III: Speed, Attack, Sp. Atk -1; Shatter III 54 to 93; a frostbitten foe's Dark
+  Pulse 62 to 31.
+- **Corrosion:** Toxic on a Steel type: nothing without, badly poisoned at I; Poison Powder: bad poison at II (187, 1/16),
+  374 at III (2/16), plain poison 375 without. **Wildfire:** Ember on a Fire type burned at III, not at II.
+- **Self-harm III:** a confused foe's self-hit 25 to 73 (Madness at 100%).
+- **Follow-through III + Shattering Blow III** on a sure critical Ember: Sp. Atk +2, Speed +1; the foe Sp. Def -2,
+  Defense -1; at I and II with Tackle: Attack +1; Defense and Sp. Def -1.
+- **Defiance:** a Growl: Attack -1 without, +1 at I (-1, +2), +2 at III (blocked).
+- **Parasite:** Leech Seed on a 3,000-HP foe 375, 500 at I, 750 at III. **Contagion and Parasite's spread:** Ho-Oh,
+  seeded and poisoned, fainted: Lugia beside it was poisoned and seeded.
+- **Overflow III:** Regrowth's 36 on a lead 10 below max: the foe lost 26. **Thorn Guard III:** Protect against Tackle
+  healed 73 (1/4) and the foe lost 375 (1/8).
+- **Baton** (the lead at +2 Attack, -2 Defense switched for Klink): Klink +1 at I, +2/-2 at II, +2 at III.
+- **Forecast:** taken from an offer: the weather list (screenshot), B asked again, Rain chosen and kept; a battle with
+  Forecast II started "It started to rain!".
+- **HP:** the third HP card taken: the copies' max HP +24% (Pignite 293 to 363, Klink 215 to 266), each healed by the
+  gain; earlier, two poked cards were applied by the battle's own recalculations.
+- Not checked in the emulator: Contagion's on-hit poison (Smog poisoned by its own chance in both runs), the 999 limit,
+  Wonder Guard and Levitate with Spectral (code paths read).
+- Hack build clean, `verify_dsi_rom.py` intact, the plain build's modules match, Python and editor tests pass.
+
+### 11.4 Memory
+
+Overlay 167 about +2.9 KB of code and 38 bytes of BSS (`sBattle`: Forecast's flag, Spectral's count, Baton's stages);
+ARM9 main about +0.25 KB (the max HP and Forecast's reads), so the main arena's start moves about 0.25 KB; overlay 12
++0.1 KB; a `BattleMon` +4 bytes (the new condition), from the battle's heap; the status icons' characters +128 bytes
+of OBJ VRAM where they're loaded. Two new texts in bank 0018 (6 lines), nine in the run script's bank.
+
+### 11.5 Calls made, for the user
+
+- Frostbite is a volatile condition that behaves as a major status (excludes and is excluded by them), rather than a
+  sixth major status: no party, summary or save changes, and a caught foe loses it.
+- Baton's rank 2 carries drops too, rank 3 only boosts, as the cards' lines read.
+- Spectral skips Wonder Guard targets (a super-effective hit would pass it); Magnetised's float affects every Ground
+  move on the paralyzed foe, the foes' too.
+- Forecast is chosen once, the first time it is taken; a rank-up keeps the choice.
