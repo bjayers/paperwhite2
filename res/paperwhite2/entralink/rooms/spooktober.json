@@ -1,0 +1,28 @@
+{
+    "$schema": "../room.schema.json",
+    "name": "Spooktober",
+    "role": "room",
+    "battles": [
+        {
+            "id": "battle",
+            "progress_id": 16,
+            "format": "single",
+            "enemies": [
+                {
+                    "species": "SPECIES_GENGAR",
+                    "level": 70,
+                    "moves": [ "MOVE_SHADOW_BALL", "MOVE_SHADOW_SNEAK", "MOVE_TOXIC", "MOVE_TOXIC_SPIKES" ]
+                }
+            ]
+        }
+    ],
+    "npcs": [
+        {
+            "type": "battle",
+            "battle": "battle",
+            "x": 15,
+            "z": 14,
+            "facing": "DIR_DOWN"
+        }
+    ]
+}

@@ -1,0 +1,101 @@
+{
+    "$schema": "../room.schema.json",
+    "name": "The Swords of Justice",
+    "role": "room",
+    "marker": "enemy_choice",
+    "battles": [
+        {
+            "id": "coba",
+            "progress_id": 9,
+            "format": "single",
+            "enemies": [
+                {
+                    "species": "SPECIES_COBALION",
+                    "level": 70,
+                    "moves": [ "MOVE_SACRED_SWORD", "MOVE_SWORDS_DANCE", "MOVE_AIR_SLASH", "MOVE_IRON_HEAD" ]
+                }
+            ]
+        },
+        {
+            "id": "terra",
+            "progress_id": 10,
+            "format": "single",
+            "enemies": [
+                {
+                    "species": "SPECIES_TERRAKION",
+                    "level": 70,
+                    "moves": [ "MOVE_SACRED_SWORD", "MOVE_SWORDS_DANCE", "MOVE_TAKE_DOWN", "MOVE_STONE_EDGE" ]
+                }
+            ]
+        },
+        {
+            "id": "viriz",
+            "progress_id": 11,
+            "format": "single",
+            "enemies": [
+                {
+                    "species": "SPECIES_VIRIZION",
+                    "level": 70,
+                    "moves": [ "MOVE_SACRED_SWORD", "MOVE_LEAF_BLADE", "MOVE_AIR_SLASH", "MOVE_SWORDS_DANCE" ]
+                }
+            ]
+        },
+        {
+            "id": "all_three",
+            "progress_id": 12,
+            "format": "triple",
+            "enemies": [
+                {
+                    "species": "SPECIES_TERRAKION",
+                    "level": 70,
+                    "moves": [ "MOVE_SACRED_SWORD", "MOVE_SWORDS_DANCE", "MOVE_STONE_EDGE", "MOVE_STONE_EDGE" ]
+                },
+                {
+                    "species": "SPECIES_VIRIZION",
+                    "level": 70,
+                    "moves": [ "MOVE_SACRED_SWORD", "MOVE_SWORDS_DANCE", "MOVE_AIR_SLASH", "MOVE_LEAF_BLADE" ]
+                },
+                {
+                    "species": "SPECIES_COBALION",
+                    "level": 70,
+                    "moves": [ "MOVE_SACRED_SWORD", "MOVE_SWORDS_DANCE", "MOVE_AIR_SLASH", "MOVE_IRON_HEAD" ]
+                }
+            ]
+        }
+    ],
+    "npcs": [
+        {
+            "type": "battle",
+            "battle": "coba",
+            "sprite": "OBJ_CODE_115",
+            "x": 15,
+            "z": 14,
+            "facing": "DIR_DOWN"
+        },
+        {
+            "type": "battle",
+            "battle": "terra",
+            "sprite": "OBJ_CODE_116",
+            "x": 12,
+            "z": 14,
+            "facing": "DIR_DOWN"
+        },
+        {
+            "type": "battle",
+            "battle": "viriz",
+            "sprite": "OBJ_CODE_117",
+            "x": 18,
+            "z": 14,
+            "facing": "DIR_DOWN"
+        },
+        {
+            "type": "battle",
+            "battle": "all_three",
+            "sprite": "OBJ_CODE_354",
+            "x": 21,
+            "z": 11,
+            "facing": "DIR_DOWN",
+            "marker": "challenge"
+        }
+    ]
+}

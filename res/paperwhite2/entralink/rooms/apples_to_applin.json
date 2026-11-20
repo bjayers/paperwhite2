@@ -1,0 +1,32 @@
+{
+    "$schema": "../room.schema.json",
+    "name": "Apples to Applin",
+    "rounds": [ 1 ],
+    "role": "room",
+    "battles": [
+        {
+            "id": "battle",
+            "progress_id": 8,
+            "format": "triple",
+            "enemies": [
+                {
+                    "species": "SPECIES_DIPPLIN",
+                    "level": 70,
+                    "scale": 120,
+                    "moves": [ "MOVE_SYRUP_BOMB", "MOVE_DRAGON_CHEER", "MOVE_DRAGON_BREATH", "MOVE_GIGA_DRAIN" ],
+                    "ability": "ABILITY_SWEET_SYRUP",
+                    "gender": "male"
+                }
+            ]
+        }
+    ],
+    "npcs": [
+        {
+            "type": "battle",
+            "battle": "battle",
+            "x": 15,
+            "z": 14,
+            "facing": "DIR_DOWN"
+        }
+    ]
+}

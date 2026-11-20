@@ -1,6 +1,7 @@
 {
     "$schema": "../room.schema.json",
     "name": "The Illusionist",
+    "rounds": [ 1 ],
     "role": "room",
     "battles": [
         {
@@ -11,6 +12,7 @@
                 {
                     "species": "SPECIES_ZOROARK",
                     "level": 70,
+                    "scale": 150,
                     "moves": [ "MOVE_AGILITY", "MOVE_FAKE_TEARS", "MOVE_KNOCK_OFF", "MOVE_NIGHT_DAZE" ],
                     "ability": "ABILITY_ILLUSION",
                     "item": "ITEM_MAX_REVIVE"

@@ -2,17 +2,17 @@
     "$schema": "run.schema.json",
     "rounds": [
         {
-            "rooms": 3,
+            "rooms": 5,
             "boss": true,
             "field_weather": "WEATHER_CUSTOM_TINT_9"
         },
         {
-            "rooms": 3,
+            "rooms": 5,
             "boss": true,
             "field_weather": "WEATHER_CUSTOM_TINT_8"
         },
         {
-            "rooms": 3,
+            "rooms": 5,
             "field_weather": "WEATHER_CUSTOM_TINT_7"
         }
     ],

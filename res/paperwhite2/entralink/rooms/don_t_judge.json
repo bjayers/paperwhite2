@@ -1,0 +1,52 @@
+{
+    "$schema": "../room.schema.json",
+    "name": "Don't Judge",
+    "role": "room",
+    "marker": "challenge",
+    "battles": [
+        {
+            "id": "battle",
+            "progress_id": 14,
+            "format": "single",
+            "enemies": [
+                {
+                    "species": "SPECIES_DITTO",
+                    "level": 70,
+                    "scale": 500,
+                    "moves": [ "MOVE_TRANSFORM" ]
+                }
+            ]
+        },
+        {
+            "id": "battle_2",
+            "progress_id": 15,
+            "format": "single",
+            "enemies": [
+                {
+                    "species": "SPECIES_DITTO",
+                    "level": 70,
+                    "scale": 70,
+                    "moves": [ "MOVE_TRANSFORM" ]
+                }
+            ]
+        }
+    ],
+    "npcs": [
+        {
+            "type": "battle",
+            "battle": "battle",
+            "sprite": "OBJ_CODE_POKEMON_MAGIKARP",
+            "x": 14,
+            "z": 14,
+            "facing": "DIR_DOWN"
+        },
+        {
+            "type": "battle",
+            "battle": "battle_2",
+            "sprite": "OBJ_CODE_FOLLOWER_GIRATINA",
+            "x": 17,
+            "z": 14,
+            "facing": "DIR_DOWN"
+        }
+    ]
+}

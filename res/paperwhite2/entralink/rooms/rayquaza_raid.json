@@ -2,6 +2,7 @@
     "$schema": "../room.schema.json",
     "name": "Nightmare Rayquaza raid",
     "role": "room",
+    "marker": "challenge",
     "battles": [
         {
             "id": "rayquaza_raid",
@@ -11,6 +12,7 @@
                 {
                     "species": "SPECIES_RAYQUAZA",
                     "level": 70,
+                    "scale": 120,
                     "moves": [ "MOVE_OUTRAGE", "MOVE_EXTREME_SPEED", "MOVE_EARTHQUAKE", "MOVE_DRAGON_PULSE" ]
                 }
             ]

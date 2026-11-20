@@ -6,12 +6,13 @@
         {
             "id": "dialga",
             "progress_id": 1,
-            "format": "single",
+            "format": "raid",
             "enemies": [
                 {
                     "species": "SPECIES_DIALGA",
                     "form": 1,
                     "level": 70,
+                    "scale": 120,
                     "moves": [ "MOVE_ROAR_OF_TIME", "MOVE_DRAGON_PULSE", "MOVE_FLASH_CANNON", "MOVE_EARTHQUAKE" ],
                     "item": "ITEM_ADAMANT_ORB"
                 }
