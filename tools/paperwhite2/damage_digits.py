@@ -20,10 +20,12 @@ tier's four colours, which replace the sheet's own 1 to 5 (only a preview); the 
 them.
 
 The member (DIGITS_MEMBER, the archive's first after its own) is a header (the rows, the cells' width and height, the
-tiers), each tier's 16 colours as RGB555 and then every cell, row by row and 0 to 9 in a row, each a 16 by 32 texture
+tiers, then each digit's glyph: its first opaque column in its cell and its opaque width, in row 1), each tier's 16
+colours as RGB555 and then every cell, row by row and 0 to 9 in a row, each a 16 by 32 texture
 of 4 bits a pixel (GX_TEXFMT_PLTT16, the left pixel in the low nibble), which
 src/paperwhite2/ov168/paperwhite2_damage_numbers.c loads into texture VRAM and draws as 3D quads, a number in its
-tier's palette. The next member is the cell of a foe's HP line on its gauge: the HP numbers' cell (HP_NUMBERS_CELL)
+tier's palette, each digit placed by its glyph's width (settings' overlap between glyphs, group_space before the
+thousands). The next member is the cell of a foe's HP line on its gauge: the HP numbers' cell (HP_NUMBERS_CELL)
 widened to two 32 by 8 pieces, 64 pixels.
 """
 import json
@@ -51,6 +53,8 @@ COLORS = 16
 OUTLINE = 1
 TIER_FIRST, TIER_COLORS = 2, 4
 DARK_SHADOW, LIGHT_SHADOW, MAIN, SHINE = range(TIER_FIRST, TIER_FIRST + TIER_COLORS)
+# The member's header: rows, cell width, cell height, tiers, then a digit's glyph (its left column, its width) each
+HEADER_SIZE = 4 + 2 * DIGITS
 # The battle view's archive's HP numbers' cell (BtlvGauge_CreateActors' 0x1c9)
 HP_NUMBERS_CELL = 0x1c9
 
@@ -60,8 +64,10 @@ ABOUT = (
     f"is one frame of their shine, played in order (up to {MAX_ROWS} rows in all, so the height is 32 times the rows). "
     "An indexed PNG of 16 colours, index 0 clear: entry 1 is the outline and entries 2-5 the tier colours (dark "
     "shadow, light shadow, main colour, shine: the shine rows draw with 5), which the Tier colours below set for "
-    "each tier; the sheet's own 1-5 are only a preview, and its other entries show as they are. The game draws the digits overlapping and spaced by the settings, starts "
-    "each number large and see-through and shrinks it into place. The preview adds a sample number in each tier.")
+    "each tier; the sheet's own 1-5 are only a preview, and its other entries show as they are. The game spaces the "
+    "digits by their glyphs' widths in row 1 (each digit's opaque columns; the shine rows take the same), the settings' "
+    "overlap between one glyph and the next and their gap before the thousands; it starts each number large and "
+    "see-through and shrinks it into place. The preview adds a sample number in each tier.")
 
 
 def digits_member_number() -> int:
@@ -120,10 +126,37 @@ def tier_palettes(colors: list, numbers: dict) -> list[list[tuple[int, int, int]
     return palettes
 
 
+def glyphs(pixels: bytes) -> list[tuple[int, int]]:
+    """Each digit's glyph in row 1: its first opaque column in its cell and its opaque width (an empty cell: the cell
+    less its blank side columns). The shine rows are placed the same."""
+    out = []
+    for digit in range(DIGITS):
+        columns = [x for x in range(CELL_WIDTH)
+                   if any(pixels[y * WIDTH + digit * CELL_WIDTH + x] for y in range(CELL_HEIGHT))]
+        out.append((columns[0], columns[-1] - columns[0] + 1) if columns else (1, CELL_WIDTH - 2))
+    return out
+
+
+def layout(text: str, metrics: list[tuple[int, int]], numbers: dict) -> tuple[list[int], int]:
+    """Where the game puts a number's digit cells (each cell's left edge, from the first glyph's left) and the
+    number's width from the first glyph's left to the last one's right: each glyph overlap pixels into the one before,
+    group_space more before the thousands (paperwhite2_damage_numbers.c's DamageNumbers_Layout)."""
+    lefts = []
+    pen = 0
+    for i, ch in enumerate(text):
+        if i and (len(text) - i) % 3 == 0:
+            pen += numbers["group_space"]
+        left, width = metrics[int(ch)]
+        lefts.append(pen - left)
+        pen += width - numbers["overlap"]
+    return lefts, pen + numbers["overlap"]
+
+
 def member(path: Path = SHEET, numbers: dict | None = None) -> bytes:
     rows, pixels, colors = read_sheet(path)
     palettes = tier_palettes(colors, numbers if numbers is not None else settings())
     data = struct.pack("<BBBB", rows, CELL_WIDTH, CELL_HEIGHT, len(palettes))
+    data += bytes(value for glyph in glyphs(pixels) for value in glyph)
     data += b"".join(struct.pack("<H", to555(color)) for palette in palettes for color in palette)
     return data + b"".join(cell(pixels, row, digit) for row in range(rows) for digit in range(DIGITS))
 
@@ -242,25 +275,22 @@ def sample(pixels: bytes, colors: list, numbers: dict) -> tuple[int, int, bytes]
     """'12 345' at its normal size in each tier, a row of 32 pixels each, as RGBA: the digits as the game places them,
     each over the one before."""
     text = "12345"
-    advance = CELL_WIDTH - 2 - numbers["overlap"]
+    lefts, _ = layout(text, glyphs(pixels), numbers)
     palettes = tier_palettes(colors, numbers)
     height = CELL_HEIGHT * len(palettes)
     out = bytearray(WIDTH * height * 4)
     for t, tier_palette in enumerate(palettes):
         palette = [shown(c) for c in tier_palette]
-        x0 = 4
         for i, ch in enumerate(text):
-            if i and (len(text) - i) % 3 == 0:
-                x0 += numbers["group_space"]
+            x0 = 4 + lefts[i]
             digit = int(ch)
             for y in range(CELL_HEIGHT):
                 for x in range(CELL_WIDTH):
                     index = pixels[y * WIDTH + digit * CELL_WIDTH + x]
                     tx = x0 + x
-                    if index and tx < WIDTH:
+                    if index and 0 <= tx < WIDTH:
                         at = ((t * CELL_HEIGHT + y) * WIDTH + tx) * 4
                         out[at:at + 4] = bytes((*palette[index], 255))
-            x0 += advance
     return WIDTH, height, bytes(out)
 
 
@@ -308,8 +338,10 @@ def check(args: list[str]):
         Path(options["--output"]).write_bytes(write_indexed_png(WIDTH, rows * CELL_HEIGHT, pixels, colors))
     if options["--info"]:
         # The pixels too (an index a hex digit, row by row), for the editor's tier colours' live preview
+        # and each digit's glyph (its left column and width in row 1), which the game spaces the digits by
         Path(options["--info"]).write_text(json.dumps({"colors": ["#%02x%02x%02x" % shown(c) for c in colors],
                                                        "used": used, "warnings": warnings,
+                                                       "glyphs": [list(g) for g in glyphs(pixels)],
                                                        "pixels": "".join("%x" % p for p in pixels)}))
     note = f"; warning: {'; '.join(warnings)}" if warnings else ""
     print(f"{rows} row{'s' if rows > 1 else ''} ({rows - 1} shine frame{'' if rows == 2 else 's'}){note}")

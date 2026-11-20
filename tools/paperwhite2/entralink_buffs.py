@@ -474,7 +474,9 @@ DEFAULT_DAMAGE_NUMBERS = {
               {"from": 5000, "colors": ["#4c1c88", "#8840d8", "#c084ff", "#f0d8ff"]},
               {"from": 10000, "colors": ["#8c4c00", "#d09000", "#ffd030", "#fff6b8"]},
               {"from": 40000, "colors": ["#780c0c", "#d02418", "#ff5844", "#ffd0c4"]}],
-    "overlap": 3,
+    # Pixels each digit's glyph overlaps the one before (the digits are spaced by their glyphs' widths in the sheet),
+    # and the gap before the thousands
+    "overlap": 2,
     "group_space": 4,
     "start_scale": 300,
     "start_alpha": 8,
@@ -500,9 +502,9 @@ def damage_number_lines(settings: dict) -> list[str]:
     tiers = numbers["tiers"]
     return [
         "// The damage numbers (phase 6): the battles they show in (0 none, 1 the run's, 2 all but link battles), the",
-        "// tiers' thresholds (each tier's palette is in the digits' member, damage_digits.py), the digits' overlap",
-        "// and the thousands' space in pixels, the pop-up's start (scale in percent, alpha of 31) and its frames, its",
-        "// rise while it fades and its height over the Pokémon's feet in pixels, the shine (0 none, 1 critical hits",
+        "// tiers' thresholds (each tier's palette is in the digits' member, damage_digits.py), the pixels each",
+        "// digit's glyph overlaps the one before and the thousands' gap, the pop-up's start (scale in percent,",
+        "// alpha of 31) and its frames, its rise while it fades and its height over the Pokémon's feet in pixels, the shine (0 none, 1 critical hits",
         "// and capped ones, 2 every hit), its frames' length and its delay from one digit to the next, and whether",
         "// a foe's gauge shows its HP in the run's battles",
         f"#define ENTRALINK_DAMAGE_NUMBERS_BATTLES {DAMAGE_NUMBER_BATTLES.index(numbers['battles'])}",

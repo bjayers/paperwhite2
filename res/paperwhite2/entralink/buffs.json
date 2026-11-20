@@ -81,7 +81,7 @@
                     "colors": [ "#780c0c", "#d02418", "#ff5844", "#ffd0c4" ]
                 }
             ],
-            "overlap": 3,
+            "overlap": 2,
             "group_space": 4,
             "start_scale": 300,
             "start_alpha": 8,

@@ -9,9 +9,10 @@
 // tier's. Both are loaded once a battle, by the VRAM transfer manager.
 
 #include "types.h"
+#include "battle/btl_main.h"
+#include "battle/btlv_camera.h"
 #include "battle/btlv_effect.h"
 #include "battle/btlv_mcss.h"
-#include "battle/btl_main.h"
 #include "constants/arc.h"
 #include "gfl/arc.h"
 #include "gfl/heap.h"
@@ -27,13 +28,14 @@
 #include "paperwhite2/entralink_buffs_config.h"
 #include "paperwhite2/entralink_run_battle.h"
 
-// The sheet's member (tools/paperwhite2/damage_digits.py): its rows, the cells' size and its tiers, each tier's 16
-// colours, then the cells
+// The sheet's member (tools/paperwhite2/damage_digits.py): its rows, the cells' size and its tiers, each digit's glyph
+// (its first opaque column in its cell and its opaque width), each tier's 16 colours, then the cells
 #define DIGIT_COUNT 10
 #define CELL_WIDTH 16
 #define CELL_HEIGHT 32
 #define CELL_BYTES (CELL_WIDTH * CELL_HEIGHT / 2)
-#define SHEET_HEADER_SIZE 4
+#define SHEET_GLYPHS 4
+#define SHEET_HEADER_SIZE (SHEET_GLYPHS + 2 * DIGIT_COUNT)
 #define PALETTE_COLORS 16
 #define PALETTE_SIZE (PALETTE_COLORS * sizeof(u16))
 #define SHEET_ROWS_MAX 8
@@ -51,8 +53,22 @@
 #define SCREEN_HEIGHT 192
 #define PIXELS_PER_UNIT 64
 #define VERTEX_SHIFT 6
-// A digit's depth, in front of the scene: the later digits nearer, so that they cover the earlier ones' overlap
-#define DIGIT_DEPTH_STEP 64
+// The least room a number keeps from the screen's edges, in pixels
+#define SCREEN_MARGIN 4
+// The battle camera at rest (btlv_camera.c's BtlvCamera_Create): the sine and cosine of half its field of view (13
+// degrees) and its aspect, from which a foe's place is projected whatever the camera does during the attack
+#define CAMERA_FOVY_SIN 0x399
+#define CAMERA_FOVY_COS 0xf97
+#define CAMERA_ASPECT FX32_CONST(1.35)
+// A digit's depth. The battle draws its 3D W-buffered (g3d_system.c): a pixel's depth is its w, which an orthographic
+// projection makes its scaleW for every vertex. The scene's w is at least 1 (the camera's near plane; MCSS's flat
+// sprites and the particles' orthographic projections use 1 too), so each digit's projection takes a scaleW well
+// under 1, smaller for each digit drawn later: every digit passes the depth test over the scene, however near a big
+// foe's sprite is, and a later digit covers an earlier one's overlap. Its z only has to lie between the near and far
+// planes
+#define DIGIT_DEPTH_Z (-64)
+#define DIGIT_W_FIRST (FX32_ONE / 8)
+#define DIGIT_W_STEP 16
 // The polygon IDs of the numbers' digits, one a digit of each number, so that see-through digits blend over each
 // other
 #define POLYGON_ID_FIRST 32
@@ -80,6 +96,9 @@ static struct {
     BOOL loaded;
     BOOL foeHP;
     u8 rows;
+    // Each digit's glyph in its cell: its first opaque column and its opaque width
+    u8 glyphLeft[DIGIT_COUNT];
+    u8 glyphWidth[DIGIT_COUNT];
     // The file while its transfers wait, the frames left, and whether they were queued
     u8 *file;
     u8 uploadFrames;
@@ -122,6 +141,7 @@ void PaperWhite2_DamageNumbersInit(BtlMainModule *mainModule, HeapID heapId) {
     ArcTool *arc;
     u32 size;
     u32 texSize;
+    u32 i;
 
     MI_CpuFill8(&sDamageNumbers, 0, sizeof(sDamageNumbers));
     if (mainModule == NULL) {
@@ -154,6 +174,10 @@ void PaperWhite2_DamageNumbersInit(BtlMainModule *mainModule, HeapID heapId) {
         sDamageNumbers.file = NULL;
         return;
     }
+    for (i = 0; i < DIGIT_COUNT; i++) {
+        sDamageNumbers.glyphLeft[i] = sDamageNumbers.file[SHEET_GLYPHS + 2 * i];
+        sDamageNumbers.glyphWidth[i] = sDamageNumbers.file[SHEET_GLYPHS + 2 * i + 1];
+    }
     sDamageNumbers.texKey = NNS_GfdAllocTexVram(texSize, FALSE, 0);
     sDamageNumbers.plttKey = NNS_GfdAllocPlttVram(PALETTES_SIZE, FALSE, 0);
     if (sDamageNumbers.texKey == NNS_GFD_ALLOC_ERROR_TEXKEY || sDamageNumbers.plttKey == NNS_GFD_ALLOC_ERROR_PLTTKEY) {
@@ -185,11 +209,37 @@ BOOL PaperWhite2_DamageNumbersFoeHP(void) {
     return sDamageNumbers.foeHP;
 }
 
+// The Pokémon's place on screen, in pixels, as the battle camera shows it at rest: the camera often zooms in on the
+// attack and moves back as the hit lands, so the moment's camera would leave the number off its target
+static void DamageNumbers_RestingScreenPos(u32 viewPos, s32 *x, s32 *y) {
+    static const VecFx32 up = { 0, FX32_ONE, 0 };
+    VecFx32 world;
+    VecFx32 camPos;
+    VecFx32 target;
+    VecFx32 view;
+    MtxFx43 camera;
+    fx32 depth;
+
+    BtlvMcss_GetDefaultPos(BtlvEffect_GetMcss(), &world, viewPos);
+    BtlvCamera_GetDefaultPosTarget(&camPos, &target);
+    MTX_LookAt(&camPos, &up, &target, &camera);
+    MTX_MultVec43(&world, &camera, &view);
+    // The camera looks down its -z; the perspective divides by the depth, scaled to the field of view
+    depth = FX_Mul(-view.z, CAMERA_FOVY_SIN);
+    if (depth <= 0) {
+        *x = SCREEN_WIDTH / 2;
+        *y = SCREEN_HEIGHT / 2;
+        return;
+    }
+    *x = SCREEN_WIDTH / 2 +
+         FX_Whole(FX_Div(FX_Mul(view.x, CAMERA_FOVY_COS), FX_Mul(depth, CAMERA_ASPECT)) * (SCREEN_WIDTH / 2));
+    *y = SCREEN_HEIGHT / 2 - FX_Whole(FX_Div(FX_Mul(view.y, CAMERA_FOVY_COS), depth) * (SCREEN_HEIGHT / 2));
+}
+
 void PaperWhite2_DamageNumbersShow(u32 viewPos, u32 damage, u32 flags) {
     DamageNumber *number = NULL;
-    VecFx32 world;
-    int x;
-    int y;
+    s32 x;
+    s32 y;
     u32 i;
 
     if (!sDamageNumbers.loaded) {
@@ -227,26 +277,40 @@ void PaperWhite2_DamageNumbersShow(u32 viewPos, u32 damage, u32 flags) {
         break;
     }
     number->fadeStart = ENTRALINK_DAMAGE_NUMBERS_SHRINK_FRAMES + ENTRALINK_DAMAGE_NUMBERS_HOLD_FRAMES;
-    BtlvMcss_GetDefaultPos(BtlvEffect_GetMcss(), &world, viewPos);
-    NNS_G3dWorldPosToScrPos(&world, &x, &y);
+    DamageNumbers_RestingScreenPos(viewPos, &x, &y);
     number->x = x;
     number->y = y - ENTRALINK_DAMAGE_NUMBERS_HEIGHT;
 }
 
-// The digits' left edges at the normal size (each cell's, its blank column included) and the number's width
-static u32 DamageNumbers_Layout(const DamageNumber *number, s32 *lefts) {
-    s32 x = 0;
+// The digits' cells' left edges at the normal size, from the first glyph's left, and the number's width from there to
+// the last glyph's right: each glyph by its own width, overlapping the one before by the settings' overlap, with the
+// group space before the thousands
+static s32 DamageNumbers_Layout(const DamageNumber *number, s32 *lefts) {
+    s32 pen = 0;
+    u32 digit;
     u32 i;
 
     // The digits are kept from the ones up; they go on screen from the highest
     for (i = 0; i < number->count; i++) {
+        digit = number->digits[number->count - 1 - i];
         if (i != 0 && (number->count - i) % 3 == 0) {
-            x += ENTRALINK_DAMAGE_NUMBERS_GROUP_SPACE;
+            pen += ENTRALINK_DAMAGE_NUMBERS_GROUP_SPACE;
         }
-        lefts[i] = x;
-        x += CELL_WIDTH - 2 - ENTRALINK_DAMAGE_NUMBERS_OVERLAP;
+        lefts[i] = pen - sDamageNumbers.glyphLeft[digit];
+        pen += sDamageNumbers.glyphWidth[digit] - ENTRALINK_DAMAGE_NUMBERS_OVERLAP;
     }
-    return lefts[number->count - 1] + CELL_WIDTH;
+    return pen + ENTRALINK_DAMAGE_NUMBERS_OVERLAP;
+}
+
+// A number's middle, in fx32 pixels, kept far enough from the screen's edges for its half size
+static fx32 DamageNumbers_Clamp(fx32 middle, fx32 half, s32 screen) {
+    fx32 low = SCREEN_MARGIN * FX32_ONE + half;
+    fx32 high = (screen - SCREEN_MARGIN) * FX32_ONE - half;
+
+    if (low > high) {
+        return screen * FX32_ONE / 2;
+    }
+    return MATH_MAX(low, MATH_MIN(middle, high));
 }
 
 // The number's size as it shrinks into place: from start_scale to 1, fast at first and settling (ease-out, the
@@ -299,8 +363,13 @@ static void DamageNumbers_DrawDigit(const DamageNumber *number, u32 slot, u32 di
     // The projection's y rises up the screen
     fx16 y0 = -(top >> VERTEX_SHIFT);
     fx16 y1 = -((top + size * CELL_HEIGHT) >> VERTEX_SHIFT);
-    fx16 z = -(fx16)((digit + 1) * DIGIT_DEPTH_STEP);
     u32 cell = row * DIGIT_COUNT + number->digits[number->count - 1 - digit];
+
+    // The screen's pixels in units of 64, in front of all the scene (DIGIT_W_FIRST), each digit drawn nearer
+    G3_MtxMode(GX_MTXMODE_PROJECTION);
+    G3i_OrthoW_(0, -SCREEN_HEIGHT * FX32_ONE / PIXELS_PER_UNIT, 0, SCREEN_WIDTH * FX32_ONE / PIXELS_PER_UNIT, 0,
+                FX32_ONE, DIGIT_W_FIRST - (slot * NUMBER_DIGITS_MAX + digit) * DIGIT_W_STEP, TRUE, NULL);
+    G3_MtxMode(GX_MTXMODE_POSITION_VECTOR);
 
     G3_PolygonAttr(GX_LIGHTMASK_NONE, GX_POLYGONMODE_MODULATE, GX_CULL_NONE,
                    POLYGON_ID_FIRST + slot * NUMBER_DIGITS_MAX + digit, alpha, 0);
@@ -311,13 +380,13 @@ static void DamageNumbers_DrawDigit(const DamageNumber *number, u32 slot, u32 di
     G3_Begin(GX_BEGIN_QUADS);
     G3_Color(GX_RGB(31, 31, 31));
     G3_TexCoord(0, 0);
-    G3_Vtx(x0, y0, z);
+    G3_Vtx(x0, y0, DIGIT_DEPTH_Z);
     G3_TexCoord(0, FX32_CONST(CELL_HEIGHT));
-    G3_Vtx(x0, y1, z);
+    G3_Vtx(x0, y1, DIGIT_DEPTH_Z);
     G3_TexCoord(FX32_CONST(CELL_WIDTH), FX32_CONST(CELL_HEIGHT));
-    G3_Vtx(x1, y1, z);
+    G3_Vtx(x1, y1, DIGIT_DEPTH_Z);
     G3_TexCoord(FX32_CONST(CELL_WIDTH), 0);
-    G3_Vtx(x1, y0, z);
+    G3_Vtx(x1, y0, DIGIT_DEPTH_Z);
     G3_End();
 }
 
@@ -326,8 +395,9 @@ static void DamageNumbers_DrawNumber(DamageNumber *number, u32 slot) {
     s32 width = DamageNumbers_Layout(number, lefts);
     fx32 scale = DamageNumbers_Scale(number->frame);
     u32 alpha = DamageNumbers_Alpha(number);
-    s32 x = MATH_MAX(width / 2, MATH_MIN(number->x, SCREEN_WIDTH - width / 2));
     s32 y = number->y;
+    fx32 left;
+    fx32 top;
     u32 i;
 
     if (alpha == 0) {
@@ -336,10 +406,12 @@ static void DamageNumbers_DrawNumber(DamageNumber *number, u32 slot) {
     if (number->frame > number->fadeStart) {
         y -= ENTRALINK_DAMAGE_NUMBERS_RISE * (number->frame - number->fadeStart) / ENTRALINK_DAMAGE_NUMBERS_FADE_FRAMES;
     }
+    // Kept inside the screen at the size it has now, so that neither its start nor a foe at the edge cuts it off
+    left = DamageNumbers_Clamp(number->x * FX32_ONE, width * scale / 2, SCREEN_WIDTH) - width * scale / 2;
+    top = DamageNumbers_Clamp(y * FX32_ONE, CELL_HEIGHT * scale / 2, SCREEN_HEIGHT) - CELL_HEIGHT * scale / 2;
     for (i = 0; i < number->count; i++) {
-        DamageNumbers_DrawDigit(number, slot, i, DamageNumbers_Row(number, i),
-                                x * FX32_ONE + (lefts[i] - width / 2) * scale, y * FX32_ONE - CELL_HEIGHT / 2 * scale,
-                                scale, alpha);
+        DamageNumbers_DrawDigit(number, slot, i, DamageNumbers_Row(number, i), left + lefts[i] * scale, top, scale,
+                                alpha);
     }
 }
 
@@ -373,8 +445,6 @@ void PaperWhite2_DamageNumbersDraw(void) {
     NNS_G3dGeFlushBuffer();
     G3_MtxMode(GX_MTXMODE_PROJECTION);
     G3_PushMtx();
-    G3i_OrthoW_(0, -SCREEN_HEIGHT * FX32_ONE / PIXELS_PER_UNIT, 0, SCREEN_WIDTH * FX32_ONE / PIXELS_PER_UNIT, 0,
-                FX32_ONE, FX32_ONE, TRUE, NULL);
     G3_MtxMode(GX_MTXMODE_POSITION_VECTOR);
     G3_PushMtx();
     G3_Identity();

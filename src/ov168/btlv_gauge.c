@@ -726,7 +726,8 @@ void BtlvGauge_SetPos(BtlvGauge *gauge, int index, const ClActorPos *offset) {
 void BtlvGauge_StartHpChange(BtlvGauge *gauge, int index, s32 hp) {
     BtlvGauge_SetHpTarget(gauge, &gauge->entries[index], hp);
 #ifdef PAPERWHITE2
-    // Paper White 2: past 999 HP, a bar drains in about half a second (paperwhite2/health_bars.h)
+    // Paper White 2: the drain takes a time by the share of the bar it drains, at most about half a second a bar,
+    // in every battle (paperwhite2/health_bars.h)
     gauge->entries[index].mon.hpSpeed = PaperWhite2_HealthBarsSpeed(&gauge->entries[index]);
 #else
     gauge->entries[index].mon.hpSpeed = 1;

@@ -2,6 +2,21 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-20: Battle visuals from the playtest: damage numbers' place and depth, triples' HP lines, digit widths, HP drain (ROM session, on a branch)
+
+- **Damage numbers** are placed from the battle camera at rest (not the attack's moving camera) and kept 4 px inside
+  the screen at every size, so a triple's right-edge hit shows whole; each digit gets a W-buffer depth under the
+  scene's (it tied with flat sprites at w = 1), so nothing in the scene can cover them.
+- **Triples' (and raids', rotations') HP lines** sit beside each foe's bar instead of under it; singles and doubles keep
+  them under.
+- **Digits spaced by their real widths:** the packer measures each digit's glyph in the sheet's first row into the
+  digits' member; `overlap` (now 2) is glyph to glyph, `group_space` the thousands' gap. The editor's Damage numbers'
+  digits page has a Layout part (both settings, the measured widths, previews at the real spacing).
+- **HP drain in every battle** takes 12 frames plus the change's share of 24 more (36 a bar on barred gauges), never
+  slower than vanilla: a 271 HP hit on a 293 HP Pokémon 34 frames instead of 271.
+- Tested in py-desmume (triple, both raids, doubles, single, drains measured). Found: a triple runs at about half
+  speed in the emulator, so its drains take twice the real time. Details: `entralink-buffs.md` 13.9.
+
 ## 2026-11-20: Damage numbers: the user's digits and four tier colours (ROM session, on a branch)
 
 - **The user's sheet** (`res/paperwhite2/battle/damage_digits.png`, 4 rows) is installed and packs; overlap 3 and

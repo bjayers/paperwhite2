@@ -141,4 +141,8 @@ a.pal-file-button { color: inherit; text-decoration: none; }
 .tier-grid { display: grid; grid-template-columns: max-content repeat(5, 72px) 1fr; gap: 8px 6px; align-items: center; margin-top: 8px; }
 .tier-grid .marker-swatch { align-items: flex-start; }
 .tier-preview { display: flex; align-items: center; }
+.tier-layout-head { margin: 16px 0 4px; }
+.tier-layout { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; align-items: center; }
+.tier-layout input[type="number"] { width: 56px; }
+.tier-glyphs { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
 .tier-sample { image-rendering: pixelated; background: repeating-conic-gradient(#6d7f6d 0 25%, #627262 0 50%) 0 0 / 16px 16px; border-radius: 4px; }
