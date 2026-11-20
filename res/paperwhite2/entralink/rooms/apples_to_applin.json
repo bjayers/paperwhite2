@@ -15,7 +15,18 @@
                     "scale": 120,
                     "moves": [ "MOVE_SYRUP_BOMB", "MOVE_DRAGON_CHEER", "MOVE_DRAGON_BREATH", "MOVE_GIGA_DRAIN" ],
                     "ability": "ABILITY_SWEET_SYRUP",
-                    "gender": "male"
+                    "gender": "male",
+                    "shiny": true
+                },
+                {
+                    "species": "SPECIES_DIPPLIN",
+                    "level": 70,
+                    "moves": [ "MOVE_SWEET_SCENT", "MOVE_SYRUP_BOMB", "MOVE_DRAGON_TAIL", "MOVE_SUNNY_DAY" ]
+                },
+                {
+                    "species": "SPECIES_DIPPLIN",
+                    "level": 70,
+                    "moves": [ "MOVE_DRAGON_BREATH", "MOVE_GROWTH", "MOVE_WITHDRAW", "MOVE_HYPER_BEAM" ]
                 }
             ]
         }
