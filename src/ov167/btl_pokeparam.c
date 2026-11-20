@@ -18,6 +18,9 @@
 #include "pml/move.h"
 #include "pml/personal.h"
 #include "pml/poke_party.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/entralink_battle.h"
+#endif
 
 BattleMon *BattleMon_Create(PartyPkm *src, u8 monId, HeapID heapId) {
     BattleMon *mon;
@@ -1286,6 +1289,25 @@ u8 BattleMon_GetConditionTurnCount(BattleMon *mon, u32 index) {
 u32 BattleMon_GetResidualDamage(BattleMon *mon, u32 index) {
     if (CheckCondition(mon, index)) {
         switch (index) {
+#ifdef PAPERWHITE2
+        // Paper White 2: in an Entralink run, a foe's damage over time is a fraction of at most one bar's HP, and bad
+        // poison's ramp stops on a boss (paperwhite2_entralink_battle.c)
+        case 5:
+            if (Condition_IsBadlyPoisoned(mon->core.conditions[index])) {
+                return EntralinkBattle_DivideResidualHP(mon, 16) *
+                       EntralinkBattle_GetToxicCounter(mon, mon->core.conditionCounters[index]);
+            }
+            return EntralinkBattle_DivideResidualHP(mon, 8);
+        case 4:
+            return EntralinkBattle_DivideResidualHP(mon, 8);
+        case 9:
+            if (CheckCondition(mon, CONDITION_SLEEP)) {
+                return EntralinkBattle_DivideResidualHP(mon, 4);
+            }
+            break;
+        case 10:
+            return EntralinkBattle_DivideResidualHP(mon, 4);
+#else
         case 5:
             if (Condition_IsBadlyPoisoned(mon->core.conditions[index])) {
                 return DivideMaxHPZeroCheck(mon, 16) * mon->core.conditionCounters[index];
@@ -1300,6 +1322,7 @@ u32 BattleMon_GetResidualDamage(BattleMon *mon, u32 index) {
             break;
         case 10:
             return DivideMaxHPZeroCheck(mon, 4);
+#endif
         default:
             return 0;
         }

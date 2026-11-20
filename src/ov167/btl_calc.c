@@ -14,6 +14,7 @@
 #include "pml/personal.h"
 #include "pml/poke_party.h"
 #ifdef PAPERWHITE2
+#include "paperwhite2/entralink_battle.h"
 #include "paperwhite2/moves.h"
 #include "paperwhite2/type_chart.h"
 #endif
@@ -255,6 +256,18 @@ s32 BtlCalc_AtLeast(s32 value, s32 minimum) {
 
 // Function names from swan.
 u32 fixed_round(u32 value, u32 ratio) {
+#ifdef PAPERWHITE2
+    // Paper White 2: saturates rather than wrapping past 32 bits, for the Entralink run's big hits (entralink-buffs.md
+    // 5.6)
+    u64 product = (u64)value * ratio;
+    u32 fraction = product & 0xfff;
+
+    product >>= 12;
+    if (fraction > 0x800) {
+        product++;
+    }
+    return product > 0xffffffff ? 0xffffffff : (u32)product;
+#else
     u32 fraction;
 
     value *= ratio;
@@ -264,6 +277,7 @@ u32 fixed_round(u32 value, u32 ratio) {
         value++;
     }
     return value;
+#endif
 }
 
 // Function name from swan.
@@ -355,7 +369,12 @@ u32 BtlCalc_GetWeatherDamage(BattleMon *mon, u32 weather) {
     default:
         return 0;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: on an Entralink run's foe, a fraction of at most one bar's HP (paperwhite2_entralink_battle.c)
+    damage = (s32)EntralinkBattle_GetResidualMaxHP(mon) / 16;
+#else
     damage = (s32)GetBattleMonStat(mon, BATTLEMON_MAX_HP) / 16;
+#endif
     if (damage == 0) {
         damage = 1;
     }

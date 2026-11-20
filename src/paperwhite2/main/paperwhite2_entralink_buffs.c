@@ -7,6 +7,7 @@
 // include/paperwhite2/entralink_buffs.h
 
 static const u8 sTypeCards[] = ENTRALINK_BUFF_TYPE_CARDS;
+static const EntralinkBuffValue sValues[ENTRALINK_BUFF_COUNT] = ENTRALINK_BUFF_VALUES;
 
 void EntralinkBuffs_Clear(void) {
     EntralinkRunState *state = EntralinkRun_GetState();
@@ -86,4 +87,31 @@ u32 EntralinkBuffs_ListHeld(u8 *buffs, u32 max) {
         }
     }
     return count;
+}
+
+u32 EntralinkBuffs_GetKind(u32 buff) {
+    return buff < ENTRALINK_BUFF_COUNT ? sValues[buff].kind : ENTRALINK_BUFF_NONE;
+}
+
+s32 EntralinkBuffs_GetValue(u32 buff, u32 level) {
+    const EntralinkBuffValue *value;
+    s32 step;
+    u32 full;
+    s32 total;
+
+    if (buff >= ENTRALINK_BUFF_COUNT || level == 0) {
+        return 0;
+    }
+    value = &sValues[buff];
+    if (value->gold) {
+        return value->values[(level > ENTRALINK_BUFF_MAX_RANK ? ENTRALINK_BUFF_MAX_RANK : level) - 1];
+    }
+    step = value->values[0];
+    full = value->values[1] != 0 && level > (u32)value->values[1] ? value->values[1] : level;
+    // Half a step for each pick past the soft limit, the halves added before rounding
+    total = (2 * step * (s32)full + step * (s32)(level - full)) / 2;
+    if (step >= 0 ? total > value->values[2] : total < value->values[2]) {
+        total = value->values[2];
+    }
+    return total;
 }

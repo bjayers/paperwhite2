@@ -57,6 +57,53 @@ typedef struct {
     u8 typeCard;
 } EntralinkBuff;
 
+// A card's numbers (ENTRALINK_BUFF_VALUES, ARM9 main): a blue's or purple's step, soft limit (0 for none) and cap; a
+// gold's value at each rank (its last repeated); whether it is a gold, and its effect's kind (ENTRALINK_BUFF_KIND_*)
+typedef struct {
+    s16 values[3];
+    u8 gold;
+    u8 kind;
+} EntralinkBuffValue;
+
+// A card's effect in battle (ENTRALINK_BUFF_EFFECTS, overlay 167's
+// src/paperwhite2/ov167/paperwhite2_entralink_battle.c, phase 3): its kind and the bucket it adds to, the condition
+// under which it applies, and its kind's parameters
+typedef struct {
+    // The tests (ENTRALINK_BUFF_COND_*) that must all hold, and those of which one must hold (0 for none)
+    u32 condition;
+    u32 anyCondition;
+    // An ability_like card's ability
+    u16 ability;
+    // ENTRALINK_BUFF_KIND_*, ENTRALINK_BUFF_BUCKET_* or ENTRALINK_BUFF_NONE
+    u8 kind;
+    u8 bucket;
+    // The tests' values: the defender's and attacker's statuses (bits of ENTRALINK_BUFF_STATUS_*), the move's type
+    // (TYPE_NULL for none), its category (ENTRALINK_BUFF_MOVE_CATEGORY_*), the attacker's HP below this percent, the
+    // move's power at most this, the weathers (bits of ENTRALINK_BUFF_WEATHER_*)
+    u8 defenderStatus;
+    u8 attackerStatus;
+    u8 moveType;
+    u8 category;
+    u8 hpBelow;
+    u8 powerAtMost;
+    u8 weathers;
+    // ENTRALINK_BUFF_SCALE_*, or 0
+    u8 scale;
+    // The kind's parameter: a stat, a residual source, a status given, a roll, a weather mode, a duration's target, a
+    // custom handler (ENTRALINK_BUFF_HANDLER_*)
+    u8 param;
+    // ENTRALINK_BUFF_FLAG_* bits
+    u8 flags;
+    // The rank from which its extra holds (halves recoil, ignores the immunity, spreads), or 0
+    u8 rankParam;
+    // A duration's statuses, or the statuses the team becomes immune to (bits of ENTRALINK_BUFF_STATUS_*)
+    u8 statuses;
+    // The stats each rank raises on entry (bits of ENTRALINK_BUFF_STAT_*)
+    u8 stats[3];
+    // The percent of max HP an attack costs
+    u8 hpCost;
+} EntralinkBuffEffect;
+
 // ---- ARM9 main: what the run holds ----------------------------------------------------------------------------------
 
 // Empties the run's buffs: no card held, every gold slot free (a run's start and end)
@@ -77,6 +124,11 @@ u32 EntralinkBuffs_GetGoldSlot(u32 slot);
 // The buffs held, at most max of them: the golds in their slots' order, then the blues and purples by ID; returns
 // how many
 u32 EntralinkBuffs_ListHeld(u8 *buffs, u32 max);
+// What a buff gives at a level, in its kind's unit: a gold's rank's value, or a blue's or purple's picks (a full step
+// each up to the soft limit, half a step past it, at most the cap); 0 at level 0
+s32 EntralinkBuffs_GetValue(u32 buff, u32 level);
+// A buff's effect's kind, ENTRALINK_BUFF_KIND_*
+u32 EntralinkBuffs_GetKind(u32 buff);
 
 // ---- Overlay 12: the offers -----------------------------------------------------------------------------------------
 

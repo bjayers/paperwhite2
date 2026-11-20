@@ -2,6 +2,32 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-20: Entralink buffs, phase 3: the battle effects (ROM session, on a branch)
+
+- **The buffs work in run battles** (`src/paperwhite2/ov167/paperwhite2_entralink_battle.c`,
+  `include/paperwhite2/entralink_battle.h`; `entralink-buffs.md` section 10): at a run battle's start the battle reads
+  the run's buffs into a table of its own and adds two event items, last in priority (vanilla on top). One handler a
+  host event sums each damage bucket's entries, holds the sum to the bucket's cap and multiplies once (ATK, DEF, POW,
+  COND, STAB, MATCH, CRIT, FINAL, GUARD). Effects are kinds read from the catalogue: the packer now writes
+  `ENTRALINK_BUFF_EFFECTS` (overlay 167) and `ENTRALINK_BUFF_VALUES` (main, `EntralinkBuffs_GetValue`).
+- **Built:** every Easy kind and the Medium ones that are per-battle state (Clear Amulet, First Blood, First Strike,
+  Focus, Second Wind, Opening Gambit, Thrifty, Vampiric, the on-hit statuses, sleep/confusion turns, Hardy, Lockjaw,
+  Madness), Vigor in the run after a win. **Phase 4:** HP blue, Spectral, Magnetised, Frostbite, Permafrost, Corrosion,
+  Wildfire r3, Contagion, Self-harm, Forecast, Baton, Follow-through, Shattering Blow, Defiance r3, Parasite, Overflow,
+  Thorn Guard.
+- **Damage clamp** at `damage_cap` where the damage is first cut to 16 bits (`ServerEvent_CalcDamage`), the full hit
+  kept for phase 6's numbers; `fixed_round` saturates.
+- **Bosses** (new `ENTRALINK_RUN_BOSS_BTL_SETUP_FLAG`: role boss or final, or a raid; new settings `boss_*`, on the
+  Buffs tab): damage over time a fraction of min(max HP, 6,000) on any run foe, bad poison stops at 4/16, fixed damage
+  at most half a bar, OHKO moves and Pain Split don't affect them, sleep 2 turns at most, never frozen, full paralysis
+  halved.
+- **Tested** in py-desmume (scratchpad `buffs3/`, section 10.4): each bucket's factor, two caps holding, a 141,699 hit
+  clamped to 60,000, Guard, sure criticals and Sniper, the boss's 750 poison tick, Super Fang 3,000, sleep counts,
+  Vigor, Opening Gambit with Simple, Second Wind, Regrowth. Hack build clean, `verify_dsi_rom.py` intact, plain
+  modules match, Python and editor tests pass.
+- **Memory:** overlay 167 +11.6 KB, main +1 KB, the main arena 36 KB to 35 KB free.
+- **Next:** phase 4's hooks (the list above); phase 5's boss bars replace `boss_bar_hp`.
+
 ## 2026-11-20: Entralink buffs, phase 2: choosing buffs in the game (ROM session, on a branch)
 
 - **The run holds buffs** (`include/paperwhite2/entralink_buffs.h`): in `EntralinkRunState`, a level a card (a blue's

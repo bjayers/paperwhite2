@@ -617,6 +617,13 @@ function SettingsSection({ cat, data, setTop }: { cat: Catalogue; data: JsonMap;
           <NumberBox value={s.maxRank} min={1} max={3} width={44} onChange={(v) => set(["max_rank"], v)} />
           <NumberBox value={s.damageCap} min={1} max={65535} width={72} onChange={(v) => set(["damage_cap"], v)} />
         </Row>
+        <Row label="Bosses" hint="One bar's HP (damage over time is a fraction of it), most sleep turns, bad poison's ramp in sixteenths, full paralysis in percent of a foe's, fixed damage in percent of a bar">
+          <NumberBox value={n("boss_bar_hp")} min={1} max={65535} width={72} title="One health bar's HP: a boss's damage over time is a fraction of the smaller of its max HP and this" onChange={(v) => set(["boss_bar_hp"], v)} />
+          <NumberBox value={n("boss_sleep_turns")} min={1} max={4} width={44} title="The most turns a boss sleeps" onChange={(v) => set(["boss_sleep_turns"], v)} />
+          <NumberBox value={n("boss_toxic_cap")} min={1} max={15} width={44} title="Bad poison's ramp on a boss stops at this many sixteenths" onChange={(v) => set(["boss_toxic_cap"], v)} />
+          <NumberBox value={n("boss_full_paralysis")} min={0} max={100} width={52} title="A paralyzed boss's full paralysis chance, in percent of a foe's" onChange={(v) => set(["boss_full_paralysis"], v)} />
+          <NumberBox value={n("boss_fixed_damage")} min={1} max={100} width={52} title="Fixed-damage moves on a boss deal at most this percent of one bar" onChange={(v) => set(["boss_fixed_damage"], v)} />
+        </Row>
         <Row label="Skip" hint="Dream Dust for skipping an offer">
           <NumberBox value={n("skip_dust")} min={0} max={999} width={56} onChange={(v) => set(["skip_dust"], v)} />
         </Row>

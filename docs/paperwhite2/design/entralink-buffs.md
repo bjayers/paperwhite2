@@ -4,7 +4,7 @@ First draft, 2026-11-19, marked up by the user the same day: their answers are t
 Stall theme (4.13) replaces Tag team and Harvest. The catalogue is data since phase 1 (section 7):
 `res/paperwhite2/entralink/buffs.json`, edited on the Entree page's Buffs tab and checked by
 `tools/paperwhite2/entralink_buffs.py`. Since phase 2 (section 9) the game offers the cards and the run holds them;
-their battle effects are phase 3. The mode itself is in `entralink-roguelike.md`
+since phase 3 (section 10) most of them work in battle. The mode itself is in `entralink-roguelike.md`
 (sections 1-2 for the design, 3.8 for the damage pipeline); how the hack adds battle effects is in
 `moves-and-abilities.md`. Every number below is a starting value to tune in playtests.
 
@@ -608,6 +608,119 @@ heap allocations freed with the list (four of 128 characters while one is built)
 
 ### 9.6 Left for later
 
-- Phase 3: the battle effects (the buckets' handlers reading the levels here).
+- Phase 3: the battle effects (section 10).
 - Icons on the cards (the category icons in the tier palettes) wait for a screen of their own; the list shows text.
 - The C-Gear's run display (a later project).
+
+## 10. Phase 3: the battle effects (2026-11-20)
+
+The run's buffs now work in its battles. Code: `src/paperwhite2/ov167/paperwhite2_entralink_battle.c` (overlay 167),
+`include/paperwhite2/entralink_battle.h` (its hooks), the values in ARM9 main (`EntralinkBuffs_GetValue`,
+`_GetKind`), and the packer's two new tables.
+
+### 10.1 How it works
+
+- **The data:** the packer writes `ENTRALINK_BUFF_EFFECTS` (each card's kind, bucket, condition as test bits, the
+  tests' values, scale, parameter, flags, rank parameter, statuses, stats a rank, HP cost; overlay 167's, 3.2 KB) and
+  `ENTRALINK_BUFF_VALUES` (a stack's step, soft limit and cap or a gold's ranks, and the kind; ARM9 main's, 0.9 KB),
+  with the enumerations they use numbered from the schema (`ENTRALINK_BUFF_STAT_*`, `_STATUS_*`, `_COND_*`,
+  `_HANDLER_*`...), each bucket's cap and vanilla factor, and the bosses' settings. The game implements kinds: a new
+  card of an existing kind needs no code. A condition's `any` is a list of single tests (the packer refuses more), and
+  the header refuses an ID that spells another name (a buff `stat_speed`).
+- **Into the battle:** the run state stays in ARM9 main. At a run battle's start (`BtlServerFlow_InitWork`, battles
+  with `ENTRALINK_RUN_BTL_SETUP_FLAG`) the battle reads every buff held into a table of its own (a type card once a
+  type), each with its value: a gold's rank's, a stack's full step to the soft limit and half a step past it, at most
+  its own cap. A boss battle (the room's role boss or final, or a raid) also has `ENTRALINK_RUN_BOSS_BTL_SETUP_FLAG`,
+  set by `EntralinkRun_CreateBattle`. Only the player's side (the player's client and its ally) gets the buffs.
+- **Two event items,** field effects at the lowest priority, so every vanilla handler runs first (decision 1): the
+  main one with a handler a host event, and a second for the events the main one's own stat changes and statuses call
+  while its handler runs (an item isn't called again while it runs: Opening Gambit's boosts must reach Simple).
+- **The buckets:** each handler sums the bucket's entries whose condition holds, holds the sum to the bucket's cap and
+  multiplies once: ATK (`ATTACK_STAT`), DEF (`DEFENSE_STAT`), POW and COND (`MOVE_POWER_RATIO`), STAB
+  (`SAME_TYPE_BONUS`, rewritten on top of any vanilla rewrite such as Adaptability's: (150 + sum) / 150; a non-STAB move
+  gets the best `non_stab` entry, Coverage), MATCH, CRIT (critical hits only, (200 + sum) / 200) and FINAL
+  (`DAMAGE_RATIO` on the team's hits), GUARD (`DAMAGE_RATIO` on the hits the team takes). MATCH's entries exempt from
+  its cap (Glancing Blow, Tinted) multiply apart, at most up to a neutral hit (×2 on a halved hit, ×4 on a quartered).
+- **The damage clamp:** the hit's damage is first cut to 16 bits at the end of `ServerEvent_CalcDamage`
+  (`*damage = result`, after `DAMAGE_CALCULATED`); there `EntralinkBattle_ClampDamage` holds a run's hit to
+  `damage_cap` (60,000) and keeps the full damage, its target and whether it was cut (`EntralinkBattle_GetLastHitDamage`,
+  for phase 6's numbers). `fixed_round` saturates instead of wrapping past 32 bits (every hack build; vanilla only
+  differs where it overflowed).
+
+### 10.2 The kinds built
+
+| Kind | Where | Cards |
+| --- | --- | --- |
+| `stat_ratio` | ATK, DEF buckets; Speed outside them (`CALCULATE_SPEED`, each card multiplies); `ignore_burn_drop` in `ServerEvent_CalcDamage` (hook) | Attack, Sp. Atk, Defense, Sp. Def, Speed, Fire Within, Storm Speed, Bulwark |
+| `damage_ratio` | its bucket; `hp_cost` after the hit (Life Orb's message); `halves_recoil_at_rank` in `CALC_RECOIL`; `immune_to` in `MOVE_CONDITION_CHECK_FAIL` | Guard, Power, Type Affinity, Type Ward, Expert Edge, Glancing Blow, Opportunist, Climate, Tough Claws, Iron Fist, Technique, Swift Hand, Pinch Power, Momentum Strike, First Blood, Giant Slayer, Galvanic, Overcharge, Dream Eater, Venom Strike, Kindling, Smoulder, Shatter (frozen foes), Cold Snap, Thaw-proof, Dizzy Strike, Heatwave, Weather Ward, Expert, Tinted, Prism, Last Stand, Blood Price, Reckless, Slipstream, Siphon |
+| `stab_bonus` | STAB bucket | Kinship, Lullaby, Adaptability, Coverage |
+| `crit_stage` | `CHECK_CRITICAL`; stage 5 or more is a sure critical hit in a run (hook in `ServerEvent_CheckCritical`) | Keen Edge, Merciless, Keen Eye |
+| `crit_damage` | CRIT bucket | Heavy Crit, Sniper |
+| `accuracy` | `GET_MOVE_ACCURACY` | Accuracy, Sure Hand |
+| `residual_ratio` | `CONDITION_DAMAGE` (poison, burn, Nightmare as sleep, any), `CHECK_WEATHER_DAMAGE` (weather; `team_immune`) | Lingering Ailment, Virulence, Searing, Sandblast |
+| `residual_fraction` | `TURN_CHECK` on sleeping foes, Bad Dreams' message, a fraction of one bar | Nightmare Field |
+| `heal_per_turn` | `TURN_CHECK` | Regrowth |
+| `heal_after_battle` | the run, after a battle won (`EntralinkRun_HealAfterBattle`): the standing Pokémon only | Vigor |
+| `heal_on_damage` | after the hit (HP damage dealt) | Vampiric |
+| `heal_ratio` | `CALC_DRAIN_AMOUNT` (drain); recovery moves in `ServerEvent_CalcMoveHealAmount` (hook) | Big Root, Mending |
+| `recoil_ratio` | `CALC_RECOIL` | Rock Skin |
+| `added_effect_chance` | `CHECK_MOVE_ADD_CONDITION`, `ADDED_STAT_CHANGE_CHANCE` | Serene Touch |
+| `flinch_chance` | `ServerEvent_GetFlinchChance` (hook: the event can't add to a move that flinches) | Flinch Edge |
+| `multi_hit` | `CHECK_MULTIHIT_HITS` | Second Hit |
+| `pp_save_chance` | `CALC_PP_DECREMENT` | Thrifty |
+| `status_chance_on_hit` | after the hit, on each foe hit | Static Field, Wildfire (without its rank-3 immunity), Daze |
+| `status_duration` | `ServerControl_AddCondition` (hook): sleep's and confusion's count | Quick Recovery, Deep Sleep, Vertigo |
+| `status_resist` | `MOVE_CONDITION_CHECK_FAIL`, a foe's statuses | Hardy |
+| `status_cure_chance` | `TURN_CHECK_EARLY` | Shed Skin |
+| `status_roll` | the fixed rolls (hooks in `ServerControl_CheckMoveFail` and `ServerControl_CheckConfusion`), on foes | Lockjaw, Madness |
+| `weather_turns` | `INCREASE_MOVE_WEATHER_TURNS` (set, then add; 255 the whole battle) | Damp Rock, Stormcaller |
+| `screen_turns` | `CHECK_SIDE_EFFECT_PARAM` | Light Clay |
+| `endure_chance`, `endure_once` | `CHECK_ENDURE` ("endured the hit!"); Second Wind once a battle each | Focus Band, Second Wind |
+| `stat_stage_on_entry` | `MEMBER_IN`, each Pokémon's first entry | Opening Gambit |
+| `ability_like` | Overcoat (weather damage), Simple (doubled boosts; rank 2 halves a foe's drops; rank 3 the first boost +1), Defiance (a foe's drop: +2 Attack; rank 2 the higher attacking stat), Speed Boost (rank 1 every second turn, rank 3 +1 on entry), Afterburner (a KO: +1 Speed, rank 2 the higher attacking stat, rank 3 heals 10%), Unaware (vanilla's three events: the foe's defending stages, rank 2 its attacking ones, rank 3 accuracy and evasion) | Overcoat, Simple, Defiance, Speed Boost, Afterburner, Unaware |
+| `custom` | Clear Amulet (`CHECK_STAT_CHANGE`, a count a Pokémon), Tempo (`STAT_CHANGE_AMOUNT`), Sandman (sleep moves never miss; ranks 2-3 sleep on a hit), First Strike (`GET_MOVE_PRIORITY` on the first move(s) a battle, rank 2's +25% in COND), Quick Draw (`CHECK_SPECIAL_PRIORITY`), Focus (a status move, rank 2 entering, rank 3 being hit ready a sure critical hit for the next attack) | |
+
+**Left for phase 4:** the HP blue (`max_hp`: the run copies' max HP), the type chart (Spectral, Magnetised), Frostbite
+(the condition; meanwhile its card does nothing), Permafrost, Corrosion, Wildfire's rank 3 (burning Fire types),
+Contagion, Self-harm, Forecast (its choice menu), Baton, Follow-through, Shattering Blow, Defiance's rank 3 (the drop
+blocked), Parasite, Overflow and Thorn Guard (the Stall theme's hooks).
+
+### 10.3 Bosses (decisions 2 and 6)
+
+- **Damage over time** on any foe of a run battle is a fraction of the smaller of its max HP and `boss_bar_hp` (6,000,
+  until phase 5's bars): poison, burn, bad poison, Nightmare, Curse (`BattleMon_GetResidualDamage`), Leech Seed and
+  binding (`condition_effects.c`), sand and hail (`BtlCalc_GetWeatherDamage`), Nightmare Field. A foe under 6,000 HP is
+  unchanged, so in effect only bosses' pools are touched. Bad poison's ramp on a boss stops at `boss_toxic_cap` (4/16).
+- **Fixed damage** (Super Fang, Endeavor, Night Shade...) on a boss is capped at `boss_fixed_damage` (50%) of one bar,
+  3,000; **OHKO moves and Pain Split don't affect** a boss ("It doesn't affect...").
+- **Statuses:** a boss sleeps `boss_sleep_turns` (2) turns at most (Deep Sleep included), is never frozen, and its full
+  paralysis chance is `boss_full_paralysis` (50%) of a foe's, Lockjaw's included (25% to 12%).
+- The settings are new in buffs.json (`boss_bar_hp`, `boss_sleep_turns`, `boss_toxic_cap`, `boss_full_paralysis`,
+  `boss_fixed_damage`) and on the Buffs tab's Offers section (Bosses row).
+
+### 10.4 Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `buffs3/`)
+
+Room 1's Gardevoir battle, the lead Pignite using Flame Charge, each variant from the same savestate (the same random
+state) with the battle's table written; the damage as the clamp sees it:
+
+- None 105; Attack ×3 135 (×1.3); Adaptability I 140 (×1.33); Galvanic III on a paralyzed foe 207 (×2.0, 105
+  paralyzed without it); Keen Eye III + Keen Edge ×2 a sure critical 201, with Sniper III 251 (×1.25).
+- **Caps:** Type Affinity (Fire) ×4 + Tough Claws ×3 + Technique ×3 (+150%) gives 207, POW held at ×2.0 (Affinity alone
+  166, ×1.6); Power ×7 + Blood Price III (+60%) gives 131, FINAL held at ×1.25.
+- **Guard ×10** (+30%: five full steps and five half): the foe's hit 218 to 153.
+- A second run on the final ROM (another random state, base 130) gave the same factors; **Unaware I** against a foe at
+  +6 Defense: 34 without it, 130 with it.
+- **The clamp:** a 1-Defense foe with 65,000 HP and a stack of buffs: the hit computed 141,699, the foe lost 60,000.
+- **Bosses:** a poisoned 50,000-HP boss lost 750 to the tick (6,000 / 8); Super Fang dealt 25,000 to a normal foe and
+  3,000 to a boss; Spore's sleep count 4 without buffs, 7 with Deep Sleep III, 3 (2 turns) on a boss with or without it.
+- **Vigor ×3** after a battle won: a Pokémon at 10/318 HP rose to 86 (+24%), a fainted one stayed at 0.
+- **From the run state:** buffs set as the debug menu sets them reach the battle's table (types a line each); a battle
+  with Opening Gambit III and Simple III: Attack +3, the other four +2 ("Defense rose sharply!"); Second Wind kept the
+  lead at 1 HP, Regrowth then healed 36, Vampiric 15% of a 271 hit.
+- Hack build clean, `verify_dsi_rom.py` intact, the plain build's modules match, Python and editor tests pass.
+
+### 10.5 Memory
+
+Overlay 167 grew 0x2e80 (11.6 KB: 3.2 KB of effects table, the code, 0.5 KB of BSS for the battle's table); ARM9 main
++1 KB (the values table and two functions), overlay 12 +0.2 KB (Vigor). The DS main arena's start moved 1.2 KB: 35 KB
+left before 0x023e0000. Two of the battle's 0x84 event items. No heap, no VRAM.

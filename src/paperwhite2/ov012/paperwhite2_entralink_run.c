@@ -1249,6 +1249,11 @@ static GameEvent *EntralinkRun_CreateBattle(GameSystem *gsys, const EntralinkRoo
     }
     BtlSetup_SetWildNormal(setup, gameData, party, &status, FORMAT_STYLES[battle->format], HEAPID_GAMEEVENT);
     BtlSetup_SetFlag(setup, ENTRALINK_RUN_BTL_SETUP_FLAG);
+    // A boss's, the final room's and a raid's foes have the bosses' protections (paperwhite2/entralink_battle.h)
+    if (room->role == ENTRALINK_ROLE_BOSS || room->role == ENTRALINK_ROLE_FINAL ||
+        battle->format == ENTRALINK_FORMAT_RAID) {
+        BtlSetup_SetFlag(setup, ENTRALINK_RUN_BOSS_BTL_SETUP_FLAG);
+    }
     GFL_HeapFree(party);
     return EventWildBattleCall_Create(gsys, field, setup, TRUE, ENCOUNT_MODE_NORMAL);
 }
@@ -1310,6 +1315,37 @@ static u32 EntralinkRun_AddDust(EntralinkRunState *state, u32 dust) {
     return dust;
 }
 
+// After a battle won, the heal_after_battle buffs (Vigor) heal each Pokémon of the party that is still standing by
+// their percent of its max HP (entralink-buffs.md, phase 3); a fainted one stays fainted
+static void EntralinkRun_HealAfterBattle(GameData *gameData) {
+    PokeParty *party = GameData_GetParty(gameData);
+    PartyPkm *pkm;
+    u32 percent = 0;
+    u32 buff;
+    u32 hp;
+    u32 maxHP;
+    int i;
+
+    for (buff = 0; buff < ENTRALINK_BUFF_COUNT; buff++) {
+        if (EntralinkBuffs_GetKind(buff) == ENTRALINK_BUFF_KIND_HEAL_AFTER_BATTLE) {
+            percent += EntralinkBuffs_GetValue(buff, EntralinkBuffs_GetLevel(buff));
+        }
+    }
+    if (percent == 0) {
+        return;
+    }
+    for (i = 0; i < PokeParty_GetPkmCount(party); i++) {
+        pkm = PokeParty_GetPkm(party, i);
+        hp = PokeParty_GetParam(pkm, PKM_PARAM_HP, NULL);
+        if (PokeParty_GetParam(pkm, PKM_PARAM_IS_EGG, NULL) || hp == 0) {
+            continue;
+        }
+        maxHP = PokeParty_GetParam(pkm, PKM_PARAM_MAX_HP, NULL);
+        hp += maxHP * percent / 100;
+        PokeParty_SetParam(pkm, PKM_PARAM_HP, hp > maxHP ? maxHP : hp);
+    }
+}
+
 // After the room's battle, what the script does next (ENTRALINK_RUN_RESULT_*)
 static u16 EntralinkRun_FinishBattle(GameSystem *gsys, const EntralinkRoom *room, const EntralinkBattle *battle) {
     GameData *gameData = GSYS_GetGameData(gsys);
@@ -1327,6 +1363,7 @@ static u16 EntralinkRun_FinishBattle(GameSystem *gsys, const EntralinkRoom *room
     EntralinkProgress_SetBattleWon(progress, battle->progressId);
     EntralinkRun_RecordCatch(gameData);
     state->dustGained = EntralinkRun_AddDust(state, EntralinkRun_GetBattleDust(state, room));
+    EntralinkRun_HealAfterBattle(gameData);
     for (i = 0; i < ENTRALINK_RUN_ENEMIES_MAX; i++) {
         state->catchIds[i] = ENTRALINK_CATCH_NONE;
     }

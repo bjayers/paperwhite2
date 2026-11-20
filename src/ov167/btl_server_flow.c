@@ -39,6 +39,7 @@
 #ifdef PAPERWHITE2
 #include "constants/pokemon.h"
 #include "paperwhite2/battle_handlers.h"
+#include "paperwhite2/entralink_battle.h"
 #include "paperwhite2/entralink_run_party.h"
 #include "paperwhite2/pokemon_forms.h"
 #include "paperwhite2/prestige.h"
@@ -110,6 +111,11 @@ void BtlServerFlow_InitWork(BtlServerFlow *flow) {
     flow->unk77E = 0;
     flow->unk778 = 0;
     flow->unk78A_6 = 0;
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink run battle's buffs and bosses' protections, an event item of their own
+    // (paperwhite2_entralink_battle.c)
+    EntralinkBattle_Start(flow);
+#endif
 }
 
 void BtlServerFlow_Delete(BtlServerFlow *flow) {
@@ -2715,7 +2721,12 @@ BOOL ServerControl_CheckMoveFail(BtlServerFlow *flow, BattleMon *mon, u16 move, 
             cause = 5;
             break;
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: an Entralink run's Lockjaw and bosses change the chance (paperwhite2_entralink_battle.c)
+        if (status == 1 && RollEffectChance(EntralinkBattle_GetFullParalysisChance(mon, 0x19))) {
+#else
         if (status == 1 && RollEffectChance(0x19)) {
+#endif
             cause = 3;
             break;
         }
@@ -2788,7 +2799,12 @@ BOOL ServerControl_CheckConfusion(BtlServerFlow *flow, BattleMon *mon) {
             return FALSE;
         }
         ServerDisplay_Confused(flow, mon);
+#ifdef PAPERWHITE2
+        // Paper White 2: an Entralink run's Madness changes a foe's chance (paperwhite2_entralink_battle.c)
+        return RollEffectChance(EntralinkBattle_GetConfusionSelfHitChance(mon, 0x32));
+#else
         return RollEffectChance(0x32);
+#endif
     }
     return FALSE;
 }
@@ -3693,8 +3709,15 @@ BOOL ServerEvent_CalcDamage(BtlServerFlow *flow, BattleMon *attacker, BattleMon 
             value = fixed_round(value, ServerEvent_SameTypeAttackBonus(flow, attacker, param->type));
         }
         value = TypeEffectivenessPowerMod(value, effectiveness);
+#ifdef PAPERWHITE2
+        // Paper White 2: an Entralink run's Fire Within ignores burn's drop, as Guts (paperwhite2_entralink_battle.c)
+        if (category == 1 && GetBattleMonStatus(attacker) == 4 &&
+            GetBattleMonStat(attacker, BATTLEMON_EFFECTIVE_ABILITY) != 0x3e &&
+            !EntralinkBattle_IgnoresBurnDrop(attacker)) {
+#else
         if (category == 1 && GetBattleMonStatus(attacker) == 4 &&
             GetBattleMonStat(attacker, BATTLEMON_EFFECTIVE_ABILITY) != 0x3e) {
+#endif
             value = value * 50 / 100;
         }
         if (value == 0) {
@@ -3708,6 +3731,11 @@ BOOL ServerEvent_CalcDamage(BtlServerFlow *flow, BattleMon *attacker, BattleMon 
     }
     BattleEvent_CallHandlers(flow, BATTLE_EVENT_DAMAGE_CALCULATED);
     BattleEventVar_Pop(0x1c9d);
+#ifdef PAPERWHITE2
+    // Paper White 2: the damage is first cut to 16 bits here; an Entralink run's hit stops at the damage cap first
+    // (paperwhite2_entralink_battle.c)
+    result = EntralinkBattle_ClampDamage(defender, result);
+#endif
     *damage = result;
     return fixed;
 }
@@ -4047,6 +4075,11 @@ void ServerControl_AddCondition(BtlServerFlow *flow, BattleMon *target, BattleMo
                                 const BattleHandlerString *string) {
     u32 state;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink run's buffs change sleep's and confusion's turns, and a boss sleeps less
+    // (paperwhite2_entralink_battle.c)
+    value = EntralinkBattle_GetConditionValue(target, attacker, condition, value);
+#endif
     ServerDisplay_AddCondition(flow, target, condition, value);
     switch (condition) {
     case 5:
@@ -6549,11 +6582,22 @@ BOOL ServerEvent_CheckCritical(BtlServerFlow *flow, BattleMon *attacker, BattleM
             critical = TRUE;
         } else {
             value = BattleEventVar_GetValue(BATTLE_EVENT_VAR_CRITICAL_STAGE);
+#ifdef PAPERWHITE2
+            // Paper White 2: in an Entralink run, stage 5 and up is a sure critical hit
+            // (paperwhite2_entralink_battle.c)
+            critical = EntralinkBattle_IsSureCritical(value);
+#endif
             if (value > 4) {
                 value = 4;
             }
             stage = value;
+#ifdef PAPERWHITE2
+            if (!critical) {
+                critical = BtlCalc_RollCritical(stage);
+            }
+#else
             critical = BtlCalc_RollCritical(stage);
+#endif
         }
         if (ReturnZero(flow->mainModule, 3)) {
             critical = TRUE;
@@ -7019,6 +7063,12 @@ u32 ServerEvent_GetFlinchChance(BtlServerFlow *flow, u16 move, BattleMon *attack
     if (failed && chance != 0) {
         return 0;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink run's Flinch Edge adds to the moves that flinch (paperwhite2_entralink_battle.c)
+    if (chance != 0) {
+        chance += EntralinkBattle_GetFlinchBonus(attacker);
+    }
+#endif
     if (chance == 0) {
         chance += bonus;
     }
@@ -7161,6 +7211,10 @@ u32 ServerEvent_CalcMoveHealAmount(BtlServerFlow *flow, u16 move, BattleMon *mon
     } else {
         amount = MultiplyValueByRatio(maxHP, ratio);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink run's Mending heals more (paperwhite2_entralink_battle.c)
+    amount = EntralinkBattle_GetMoveHealAmount(mon, amount);
+#endif
     if (amount == 0) {
         return 1;
     }

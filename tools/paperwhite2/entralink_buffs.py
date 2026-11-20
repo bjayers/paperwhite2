@@ -262,6 +262,190 @@ def table(data: dict) -> list[str]:
     return rows
 
 
+# ---- The battle's tables (phase 3) ----------------------------------------------------------------------------------
+
+# The enumerations of the effects' parameters, numbered in the schema's order: (the header's prefix, the definition and
+# its property, whether the enum is of an array's items)
+EFFECT_ENUMS = [
+    ("STAT", "effect_stat_ratio", "stat", False),
+    ("STATUS", "condition", "defender_status", True),
+    ("SCALE", "effect_damage_ratio", "scale", False),
+    ("WEATHER", "condition", "weather", True),
+    ("MOVE_CATEGORY", "condition", "category", False),
+    ("RESIDUAL", "effect_residual_ratio", "source", False),
+    ("FRACTION", "effect_residual_fraction", "source", False),
+    ("HEAL", "effect_heal_ratio", "source", False),
+    ("ROLL", "effect_status_roll", "roll", False),
+    ("WEATHER_MODE", "effect_weather_turns", "mode", False),
+    ("DURATION", "effect_status_duration", "target", False),
+]
+# The condition's fields that hold a value beside their test bit
+CONDITION_VALUES = {"defender_status", "attacker_status", "move_type", "category", "attacker_hp_below",
+                    "power_at_most", "weather"}
+# The effects' flags, bits of EntralinkBuffEffect's flags
+EFFECT_FLAGS = ["exempt_from_bucket_cap", "ignore_burn_drop", "team_immune", "non_stab", "overrides_immunity",
+                "replaces_freeze"]
+# The effects' "from this rank on" parameter, EntralinkBuffEffect's rankParam
+RANK_PARAMS = ["halves_recoil_at_rank", "ignores_immunity_at_rank", "spreads_at_rank"]
+
+
+def effect_enums(directory: Path = SOURCE) -> dict[str, list[str]]:
+    """Each parameter enumeration's names, from the schema."""
+    defs = datajson.load_schema(directory / "buffs.schema.json")["$defs"]
+    enums = {}
+    for prefix, definition, field, items in EFFECT_ENUMS:
+        prop = defs[definition]["properties"][field]
+        enums[prefix] = (prop["items"] if items else prop)["enum"]
+    return enums
+
+
+def condition_tests(directory: Path = SOURCE) -> list[str]:
+    """The condition's tests in the schema's order (any is the list of alternatives, not a test)."""
+    defs = datajson.load_schema(directory / "buffs.schema.json")["$defs"]
+    return [name for name in defs["condition"]["properties"] if name != "any"]
+
+
+def custom_handlers(data: dict) -> list[str]:
+    """The custom effects' handlers, in the order the catalogue first names them."""
+    names = []
+    for entry in data["buffs"]:
+        handler = entry["effect"].get("handler")
+        if handler is not None and handler not in names:
+            names.append(handler)
+    return names
+
+
+def bits(names, enum: list[str]) -> int:
+    return sum(1 << enum.index(n) for n in names)
+
+
+def effects_table(data: dict, directory: Path = SOURCE) -> list[str]:
+    """ENTRALINK_BUFF_EFFECTS, EntralinkBuffEffect's initializer (paperwhite2/entralink_buffs.h): each card's kind,
+    bucket, condition (the tests that must all hold, the tests of which one must hold, and their values), scale,
+    parameter, flags, rank parameter, statuses, stats a rank and ability."""
+    enums = effect_enums(directory)
+    tests = condition_tests(directory)
+    handlers = custom_handlers(data)
+    kinds = effect_kinds(directory)
+    buckets = [b["id"] for b in data["buckets"]]
+    rows = []
+    for entry in data["buffs"]:
+        where = f"buffs.{entry['id']}"
+        effect = entry["effect"]
+        kind = effect["kind"]
+        values = {"move_type": "TYPE_NULL", "defender_status": 0, "attacker_status": 0, "category": 0,
+                  "attacker_hp_below": 0, "power_at_most": 0, "weather": 0}
+
+        def take(condition: dict, alternatives: bool) -> int:
+            mask = 0
+            for name, value in condition.items():
+                if name == "any":
+                    continue
+                mask |= 1 << tests.index(name)
+                if name not in CONDITION_VALUES:
+                    continue
+                if name in ("defender_status", "attacker_status"):
+                    value = bits(value, enums["STATUS"])
+                elif name == "weather":
+                    value = bits(value, enums["WEATHER"])
+                elif name == "category":
+                    value = enums["MOVE_CATEGORY"].index(value)
+                elif name == "move_type":
+                    value = value
+                old = values[name]
+                if old not in (0, "TYPE_NULL") and old != value:
+                    error(where, f"its condition gives {name} two values; the game keeps one")
+                values[name] = value
+            if alternatives and bin(mask).count("1") != len([n for n in condition if n != "any"]):
+                error(where, "a condition of any is one test")
+            return mask
+
+        condition = effect.get("condition", {})
+        all_mask = take(condition, False)
+        any_mask = 0
+        for alternative in condition.get("any", []):
+            if len(alternative) != 1 or "any" in alternative:
+                error(where, "each condition of any is one test (the game ORs single tests)")
+            any_mask |= take(alternative, True)
+        param = 0
+        if kind == "stat_ratio":
+            param = enums["STAT"].index(effect["stat"])
+        elif kind == "residual_ratio":
+            param = enums["RESIDUAL"].index(effect["source"])
+        elif kind == "residual_fraction":
+            param = enums["FRACTION"].index(effect["source"])
+        elif kind == "heal_ratio":
+            param = enums["HEAL"].index(effect["source"])
+        elif kind == "status_chance_on_hit":
+            param = enums["STATUS"].index(effect["status"])
+        elif kind == "status_roll":
+            param = enums["ROLL"].index(effect["roll"])
+        elif kind == "weather_turns":
+            param = enums["WEATHER_MODE"].index(effect["mode"])
+        elif kind == "status_duration":
+            param = enums["DURATION"].index(effect["target"])
+        elif kind == "custom":
+            param = f"ENTRALINK_BUFF_HANDLER_{macro(effect['handler'])}"
+        statuses = bits(effect.get("statuses", []) + effect.get("immune_to", []), enums["STATUS"])
+        flags = sum(1 << i for i, f in enumerate(EFFECT_FLAGS) if effect.get(f))
+        rank_param = max([effect.get(p, 0) for p in RANK_PARAMS])
+        stats = [bits(s, enums["STAT"]) for s in effect.get("stats_by_rank", [])]
+        stats = (stats + [stats[-1] if stats else 0] * 3)[:3]
+        scale = enums["SCALE"].index(effect["scale"]) + 1 if "scale" in effect else 0
+        bucket = f"ENTRALINK_BUFF_BUCKET_{macro(entry['bucket'])}" if entry.get("bucket") in buckets \
+            else "ENTRALINK_BUFF_NONE"
+        ability = effect.get("ability", "ABILITY_NONE")
+        rows.append(f"    {{ {all_mask:#x}, {any_mask:#x}, {ability}, ENTRALINK_BUFF_KIND_{macro(kind)}, {bucket}, "
+                    f"{values['defender_status']:#x}, {values['attacker_status']:#x}, {values['move_type']}, "
+                    f"{values['category']}, {values['attacker_hp_below']}, {values['power_at_most']}, "
+                    f"{values['weather']:#x}, {scale}, {param}, {flags:#x}, {rank_param}, {statuses:#x}, "
+                    f"{{ {stats[0]:#x}, {stats[1]:#x}, {stats[2]:#x} }}, {effect.get('hp_cost', 0)} }}, "
+                    f"/* {entry['id']} */")
+        assert kinds.index(kind) >= 0
+    return rows
+
+
+def values_table(data: dict) -> list[str]:
+    """ENTRALINK_BUFF_VALUES, EntralinkBuffValue's initializer: a blue's or purple's step, soft limit (0 for none) and
+    cap, or a gold's value at each rank (its last repeated); whether it is a gold, and its effect's kind (for the run's
+    own effects outside the battle, Vigor's)."""
+    rows = []
+    for entry in data["buffs"]:
+        if entry["tier"] == "gold":
+            ranks = entry["ranks"]
+            numbers = (ranks + [ranks[-1]] * 3)[:3]
+        else:
+            numbers = [entry["step"], entry.get("soft_limit", 0), entry["cap"]]
+        kind = f"ENTRALINK_BUFF_KIND_{macro(entry['effect']['kind'])}"
+        rows.append(f"    {{ {{ {numbers[0]}, {numbers[1]}, {numbers[2]} }}, {int(entry['tier'] == 'gold')}, {kind} }}, "
+                    f"/* {entry['id']} */")
+    return rows
+
+
+def effect_lines(data: dict, directory: Path = SOURCE) -> list[str]:
+    enums = effect_enums(directory)
+    lines = ["// The effects' parameters (phase 3, buffs.schema.json's enums in their order): stats, statuses (bits),",
+             "// scales (from 1; 0 for none), weathers (bits), move categories, residual sources, fractions' sources,",
+             "// heals' sources, rolls, weather modes, durations' targets"]
+    for prefix, _, _, _ in EFFECT_ENUMS:
+        lines += [f"#define ENTRALINK_BUFF_{prefix}_{macro(name)} {i + (prefix == 'SCALE')}"
+                  for i, name in enumerate(enums[prefix])]
+    lines += ["// The condition's tests, bits of EntralinkBuffEffect's condition and anyCondition"]
+    lines += [f"#define ENTRALINK_BUFF_COND_{macro(name)} (1 << {i})" for i, name in enumerate(condition_tests(directory))]
+    lines += ["// The effects' flags", *[f"#define ENTRALINK_BUFF_FLAG_{macro(f)} (1 << {i})"
+                                       for i, f in enumerate(EFFECT_FLAGS)]]
+    lines += ["// The custom effects' handlers", *[f"#define ENTRALINK_BUFF_HANDLER_{macro(h)} {i}"
+                                                for i, h in enumerate(custom_handlers(data))]]
+    lines += ["// Each card's effect (EntralinkBuffEffect, paperwhite2/entralink_buffs.h): condition, any condition,",
+              "// ability, kind, bucket, defender's and attacker's statuses, move type, category, HP below, power at",
+              "// most, weathers, scale, parameter, flags, rank parameter, statuses, stats a rank, HP cost",
+              "#define ENTRALINK_BUFF_EFFECTS { \\", *[row + " \\" for row in effects_table(data, directory)], "}",
+              "// Each card's numbers (EntralinkBuffValue): step, soft limit and cap, or the ranks; whether a gold; its",
+              "// effect's kind",
+              "#define ENTRALINK_BUFF_VALUES { \\", *[row + " \\" for row in values_table(data)], "}"]
+    return lines
+
+
 # ---- The checks -----------------------------------------------------------------------------------------------------
 
 def check_icon(directory: Path, name: str, where: str):
@@ -381,7 +565,7 @@ def macro(name: str) -> str:
     return name.upper()
 
 
-def header(data: dict, kinds: list[str]) -> str:
+def header(data: dict, kinds: list[str], directory: Path = SOURCE) -> str:
     settings = data["settings"]
     type_cards = [e["id"] for e in data["buffs"] if e.get("type_card")]
     lines = [
@@ -397,7 +581,11 @@ def header(data: dict, kinds: list[str]) -> str:
         *[f"#define ENTRALINK_BUFF_KIND_{macro(k)} {i}" for i, k in enumerate(kinds)], "",
         "// Damage buckets, with their caps in hundredths",
         *[f"#define ENTRALINK_BUFF_BUCKET_{macro(b['id'])} {i}" for i, b in enumerate(data["buckets"])],
-        *[f"#define ENTRALINK_BUFF_BUCKET_{macro(b['id'])}_CAP {b['cap']}" for b in data["buckets"]], "",
+        *[f"#define ENTRALINK_BUFF_BUCKET_{macro(b['id'])}_CAP {b['cap']}" for b in data["buckets"]],
+        "// Each bucket's cap and the vanilla factor its sum adds to (hundredths), in the buckets' order (phase 3)",
+        "#define ENTRALINK_BUFF_BUCKET_CAPS { " + ", ".join(str(b["cap"]) for b in data["buckets"]) + " }",
+        "#define ENTRALINK_BUFF_BUCKET_VANILLAS { " + ", ".join(str(b.get("vanilla", 100)) for b in data["buckets"])
+        + " }", "",
         "// Icon categories (buff_icons/<category>.png, drawn in buff_icons/tier_<tier>.png's palette)",
         f"#define ENTRALINK_BUFF_CATEGORY_COUNT {len(data['categories'])}",
         *[f"#define ENTRALINK_BUFF_CATEGORY_{macro(c['id'])} {i}" for i, c in enumerate(data["categories"])], "",
@@ -418,6 +606,11 @@ def header(data: dict, kinds: list[str]) -> str:
         f"#define ENTRALINK_BUFF_GOLD_SLOTS {settings['gold_slots']}",
         f"#define ENTRALINK_BUFF_MAX_RANK {settings['max_rank']}",
         f"#define ENTRALINK_BUFF_DAMAGE_CAP {settings['damage_cap']}",
+        f"#define ENTRALINK_BUFF_BOSS_BAR_HP {settings.get('boss_bar_hp', 6000)}",
+        f"#define ENTRALINK_BUFF_BOSS_SLEEP_TURNS {settings.get('boss_sleep_turns', 2)}",
+        f"#define ENTRALINK_BUFF_BOSS_TOXIC_CAP {settings.get('boss_toxic_cap', 4)}",
+        f"#define ENTRALINK_BUFF_BOSS_FULL_PARALYSIS {settings.get('boss_full_paralysis', 50)}",
+        f"#define ENTRALINK_BUFF_BOSS_FIXED_DAMAGE {settings.get('boss_fixed_damage', 50)}",
         f"#define ENTRALINK_BUFF_SKIP_DUST {settings.get('skip_dust', 0)}",
         f"#define ENTRALINK_BUFF_TYPE_CARD_TEAM_WEIGHT {settings.get('type_card_team_weight', 100)}",
         *[f"#define ENTRALINK_BUFF_PRICE_{macro(t)} {settings['prices'][t]}" for t in TIERS], "",
@@ -443,9 +636,15 @@ def header(data: dict, kinds: list[str]) -> str:
         "// theme, highest level, pools, rounds, weight, type card",
         "#define ENTRALINK_BUFF_TABLE { \\",
         *[row + " \\" for row in table(data)],
-        "}",
+        "}", "",
+        *effect_lines(data, directory),
         "", f"#endif // {GUARD}", "",
     ]
+    # A buff's, category's or theme's ID can spell another value's name (a buff "stat_speed")
+    names = [line.split()[1] for line in lines if line.startswith("#define ")]
+    for name in names:
+        if names.count(name) > 1:
+            error("buffs", f"{name} is defined twice: rename the ID that spells it")
     return "\n".join(lines)
 
 
@@ -475,7 +674,7 @@ def main():
             return
         if args.output is None:
             parser.error("give the output header")
-        text = header(data, effect_kinds(args.source))
+        text = header(data, effect_kinds(args.source), args.source)
         if not args.output.exists() or args.output.read_text() != text:
             args.output.parent.mkdir(parents=True, exist_ok=True)
             args.output.write_text(text)

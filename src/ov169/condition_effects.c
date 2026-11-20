@@ -10,6 +10,7 @@
 #include "constants/types.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/battle_handlers.h"
+#include "paperwhite2/entralink_battle.h"
 #include "text/system/0018.h"
 #endif
 
@@ -138,7 +139,12 @@ static void ConditionEndTurnLeechSeed(BtlServerFlow *flow, BattleMon *mon, u8 mo
     pos = Condition_GetParam(cont);
     sourceId = BtlServerFlow_GetMonIDAtPos(flow, pos);
     if (sourceId != 0x1f) {
+#ifdef PAPERWHITE2
+        // Paper White 2: on an Entralink run's foe, a fraction of at most one bar's HP (paperwhite2_entralink_battle.c)
+        amount = EntralinkBattle_DivideResidualHP(mon, 8);
+#else
         amount = DivideMaxHPZeroCheck(mon, 8);
+#endif
         hp = GetBattleMonStat(mon, BATTLEMON_HP);
         if (amount > hp) {
             amount = hp;
@@ -217,11 +223,20 @@ static void ConditionEndTurnBind(BtlServerFlow *flow, BattleMon *mon, u8 monId) 
         }
         damage = BattleHandler_PushWork(flow, 7, monId);
         damage->targetIndex = monId;
+#ifdef PAPERWHITE2
+        // Paper White 2: on an Entralink run's foe, a fraction of at most one bar's HP (paperwhite2_entralink_battle.c)
+        if (GetConditionFlag(cont) != 0) {
+            damage->amount = EntralinkBattle_DivideResidualHP(mon, 8);
+        } else {
+            damage->amount = EntralinkBattle_DivideResidualHP(mon, 16);
+        }
+#else
         if (GetConditionFlag(cont) != 0) {
             damage->amount = DivideMaxHPZeroCheck(mon, 8);
         } else {
             damage->amount = DivideMaxHPZeroCheck(mon, 16);
         }
+#endif
         if (effect != -1) {
             damage->showViewEffect = TRUE;
             damage->effect = effect;

@@ -199,3 +199,39 @@ def test_one_icon_a_category_in_each_tiers_palette():
     assert all(len(p) == 16 for p in palettes)
     assert len({tuple(p) for p in palettes}) == 3
     assert {e["category"] for e in data["buffs"]} <= {c["id"] for c in data["categories"]}
+
+
+def test_battle_tables_carry_kinds_conditions_and_numbers():
+    """Phase 3: the battle's effects table (each card's kind, bucket, condition bits and values) and the values table
+    (a stack's step, soft limit and cap; a gold's ranks)."""
+    data = fixture_catalogue()
+    entry(data, "galvanic")["effect"] = {"kind": "status_chance_on_hit", "status": "burn",
+                                         "condition": {"any": [{"contact": True}, {"move_type": "TYPE_FIRE"}]}}
+    entry(data, "galvanic").pop("bucket")
+    tests = entralink_buffs.condition_tests()
+    enums = entralink_buffs.effect_enums()
+    rows = entralink_buffs.effects_table(data)
+    assert len(rows) == 3
+    assert "ENTRALINK_BUFF_KIND_STAT_RATIO, ENTRALINK_BUFF_BUCKET_ATK" in rows[0]
+    # type_affinity: the card's type test, POW
+    assert rows[1].startswith(f"    {{ {1 << tests.index('card_type'):#x}, 0x0, ABILITY_NONE, "
+                              "ENTRALINK_BUFF_KIND_DAMAGE_RATIO, ENTRALINK_BUFF_BUCKET_POW,")
+    # the any condition: contact or a Fire move, burn as its parameter
+    any_mask = (1 << tests.index("contact")) | (1 << tests.index("move_type"))
+    assert rows[2].startswith(f"    {{ 0x0, {any_mask:#x}, ABILITY_NONE, ENTRALINK_BUFF_KIND_STATUS_CHANCE_ON_HIT, "
+                              "ENTRALINK_BUFF_NONE, 0x0, 0x0, TYPE_FIRE,")
+    assert f", {enums['STATUS'].index('burn')}, 0x0, 0, 0x0," in rows[2]
+    values = entralink_buffs.values_table(data)
+    assert values[0].startswith("    { { 10, 6, 80 }, 0, ENTRALINK_BUFF_KIND_STAT_RATIO }")
+    assert values[1].startswith("    { { 15, 0, 60 }, 0, ENTRALINK_BUFF_KIND_DAMAGE_RATIO }")
+    assert values[2].startswith("    { { 60, 80, 100 }, 1, ENTRALINK_BUFF_KIND_STATUS_CHANCE_ON_HIT }")
+    text = entralink_buffs.header(data, entralink_buffs.effect_kinds())
+    assert "#define ENTRALINK_BUFF_BUCKET_CAPS { 100, 100, 75, 40, 125, 50, 25, 100, 50 }" in text
+    assert "#define ENTRALINK_BUFF_BOSS_BAR_HP 6000" in text
+
+
+def test_an_id_that_spells_another_name_is_refused():
+    data = fixture_catalogue()
+    entry(data, "attack")["id"] = "stat_speed"
+    with pytest.raises(datajson.DataError, match="ENTRALINK_BUFF_STAT_SPEED is defined twice"):
+        entralink_buffs.header(data, entralink_buffs.effect_kinds())
