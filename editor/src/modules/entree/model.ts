@@ -148,9 +148,10 @@ export function checkTemplates(ids: Iterable<string>): string[] {
     + `${t === "pre_boss_rest" ? "the rest before each boss" : `every generated ${t} room`}. Make it under Templates.`);
 }
 
-/** The most enemies each format takes, and the fewest. */
+/** The enemies each format takes, exactly (min and max are the same, as the packer's ENEMY_COUNTS): a double or
+ * triple with fewer leaves places of its side empty, which the battle's code doesn't expect. */
 export const FORMAT_ENEMIES: Record<Format, { min: number; max: number }> = {
-  single: { min: 1, max: 1 }, double: { min: 1, max: 2 }, triple: { min: 1, max: 3 }, raid: { min: 1, max: 1 },
+  single: { min: 1, max: 1 }, double: { min: 2, max: 2 }, triple: { min: 3, max: 3 }, raid: { min: 1, max: 1 },
 };
 
 // The game's defaults for what a file leaves out (the prototype's packer, tools/paperwhite2/entralink_run.py)
@@ -347,19 +348,29 @@ export function newNpc(type: NpcType, x: number, z: number, room: Room, markers?
   return fromPlain({ ...npc, x, z, facing: "DIR_DOWN", ...(marker && markers?.has(marker) && { marker }) }) as JsonMap;
 }
 
-/** A battle NPC's walking Pokémon sprite for a species, if the game has one. */
-export function walkingSprite(species: string | undefined, constants: ReadonlyMap<string, number>): string | null {
+/** A battle NPC's walking Pokémon sprite for a species, if the game has one, as the packer's walking_sprite picks it:
+ * OBJ_CODE_POKEMON_<SPECIES>, a form's with _FORM_<n> (a form without its own shows its species'), and _MALE or
+ * _FEMALE after it for a species whose sexes differ (the male's unless the enemy is female). */
+export function walkingSprite(species: string | undefined, constants: ReadonlyMap<string, number>, form = 0,
+  gender?: "male" | "female"): string | null {
   if (!species) return null;
-  const code = `OBJ_CODE_POKEMON_${species.replace(/^SPECIES_/, "")}`;
-  return constants.has(code) ? code : null;
+  const base = `OBJ_CODE_POKEMON_${species.replace(/^SPECIES_/, "")}`;
+  const sex = gender === "female" ? "_FEMALE" : "_MALE";
+  for (const name of [...(form ? [`${base}_FORM_${form}`] : []), base])
+    for (const code of [name, name + sex]) if (constants.has(code)) return code;
+  return null;
 }
+
+/** An enemy's walking sprite (walkingSprite of its species, form and gender). */
+export const enemySprite = (enemy: Enemy | undefined, constants: ReadonlyMap<string, number>) =>
+  walkingSprite(enemy?.species, constants, enemy?.form ?? 0, enemy?.gender);
 
 /** The sprite an NPC shows: its own, else its type's default (a battle NPC its enemy's walking Pokémon, the balls the
  * item ball, the others the Lady). Null when it has none. */
 export function npcSprite(npc: Npc, room: Room, constants: ReadonlyMap<string, number>): string | null {
   if (npc.sprite) return npc.sprite;
   if (BALL_TYPES.includes(npc.type)) return ITEM_BALL_SPRITE;
-  if (npc.type === "battle") return walkingSprite(shownEnemy(npc, room)?.species, constants);
+  if (npc.type === "battle") return enemySprite(shownEnemy(npc, room), constants);
   return LADY_SPRITE;
 }
 
@@ -412,8 +423,11 @@ export function checkRoom(room: Room, constants: ReadonlyMap<string, number>, cl
     ids.set(b.id, i);
     if (!ID_PATTERN.test(b.id)) add("error", { battle: i }, `Battle ${i + 1}'s id "${b.id}" isn't lower-case letters, digits and underscores.`);
     const { min, max } = FORMAT_ENEMIES[b.format];
-    if (b.enemies.length > max) add("error", { battle: i }, `Battle "${b.id}" has ${b.enemies.length} enemies; a ${b.format} battle takes ${max === 1 ? "one" : `at most ${max}`}.`);
-    if (b.enemies.length < min) add("error", { battle: i }, `Battle "${b.id}" has no enemy.`);
+    if (!b.enemies.length) add("error", { battle: i }, `Battle "${b.id}" has no enemy.`);
+    else if (b.enemies.length > max || b.enemies.length < min) {
+      const n = b.enemies.length;
+      add("error", { battle: i }, `Battle "${b.id}" has ${n === 1 ? "one enemy" : `${n} enemies`}; a ${b.format} battle takes ${max === 1 ? "one" : max}.`);
+    }
     if (!room.npcs.some((n) => n.type === "battle" && n.battle === b.id))
       add("warning", { battle: i }, `No NPC starts battle "${b.id}": it can't be fought.`);
     else if (room.npcs.filter((n) => n.type === "battle" && n.battle === b.id).every((n) => (n.chance ?? DEFAULT_CHANCE) < 100 || n.requires.length))
@@ -432,8 +446,8 @@ export function checkRoom(room: Room, constants: ReadonlyMap<string, number>, cl
       if (!n.battle) add("error", { npc: i }, `${name} starts no battle: choose one.`);
       else if (!battle) add("error", { npc: i }, `${name} starts battle "${n.battle}", which the room doesn't have.`);
       else if ((n.enemy ?? 0) >= battle.enemies.length) add("error", { npc: i }, `${name} shows enemy ${(n.enemy ?? 0) + 1}, but battle "${battle.id}" has ${battle.enemies.length}.`);
-      else if (!n.sprite && !walkingSprite(shownEnemy(n, room)?.species, constants))
-        add("warning", { npc: i }, `${name}: ${shownEnemy(n, room)?.species} has no walking sprite; choose a sprite for it.`);
+      else if (!n.sprite && !enemySprite(shownEnemy(n, room), constants))
+        add("error", { npc: i }, `${name}: ${shownEnemy(n, room)?.species} has no walking sprite; choose a sprite for it.`);
     } else {
       if (n.battle !== undefined || n.enemy !== undefined) add("warning", { npc: i }, `${name} names a battle, which only battle NPCs use.`);
     }

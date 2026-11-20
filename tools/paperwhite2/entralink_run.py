@@ -33,7 +33,9 @@ SOURCE = ROOT / "res" / "paperwhite2" / "entralink"
 GUARD = "POKEBW2_PAPERWHITE2_ENTRALINK_RUN_CONFIG_H"
 # include/paperwhite2/entralink_run.h's values
 FORMATS = {"single": 0, "double": 1, "triple": 2, "raid": 3}
-ENEMY_COUNTS = {"single": (1, 1), "double": (1, 2), "triple": (1, 3), "raid": (1, 1)}
+# The enemies each format takes: a double or triple battle with fewer leaves places of its side empty, which the battle
+# code doesn't expect (the foe's AI reads them as Pokémon and corrupts memory, entralink-roguelike-prototype.md)
+ENEMY_COUNTS = {"single": 1, "double": 2, "triple": 3, "raid": 1}
 ROLES = {"room": 0, "boss": 1, "final": 2}
 NPC_TYPES = {"battle": 0, "item": 1, "rest": 2, "buff": 3, "heal": 4, "revive": 5, "gift": 6, "shop": 7,
              "item_choice": 8, "buff_choice": 9, "swap": 10}
@@ -128,6 +130,23 @@ CATCHES_MAX = 512
 RUN_ROOMS_MAX = 32
 
 
+def walking_sprite(enemy: dict, constants: dict[str, int]) -> str | None:
+    """A battle NPC's sprite when it has none of its own: its enemy's walking Pokémon, by name, as the editor's
+    walkingSprite picks it: OBJ_CODE_POKEMON_<SPECIES>, a form's with _FORM_<n> (a form without its own shows its
+    species'), and _MALE or _FEMALE after it for a species whose sexes differ (the male's unless the enemy is female).
+    The game's walking table (a/2/0/8, GetPokemonFieldOBJCODE) gives the same codes for its species, but has no rows for
+    the hack's own walking sprites (OBJ_CODE_POKEMON_ from 0x4000: the new species' and forms'), so the packer writes
+    the code rather than leaving it to the game. None when the species has none."""
+    base = "OBJ_CODE_POKEMON_" + enemy["species"].removeprefix("SPECIES_")
+    sex = "_FEMALE" if enemy.get("gender") == "female" else "_MALE"
+    form = enemy.get("form", 0)
+    for name in ([f"{base}_FORM_{form}"] if form else []) + [base]:
+        for code in (name, name + sex):
+            if code in constants:
+                return code
+    return None
+
+
 def error(where: str, message: str):
     raise datajson.DataError(f"{where}: {message}")
 
@@ -196,10 +215,11 @@ def check_room(directory: Path, where: str, room: dict):
         if battle["id"] in battles:
             error(where, f"two battles are called {battle['id']!r}")
         battles[battle["id"]] = battle
-        low, high = ENEMY_COUNTS[battle["format"]]
+        wanted = ENEMY_COUNTS[battle["format"]]
         count = len(battle["enemies"])
-        if not low <= count <= high:
-            error(where, f"battles[{i}]: a {battle['format']} battle takes {low} to {high} enemies, not {count}")
+        if count != wanted:
+            error(where, f"battles[{i}]: a {battle['format']} battle takes {wanted} "
+                  f"{'enemy' if wanted == 1 else 'enemies'}, not {count}")
         for j, enemy in enumerate(battle["enemies"]):
             ability = enemy.get("ability")
             if ability is not None and ability != "hidden" and not (
@@ -213,6 +233,9 @@ def check_room(directory: Path, where: str, room: dict):
                 error(where, f"{at} starts battle {npc.get('battle')!r}, which the room doesn't have")
             if npc.get("enemy", 0) >= len(battles[npc["battle"]]["enemies"]):
                 error(where, f"{at} shows enemy {npc['enemy']}, which its battle doesn't have")
+            enemy = battles[npc["battle"]]["enemies"][npc.get("enemy", 0)]
+            if "sprite" not in npc and walking_sprite(enemy, constants) is None:
+                error(where, f"{at}: {enemy['species']} has no walking sprite, so the NPC needs a sprite of its own")
         elif npc["type"] == "item" and "item" not in npc:
             error(where, f"{at} is an item NPC without an item")
         if "marker" in npc and npc["marker"] not in npc_marker_names(directory):
@@ -586,6 +609,9 @@ def room_row(name: str, room: dict, template: bool, rooms: dict[str, dict], tabl
             else:
                 messages.append(NONE16)
         sprite = npc.get("sprite", DEFAULT_SPRITES.get(npc["type"]))
+        if sprite is None and npc["type"] == "battle":
+            battle = room["battles"][battle_index[npc["battle"]]]
+            sprite = walking_sprite(battle["enemies"][npc.get("enemy", 0)], constants)
         npcs.append({
             "name": f"{label}: {npc['type']}",
             "type": NPC_TYPES[npc["type"]],

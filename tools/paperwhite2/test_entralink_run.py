@@ -43,6 +43,44 @@ def test_raid_takes_one_enemy(tmp_path):
         entralink_run.tables(directory)
 
 
+def test_formats_take_exactly_their_enemies(tmp_path):
+    directory = copy_data(tmp_path)
+    path = directory / "rooms" / "short_triple.json"
+    path.write_text(json.dumps({
+        "name": "Short triple", "role": "room",
+        "battles": [{"id": "battle", "progress_id": 1000, "format": "triple",
+                     "enemies": [{"species": "SPECIES_PIKACHU"}]}],
+        "npcs": [{"type": "battle", "battle": "battle", "x": 15, "z": 14, "facing": "DIR_DOWN"}]}))
+    with pytest.raises(datajson.DataError, match="a triple battle takes 3 enemies, not 1"):
+        entralink_run.check_room(directory, "rooms/short_triple.json", json.loads(path.read_text()))
+
+
+def test_battle_npc_default_sprite():
+    """A battle NPC without a sprite shows its enemy's walking Pokémon: the hack's own (no row in the game's walking
+    table), a form's, a sex's, a form without its own its species'; none for a species without one."""
+    constants = {"OBJ_CODE_POKEMON_NEWMON": 0x4015, "OBJ_CODE_POKEMON_FORMED": 1, "OBJ_CODE_POKEMON_FORMED_FORM_1": 2,
+                 "OBJ_CODE_POKEMON_SEXED_MALE": 3, "OBJ_CODE_POKEMON_SEXED_FEMALE": 4}
+    sprite = entralink_run.walking_sprite
+    assert sprite({"species": "SPECIES_NEWMON"}, constants) == "OBJ_CODE_POKEMON_NEWMON"
+    assert sprite({"species": "SPECIES_FORMED", "form": 1}, constants) == "OBJ_CODE_POKEMON_FORMED_FORM_1"
+    assert sprite({"species": "SPECIES_FORMED", "form": 2}, constants) == "OBJ_CODE_POKEMON_FORMED"
+    assert sprite({"species": "SPECIES_SEXED"}, constants) == "OBJ_CODE_POKEMON_SEXED_MALE"
+    assert sprite({"species": "SPECIES_SEXED", "gender": "female"}, constants) == "OBJ_CODE_POKEMON_SEXED_FEMALE"
+    assert sprite({"species": "SPECIES_NONE"}, constants) is None
+
+
+def test_battle_npc_without_walking_sprite(tmp_path):
+    directory = copy_data(tmp_path)
+    data = {"name": "No sprite", "role": "room",
+            "battles": [{"id": "battle", "progress_id": 1000, "format": "single",
+                         "enemies": [{"species": "SPECIES_NONE"}]}],
+            "npcs": [{"type": "battle", "battle": "battle", "x": 15, "z": 14, "facing": "DIR_DOWN"}]}
+    with pytest.raises(datajson.DataError, match="no walking sprite"):
+        entralink_run.check_room(directory, "rooms/no_sprite.json", data)
+    data["npcs"][0]["sprite"] = "OBJ_CODE_LADY"
+    entralink_run.check_room(directory, "rooms/no_sprite.json", data)
+
+
 def test_npc_names_a_missing_battle(tmp_path):
     directory = copy_data(tmp_path)
     edit(room(directory, "dialga"), lambda data: data["npcs"][0].update(battle="missing"))

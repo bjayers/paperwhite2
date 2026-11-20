@@ -80,6 +80,18 @@ test("a new room, edited, saves in the data tools' layout and passes the build's
   assert.equal(npcSprite(room.npcs[0], room, constants), "OBJ_CODE_POKEMON_KYOGRE");
   assert.equal(npcSprite(room.npcs[1], room, constants), "OBJ_CODE_POKEMON_GROUDON");
   assert.equal(npcSprite(room.npcs[2], room, constants), "OBJ_CODE_110");
+  // As the packer's walking_sprite: the hack's own walking sprites (no row in the game's walking table), a form's,
+  // a sex's, and a form without its own shows its species'
+  const codes = new Map([["OBJ_CODE_POKEMON_NEWMON", 0x4015], ["OBJ_CODE_POKEMON_FORMED", 1], ["OBJ_CODE_POKEMON_FORMED_FORM_1", 2],
+    ["OBJ_CODE_POKEMON_SEXED_MALE", 3], ["OBJ_CODE_POKEMON_SEXED_FEMALE", 4]]);
+  const shows = (enemy: Room["battles"][number]["enemies"][number]) =>
+    npcSprite(room.npcs[0], { ...room, battles: [{ ...room.battles[0], enemies: [enemy] }] }, codes);
+  assert.equal(shows({ species: "SPECIES_NEWMON" }), "OBJ_CODE_POKEMON_NEWMON");
+  assert.equal(shows({ species: "SPECIES_FORMED", form: 1 }), "OBJ_CODE_POKEMON_FORMED_FORM_1");
+  assert.equal(shows({ species: "SPECIES_FORMED", form: 2 }), "OBJ_CODE_POKEMON_FORMED");
+  assert.equal(shows({ species: "SPECIES_SEXED" }), "OBJ_CODE_POKEMON_SEXED_MALE");
+  assert.equal(shows({ species: "SPECIES_SEXED", gender: "female" }), "OBJ_CODE_POKEMON_SEXED_FEMALE");
+  assert.equal(shows({ species: "SPECIES_NONE" }), null);
   const dir = mkdtempSync(join(tmpdir(), "entree-"));
   try {
     const file = join(dir, "room.json");
@@ -113,6 +125,11 @@ test("the checks", () => {
     "error: Battle \"battle\" has 2 enemies; a raid battle takes one.",
     "error: NPC 1 (battle) shows enemy 3, but battle \"battle\" has 2.",
   ]);
+  // Too few: a double or triple takes exactly its places' enemies
+  assert.deepEqual(messages({ ...base, battles: [{ id: "battle", format: "triple", enemies: [mon] }] }), [
+    "error: Battle \"battle\" has one enemy; a triple battle takes 3.",
+  ]);
+  assert.deepEqual(messages({ ...base, battles: [{ id: "battle", format: "double", enemies: [mon, mon] }] }), []);
   // On an exit, on the arrival tile, on a blocked tile, two on one tile
   const at = (x: number, z: number) => ({ ...base.npcs[0], x, z });
   assert.deepEqual(messages({ ...base, npcs: [at(16, 9), at(15, 23), at(3, 3), at(3, 3)] }, [[3, 3]]).filter((m) => !m.includes("may all")), [

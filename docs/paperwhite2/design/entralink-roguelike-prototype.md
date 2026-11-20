@@ -108,7 +108,7 @@ final room). All names are the repo's constants.
 | `role` | `room` (one of a round's rooms), `boss` (ends round 1 or 2; the bosses have their own pool) or `final` (the run's last room; one is drawn if there are several) |
 | `weather` | Optional `BTL_WEATHER_*`: its battles start in it. Since step 5 the field doesn't show it (step 3 showed the matching field weather): the field has its round's fog. Left out, the battles take the field's |
 | `marker` | Optional (step 5): what lies in front of any door leading to it, `enemy`, `challenge`, `boss`, `rest`, `gift`, `event`, `shop`, `unknown` (always ???) or `final`; left out, its role's (`enemy`, `boss`, `final`). `catch` is never set: the game shows it instead of `enemy`, `challenge` or `boss` while one of its enemies can be caught and the run's bag holds a Nightmare Ball |
-| `battles[]` | Up to 8 of: `id` (lower case, the name NPCs use), `progress_id` (its won-ever bit, below), `format` (`single` 1 enemy, `double` 1-2, `triple` 1-3, `raid` exactly 1 in the center), `enemies[]` (1-3: `species`, `form` (0), `level` (70), `moves`, `ability` (`ABILITY_*` or `"hidden"`), `item`, `gender`, `shiny` (false), `catch`, `progress_id`) |
+| `battles[]` | Up to 8 of: `id` (lower case, the name NPCs use), `progress_id` (its won-ever bit, below), `format` (exactly: `single` 1 enemy, `double` 2, `triple` 3, `raid` 1 in the center; the packer and the editor refuse other counts, and the game plays a short double or triple as the format its enemies fill), `enemies[]` (1-3: `species`, `form` (0), `level` (70), `moves`, `ability` (`ABILITY_*` or `"hidden"`), `item`, `gender`, `shiny` (false), `catch`, `progress_id`) |
 | `npcs[]` | Up to 16 of the NPC record below. If no battle NPC spawns, the room is free: its exits are open at once |
 
 An enemy's `catch` (left out: it can't be caught): `after` (a list of `"<room id>/<battle id>"`, battles that must have
@@ -123,7 +123,7 @@ An NPC:
 | `battle` | A battle NPC's battle, by `id`. Several NPCs may start one battle (Kyogre and Groudon side by side for one double battle); several battles, one NPC each, let the player choose: **winning one opens the room and every battle NPC goes**, the other battles too |
 | `enemy` | A battle NPC's enemy (0 the first, the default) whose overworld sprite it shows and whose cry it plays |
 | `item`, `count` | An item NPC's item (`ITEM_*`) and how many (1); if the run's bag has no room, it says so and stays |
-| `sprite` | Optional `OBJ_CODE_*`: its own overworld sprite. Without it a battle NPC shows its enemy's walking Pokémon (`OBJ_CODE_POKEMON_<species>`), an item NPC the item ball (`OBJ_CODE_110`), rest and buff NPCs the Lady (`OBJ_CODE_LADY`). A new Nightmare with no walking sprite needs one (the editor warns) |
+| `sprite` | Optional `OBJ_CODE_*`: its own overworld sprite. Without it a battle NPC shows its enemy's walking Pokémon (`OBJ_CODE_POKEMON_<species>`, a form's `_FORM_<n>` or else its species', `_MALE`/`_FEMALE` where the sexes differ; the packer writes the code, so the hack's new species and forms get theirs), an item NPC the item ball (`OBJ_CODE_110`), rest and buff NPCs the Lady (`OBJ_CODE_LADY`). A Nightmare with no walking sprite needs one (an error in the packer and the editor) |
 | `requires` | Optional list: `"<room id>/<battle id>"` (that battle won at least once in any run) and `"run/completed"` (the final room beaten at least once); it spawns only if all hold |
 | `chance` | Its chance to spawn, 1-100 percent (100), rolled once as the player enters the room |
 | `dialogue` | Optional `before` (on talking; a battle NPC's before its battle) and `after` (a battle NPC's, after its battle is won or its enemy caught, before the room opens): a message in the text files' codes (below); `before_style` and `after_style`, each message's window (below; `talk` if left out) |
@@ -957,6 +957,36 @@ Code: overlay 12 +0.45 KB, overlay 36 +0.52 KB (the shop 0.36), overlay 86 +0.16
 +56 bytes (the state +40 of .bss). The DS arena: 45 KB left (from 46). At run time: the shop's screen is the Mart's,
 in its own heaps and freed when it closes; the Dowsing's search work +12 bytes; VRAM as before per marker texture (the
 enemy_choice marker 544 bytes, each NPC marker 160) only while shown.
+
+## Fixes: new species' NPC sprites and short doubles and triples (2026-11-20)
+
+From the user's room `apples_to_applin` (a triple with one Dipplin, a battle NPC with no sprite), both proven in
+py-desmume (scripts in the session's scratchpad `applin/`):
+
+- **The NPC was invisible.** A battle NPC without a sprite was packed with sprite 0, and the game looked its enemy up in
+  the walking table (a/2/0/8, `GetPokemonFieldOBJCODE`), which has 620 rows, the original's species only: none for
+  Dipplin (690) or for any of the hack's walking sprites (`OBJ_CODE_POKEMON_` from 0x4000). The lookup's
+  `TPOKE_INDEX_NONE` isn't negative, so the original's bug (`tpoke_data.c`, `// BUG:`) read row 0xffff past the table:
+  object code 0, an actor with no sprite. **Now** the packer writes the code itself (`walking_sprite`): the names the
+  table's rows have (checked: all 620 are `OBJ_CODE_POKEMON_<species>`, a form's `_FORM_<n>`, a sex's `_MALE`/`_FEMALE`),
+  so the hack's own sprites come too, and a form without its own shows its species'. The editor's `walkingSprite`
+  picks the same; a species with none is an error in both (it was a warning in the editor).
+- **The crash.** In a double or triple the foe's AI (`AIGetHighestDamagingMoveWithPartners`, `tr_ai.c`) loops over
+  every place of its side (`GetClientBattlerCount`), and with fewer Pokémon than places `TrAI_GetPartyMon` gives NULL:
+  `CanPokemonBattle` reads the null BattleMon's `core.src` (0) and `PokeParty_GetParam` decrypts and re-encrypts a
+  Pokémon at address 0, which is the ITCM's mirror. That rewrites `mainRenderer` (clact_itcm, 0x01ff8020), and the next
+  sprite draw runs garbage: an undefined instruction at 0x01ff802e, the crash screen's exception (its PC+4 of 4 and the
+  OS exception functions are the handler's own). A raid has no such hole: its sides are fainted copies. **Now** the
+  packer and the editor require exactly a format's enemies (single 1, double 2, triple 3, raid 1), and the run plays a
+  battle that has fewer as the format they fill (`EntralinkRun_CreateBattle`): one enemy as a single, two as a double.
+  Not a raid-like centred triple: that would add fainted copies, the raid's look, without the raid's HP and boss
+  protections, and the data is refused anyway; the fallback only keeps a build with such data from crashing.
+- **Tested:** the room as it was (one Dipplin, triple, the packer's check bypassed for the test): its NPC shows
+  Dipplin's walking sprite (actor model 0x4015 instead of 0), the battle plays as a single and is won, no exception;
+  the same room with three Dipplin: a triple with all three, several turns of both sides' moves (Syrup Bomb among them), no exception; before the fix the same
+  savestate hit the undefined instruction within the first turn, and a write watch on 0-0x400 caught
+  `PML_CryptoRun` writing there from `TrAI_Think`.
+- Cost: a few instructions of overlay 12; nothing at run time.
 
 ## The re-entry question
 

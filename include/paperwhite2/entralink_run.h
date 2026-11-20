@@ -177,7 +177,8 @@ typedef struct {
 } EntralinkBattle;
 
 typedef struct {
-    // An item NPC's item, and its sprite (an OBJ_CODE_*, or 0 for a battle NPC's enemy's walking Pokémon)
+    // An item NPC's item, and its sprite (an OBJ_CODE_*; the packer gives a battle NPC without one its enemy's walking
+    // Pokémon, and 0 looks that up in the game's walking table, which has the original's species only)
     u16 item;
     u16 sprite;
     // Its requirements in the table

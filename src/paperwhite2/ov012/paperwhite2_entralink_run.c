@@ -1293,8 +1293,15 @@ static GameEvent *EntralinkRun_CreateBattle(GameSystem *gsys, const EntralinkRoo
     BtlSetup *setup = BtlSetup_Create(HEAPID_GAMEEVENT);
     PokeParty *party = PokeParty_Create(HEAPID_GAMEEVENT);
     BtlFieldStatus status;
+    u32 format = battle->format;
     u32 i;
 
+    // A double or triple with fewer enemies than places plays as the format they fill: the foe's AI reads each place
+    // of its side as a Pokémon (AIGetHighestDamagingMoveWithPartners), and an empty one makes it write through a null
+    // pointer, over the ITCM's code. The packer and the editor refuse such a battle; this keeps one from crashing
+    if (format != ENTRALINK_FORMAT_RAID && battle->enemyCount != 0 && battle->enemyCount <= format) {
+        format = battle->enemyCount - 1;
+    }
     for (i = 0; i < ENTRALINK_RUN_ENEMIES_MAX; i++) {
         state->catchIds[i] = ENTRALINK_CATCH_NONE;
     }
@@ -1313,7 +1320,7 @@ static GameEvent *EntralinkRun_CreateBattle(GameSystem *gsys, const EntralinkRoo
     if (room->weather != ENTRALINK_WEATHER_FIELD) {
         status.weather = room->weather;
     }
-    BtlSetup_SetWildNormal(setup, gameData, party, &status, FORMAT_STYLES[battle->format], HEAPID_GAMEEVENT);
+    BtlSetup_SetWildNormal(setup, gameData, party, &status, FORMAT_STYLES[format], HEAPID_GAMEEVENT);
     BtlSetup_SetFlag(setup, ENTRALINK_RUN_BTL_SETUP_FLAG);
     // A boss's, the final room's and a raid's foes have the bosses' protections (paperwhite2/entralink_battle.h)
     if (room->role == ENTRALINK_ROLE_BOSS || room->role == ENTRALINK_ROLE_FINAL ||

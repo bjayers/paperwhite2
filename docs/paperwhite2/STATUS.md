@@ -2,6 +2,21 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-20: Entralink fixes: new species' battle NPCs invisible, a short triple crashing (ROM session, on a branch)
+
+- **Invisible NPC** (`apples_to_applin`'s Dipplin): a battle NPC without a sprite took its enemy's from the game's
+  walking table, which has no row for the hack's species or walking sprites, and the original's lookup bug read past
+  it (object code 0). The packer now writes the walking sprite by name (form, sex, the hack's own codes), as the
+  editor shows it; a species with none is an error in both.
+- **Crash:** a triple (or double) with fewer enemies than places: the foe's AI read the empty places as Pokémon and
+  encrypted one at address 0, the ITCM's mirror, overwriting the sprite renderer (undefined instruction at
+  0x01ff802e). Proven with a write watch in py-desmume. The packer and the editor now require exactly 1/2/3/1
+  enemies (single/double/triple/raid), and the run plays a short battle as the format its enemies fill.
+- **The user's `apples_to_applin.json` (triple, one Dipplin) now fails the build** (the hack's and the plain one,
+  which packs the run's dialogue text) and the packer's and editor's real-data tests until it is fixed in the editor
+  (format Single or Raid, or three enemies). Details: `entralink-roguelike-prototype.md`, "Fixes: new species' NPC
+  sprites and short doubles and triples".
+
 ## 2026-11-20: Entralink enemy scaling rebalance after the first playtest (ROM session, on a branch)
 
 - **Why:** room 2 was the Rayquaza raid, which had round 1's boss values (6,627 HP, x27.5, Attack x3): the user's
