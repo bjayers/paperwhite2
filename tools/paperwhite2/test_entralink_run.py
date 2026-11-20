@@ -333,6 +333,31 @@ def test_dust_and_shop(tmp_path):
         entralink_run.tables(directory)
 
 
+def test_swap_and_reserve(tmp_path):
+    """Phase 7 of the buffs: run.json's swap_dust and reserve_slots, with their defaults and ranges, and a swap NPC
+    packed as its type, its marker and the Lady."""
+    directory = copy_data(tmp_path)
+    edit(directory / "run.json", lambda data: [data.pop(key, None) for key in ("swap_dust", "reserve_slots")])
+    text = entralink_run.header(directory)
+    assert "#define ENTRALINK_RUN_SWAP_DUST 100" in text and "#define ENTRALINK_RUN_RESERVE_SLOTS 6" in text
+    edit(directory / "run.json", lambda data: data.update(swap_dust=0, reserve_slots=30))
+    data = entralink_run.tables(directory)
+    assert data["swap_dust"] == 0 and data["reserve_slots"] == 30
+    edit(room(directory, "dialga"), lambda data: data["npcs"].append(
+        {"type": "swap", "x": 20, "z": 14, "facing": "DIR_DOWN", "marker": "swap"}))
+    data = entralink_run.tables(directory)
+    first = data["rooms"][data["ids"].index("dialga")]["firstNpc"]
+    count = data["rooms"][data["ids"].index("dialga")]["npcCount"]
+    npc = data["npcs"][first + count - 1]
+    assert npc["type"] == entralink_run.NPC_TYPES["swap"] and npc["sprite"] == datajson.constants()["OBJ_CODE_LADY"]
+    assert npc["marker"] == entralink_run.npc_marker_names(directory).index("swap")
+    for key, value in (("swap_dust", 10000), ("reserve_slots", 0), ("reserve_slots", 31)):
+        edit(directory / "run.json", lambda data: data.update({key: value}))
+        with pytest.raises(datajson.DataError, match=key):
+            entralink_run.tables(directory)
+        edit(directory / "run.json", lambda data: data.pop(key))
+
+
 def test_icon_shift():
     """Step 7: a bag icon's picture, in the top-left 24 by 24 of its 32 by 32, moves right 4 and down 8."""
     pixels = bytes([1] * 32 * 32)

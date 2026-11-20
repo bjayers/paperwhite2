@@ -527,7 +527,7 @@ static void FinishBoxPick(void *data) {
 }
 
 // The PC Box in the Dream World's mode, which only picks a Pokémon, unless it is an Egg or its species isn't flagged:
-// every species the Wonder Trade takes. The box's own messages are the trade's (Box2Param's wonderTrade)
+// every species the Wonder Trade takes. The box's own messages are the trade's (Box2Param's pick)
 void WonderTrade_CallBox(FieldScriptEnv *env, u16 *result) {
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
     GameData *gameData = GSYS_GetGameData(gsys);
@@ -552,7 +552,7 @@ void WonderTrade_CallBox(FieldScriptEnv *env, u16 *result) {
     work->box.isNationalDex = PokeDex_IsNationalObtained(GameData_GetPokedex(gameData));
     work->box.unk20 = work->speciesFlags;
     work->box.mode = BOX2_MODE_DREAM_WORLD;
-    work->box.wonderTrade = TRUE;
+    work->box.pick = BOX2_PICK_WONDER_TRADE;
     ScriptWork_CallEvent(FieldScriptEnv_GetScriptWork(env), EventFieldSubprocessCall_CreateWithCallback(
                                                                 gsys, GSYS_GetField(gsys), OVERLAY_BOX2,
                                                                 &BOX2_PROC_FUNCTIONS, &work->box, FinishBoxPick, work));

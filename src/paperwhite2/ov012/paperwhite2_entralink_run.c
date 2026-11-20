@@ -27,6 +27,7 @@
 #include "nitro/math.h"
 #include "paperwhite2/entralink_buffs.h"
 #include "paperwhite2/entralink_progress.h"
+#include "paperwhite2/entralink_reserve.h"
 #include "paperwhite2/entralink_run.h"
 #include "paperwhite2/entralink_run_actions.h"
 #include "paperwhite2/entralink_run_battle.h"
@@ -1017,8 +1018,8 @@ static void EntralinkRun_RemoveNpc(GameSystem *gsys, u32 index) {
 }
 
 // Whether an NPC type makes the room's choice when used, and is one of the room's choice NPCs that go once the choice
-// is made: a rest's heal, revive and gift, a shop (once talked to, whether anything is bought or not), an item room's
-// ball, a buff ball
+// is made: a rest's heal, revive, gift and swap, a shop (once talked to, whether anything is bought or not), an item
+// room's ball, a buff ball
 static BOOL EntralinkRun_IsChoiceType(u32 type) {
     switch (type) {
     case ENTRALINK_NPC_HEAL:
@@ -1027,6 +1028,7 @@ static BOOL EntralinkRun_IsChoiceType(u32 type) {
     case ENTRALINK_NPC_SHOP:
     case ENTRALINK_NPC_ITEM_CHOICE:
     case ENTRALINK_NPC_BUFF_CHOICE:
+    case ENTRALINK_NPC_SWAP:
         return TRUE;
     }
     return FALSE;
@@ -1909,6 +1911,9 @@ BOOL Scrcmd_PaperWhite2_EntralinkRun(VM *vm, FieldScriptEnv *env) {
         case 2:
             *result = ENTRALINK_BUFF_SKIP_DUST;
             break;
+        case 4:
+            *result = ENTRALINK_RUN_SWAP_DUST;
+            break;
         default:
             *result = EntralinkBuffs_GetPrice(&state->picked);
             break;
@@ -1926,6 +1931,17 @@ BOOL Scrcmd_PaperWhite2_EntralinkRun(VM *vm, FieldScriptEnv *env) {
     case ENTRALINK_RUN_ACTION_WARP_HUB:
         ScriptWork_CallEvent(FieldScriptEnv_GetScriptWork(env), EntralinkRun_CreateHubWarp(gsys));
         return TRUE;
+    case ENTRALINK_RUN_ACTION_RESERVE_COUNT:
+    case ENTRALINK_RUN_ACTION_RESERVE_ADD_OPTIONS:
+    case ENTRALINK_RUN_ACTION_RESERVE_PICK_BOX:
+    case ENTRALINK_RUN_ACTION_RESERVE_ADD:
+    case ENTRALINK_RUN_ACTION_RESERVE_NAME:
+    case ENTRALINK_RUN_ACTION_RESERVE_REMOVE:
+    case ENTRALINK_RUN_ACTION_SWAP_CHECK:
+    case ENTRALINK_RUN_ACTION_SWAP_CAN_LEAVE:
+    case ENTRALINK_RUN_ACTION_SWAP:
+        // Phase 7: the Reserve Box, in the hub too, and the swap NPC
+        return EntralinkReserve_Action(env, action, arg, arg2, result);
     }
     return FALSE;
 }

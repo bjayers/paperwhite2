@@ -45,6 +45,16 @@
             "z": 14,
             "facing": "DIR_DOWN",
             "marker": "shop"
+        },
+        {
+            "type": "swap",
+            "x": 8,
+            "z": 14,
+            "facing": "DIR_DOWN",
+            "marker": "swap",
+            "dialogue": {
+                "before": "Need a fresh face on your team?\nI can call one from your Reserve Box."
+            }
         }
     ]
 }

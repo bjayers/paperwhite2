@@ -262,8 +262,10 @@ static const Box2MenuItem sMenu7144[] = { { 41, 0 }, { 42, 0 }, { 43, 0 }, { 44,
 static const Box2MenuItem sMenu7158[] = { { 45, 0 }, { 46, 0 }, { 47, 0 }, { 48, 0 }, { 66, 1 } };
 static const Box2MenuItem sMenu716c[] = { { 49, 0 }, { 50, 0 }, { 51, 0 }, { 52, 0 }, { 66, 1 } };
 #ifdef PAPERWHITE2
-// Paper White 2: the Wonder Trade's pick (Box2Param's wonderTrade) offers Trade where the Dream World's has Tuck In
+// Paper White 2: the Wonder Trade's and the Reserve Box's picks (Box2Param's pick) offer Trade and Reserve where the
+// Dream World's has Tuck In
 static const Box2MenuItem sMenuWonderTrade[] = { { BtlPokeparamBoxMainSaveInit_Text_WonderTrade, 0 }, { 80, 1 } };
+static const Box2MenuItem sMenuReserve[] = { { BtlPokeparamBoxMainSaveInit_Text_Reserve, 0 }, { 80, 1 } };
 #endif
 static const Box2MenuItem sMenu7194[] = { { 78, 0 }, { 74, 0 }, { 76, 0 }, { 77, 0 }, { 80, 1 } };
 static const Box2MenuItem sMenu71a8[] = { { 57, 0 }, { 35, 0 }, { 36, 0 }, { 37, 0 }, { 38, 0 }, { 66, 1 } };
@@ -596,9 +598,13 @@ static int Box2Seq_OpenMenu(Box2SysWork *syswk) {
         case 5:
             Box2Bmp_ClearMsgWindow(syswk->app, 27);
 #ifdef PAPERWHITE2
-            // Paper White 2: the Wonder Trade's pick says Trade
-            if (syswk->param->wonderTrade) {
+            // Paper White 2: the Wonder Trade's pick says Trade, the Reserve Box's Reserve
+            if (syswk->param->pick == BOX2_PICK_WONDER_TRADE) {
                 Box2Bmp_OpenMenu(syswk, sMenuWonderTrade, 2);
+                break;
+            }
+            if (syswk->param->pick == BOX2_PICK_RESERVE) {
+                Box2Bmp_OpenMenu(syswk, sMenuReserve, 2);
                 break;
             }
 #endif
@@ -5230,9 +5236,11 @@ static int Box2Seq_DreamWorldMain(Box2SysWork *syswk) {
             GFL_SndSEPlay(SEQ_SE_DECIDE1);
             syswk->pos = res;
 #ifdef PAPERWHITE2
-            // Paper White 2: the Wonder Trade's pick says Trade
-            if (syswk->param->wonderTrade) {
+            // Paper White 2: the Wonder Trade's pick says Trade, the Reserve Box's Reserve
+            if (syswk->param->pick == BOX2_PICK_WONDER_TRADE) {
                 Box2Bmp_OpenMenu(syswk, sMenuWonderTrade, 2);
+            } else if (syswk->param->pick == BOX2_PICK_RESERVE) {
+                Box2Bmp_OpenMenu(syswk, sMenuReserve, 2);
             } else {
                 Box2Bmp_OpenMenu(syswk, sMenu70cc, 2);
             }

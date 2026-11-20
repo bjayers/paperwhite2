@@ -12,7 +12,7 @@ import { fileText, fromPlain, parseJson, setIn, type JsonValue } from "../shared
 import { validate, type Schema } from "../shared/schema.ts";
 import { Python } from "../server/python.ts";
 import {
-  DEFAULT_DUST, DEFAULT_SHOP_ITEMS, DUST_KINDS, MARKER_TYPES, ROOM_SCHEMA, ROOM_TYPES, WEIGHT_ORDER, checkRoom, defaultMarker, newRoomData,
+  DEFAULT_DUST, DEFAULT_RESERVE_SLOTS, DEFAULT_SHOP_ITEMS, DEFAULT_SWAP_DUST, DUST_KINDS, MAX_RESERVE_SLOTS, MAX_SWAP_DUST, MARKER_TYPES, ROOM_SCHEMA, ROOM_TYPES, WEIGHT_ORDER, checkRoom, defaultMarker, newRoomData,
   readRoom, readRun,
 } from "../src/modules/entree/model.ts";
 
@@ -67,3 +67,20 @@ test("the run's Dream Dust and shop items: read with their defaults, written val
   assert.equal(errors(setIn(data, ["shop_items"], 9), runSchema).length, 1);
   assert.equal(errors(setIn(data, ["dust", "boss"], 10000), runSchema).length, 1);
 });
+
+test("the buffs' phase 7: a swap's Dust and the Reserve Box's slots, read with their defaults, written valid, out of range caught", () => {
+  const real = parseJson(readFileSync(join(ROOT, "res/paperwhite2/entralink/run.json"), "utf8"));
+  const base = new Map(asEntries(real).filter(([k]) => k !== "swap_dust" && k !== "reserve_slots"));
+  const run = readRun(base);
+  assert.equal(run.swapDust, DEFAULT_SWAP_DUST);
+  assert.equal(run.reserveSlots, DEFAULT_RESERVE_SLOTS);
+  const data = setIn(setIn(base, ["swap_dust"], MAX_SWAP_DUST), ["reserve_slots"], MAX_RESERVE_SLOTS);
+  assert.deepEqual(errors(data, runSchema), []);
+  assert.deepEqual(buildCheck(data, RUN_SCHEMA), { ok: true });
+  assert.deepEqual([readRun(data).swapDust, readRun(data).reserveSlots], [MAX_SWAP_DUST, MAX_RESERVE_SLOTS]);
+  assert.equal(errors(setIn(data, ["swap_dust"], MAX_SWAP_DUST + 1), runSchema).length, 1);
+  assert.equal(errors(setIn(data, ["reserve_slots"], MAX_RESERVE_SLOTS + 1), runSchema).length, 1);
+  assert.equal(errors(setIn(data, ["reserve_slots"], 0), runSchema).length, 1);
+});
+
+const asEntries = (v: JsonValue): [string, JsonValue][] => [...(v as Map<string, JsonValue>).entries()];

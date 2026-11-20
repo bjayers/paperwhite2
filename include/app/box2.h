@@ -12,6 +12,13 @@
 #define BOX2_MODE_BATTLE_BOX 4
 #define BOX2_MODE_DREAM_WORLD 5
 
+#ifdef PAPERWHITE2
+// Paper White 2: Box2Param's pick
+#define BOX2_PICK_NONE 0
+#define BOX2_PICK_WONDER_TRADE 1
+#define BOX2_PICK_RESERVE 2
+#endif
+
 typedef struct {
     GameData *gameData;
     BoxSaveAccessor *boxes;
@@ -32,9 +39,10 @@ typedef struct {
     u8 tray;
     u8 position;
 #ifdef PAPERWHITE2
-    // Paper White 2: set with BOX2_MODE_DREAM_WORLD, the pick is the Wonder Trade's
-    // (src/paperwhite2/ov012/paperwhite2_wonder_trade.c), whose title and messages it shows
-    BOOL wonderTrade;
+    // Paper White 2: with BOX2_MODE_DREAM_WORLD, whose pick it is (BOX2_PICK_*), whose title and messages it shows: the
+    // Wonder Trade's (src/paperwhite2/ov012/paperwhite2_wonder_trade.c) or the Entralink's Reserve Box's
+    // (src/paperwhite2/ov012/paperwhite2_entralink_reserve.c); BOX2_PICK_NONE for the Dream World's own
+    u32 pick;
 #endif
 } Box2Param;
 

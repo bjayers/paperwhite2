@@ -158,9 +158,11 @@ void Box2Bmp_PrintTitle(Box2SysWork *syswk) {
     msgData = LoadBoxMsgData();
     // The titles follow the modes, from Deposit Pokémon on
 #ifdef PAPERWHITE2
-    // Paper White 2: the Wonder Trade's pick (Box2Param's wonderTrade) has its own title
-    if (syswk->param->wonderTrade) {
+    // Paper White 2: the Wonder Trade's and the Reserve Box's picks (Box2Param's pick) have their own titles
+    if (syswk->param->pick == BOX2_PICK_WONDER_TRADE) {
         PrintMsg(app, 0, msgData, Box2Bmp_Text_WonderTradeTitle, 0, 8, app->font, BOX2_COLOR_NORMAL);
+    } else if (syswk->param->pick == BOX2_PICK_RESERVE) {
+        PrintMsg(app, 0, msgData, Box2Bmp_Text_ReserveTitle, 0, 8, app->font, BOX2_COLOR_NORMAL);
     } else {
         PrintMsg(app, 0, msgData, syswk->param->mode + Box2Bmp_Text_DepositPokemon, 0, 8, app->font, BOX2_COLOR_NORMAL);
     }
@@ -802,7 +804,7 @@ void Box2Bmp_PrintDenyMsg(Box2SysWork *syswk, u32 type, u32 index) {
     case BOX2_MOVE_ERR_NOT_SLEEPY:
 #ifdef PAPERWHITE2
         // Paper White 2: the Wonder Trade's pick refuses the species it doesn't take
-        if (syswk->param->wonderTrade) {
+        if (syswk->param->pick == BOX2_PICK_WONDER_TRADE) {
             msgId = Box2Bmp_Text_WonderTradeCantTrade;
             break;
         }
@@ -816,9 +818,13 @@ void Box2Bmp_PrintDenyMsg(Box2SysWork *syswk, u32 type, u32 index) {
 void Box2Bmp_PrintTuckIn(Box2SysWork *syswk) {
     loadBoxPokemonNameToStrbuf(syswk->app->wordSet, 0, Box2Main_GetBoxPkm(syswk, syswk->tray, syswk->pos));
 #ifdef PAPERWHITE2
-    // Paper White 2: the Wonder Trade's pick asks whether to trade it
-    if (syswk->param->wonderTrade) {
+    // Paper White 2: the Wonder Trade's pick asks whether to trade it, the Reserve Box's whether to reserve it
+    if (syswk->param->pick == BOX2_PICK_WONDER_TRADE) {
         PrintBoxMsg(syswk, Box2Bmp_Text_WonderTradeOk, 27);
+        return;
+    }
+    if (syswk->param->pick == BOX2_PICK_RESERVE) {
+        PrintBoxMsg(syswk, Box2Bmp_Text_ReserveOk, 27);
         return;
     }
 #endif

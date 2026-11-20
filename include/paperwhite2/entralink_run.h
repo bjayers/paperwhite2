@@ -52,7 +52,7 @@
 // healing the Pokémon that haven't fainted, reviving a fainted one, a choice of 3 cards (items and buffs), a shop
 // selling items and buffs for Dream Dust (step 7), an item room's ball, whose item is drawn as the room is entered, and
 // a buff ball, the room's offer of buffs (paperwhite2/entralink_buffs.h). Using
-// one of the choice NPCs (ENTRALINK_NPC_HEAL to ENTRALINK_NPC_BUFF_CHOICE; the shop by talking to it) is the room's
+// one of the choice NPCs (ENTRALINK_NPC_HEAL to ENTRALINK_NPC_SWAP; the shop by talking to it) is the room's
 // choice: the room's other choice NPCs go and it is done
 #define ENTRALINK_NPC_BATTLE 0
 #define ENTRALINK_NPC_ITEM 1
@@ -64,6 +64,9 @@
 #define ENTRALINK_NPC_SHOP 7
 #define ENTRALINK_NPC_ITEM_CHOICE 8
 #define ENTRALINK_NPC_BUFF_CHOICE 9
+// Phase 7 of the buffs: a rest stop's swap, a Pokémon of the Reserve Box (paperwhite2/entralink_reserve.h) into the
+// team for Dream Dust in place of a copy, a choice NPC too
+#define ENTRALINK_NPC_SWAP 10
 
 // The item table's pools, bits of EntralinkItem's pools: an item room's balls, a gift NPC's choice, a shop's goods,
 // and the items on the ground and hidden in a room

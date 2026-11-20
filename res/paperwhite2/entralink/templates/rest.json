@@ -37,6 +37,16 @@
             "dialogue": {
                 "before": "Take one of these for the road."
             }
+        },
+        {
+            "type": "swap",
+            "x": 21,
+            "z": 14,
+            "facing": "DIR_DOWN",
+            "marker": "swap",
+            "dialogue": {
+                "before": "Need a fresh face on your team?\nI can call one from your Reserve Box."
+            }
         }
     ]
 }

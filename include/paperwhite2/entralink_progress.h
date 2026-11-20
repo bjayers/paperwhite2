@@ -18,6 +18,9 @@
 #define ENTRALINK_PROGRESS_BATTLES_MAX 1024
 #define ENTRALINK_PROGRESS_CATCHES_MAX 512
 
+// The Reserve Box's slots in the block (phase 7); run.json's reserve_slots is how many the hub offers
+#define ENTRALINK_RESERVE_MAX 30
+
 #define ENTRALINK_PROGRESS_MAGIC 0x45325750 // "PW2E"
 #define ENTRALINK_PROGRESS_VERSION 1
 
@@ -31,9 +34,14 @@ typedef struct {
     u8 battlesWon[ENTRALINK_PROGRESS_BATTLES_MAX / 8]; // 0x08
     // A bit for each enemy caught at least once, by its progress id
     u8 caught[ENTRALINK_PROGRESS_CATCHES_MAX / 8]; // 0x88
+    // The Reserve Box (phase 7, paperwhite2/entralink_reserve.h): a bit for each slot that holds a Pokémon, and each
+    // slot's Pokémon by its PID, which the PC boxes are searched for whenever the box is used: live links to box
+    // Pokémon, not copies. Zero in a block of before it, an empty box
+    u32 reserveSlots;                       // 0xc8
+    u32 reservePids[ENTRALINK_RESERVE_MAX]; // 0xcc
     // Free for the roguelike's later saves (a mid-run save, unlocks), zero
-    u8 reserved[0x850 - 0xc8]; // 0xc8
-} EntralinkProgress;           // 0x850, the Symbol block's size
+    u8 reserved[0x850 - 0x144]; // 0x144
+} EntralinkProgress;            // 0x850, the Symbol block's size
 
 // The save table's size and initial state of the block (save_table.c)
 u32 EntralinkProgress_GetSize(void);

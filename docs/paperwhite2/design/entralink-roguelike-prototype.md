@@ -11,7 +11,8 @@ the shops and the Dowsing MCHN; see "Step 2" to "Step 7" below.
 ## What a run is
 
 1. **The hub** (`ZONE_ENTRALINK`) has no Entree monolith, no tutorial and one NPC (the Lady south of the Entree), who
-   asks and takes the player back to their own world (`CallEntralinkWarpOut`). Walking off the hub's south walkway
+   asks and takes the player back to their own world (`CallEntralinkWarpOut`); since the buffs' phase 7 also the
+   Reserve Box NPC beside her, with the PC and the Reserve Box (`entralink-buffs.md`, section 14). Walking off the hub's south walkway
    still asks the same (vanilla's Script_14).
 2. **Walking off the hub's top edge** starts a run and enters room 1.
 3. **Rooms 1-3** are run.json's pool (Dialga, the Rayquaza raid, Ho-Oh) in a random order (`GFL_RandomLC`,
@@ -342,7 +343,9 @@ The Symbol block (`SAVE_BLOCK_SYMBOL`, 0x850 bytes at 0x22a00 and its copy at 0x
 | 0x06 | 2 | runs completed (the final room beaten), at most 0xffff; **"run completed" is this above 0** (`requires`' `run/completed`) |
 | 0x08 | 0x80 | battles won at least once, a bit per battle `progress_id` (1024) |
 | 0x88 | 0x40 | enemies caught at least once, a bit per catch `progress_id` (512) |
-| 0xc8 | 0x788 | free, zero (for a mid-run save or unlocks later) |
+| 0xc8 | 4 | the Reserve Box's slots in use, a bit each (`entralink-buffs.md`, phase 7, section 14) |
+| 0xcc | 0x78 | the Reserve Box's Pokémon, a PID per slot (30), searched for in the PC boxes whenever the box is used |
+| 0x144 | 0x70c | free, zero (for a mid-run save or unlocks later) |
 
 - No encryption or checksum of its own: the save's CRC of the block covers it. `EntralinkProgress_Get` clears a block
   without the magic or with another version to an empty progress, so an old save's forest data is dropped the first
@@ -692,6 +695,7 @@ The new NPC types:
 | `item_choice` | An item ball (`OBJ_CODE_110`) whose item is drawn from the `item_room` pool as the room is entered, the room's balls each another item; its bag icon floats over it. "It's X! Will you take it?" Yes puts it in the run's bag |
 | `buff_choice` | Since the buffs' phase 2: its dialogue, then the room's offer of buffs (drawn on entry, the `buff_room` pool), one taken the room's choice (`entralink-buffs.md`, section 9); the template has one ball. Its sprite is the item ball with the `buff` NPC marker (no palette swap: the ball's palette comes from the archive per sprite, and a tinted copy needs a new sprite) |
 | `rest`, `buff` | Unchanged (their dialogue or the placeholder line) |
+| `swap` | Since the buffs' phase 7 (`entralink-buffs.md`, section 14): for `run.json`'s `swap_dust` in Dream Dust, a Pokémon of the hub's Reserve Box joins the team as a level 100 copy made like the run's first ones, in place of a copy that hasn't fainted, which leaves the run; a choice NPC, in the `rest` and `pre_boss_rest` templates |
 
 **The choice:** using one heal, revive, gift, item_choice or buff_choice NPC (`ENTRALINK_RUN_ACTION_MAKE_CHOICE`) makes
 the room's choice: every other NPC of those types and the shops go, and the room is done (markers, exits). A used NPC
@@ -758,7 +762,7 @@ player walk on (`terrain_0.csv`, packed as a 32-bit row per z, `EntralinkClearin
 door's marker, not an NPC's that came up, not within one tile of the arrival (15, 23); and the hidden item
 (`hidden_item_chance`, the `ground` pool) on a random flower tile of the clearing (`EntralinkClearing`'s flower tiles)
 with no NPC or ball on it. The ball is an actor with ID 16 (after the room's 16 NPCs), the item ball, talked to through
-script 10498 (`ENTRALINK_RUN_NPC_GROUND`). The hidden item has no event: `FieldEventProvider_Grid_CheckForEvent`
+script 10498 (`ENTRALINK_RUN_NPC_GROUND`, 100 since the buffs' phase 7). The hidden item has no event: `FieldEventProvider_Grid_CheckForEvent`
 (`src/ov036/fieldmap_event.c`, `#ifdef PAPERWHITE2`) asks `EntralinkRun_CheckHiddenItem` after the bg events, with the
 tile in front of the player, and starts script 10499 (`global_10490.s` Script_10): "Riku found X!" into the run's bag.
 **No Dowsing MCHN:** it is a key item, which the run's bag doesn't hold, so it can't be used in a run (step 7 lets the

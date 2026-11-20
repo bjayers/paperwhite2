@@ -69,6 +69,14 @@
       "type": "integer", "minimum": 1, "maximum": 8,
       "description": "How many different items a shop sells, drawn from items.json's shop pool (its weights and rounds, the Nightmare Ball only while something can be caught) as the player enters its room, at their price in Dream Dust; 5 if left out"
     },
+    "swap_dust": {
+      "type": "integer", "minimum": 0, "maximum": 9999,
+      "description": "The Dream Dust a rest stop's swap NPC (type swap) takes for bringing a Pokémon of the Reserve Box into the team in place of one of the run's copies; 100 if left out"
+    },
+    "reserve_slots": {
+      "type": "integer", "minimum": 1, "maximum": 30,
+      "description": "How many Pokémon the Reserve Box holds: the PC Box Pokémon the player sets aside in the hub (its NPC) for rest stops' swaps, saved as links to them; 6 if left out"
+    },
     "field_weather": {
       "$ref": "#/$defs/field_weather",
       "description": "The forest's field weather (include/system/zone_weather.h) in the rounds with no field_weather of their own, the hack's tints (WEATHER_CUSTOM_TINT_*, res/paperwhite2/field_tints/tints.json) among them; the forest's own if left out"

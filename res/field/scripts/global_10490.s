@@ -375,6 +375,8 @@ Script_9:
     VMJumpIf CMP_EQ, L_RunItemChoice
     WorkCmpConst 0x8000, ENTRALINK_RUN_NPC_BUFF_CHOICE
     VMJumpIf CMP_EQ, L_RunBuffChoice
+    WorkCmpConst 0x8000, ENTRALINK_RUN_NPC_SWAP
+    VMJumpIf CMP_EQ, L_RunSwapNpc
     WorkCmpConst 0x8000, ENTRALINK_RUN_NPC_DONE
     VMJumpIf CMP_EQ, L_RunChoiceDone
     WorkSetConst 0x8002, 0
@@ -573,6 +575,98 @@ L_RunItemChoice:
     LastKeyWait
     SystemMsgClose
     EntralinkRun ENTRALINK_RUN_ACTION_MAKE_CHOICE, 0, 0, 0x8000
+    VMJump L_RunNpcEnd
+
+L_RunSwapNpc:
+    // Paper White 2: a swap NPC (phase 7): for Dream Dust, a Pokémon of the Reserve Box joins the team as a level 100
+    // copy in place of a copy that hasn't fainted, which leaves the run; the swap is the room's choice. Refused with no
+    // one to bring in, too little Dust, or every copy fainted; leaving the list or answering No leaves the choice open,
+    // and B in the party screen goes back to the list
+    WorkSetConst 0x8002, 0
+    VMCall L_RunDialogue
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_DUST, 4, 0, 0x8005
+    WordSetNumber 2, 0x8005, 5
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_DUST, 1, 0, 0x8005
+    WordSetNumber 3, 0x8005, 5
+    EntralinkRun ENTRALINK_RUN_ACTION_SWAP_CHECK, 0, 0, 0x8000
+    WorkCmpConst 0x8000, ENTRALINK_SWAP_NONE
+    VMJumpIf CMP_EQ, L_RunSwapNone
+    WorkCmpConst 0x8000, ENTRALINK_SWAP_NO_DUST
+    VMJumpIf CMP_EQ, L_RunSwapNoDust
+    WorkCmpConst 0x8000, ENTRALINK_SWAP_ALL_FAINTED
+    VMJumpIf CMP_EQ, L_RunSwapAllFainted
+
+L_RunSwapMenu:
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_DUST, 4, 0, 0x8005
+    WordSetNumber 2, 0x8005, 5
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_DUST, 1, 0, 0x8005
+    WordSetNumber 3, 0x8005, 5
+    SystemMsg Global10490_Text_RunSwapWhich, 2
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8000
+    EntralinkRun ENTRALINK_RUN_ACTION_RESERVE_ADD_OPTIONS, 1, 0, 0x8001
+    ListMenuAdd Global10490_Text_RunSwapCancel, Global10490_Text_RunSwapCancelInfo, ENTRALINK_RUN_CARD_OTHER
+    ListMenuShow
+    SystemMsgClose
+    WorkCmpConst 0x8000, 65534
+    VMJumpIf CMP_EQ, L_RunNpcEnd
+    WorkCmpConst 0x8000, ENTRALINK_RUN_CARD_OTHER
+    VMJumpIf CMP_EQ, L_RunNpcEnd
+    WorkSet 0x8006, 0x8000
+
+L_RunSwapSelect:
+    EntralinkRun ENTRALINK_RUN_ACTION_RESERVE_NAME, 0x8006, 0, 0x8000
+    SystemMsg Global10490_Text_RunSwapLeave, 2
+    LastKeyWait
+    SystemMsgClose
+    CallPokeSelect 0, 0x8003, 0x8004, 0
+    WorkCmpConst 0x8003, 0
+    VMJumpIf CMP_EQ, L_RunSwapMenu
+    EntralinkRun ENTRALINK_RUN_ACTION_SWAP_CAN_LEAVE, 0x8004, 0, 0x8000
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_EQ, L_RunSwapCantLeave
+    EntralinkRun ENTRALINK_RUN_ACTION_RESERVE_NAME, 0x8006, 0, 0x8000
+    WordSetPartyPokeName 1, 0x8004
+    EntralinkRun ENTRALINK_RUN_ACTION_GET_DUST, 4, 0, 0x8005
+    WordSetNumber 2, 0x8005, 5
+    SystemMsg Global10490_Text_RunSwapAsk, 2
+    YesNoWin 0x8000
+    SystemMsgClose
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_NE, L_RunNpcEnd
+    EntralinkRun ENTRALINK_RUN_ACTION_SWAP, 0x8006, 0x8004, 0x8000
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_EQ, L_RunSwapFailed
+    SEPlay SEQ_SE_RECOVERY
+    SystemMsg Global10490_Text_RunSwapped, 2
+    LastKeyWait
+    SystemMsgClose
+    EntralinkRun ENTRALINK_RUN_ACTION_MAKE_CHOICE, 0, 0, 0x8000
+    VMJump L_RunNpcEnd
+
+L_RunSwapCantLeave:
+    SystemMsg Global10490_Text_RunSwapCantLeave, 2
+    LastKeyWait
+    SystemMsgClose
+    VMJump L_RunSwapSelect
+
+L_RunSwapNone:
+    SystemMsg Global10490_Text_RunSwapNone, 2
+    VMJump L_RunSwapRefused
+
+L_RunSwapNoDust:
+    SystemMsg Global10490_Text_RunSwapNoDust, 2
+    VMJump L_RunSwapRefused
+
+L_RunSwapAllFainted:
+    SystemMsg Global10490_Text_RunSwapAllFainted, 2
+    VMJump L_RunSwapRefused
+
+L_RunSwapFailed:
+    SystemMsg Global10490_Text_RunSwapFailed, 2
+
+L_RunSwapRefused:
+    LastKeyWait
+    SystemMsgClose
     VMJump L_RunNpcEnd
 
 L_RunBuffChoice:

@@ -1,5 +1,8 @@
 #include "asm/field_script.inc"
 #include "text/script/entralink.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/entralink_run_actions.h"
+#endif
 
     ScriptEntry Script_1
     ScriptEntry Script_2
@@ -15,6 +18,9 @@
     ScriptEntry Script_12
     ScriptEntry Script_13
     ScriptEntry Script_14
+#ifdef PAPERWHITE2
+    ScriptEntry Script_15
+#endif
     ScriptEntriesEnd
     WorkSetConst 0x8020, 0
 
@@ -520,6 +526,131 @@ L_HubNpcStay:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt
+
+#ifdef PAPERWHITE2
+Script_15:
+    // Paper White 2: the hub's Reserve Box NPC (phase 7 of the Entralink's buffs, res/field/events/entralink.json):
+    // the PC's Box as a Pokémon Center's PC opens it, and the Reserve Box (paperwhite2/entralink_reserve.h), the box
+    // Pokémon set aside for the run's rest stops' swaps
+    ActorsPauseAll
+    SEPlay SEQ_SE_MESSAGE
+    ActorSetEyeToEye
+    SystemMsg Entralink_Text_ReserveNpcHello, 2
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8010
+    ListMenuAdd Entralink_Text_ReserveNpcUsePc, 65535, 0
+    ListMenuAdd Entralink_Text_ReserveNpcReserveBox, 65535, 1
+    ListMenuAdd Entralink_Text_ReserveNpcCancel, 65535, 2
+    ListMenuShow
+    SystemMsgClose
+    WorkCmpConst 0x8010, 0
+    VMJumpIf CMP_EQ, L_HubPc
+    WorkCmpConst 0x8010, 1
+    VMJumpIf CMP_EQ, L_HubReserveMenu
+
+L_HubReserveNpcEnd:
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+L_HubPc:
+    // Paper White 2: the PC's Box modes (the original's Deposit, Withdraw, Move Pokémon and Move Items, global_10090.s);
+    // the Box's close button ends it all, as at a Pokémon Center
+    SEPlay SEQ_SE_PC_LOGIN
+    SystemMsg Entralink_Text_ReservePcAccessed, 2
+
+L_HubPcMenu:
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8010
+    ListMenuAdd Entralink_Text_ReservePcMove, 65535, 2
+    ListMenuAdd Entralink_Text_ReservePcDeposit, 65535, 0
+    ListMenuAdd Entralink_Text_ReservePcWithdraw, 65535, 1
+    ListMenuAdd Entralink_Text_ReservePcItems, 65535, 3
+    ListMenuAdd Entralink_Text_ReservePcCancel, 65535, 4
+    ListMenuShow
+    SystemMsgClose
+    WorkCmpConst 0x8010, 3
+    VMJumpIf CMP_GT, L_HubPcEnd
+    FadeOutBlackQ
+    FadeWait
+    CallPC 0x8011, 0x8010
+    FadeInBlackQ
+    FadeWait
+    WorkCmpConst 0x8011, 0
+    VMJumpIf CMP_EQ, L_HubPcEnd
+    SEPlay SEQ_SE_PC_LOGIN
+    SystemMsg Entralink_Text_ReservePcWhat, 2
+    VMJump L_HubPcMenu
+
+L_HubPcEnd:
+    SEPlay SEQ_SE_PC_LOGOFF
+    VMJump L_HubReserveNpcEnd
+
+L_HubReserveMenu:
+    // Paper White 2: the Reserve Box: its Pokémon as they are now (one released or moved into the party drops off),
+    // one picked can be taken out, and Add opens the PC Box to pick one
+    EntralinkRun ENTRALINK_RUN_ACTION_RESERVE_COUNT, 0, 0, 0x8011
+    EntralinkRun ENTRALINK_RUN_ACTION_RESERVE_COUNT, 1, 1, 0x8011
+    SystemMsg Entralink_Text_ReserveBoxWhat, 2
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8010
+    EntralinkRun ENTRALINK_RUN_ACTION_RESERVE_ADD_OPTIONS, 0, 0, 0x8011
+    ListMenuAdd Entralink_Text_ReserveBoxAdd, Entralink_Text_ReserveBoxAddInfo, 100
+    ListMenuAdd Entralink_Text_ReserveBoxClose, Entralink_Text_ReserveBoxCloseInfo, 101
+    ListMenuShow
+    SystemMsgClose
+    WorkCmpConst 0x8010, 100
+    VMJumpIf CMP_EQ, L_HubReserveAdd
+    WorkCmpConst 0x8010, 100
+    VMJumpIf CMP_GT, L_HubReserveNpcEnd
+    WorkSet 0x8014, 0x8010
+    EntralinkRun ENTRALINK_RUN_ACTION_RESERVE_NAME, 0x8014, 0, 0x8011
+    SystemMsg Entralink_Text_ReserveBoxRemoveAsk, 2
+    YesNoWin 0x8011
+    SystemMsgClose
+    WorkCmpConst 0x8011, 0
+    VMJumpIf CMP_NE, L_HubReserveMenu
+    EntralinkRun ENTRALINK_RUN_ACTION_RESERVE_REMOVE, 0x8014, 0, 0x8011
+    SystemMsg Entralink_Text_ReserveBoxRemoved, 2
+    VMJump L_HubReserveSaid
+
+L_HubReserveAdd:
+    EntralinkRun ENTRALINK_RUN_ACTION_RESERVE_COUNT, 2, 0, 0x8011
+    WorkCmpConst 0x8011, 0
+    VMJumpIf CMP_EQ, L_HubReserveFull
+    SystemMsg Entralink_Text_ReserveBoxPick, 2
+    LastKeyWait
+    SystemMsgClose
+    FadeOutBlackQ
+    FadeWait
+    EntralinkRun ENTRALINK_RUN_ACTION_RESERVE_PICK_BOX, 0, 0, 0x8011
+    FadeInBlackQ
+    FadeWait
+    WorkCmpConst 0x8011, ENTRALINK_RESERVE_NONE
+    VMJumpIf CMP_EQ, L_HubReserveMenu
+    EntralinkRun ENTRALINK_RUN_ACTION_RESERVE_ADD, 0x8011, 0, 0x8012
+    WorkCmpConst 0x8012, ENTRALINK_RESERVE_ADDED
+    VMJumpIf CMP_EQ, L_HubReserveAdded
+    WorkCmpConst 0x8012, ENTRALINK_RESERVE_ALREADY
+    VMJumpIf CMP_EQ, L_HubReserveAlready
+    WorkCmpConst 0x8012, ENTRALINK_RESERVE_FULL
+    VMJumpIf CMP_EQ, L_HubReserveFull
+    SystemMsg Entralink_Text_ReserveBoxNotAdded, 2
+    VMJump L_HubReserveSaid
+
+L_HubReserveAdded:
+    SystemMsg Entralink_Text_ReserveBoxAdded, 2
+    VMJump L_HubReserveSaid
+
+L_HubReserveAlready:
+    SystemMsg Entralink_Text_ReserveBoxAlready, 2
+    VMJump L_HubReserveSaid
+
+L_HubReserveFull:
+    SystemMsg Entralink_Text_ReserveBoxFull, 2
+
+L_HubReserveSaid:
+    LastKeyWait
+    SystemMsgClose
+    VMJump L_HubReserveMenu
+#endif
 
 Script_14:
     ActorsPauseAll

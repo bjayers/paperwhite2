@@ -1050,3 +1050,113 @@ quads a frame. The battle view's archive +10.3 KB (the sheet) and 111 bytes (the
   the number lands; a new number on a foe fades the previous one.
 - `battles: all` is implemented (not link battles) but the setting stays `run`.
 - `EntralinkBattle_GetLastHitDamage` (phase 3, unused) gave way to each Pokémon's last hit, which every battle keeps.
+
+## 14. Phase 7: the Reserve Box and the rest stops' swaps (2026-11-20)
+
+Decided with the user on 2026-11-19 and 20: Pokémon set aside in the hub before a run, as live links to the PC boxes,
+which a rest stop's swap NPC brings into the run's team for Dream Dust.
+
+### 14.1 The Reserve Box
+
+- **Live links, not copies:** for each reserved Pokémon only its PID is saved, in the progress block (the Symbol
+  block's free area, prototype doc Step 3: `reserveSlots`, a bit per slot, and `reservePids[30]` at 0xc8-0x143; zero in
+  an older block, an empty box, so the version stays 1). Whenever the box is used (its list, a swap) the PC boxes are
+  searched for each PID (`EntralinkRun_FindBoxPkm`, ARM9 main: the PID is a BoxPkm's unencrypted first word, so only a
+  match is decrypted) and the Pokémon is used as it is then: moves, EVs, level, item. Moving it between boxes keeps
+  the link; one that isn't in a box any more (released, moved into the party) **drops off**, and its slot is freed the
+  next time the list is read. During a run the boxes don't change, so the hub's list and the rest stop's agree.
+- **Its size** is `run.json`'s `reserve_slots` (1-30, 6); the block holds 30 (`ENTRALINK_RESERVE_MAX`), so a smaller
+  setting only limits Add.
+- **The hub's NPC** (`res/field/events/entralink.json`, id 5, `OBJ_CODE_CLERK_F` at (28, 43) facing down, left of the
+  exit Lady; the user moves it later; script 15 of `entralink.s`): "Welcome, dreamer. What can I do for you?" with
+  - **Use the PC**: "The Pokémon Storage System was accessed." and the PC's Box modes (Move Pokémon, Deposit,
+    Withdraw, Move Items, See ya!), each the PC Box (`CallPC`, as a Pokémon Center's PC), the Box's close button
+    ending it all; no Battle Box (a Center's PC offers it only once it's unlocked).
+  - **Reserve Box**: "Your Reserve Box holds N of M." over a list of its Pokémon (name and level, with species and box
+    as the cursor's description; `ENTRALINK_RUN_ACTION_RESERVE_ADD_OPTIONS`), **Add a Pokémon** and **Close**. A
+    Pokémon picked asks "Take X out of the Reserve Box? It will stay in its Box." **Add** opens the PC Box in a pick
+    mode (the Dream World's pick mode that the Wonder Trade already uses, every species allowed so it refuses only eggs;
+    title "SELECT A POKÉMON TO RESERVE", button RESERVE, "Put X in the Reserve Box?"; `Box2Param`'s `wonderTrade`
+    became `pick`, `BOX2_PICK_*`), then "X was put in the Reserve Box.", "X is already in the Reserve Box." or "Your
+    Reserve Box is full." (also before opening the Box when full).
+  - Text: 23 lines at the end of `res/text/script/entralink.txt` (`Entralink_Text_Reserve*`), two in `box2_bmp.txt`,
+    one in `btl_pokeparam_box_main_save_init.txt`; placeholders for the user to edit.
+
+### 14.2 The swap NPC
+
+- **NPC type `swap`** (`ENTRALINK_NPC_SWAP`, 10; the scripts' ground and done results moved to 100 and 101), a choice
+  NPC like heal, revive and gift; its marker `npc_markers/swap.png` (a placeholder "S" on teal). The templates `rest`
+  (x 21) and `pre_boss_rest` (x 8) have one, with the dialogue "Need a fresh face on your team? I can call one from your
+  Reserve Box."
+- **Talking** (`global_10490.s` `L_RunSwapNpc`): its dialogue, then `ENTRALINK_RUN_ACTION_SWAP_CHECK`. **Refused**, the
+  choice left open: no reserved Pokémon that can join ("There's no one in your Reserve Box who can join you now."),
+  less Dust than `run.json`'s `swap_dust` (0-9999, 100: "Calling on a Pokémon costs 100 Dream Dust. You have 50."),
+  or every copy fainted ("Every Pokémon on your team has fainted. No one can make way."). Else "Who will join your
+  team? It costs 100 Dream Dust. (You have N.)" over the joinable reserved Pokémon (as the hub lists them) and Cancel;
+  then "Who will make way for X?" and the party screen (B back to the list); a fainted copy or an egg: "A fainted
+  Pokémon can't make way. Choose another."; then "Y will leave the run, and X will join it for 100 Dream Dust. OK?"
+  Yes: the Dust taken, "Y left the run. X joined your team!", and the room's choice made (the other choice NPCs go).
+  No or Cancel leave the choice open.
+- **The copy** (`EntralinkRun_SwapIn`, ARM9 main): the box Pokémon made a party Pokémon as it is now
+  (`boxPkmRegenToPartyPkm`), put in the leaving copy's slot of the run's team and made the run's way
+  (`EntralinkRun_PrepareCopy`, which `EntralinkRun_KeepParty` now uses too): level 100, healed (HP, PP, status), its
+  held item cleared unless it decides its form, its stats with the max_hp buffs. The leaving copy simply leaves the
+  run; the real Pokémon (in the save's party block, or the box) is never touched.
+- **Once a run:** each swap is recorded (`RunSwap`, at most `ENTRALINK_RUN_SWAPS_MAX`, one a room), and a Pokémon that
+  joined (still in the team or swapped out again) isn't listed at a later swap.
+- **Prestige:** a joined copy may gain prestige if its box Pokémon was level 100 when it joined (the same rule as the
+  party's, `EntralinkRun_CanGainPrestige`). At the run's end (`EntralinkRun_RestoreParty`) the real party gets its
+  prestige back as before, and each joined Pokémon's box self gets its copy's prestige, found again by PID in the boxes,
+  written only if it is still level 100 and the value changed. A copy that left in a swap counts with its prestige as
+  it left (kept in its `RunSwap`), for a party member and a joined one alike.
+
+### 14.3 Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `buffs7/h/`)
+
+- **The hub NPC** (`shots/hub_menu.png`): its menu; Use the PC, Move Pokémon: the Box in its own mode, closed back to the
+  field (`pc_box.png`, `pc_out1.png`).
+- **Add:** the empty Reserve Box, Add, the Box in the pick mode (`box_ask.png`: "SELECT A POKÉMON TO RESERVE", "Put
+  Trubbish in the Reserve Box?"), Yes: "Trubbish was put in the Reserve Box." (`box_after.png`), the slot's PID in the
+  progress block, the list "Trubbish Lv. 4 / Add a Pokémon / Close" with "Trubbish, in BOX 1." (`after_add1.png`).
+- **The list** with the block poked to Trubbish, Grimer, a PID in no box and Shinx: three listed (`list3.png`), the lost
+  one's slot freed; Grimer taken out with Yes (`remove_ask.png`), its slot freed; Trubbish added again: "already"
+  (`already.png`); poked full: "Your Reserve Box is full." (`full.png`).
+- **The swap** (a run started from the hub, room 1's doors poked to the rest template; Grimer edited in its box to
+  moves 1-4 holding Leftovers, Trubbish's Exp. poked to level 100): with 50 Dust, "costs 100 ... You have 50."
+  (`swap_nodust.png`); every copy poked fainted: refused (`swap_allfainted.png`); the three box slots cleared: refused,
+  and all three slots freed; nothing changed the room's choice. With 300 Dust: the list "Trubbish Lv. 100, Grimer
+  Lv. 12, Shinx Lv. 10, Cancel" (`swap_list_grimer.png`), Grimer; the fainted slot 1 refused (`swap_cant.png`); slot 0
+  (Pignite, "Oinkums"): "Oinkums left the run. Grimer joined your team!" (`swap_ask.png`). The copy in slot 0: Grimer's
+  PID, level 100, moves 1-4 (the box edit), no item (Leftovers cleared), HP 273/273; 200 Dust; the room done, the other
+  NPCs gone, the swap NPC then "Go on. The nightmare awaits."; the follower became Grimer.
+- **A second rest room:** the list without Grimer (`swap2_list.png`); Trubbish (its box PP poked to 1) for slot 2
+  (Keldeo), the question (`swap2_ask.png`), Yes: level 100, PP full (35, 40, 10), 100 Dust.
+- **The run's end** (the back door), with the Trubbish copy's prestige poked to level 3 progress 50 and the Grimer
+  copy's to 2/7: the real party byte for byte as before; in the boxes only Trubbish changed, its prestige written
+  (51203; its PP still 1, the rest as before); Grimer (level 12) untouched, still holding Leftovers with moves 1-4; the
+  Reserve Box kept.
+- The packer's tests (`test_swap_and_reserve`), the editor's (typecheck, all tests; two Entree tests updated for the
+  new type, one new), `verify_dsi_rom.py`, the plain build's module check; the editor's Run section and a rest
+  template's swap NPC (`shots/editor_rest_swap.png`).
+- **Not tested:** the No answer and Cancel (script branches to the same end as B); the pre-boss rest's swap NPC (the
+  same NPC type, at x 8); a swapped-out party member's prestige write-back (none of the save's party is level 100;
+  the record is the same as the joined one's); a form item kept on a joined copy (the shared `PrepareCopy`); real
+  hardware.
+
+### 14.4 Memory
+
+ARM9 main +0.9 KB (code 0.6 KB, the swaps' records 0.3 KB of BSS), overlay 12 +1.7 KB (the Reserve Box 1.6 KB),
+overlay 255 (the PC Box) +86 bytes. The DS arena: 32 KB left (from 34). At run time: the Box's pick 0.3 KB of the
+event heap while it is open, the list's strings while it shows; no VRAM.
+
+### 14.5 Calls made, for the user
+
+- **Size 6** as a setting (`reserve_slots`, 1-30); the save always has room for 30.
+- **Dropped-off links are freed** the next time the list is read (a released Pokémon doesn't hold a slot forever; one
+  moved into the party and back must be added again).
+- **The pick** is the PC Box's own pick mode (as the Wonder Trade's), not a list of box Pokémon; eggs can't be reserved.
+- **Use the PC** offers Move Pokémon first (as this hack's Centers do), then Deposit, Withdraw and Move Items; no Battle
+  Box.
+- **A swapped-out copy can't come back:** it isn't in a box; and a reserved Pokémon joins once a run.
+- **The swap is the room's choice**, like heal, revive and gift; a refusal, Cancel or No leave it open.
+- The hub NPC's look and place (`OBJ_CODE_CLERK_F`, (28, 43)) and the swap NPCs' places (rest x 21, pre-boss rest x 8,
+  the Lady by default) are placeholders.

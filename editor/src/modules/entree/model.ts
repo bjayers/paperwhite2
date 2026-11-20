@@ -25,9 +25,9 @@ export const ROLES = ["room", "boss", "final"] as const;
 export type Role = (typeof ROLES)[number];
 export const FORMATS = ["single", "double", "triple", "raid"] as const;
 export type Format = (typeof FORMATS)[number];
-/** The NPCs' types (room.schema.json's npc type), in the pickers' order: the step 6 types after battle and item, the old
- * placeholders last. */
-export const NPC_TYPES = ["battle", "item", "heal", "revive", "gift", "shop", "item_choice", "buff_choice", "rest", "buff"] as const;
+/** The NPCs' types (room.schema.json's npc type), in the pickers' order: the step 6 types after battle and item (the
+ * buffs' phase 7 swap with the rest's), the old placeholders last. */
+export const NPC_TYPES = ["battle", "item", "heal", "revive", "gift", "shop", "swap", "item_choice", "buff_choice", "rest", "buff"] as const;
 export type NpcType = (typeof NPC_TYPES)[number];
 export const NPC_TYPE_NOTES: Record<NpcType, string> = {
   battle: "Talking to it starts the battle it names.",
@@ -36,6 +36,7 @@ export const NPC_TYPE_NOTES: Record<NpcType, string> = {
   revive: "Revives a fainted Pokémon the player chooses, to full HP (offered only with one fainted).",
   gift: "A choice of 3 random items from the item table's gift pool.",
   shop: "A shop: the Poké Mart's screen selling the run's shop items for Dream Dust. Talking to it is the room's choice.",
+  swap: "Brings a Pokémon of the Reserve Box (set aside at the Entralink's NPC) into the team as a level 100 copy, in place of a copy that hasn't fainted, for the run's swap Dust; the copy that makes way leaves the run. A swap is the room's choice; each reserved Pokémon joins once a run.",
   item_choice: "An item ball whose item is drawn from the item room pool as the room is entered; its bag icon floats above it. Taking one makes the others go.",
   buff_choice: "A buff ball (a placeholder line until buffs come).",
   rest: "The old placeholder: says its dialogue only.",
@@ -44,10 +45,10 @@ export const NPC_TYPE_NOTES: Record<NpcType, string> = {
 /** The types shown as a ball (the item ball); the others but battle are people (the Lady). */
 export const BALL_TYPES: readonly NpcType[] = ["item", "item_choice", "buff_choice"];
 /** The types whose use is the room's choice: using one makes the others of these types go and the room is done. */
-export const CHOICE_TYPES: readonly NpcType[] = ["heal", "revive", "gift", "shop", "item_choice"];
+export const CHOICE_TYPES: readonly NpcType[] = ["heal", "revive", "gift", "shop", "swap", "item_choice"];
 /** The NPC marker a new NPC of a type gets, if npc_markers/ has it. */
 export const NPC_DEFAULT_MARKERS: Partial<Record<NpcType, string>> = {
-  heal: "heal", revive: "revive", gift: "item", shop: "shop", buff_choice: "buff", rest: "rest", buff: "buff",
+  heal: "heal", revive: "revive", gift: "item", shop: "shop", swap: "swap", buff_choice: "buff", rest: "rest", buff: "buff",
 };
 /** The balls an item room is meant to offer. */
 export const ITEM_CHOICES = 3;
@@ -89,7 +90,7 @@ export const ROOM_TYPE_NOTES: Record<RoomType, string> = {
   enemy: "A battle room: one battle.",
   enemy_choice: "A battle room with several battles to choose from, one NPC each: winning one opens the room.",
   challenge: "A harder battle room.",
-  rest: "A rest: heal, revive and gift NPCs; using one is the room's choice.",
+  rest: "A rest: heal, revive, gift and swap NPCs; using one is the room's choice.",
   item: "An item room: item-choice balls, one to take.",
   buff: "A buff room: buff balls (buffs come later).",
   shop: "A shop: its goods sell for Dream Dust, which battles give.",
@@ -123,12 +124,13 @@ export const TEMPLATE_NOTES: Record<string, string> = {
   event: "Every generated event room is this template.",
 };
 
-/** A template's starting data, the spec's placeholders: rest heal, revive and gift; item three item-choice balls; buff
- * three buff balls; shop one shop NPC; the pre-boss rest heal, revive, gift and shop. markers: the NPC markers' names. */
+/** A template's starting data, the spec's placeholders: rest heal, revive, gift and swap; item three item-choice balls;
+ * buff three buff balls; shop one shop NPC; the pre-boss rest heal, revive, gift, shop and swap. markers: the NPC
+ * markers' names. */
 export function newTemplateData(id: string, markers?: ReadonlySet<string>): JsonValue {
   const kinds: Record<string, NpcType[]> = {
-    rest: ["heal", "revive", "gift"], item: ["item_choice", "item_choice", "item_choice"], buff: ["buff_choice", "buff_choice", "buff_choice"],
-    shop: ["shop"], pre_boss_rest: ["heal", "revive", "gift", "shop"], event: [],
+    rest: ["heal", "revive", "gift", "swap"], item: ["item_choice", "item_choice", "item_choice"], buff: ["buff_choice", "buff_choice", "buff_choice"],
+    shop: ["shop"], pre_boss_rest: ["heal", "revive", "gift", "shop", "swap"], event: [],
   };
   const list = kinds[id] ?? [];
   const empty: Room = { name: "", rounds: [], role: "room", battles: [], npcs: [] };
@@ -507,6 +509,11 @@ export const SCALING_KEY_NAMES: Record<ScalingKey, string> = { rooms: "First", r
 export const DEFAULT_ENEMY_SCALE = 100;
 export const DEFAULT_SHOP_ITEMS = 5;
 export const MAX_SHOP_ITEMS = 8;
+/** The buffs' phase 7: a swap's Dream Dust, and the Reserve Box's slots (at most the save's 30). */
+export const DEFAULT_SWAP_DUST = 100;
+export const MAX_SWAP_DUST = 9999;
+export const DEFAULT_RESERVE_SLOTS = 6;
+export const MAX_RESERVE_SLOTS = 30;
 /** Each type's chance in percent from its weights (0 for all when they add up to 0). */
 export function typeChances(weights: Record<RoomType, number>): Record<RoomType, number> {
   const sum = WEIGHT_ORDER.reduce((n, t) => n + weights[t], 0);
@@ -533,6 +540,9 @@ export interface RunLayout {
   dust: Record<DustKind, number>;
   dustRoundPercent: number[];
   shopItems: number;
+  /** A swap NPC's price in Dream Dust, and how many Pokémon the hub's Reserve Box holds. */
+  swapDust: number;
+  reserveSlots: number;
   /** Each stat's multipliers in percent by depth, three values a row (the last given for rounds left out). */
   enemyScaling: Record<ScaledStat, Record<ScalingKey, number[]>>;
 }
@@ -561,6 +571,8 @@ export function readRun(data: JsonValue | null | undefined): RunLayout {
       return ROUNDS.map((_, i) => list[Math.min(i, list.length - 1)]);
     })(),
     shopItems: num(m.get("shop_items")) ?? DEFAULT_SHOP_ITEMS,
+    swapDust: num(m.get("swap_dust")) ?? DEFAULT_SWAP_DUST,
+    reserveSlots: num(m.get("reserve_slots")) ?? DEFAULT_RESERVE_SLOTS,
     enemyScaling: Object.fromEntries(SCALED_STATS.map((stat) => {
       const entry = asMap(asMap(m.get("enemy_scaling")).get(stat));
       return [stat, Object.fromEntries(SCALING_KEYS.map((key) => {

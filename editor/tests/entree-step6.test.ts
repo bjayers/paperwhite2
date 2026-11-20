@@ -61,11 +61,11 @@ test("room types: read, enemy by default, the door's marker follows the type unl
 test("the new NPC types: valid, their default sprites and markers, item-choice rooms of fewer than 3 warned", () => {
   const room = readRoom(newRoomData("x"));
   const npcs = NPC_TYPES.map((t, i) => newNpc(t, 3 + i, 4, room, markers));
-  // Their markers: heal and revive their own (step 7; none where the art isn't given), gift the item, shop the shop,
-  // buff balls the buff; item-choice balls none
-  assert.deepEqual(npcs.map((n) => n.get("marker") ?? null), [null, null, null, null, "item", "shop", null, "buff", "rest", "buff"]);
-  const step7 = new Set([...markers, "heal", "revive"]);
-  assert.deepEqual(["heal", "revive"].map((t) => newNpc(t as NpcType, 3, 4, room, step7).get("marker")), ["heal", "revive"]);
+  // Their markers: heal, revive and swap their own (step 7, the buffs' phase 7; none where the art isn't given), gift
+  // the item, shop the shop, buff balls the buff; item-choice balls none
+  assert.deepEqual(npcs.map((n) => n.get("marker") ?? null), [null, null, null, null, "item", "shop", null, null, "buff", "rest", "buff"]);
+  const step7 = new Set([...markers, "heal", "revive", "swap"]);
+  assert.deepEqual(["heal", "revive", "swap"].map((t) => newNpc(t as NpcType, 3, 4, room, step7).get("marker")), ["heal", "revive", "swap"]);
   // Without npc_markers/ art, none
   assert.equal(newNpc("heal", 0, 0, room, new Set()).has("marker"), false);
   const data = setIn(newRoomData("x"), ["npcs"], npcs);
@@ -73,15 +73,16 @@ test("the new NPC types: valid, their default sprites and markers, item-choice r
   const read = readRoom(data);
   // Sprites: balls the item ball, people the Lady; none written
   assert.deepEqual(read.npcs.map((n) => (n.type === "battle" ? "battle" : npcSprite(n, read, constants))),
-    ["battle", ITEM_BALL_SPRITE, LADY_SPRITE, LADY_SPRITE, LADY_SPRITE, LADY_SPRITE, ITEM_BALL_SPRITE, ITEM_BALL_SPRITE, LADY_SPRITE, LADY_SPRITE]);
+    ["battle", ITEM_BALL_SPRITE, LADY_SPRITE, LADY_SPRITE, LADY_SPRITE, LADY_SPRITE, LADY_SPRITE, ITEM_BALL_SPRITE, ITEM_BALL_SPRITE, LADY_SPRITE, LADY_SPRITE]);
   assert.ok(npcs.every((n) => !n.has("sprite")));
+  const ball = read.npcs.find((x) => x.type === "item_choice")!;
   const choices = (n: number): Room => ({ ...read, npcs: read.npcs.filter((x) => x.type === "item_choice").concat(
-    Array.from({ length: n - 1 }, (_, k) => ({ ...read.npcs[6], x: 20 + k }))) });
+    Array.from({ length: n - 1 }, (_, k) => ({ ...ball, x: 20 + k }))) });
   const warned = (r: Room) => checkRoom(r, constants).filter((p) => p.message.includes("item-choice ball")).map((p) => p.message);
   assert.deepEqual(warned(choices(2)), ["The room has 2 item-choice balls; an item room offers 3 to choose from."]);
   assert.deepEqual(warned(choices(3)), []);
   // An item-choice ball's item is drawn, never set
-  assert.ok(checkRoom({ ...read, npcs: [{ ...read.npcs[6], item: "ITEM_POTION" }] }, constants).some((p) => p.message.includes("drawn as the room is entered")));
+  assert.ok(checkRoom({ ...read, npcs: [{ ...ball, item: "ITEM_POTION" }] }, constants).some((p) => p.message.includes("drawn as the room is entered")));
 });
 
 test("templates: the placeholders are valid rooms of their types, a missing one is an error, and the real ones are valid", () => {
@@ -93,9 +94,9 @@ test("templates: the placeholders are valid rooms of their types, a missing one 
     assert.equal(room.type, TEMPLATE_TYPES[id]);
     assert.deepEqual(checkRoom(room, constants), [], id);
   }
-  assert.deepEqual(readRoom(newTemplateData("rest")).npcs.map((n) => n.type), ["heal", "revive", "gift"]);
+  assert.deepEqual(readRoom(newTemplateData("rest")).npcs.map((n) => n.type), ["heal", "revive", "gift", "swap"]);
   assert.deepEqual(readRoom(newTemplateData("item")).npcs.map((n) => n.type), ["item_choice", "item_choice", "item_choice"]);
-  assert.deepEqual(readRoom(newTemplateData("pre_boss_rest")).npcs.map((n) => n.type), ["heal", "revive", "gift", "shop"]);
+  assert.deepEqual(readRoom(newTemplateData("pre_boss_rest")).npcs.map((n) => n.type), ["heal", "revive", "gift", "shop", "swap"]);
   assert.equal(TEMPLATE_TYPES.pre_boss_rest, "rest");
   assert.deepEqual(checkTemplates(TEMPLATES), []);
   assert.deepEqual(checkTemplates(["rest", "item", "buff", "shop"]), [

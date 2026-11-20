@@ -2,6 +2,30 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-20: Entralink buffs, phase 7: the Reserve Box and the rest stops' swaps (ROM session, on a branch)
+
+- **The Reserve Box:** a new hub NPC (`entralink.json` id 5, a clerk at (28, 43) left of the exit Lady, placeholder
+  place) offers **Use the PC** (the PC's Box modes, as a Center's PC) and **Reserve Box**: the reserved Pokémon (name,
+  level; species and box as the description), Add (the PC Box in a pick mode, as the Wonder Trade's) and taking one
+  out. Saved as **live links**: a PID per slot in the progress block (0xc8-0x143); each use searches the boxes and
+  uses the Pokémon as it is then; one released or moved into the party drops off. Size: `run.json`'s `reserve_slots`
+  (6; at most 30).
+- **The swap NPC** (`swap`, a choice NPC, in the rest and pre-boss rest templates, marker `swap`): for `swap_dust` (100)
+  Dream Dust, a reserved Pokémon joins as a level 100 copy made like the run's first ones, in place of a copy that
+  hasn't fainted, which leaves the run. Refused with no one to bring, too little Dust or every copy fainted; each
+  reserved Pokémon joins once a run. At the run's end the real party comes back as before, and a joined Pokémon's box
+  self gets the prestige its copy gained (same rule: only if level 100).
+- **Editor:** the Swap type in the NPC pickers with its note, Swap Dust and Reserve Box in the Run section; new
+  templates start with a swap NPC.
+- **Tested** in py-desmume (scratchpad `buffs7/h/`, `entralink-buffs.md` section 14.3): the hub's menu, the PC, adding
+  through the Box, the list, removal, already-reserved, full; a box edit (moves, held item) showing on the swapped-in
+  copy, released ones dropping off, every refusal, two swaps (level 100, full HP and PP, item cleared, Dust taken, not
+  listed twice), the run's end with the real party byte for byte and the boxes untouched but the joined level-100
+  Pokémon's prestige. Hack build clean, DSi ROM intact, plain modules match, Python and editor tests pass.
+- **Memory:** ARM9 main +0.9 KB, overlay 12 +1.7 KB, overlay 255 +86 bytes; DS arena 32 KB left (from 34).
+- **For the user:** move the hub NPC and the swap NPCs where you want them, edit the placeholder text and the `swap`
+  marker; the calls in section 14.5.
+
 ## 2026-11-20: Entralink buffs, phase 6: damage numbers and a foe's HP numbers (ROM session, on a branch)
 
 - **Damage numbers:** each hit of the team's on a foe pops its full damage over the foe as the drain starts (a new

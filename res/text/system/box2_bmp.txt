@@ -59,4 +59,6 @@ Box2Bmp_Text_ShinyCandyBagFull = It left a Shiny Candy, but the Bag is full.
 Box2Bmp_Text_WonderTradeTitle = SELECT A POKÉMON TO TRADE
 Box2Bmp_Text_WonderTradeCantTrade = This Pokémon can't go\nin the Wonder Trade.
 Box2Bmp_Text_WonderTradeOk = Trade {0102:0}?
+Box2Bmp_Text_ReserveTitle = SELECT A POKÉMON TO RESERVE
+Box2Bmp_Text_ReserveOk = Put {0102:0} in the Reserve Box?
 \pad{b4}

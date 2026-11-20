@@ -99,9 +99,8 @@ BOOL Scrcmd_ProcFld_CallPC(VM *vm, FieldScriptEnv *env) {
     param->mode = mode;
     param->battleBoxLocked = FALSE;
 #ifdef PAPERWHITE2
-    // Paper White 2: the PC's Box isn't the Wonder Trade's pick (paperwhite2_wonder_trade.c), and the parameter isn't
-    // cleared
-    param->wonderTrade = FALSE;
+    // Paper White 2: the PC's Box isn't a pick of the hack's (Box2Param's pick), and the parameter isn't cleared
+    param->pick = BOX2_PICK_NONE;
 #endif
     if (mode == BOX2_MODE_BATTLE_BOX) {
         BattleBoxSave *battleBox = getBattleBox(save);

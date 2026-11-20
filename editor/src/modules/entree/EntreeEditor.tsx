@@ -39,7 +39,7 @@ import {
   DEFAULT_ONCE, PROGRESS_IDS, PROGRESS_IDS_SCHEMA, RUN_COMPLETED, assignProgressIds, battleKey, battleKeys, renameKeys, withoutProgressIds,
   MESSAGE_STYLES, MESSAGE_STYLE_NOTES, readRun, roundSummary, runProblems, type MessageStyle,
   DOORS, MARKER_NOTES, MARKER_TYPES, NPC_MARKERS_DIR, markerArt, npcMarkerArt, type Door,
-  BALL_TYPES, DEFAULT_ROOM_TYPE, DEFAULT_TYPE_WEIGHTS, DUST_KINDS, DUST_NOTES, MAX_SHOP_ITEMS, DEFAULT_ENEMY_SCALE, SCALED_STATS, SCALED_STAT_NAMES, SCALING_KEYS, SCALING_KEY_NAMES, FLOWER_TILES, FLOWER_TILES_SCHEMA, ITEMS, LADY_SPRITE, NPC_DEFAULT_MARKERS, NPC_TYPE_NOTES,
+  BALL_TYPES, DEFAULT_ROOM_TYPE, DEFAULT_TYPE_WEIGHTS, DUST_KINDS, DUST_NOTES, MAX_SHOP_ITEMS, MAX_SWAP_DUST, MAX_RESERVE_SLOTS, DEFAULT_ENEMY_SCALE, SCALED_STATS, SCALED_STAT_NAMES, SCALING_KEYS, SCALING_KEY_NAMES, FLOWER_TILES, FLOWER_TILES_SCHEMA, ITEMS, LADY_SPRITE, NPC_DEFAULT_MARKERS, NPC_TYPE_NOTES,
   ROOM_TYPES, ROOM_TYPE_NOTES, TEMPLATES, TEMPLATES_DIR, TEMPLATE_NOTES, TEMPLATE_TYPES, WEIGHT_ORDER, checkTemplates, defaultMarker,
   isTemplateFile, newTemplateData, percent, readFlowerTiles, setFlowerTiles, templatePath, typeChances, type RoomType,
   type Round, type Exit, type MapInfo, type NpcType, type Problem, type ProgressCounters, type Role, type Room,
@@ -66,20 +66,20 @@ const FORMAT_NOTES: Record<string, string> = {
 };
 const TYPE_NOTES = NPC_TYPE_NOTES;
 const TYPE_LABELS: Record<NpcType, string> = {
-  battle: "Battle", item: "Item", heal: "Heal", revive: "Revive", gift: "Gift", shop: "Shop", item_choice: "Item choice",
+  battle: "Battle", item: "Item", heal: "Heal", revive: "Revive", gift: "Gift", shop: "Shop", swap: "Swap", item_choice: "Item choice",
   buff_choice: "Buff choice", rest: "Rest (old)", buff: "Buff (old)",
 };
 /** The NPC types in the Add and Type pickers, grouped. */
 const TYPE_GROUPS: [string, NpcType[]][] = [
   ["Battles and items", ["battle", "item"]],
-  ["Rests and choices", ["heal", "revive", "gift", "shop", "item_choice", "buff_choice"]],
+  ["Rests and choices", ["heal", "revive", "gift", "shop", "swap", "item_choice", "buff_choice"]],
   ["Old placeholders", ["rest", "buff"]],
 ];
 /** What a message box asks for, by the NPC's type. */
 const TALK_PLACEHOLDERS: Partial<Record<NpcType, string>> = {
   battle: "What it says before the battle starts", item: "What it says as it gives its item",
   heal: "What it says before healing", revive: "What it says before reviving", gift: "What it says before the choice of 3",
-  shop: "What it says (the shop comes later)", item_choice: "Left empty: \"It's a <item>! Take it?\"", buff_choice: "What it says (buffs come later)",
+  shop: "What it says (the shop comes later)", swap: "What it says before the Reserve Box's list", item_choice: "Left empty: \"It's a <item>! Take it?\"", buff_choice: "What it says (buffs come later)",
 };
 const FLOWER_COLOR = 0xff3fb4;
 const RUN = "res/paperwhite2/entralink/run.json";
@@ -741,6 +741,21 @@ function RunSection({ rooms, templates }: { rooms: { id: string; room: Room }[];
           </span>
         </div>
         <span className="muted small">How many different items of the shop pool a shop sells, drawn as its room is entered, at their prices in Dream Dust (the Items tab)</span>
+        <div className="en-run">
+          <span className="muted small">Swap Dust</span>
+          <span className="en-run-controls">
+            <NumberBox value={run.swapDust} min={0} max={MAX_SWAP_DUST} width={64} onChange={(n) => setKey("swap_dust", n)} />
+          </span>
+        </div>
+        <span className="muted small">What a swap NPC takes for bringing a Pokémon of the Reserve Box into the team in place of a copy that hasn't fainted</span>
+        <div className="en-run">
+          <span className="muted small">Reserve Box</span>
+          <span className="en-run-controls">
+            <NumberBox value={run.reserveSlots} min={1} max={MAX_RESERVE_SLOTS} width={52} onChange={(n) => setKey("reserve_slots", n)} />
+            <span className="small">Pokémon</span>
+          </span>
+        </div>
+        <span className="muted small">How many box Pokémon the Entralink's Reserve Box NPC lets the player set aside for swaps (saved as links: each is used as it is in its box when called)</span>
 
         <h6 className="en-sub en-run-head">Enemy scaling <span className="muted">stats in percent, by depth</span></h6>
         <span className="muted small">A round's room n (from 0) multiplies its enemies' stat by First + n × Step, its boss (round 3's: the final room) and any raid in it by Boss; then each enemy's own Scale. tools/paperwhite2/entralink_sim.py simulates a run with them</span>
@@ -1300,7 +1315,7 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
   );
 }
 
-const CHOICE_NOTE = new Set<NpcType>(["heal", "revive", "gift", "shop", "item_choice"]);
+const CHOICE_NOTE = new Set<NpcType>(["heal", "revive", "gift", "shop", "swap", "item_choice"]);
 
 /** The NPC types as a select's options, grouped. */
 function TypeOptions() {

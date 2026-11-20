@@ -60,4 +60,17 @@ Global10490_Text_RunForecastSand = Sandstorm
 Global10490_Text_RunForecastSandInfo = Hurts all but Rock, Ground and Steel types.
 Global10490_Text_RunForecastHail = Hail
 Global10490_Text_RunForecastHailInfo = Hurts all but Ice types.
+Global10490_Text_RunReserveEntry = {0101:0} Lv. {0202:1}
+Global10490_Text_RunReserveEntryInfo = {0101:2}, in {0100:3}.
+Global10490_Text_RunSwapWhich = Who will join your team? It costs\n{0205:2} Dream Dust. (You have {0205:3}.)
+Global10490_Text_RunSwapCancel = Cancel
+Global10490_Text_RunSwapCancelInfo = Keep your team as it is.
+Global10490_Text_RunSwapLeave = Who will make way for {0101:0}?
+Global10490_Text_RunSwapAsk = {0101:1} will leave the run, and {0101:0}\nwill join it for {0205:2} Dream Dust. OK?
+Global10490_Text_RunSwapped = {0101:1} left the run.\n{0101:0} joined your team!
+Global10490_Text_RunSwapCantLeave = A fainted Pokémon can't make way.\nChoose another.
+Global10490_Text_RunSwapNone = There's no one in your Reserve Box\nwho can join you now.
+Global10490_Text_RunSwapNoDust = Calling on a Pokémon costs {0205:2} Dream Dust.\nYou have {0205:3}.
+Global10490_Text_RunSwapAllFainted = Every Pokémon on your team has fainted.\nNo one can make way.
+Global10490_Text_RunSwapFailed = The swap couldn't be made.
 \pad{d6}

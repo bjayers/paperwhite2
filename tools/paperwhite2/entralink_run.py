@@ -36,7 +36,7 @@ FORMATS = {"single": 0, "double": 1, "triple": 2, "raid": 3}
 ENEMY_COUNTS = {"single": (1, 1), "double": (1, 2), "triple": (1, 3), "raid": (1, 1)}
 ROLES = {"room": 0, "boss": 1, "final": 2}
 NPC_TYPES = {"battle": 0, "item": 1, "rest": 2, "buff": 3, "heal": 4, "revive": 5, "gift": 6, "shop": 7,
-             "item_choice": 8, "buff_choice": 9}
+             "item_choice": 8, "buff_choice": 9, "swap": 10}
 # A room's type (ENTRALINK_TYPE_*), which its doors draw by the round's weights, and the marker it shows by default.
 # enemy_choice (step 7) is an enemy room with several battles to choose from, one NPC each
 ROOM_TYPES = {"enemy": 0, "challenge": 1, "rest": 2, "item": 3, "buff": 4, "shop": 5, "event": 6, "enemy_choice": 7}
@@ -61,6 +61,10 @@ DUST_KINDS = ["enemy", "enemy_choice", "challenge", "boss", "final"]
 DEFAULT_DUST = {"enemy": 40, "enemy_choice": 50, "challenge": 80, "boss": 150, "final": 0}
 DEFAULT_DUST_ROUND_PERCENT = [100, 150, 200]
 DEFAULT_SHOP_ITEMS = 5
+# Phase 7 of the buffs: the Dream Dust a rest stop's swap costs, and the Reserve Box's slots that the hub offers (at
+# most the progress block's, ENTRALINK_RESERVE_MAX)
+DEFAULT_SWAP_DUST = 100
+DEFAULT_RESERVE_SLOTS = 6
 # Phase 5 (entralink-buffs.md, section 12): the enemies' stat multipliers by depth, in EntralinkScaling's order
 # (ENTRALINK_STAT_*), each a round's first room, its step a later room and its boss; and an enemy's own scale
 SCALED_STATS = ["hp", "attack", "defense", "sp_attack", "sp_defense", "speed"]
@@ -114,7 +118,7 @@ DEFAULT_LEVEL = 70
 # The sprites an NPC shows without its own: an item NPC the item ball, rest and buff NPCs the Lady
 DEFAULT_SPRITES = {"item": "OBJ_CODE_110", "rest": "OBJ_CODE_LADY", "buff": "OBJ_CODE_LADY", "heal": "OBJ_CODE_LADY",
                    "revive": "OBJ_CODE_LADY", "gift": "OBJ_CODE_LADY", "shop": "OBJ_CODE_LADY",
-                   "item_choice": "OBJ_CODE_110", "buff_choice": "OBJ_CODE_110"}
+                   "item_choice": "OBJ_CODE_110", "buff_choice": "OBJ_CODE_110", "swap": "OBJ_CODE_LADY"}
 # The save's bits (include/paperwhite2/entralink_progress.h)
 BATTLES_MAX = 1024
 CATCHES_MAX = 512
@@ -705,6 +709,8 @@ def tables(directory: Path) -> dict:
         "dust_round_percent": round_percents(run.get("dust_round_percent", DEFAULT_DUST_ROUND_PERCENT)),
         "enemy_scaling": enemy_scaling(run),
         "shop_items": run.get("shop_items", DEFAULT_SHOP_ITEMS),
+        "swap_dust": run.get("swap_dust", DEFAULT_SWAP_DUST),
+        "reserve_slots": run.get("reserve_slots", DEFAULT_RESERVE_SLOTS),
         "type_templates": type_templates,
         "marker_spots": [tuple(spots[door]) for door in DOORS],
         "npc_markers": list(npc_markers),
@@ -790,6 +796,9 @@ def header(directory: Path) -> str:
         f"#define ENTRALINK_RUN_DUST {{ {', '.join(map(str, data['dust']))} }}",
         f"#define ENTRALINK_RUN_DUST_ROUND_PERCENT {{ {', '.join(map(str, data['dust_round_percent']))} }}",
         f"#define ENTRALINK_RUN_SHOP_ITEMS {data['shop_items']}",
+        "// A rest stop's swap's price in Dream Dust, and the Reserve Box's slots (phase 7)",
+        f"#define ENTRALINK_RUN_SWAP_DUST {data['swap_dust']}",
+        f"#define ENTRALINK_RUN_RESERVE_SLOTS {data['reserve_slots']}",
         "// EntralinkScaling (phase 5), a stat each (ENTRALINK_STAT_* order): the percent in a round's first room, the",
         "// step a later room of the round adds, the round's boss's (and its raids'); a round each",
         "#define ENTRALINK_RUN_ENEMY_SCALING { " + ", ".join(

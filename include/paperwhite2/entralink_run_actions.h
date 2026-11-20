@@ -67,7 +67,8 @@
 // it
 #define ENTRALINK_RUN_ACTION_TAKE_HIDDEN_ITEM 21
 // Step 7: arg1 0: returns the Dream Dust the last battle won gave (0 for none), 1: the run's Dream Dust; 2: what
-// skipping a buff offer gives (buffs.json's skip_dust), 3: the price of the card picked
+// skipping a buff offer gives (buffs.json's skip_dust), 3: the price of the card picked, 4: a swap's price (run.json's
+// swap_dust, phase 7)
 #define ENTRALINK_RUN_ACTION_GET_DUST 22
 
 // The buffs (paperwhite2/entralink_buffs.h, phase 2). After a battle won (or a capture) in a room other than the
@@ -93,6 +94,47 @@
 // Forecast's weather (phase 4): arg1 0 returns 1 if a card that chooses the weather is held with none chosen yet;
 // arg1 a BTL_WEATHER_* (1 sun, 2 rain, 3 hail, 4 sandstorm) chooses it
 #define ENTRALINK_RUN_ACTION_FORECAST 29
+
+// Phase 7: the Reserve Box (paperwhite2/entralink_reserve.h), in the hub (entralink.s) and at a rest stop's swap NPC.
+// arg1 0: returns how many Pokémon the Reserve Box holds that are in the boxes (a slot whose Pokémon isn't, released or
+// moved into the party, is freed); 1: how many it can hold (run.json's reserve_slots); 2: how many more it can take.
+// Puts the number in word arg2
+#define ENTRALINK_RUN_ACTION_RESERVE_COUNT 30
+// Adds the Reserve Box's Pokémon to the open list menu, each valued by its slot: its name and level, with its species
+// and box as the cursor is on it. arg1 1 leaves out those that can't join the run (one that joined it already, an egg).
+// Returns how many it added
+#define ENTRALINK_RUN_ACTION_RESERVE_ADD_OPTIONS 31
+// Opens the PC Box to pick a Pokémon to reserve, which the script waits for, and puts its Box position
+// (box * 30 + position) in the result, or ENTRALINK_RESERVE_NONE when none was picked
+#define ENTRALINK_RUN_ACTION_RESERVE_PICK_BOX 32
+// arg1 a Box position: reserves its Pokémon, with its name in word 0, and returns ENTRALINK_RESERVE_*
+#define ENTRALINK_RUN_ACTION_RESERVE_ADD 33
+// arg1 a slot: puts its Pokémon's name in word arg2 and returns 1, or 0 if the slot holds none in the boxes
+#define ENTRALINK_RUN_ACTION_RESERVE_NAME 34
+// arg1 a slot: frees it (the box Pokémon is untouched)
+#define ENTRALINK_RUN_ACTION_RESERVE_REMOVE 35
+// A swap NPC: returns whether it can swap now, ENTRALINK_SWAP_*
+#define ENTRALINK_RUN_ACTION_SWAP_CHECK 36
+// arg1 a party slot: returns 1 if its copy can leave the run in a swap (there, not an egg, not fainted), else 0
+#define ENTRALINK_RUN_ACTION_SWAP_CAN_LEAVE 37
+// arg1 a Reserve Box slot, arg2 a party slot: takes the swap's Dream Dust and puts a level 100 copy of the slot's
+// Pokémon in the party slot, whose copy leaves the run; returns 1, or 0 if the swap can't be made
+#define ENTRALINK_RUN_ACTION_SWAP 38
+
+// What ENTRALINK_RUN_ACTION_RESERVE_ADD returns: reserved; already in the Reserve Box; the box full; no Pokémon there
+// (or an egg)
+#define ENTRALINK_RESERVE_ADDED 0
+#define ENTRALINK_RESERVE_ALREADY 1
+#define ENTRALINK_RESERVE_FULL 2
+#define ENTRALINK_RESERVE_NOT_ADDED 3
+// No Pokémon picked from the PC Box
+#define ENTRALINK_RESERVE_NONE 0xffff
+// What ENTRALINK_RUN_ACTION_SWAP_CHECK returns: a swap can be made; no Pokémon of the Reserve Box can join (none
+// reserved, none in the boxes, all joined already); not enough Dream Dust; no copy can leave (all fainted)
+#define ENTRALINK_SWAP_OK 0
+#define ENTRALINK_SWAP_NONE 1
+#define ENTRALINK_SWAP_NO_DUST 2
+#define ENTRALINK_SWAP_ALL_FAINTED 3
 
 // The lists of cards: the offer after a battle, the buff room's, the gift NPC's (items and buffs), the shop's buffs,
 // the buffs held (the viewer), and the golds held (the choice of the one a new gold replaces)
@@ -137,9 +179,10 @@
 #define ENTRALINK_RUN_NPC_SHOP 7
 #define ENTRALINK_RUN_NPC_ITEM_CHOICE 8
 #define ENTRALINK_RUN_NPC_BUFF_CHOICE 9
-// The room's ball on the ground (run.json's ground_item_chance), and a choice NPC whose choice was made
-#define ENTRALINK_RUN_NPC_GROUND 10
-#define ENTRALINK_RUN_NPC_DONE 11
+#define ENTRALINK_RUN_NPC_SWAP 10
+// The room's ball on the ground (run.json's ground_item_chance), and a choice NPC whose choice was made: no NPC type's
+#define ENTRALINK_RUN_NPC_GROUND 100
+#define ENTRALINK_RUN_NPC_DONE 101
 
 #define ENTRALINK_RUN_EXIT_BLOCKED 0
 #define ENTRALINK_RUN_EXIT_OPEN 1
