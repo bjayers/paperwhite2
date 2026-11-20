@@ -17,19 +17,48 @@ import { SearchSelect } from "../../shell/SearchSelect.tsx";
 import { BaseField, defaultFor, humanize, type FormContext } from "../schema-form/form.tsx";
 import { NumberBox, Row, Section, Switch, cap } from "./parts.tsx";
 import { ROUNDS, ROUND_NOTES } from "./model.ts";
+import { readIndexedPng } from "../palettes/png.ts";
 import {
-  BUFFS, BUFFS_SCHEMA, BUFF_ICONS_DIR, BUFF_POOLS, BUFF_POOL_NAMES, BUFF_POOL_NOTES, SOURCES, TIERS, TIER_NOTES, buffIconPath, ceilingHit,
+  BUFFS, BUFFS_SCHEMA, BUFF_POOLS, BUFF_POOL_NAMES, BUFF_POOL_NOTES, SOURCES, TIERS, TIER_NOTES, categoryIconPath, ceilingHit,
   changeTier, checkBuffs, duplicateBuff, effectKinds, exampleHit, fieldOrder, filterBuffs, needsBucket, newBuff, readBuff, readCatalogue,
-  shownIcon, uniqueId, withFields, type Buff, type BuffPool, type Catalogue, type Hit, type Tier,
+  tierPalettePath, tintIcon, uniqueId, withFields, type Buff, type BuffPool, type Catalogue, type Hit, type Tier,
 } from "./buffs.ts";
 
 const asMap = (v: JsonValue | undefined): JsonMap => (v instanceof Map ? v : new Map());
 const asList = (v: JsonValue | undefined): JsonValue[] => (Array.isArray(v) ? v : []);
 const round = (n: number) => Math.round(n).toLocaleString("en");
-const TOP_ORDER = ["$schema", "settings", "buckets", "balance", "themes", "buffs"];
+const TOP_ORDER = ["$schema", "settings", "buckets", "balance", "categories", "themes", "buffs"];
 
-function BuffIcon({ name, size = 24, title }: { name: string; size?: number; title?: string }) {
-  return <img className="en-bag-icon en-buff-icon" src={api.assetUrl(buffIconPath(name))} width={size} height={size} alt="" title={title ?? name} />;
+/** Each category's icon in each tier's palette, as a data URL, read once (the file changes after a reload). */
+const tinted = new Map<string, Promise<string>>();
+function tintedIcon(category: string, tier: Tier): Promise<string> {
+  const key = `${category}/${tier}`;
+  if (!tinted.has(key)) {
+    const p = (async () => {
+      const [icon, palette] = await Promise.all([api.asset(categoryIconPath(category)), api.asset(tierPalettePath(tier))]).then(([a, b]) => Promise.all([readIndexedPng(a), readIndexedPng(b)]));
+      const canvas = document.createElement("canvas");
+      canvas.width = icon.width;
+      canvas.height = icon.height;
+      canvas.getContext("2d")!.putImageData(new ImageData(tintIcon(icon.pixels, palette.colors), icon.width, icon.height), 0, 0);
+      return canvas.toDataURL();
+    })();
+    p.catch(() => tinted.delete(key));
+    tinted.set(key, p);
+  }
+  return tinted.get(key)!;
+}
+
+/** A card's icon: its category's picture in its tier's palette, as the game will draw it. */
+function CategoryIcon({ category, tier, size = 24, title }: { category: string; tier: Tier; size?: number; title?: string }) {
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    tintedIcon(category, tier).then((s) => live && setSrc(s), () => live && setSrc(null));
+    return () => { live = false; };
+  }, [category, tier]);
+  return src
+    ? <img className="en-bag-icon en-buff-icon" src={src} width={size} height={size} alt="" title={title ?? `${category}, ${tier}`} />
+    : <span className="en-bag-icon en-bag-missing" style={{ width: size, height: size }} title={`No icon for ${category}`} />;
 }
 
 function TierChip({ tier }: { tier: Tier }) {
@@ -40,7 +69,6 @@ export function BuffsPage({ constants }: { constants: Constants }) {
   const { docs } = useDocuments();
   const [schema, setSchema] = useState<Schema | null>(null);
   const [missing, setMissing] = useState(false);
-  const [icons, setIcons] = useState<string[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [tier, setTier] = useState<Tier | "all">("all");
   const [theme, setTheme] = useState("");
@@ -50,7 +78,6 @@ export function BuffsPage({ constants }: { constants: Constants }) {
   useEffect(() => {
     documents.hold(BUFFS).then(() => setMissing(false), () => setMissing(true));
     api.schema(BUFFS_SCHEMA).then(setSchema, () => undefined);
-    api.list(`${BUFF_ICONS_DIR}/*.png`).then((paths) => setIcons(paths.map((p) => p.slice(p.lastIndexOf("/") + 1)).sort()), () => undefined);
   }, []);
   const doc = docs.get(BUFFS);
   const data = doc?.data instanceof Map ? doc.data : null;
@@ -142,7 +169,7 @@ export function BuffsPage({ constants }: { constants: Constants }) {
             return (
               <button key={b.id + i} className={`en-item en-buff-item ${b.id === selected ? "selected" : ""}`} onClick={() => setSelected(b.id)}>
                 <span className="en-buff-line">
-                  <BuffIcon name={shownIcon(b, cat.themes)} size={16} />
+                  <CategoryIcon category={b.category} tier={b.tier} size={16} />
                   <span className={`en-item-name ${bad(i) ? "en-bad" : ""}`}>{b.name || b.id}</span>
                   {b.core && <span className="en-role en-tier-gold" title="Its theme's core">core</span>}
                 </span>
@@ -161,13 +188,14 @@ export function BuffsPage({ constants }: { constants: Constants }) {
       <main className="en-buffs-main">
         {current ? (
           <BuffPanel key={current.id} index={index} buff={current} record={asMap(list[index])} cat={cat} schema={schema} constants={constants}
-                     kinds={kinds} icons={icons} errors={schemaErrors} change={(c) => change(index, c)} replace={(r) => setRecord(index, r)} />
+                     kinds={kinds} errors={schemaErrors} change={(c) => change(index, c)} replace={(r) => setRecord(index, r)} />
         ) : <p className="muted en-pad">Choose a card on the left, or add one.</p>}
       </main>
 
       <aside className="en-buffs-side">
         <BalanceMeter cat={cat} data={data} setTop={setTop} />
-        <ThemesSection cat={cat} data={data} icons={icons} setTop={setTop} />
+        <CategoriesSection cat={cat} data={data} setTop={setTop} />
+        <ThemesSection cat={cat} data={data} setTop={setTop} />
         <SettingsSection cat={cat} data={data} setTop={setTop} />
         <Section title="Checks" summary={errors || warnings ? [errors && `${errors} error${errors > 1 ? "s" : ""}`, warnings && `${warnings} warning${warnings > 1 ? "s" : ""}`].filter(Boolean).join(", ") : "none"}>
           {errors || warnings ? (
@@ -188,9 +216,9 @@ export function BuffsPage({ constants }: { constants: Constants }) {
 
 // ---- The chosen card ------------------------------------------------------------------------------------------------
 
-function BuffPanel({ index, buff: b, record, cat, schema, constants, kinds, icons, errors, change, replace }: {
+function BuffPanel({ index, buff: b, record, cat, schema, constants, kinds, errors, change, replace }: {
   index: number; buff: Buff; record: JsonMap; cat: Catalogue; schema: Schema | null; constants: Constants;
-  kinds: ReturnType<typeof effectKinds>; icons: string[]; errors: ReturnType<typeof validate>;
+  kinds: ReturnType<typeof effectKinds>; errors: ReturnType<typeof validate>;
   change(c: Record<string, JsonValue | undefined>): void; replace(r: JsonMap): void;
 }) {
   const kind = kinds.find((k) => k.kind === b.kind);
@@ -246,13 +274,16 @@ function BuffPanel({ index, buff: b, record, cat, schema, constants, kinds, icon
               <input className="en-wide" maxLength={60} value={b.description[0] ?? ""} onChange={(e) => change({ description: e.target.value })} />
             </Row>
           )}
-          <Row label="Icon" hint={b.icon ? "Its own icon" : `None of its own: it shows ${shownIcon({ ...b, icon: undefined }, cat.themes)}`}>
+          <Row label="Icon" hint={`Its category's icon in its tier's colors: ${cat.categories.find((c) => c.id === b.category)?.description ?? "pick a category"}`}>
             <span className="en-icon-pick">
-              <span className="en-icon-frame"><BuffIcon name={shownIcon(b, cat.themes)} size={32} /></span>
-              <select value={b.icon ?? ""} onChange={(e) => change({ icon: e.target.value || undefined })}>
-                <option value="">{gold ? "The theme's" : "The tier's"}</option>
-                {icons.map((i) => <option key={i} value={i}>{i}</option>)}
+              <span className="en-icon-frame"><CategoryIcon category={b.category} tier={b.tier} size={32} /></span>
+              <select value={b.category} onChange={(e) => change({ category: e.target.value })}>
+                {!cat.categories.some((c) => c.id === b.category) && <option value={b.category}>{b.category || "(none)"}</option>}
+                {cat.categories.map((c) => <option key={c.id} value={c.id} title={c.description}>{c.name}</option>)}
               </select>
+              <span className="en-icon-tiers" title="The same icon in the other tiers' palettes">
+                {TIERS.filter((t) => t !== b.tier).map((t) => <CategoryIcon key={t} category={b.category} tier={t} size={16} />)}
+              </span>
             </span>
           </Row>
         </div>
@@ -486,10 +517,35 @@ function BalanceMeter({ cat, data, setTop }: { cat: Catalogue; data: JsonMap; se
 
 // ---- Themes and settings --------------------------------------------------------------------------------------------
 
-function ThemesSection({ cat, data, icons, setTop }: { cat: Catalogue; data: JsonMap; icons: string[]; setTop(key: string, v: JsonValue): void }) {
+/** The icon categories: each one's icon in the three tiers' palettes, its name and line, and how many cards use it.
+ * The pictures and palettes are drawn on Graphics & Palettes (buff_icons/<category>.png, tier_<tier>.png). */
+function CategoriesSection({ cat, data, setTop }: { cat: Catalogue; data: JsonMap; setTop(key: string, v: JsonValue): void }) {
+  const list = asList(data.get("categories"));
+  const order = ["id", "name", "description"];
+  const setCategory = (i: number, changes: Record<string, JsonValue | undefined>) => setTop("categories", list.map((c, k) => (k === i ? withFields(asMap(c), changes, order) : c)));
+  return (
+    <Section title="Icon categories" summary={`${cat.categories.length} icons × ${TIERS.length} tier palettes`}>
+      <p className="muted small en-template-note">A card shows its category's icon in its tier's palette. Draw the icons and the tier palettes on Graphics &amp; Palettes (Sprite sheets: Buff icon, Buff tier palette); a new category needs its PNG in buff_icons/.</p>
+      <div className="en-categories">
+        {cat.categories.map((c, i) => {
+          const used = cat.buffs.filter((b) => b.category === c.id).length;
+          return (
+            <div key={c.id} className="en-category" title={c.description}>
+              <span className="en-category-icons">{TIERS.map((t) => <CategoryIcon key={t} category={c.id} tier={t} size={24} />)}</span>
+              <input value={c.name} maxLength={24} onChange={(e) => setCategory(i, { name: e.target.value })} />
+              <span className="muted small">{used} card{used === 1 ? "" : "s"}</span>
+            </div>
+          );
+        })}
+      </div>
+    </Section>
+  );
+}
+
+function ThemesSection({ cat, data, setTop }: { cat: Catalogue; data: JsonMap; setTop(key: string, v: JsonValue): void }) {
   const [name, setName] = useState("");
   const list = asList(data.get("themes"));
-  const order = ["id", "name", "description", "icon"];
+  const order = ["id", "name", "description"];
   const setTheme = (i: number, changes: Record<string, JsonValue | undefined>) => setTop("themes", list.map((t, k) => (k === i ? withFields(asMap(t), changes, order) : t)));
   const add = () => {
     const id = uniqueId(name || "theme", cat.themes.map((t) => t.id));
@@ -507,7 +563,6 @@ function ThemesSection({ cat, data, icons, setTop }: { cat: Catalogue; data: Jso
           return (
             <div key={t.id} className="en-theme">
               <span className="en-theme-head">
-                <BuffIcon name={t.icon ?? "gold.png"} size={20} />
                 <input value={t.name} maxLength={24} onChange={(e) => setTheme(i, { name: e.target.value })} />
                 <span className="en-pid" title="Its stable id, which its golds name">{t.id}</span>
                 <button className="icon" title={golds.length || related ? `${golds.length} golds and ${related} purples name it` : "Remove the theme"}
@@ -515,10 +570,6 @@ function ThemesSection({ cat, data, icons, setTop }: { cat: Catalogue; data: Jso
               </span>
               <input className="en-wide" value={t.description} maxLength={80} onChange={(e) => setTheme(i, { description: e.target.value })} />
               <span className="en-theme-foot muted small">
-                <select value={t.icon ?? ""} onChange={(e) => setTheme(i, { icon: e.target.value || undefined })} title="Its icon in buff_icons/, which its golds show">
-                  <option value="">The gold tier's</option>
-                  {icons.map((x) => <option key={x} value={x}>{x}</option>)}
-                </select>
                 {golds.length} gold{golds.length === 1 ? "" : "s"}{core ? `, core ${core.name}` : ", no core"}; {related} related purple{related === 1 ? "" : "s"}
               </span>
             </div>
@@ -560,6 +611,9 @@ function SettingsSection({ cat, data, setTop }: { cat: Catalogue; data: JsonMap;
           <NumberBox value={s.goldSlots} min={1} max={8} width={44} onChange={(v) => set(["gold_slots"], v)} />
           <NumberBox value={s.maxRank} min={1} max={3} width={44} onChange={(v) => set(["max_rank"], v)} />
           <NumberBox value={s.damageCap} min={1} max={65535} width={72} onChange={(v) => set(["damage_cap"], v)} />
+        </Row>
+        <Row label="Skip" hint="Dream Dust for skipping an offer">
+          <NumberBox value={n("skip_dust")} min={0} max={999} width={56} onChange={(v) => set(["skip_dust"], v)} />
         </Row>
       </div>
     </Section>

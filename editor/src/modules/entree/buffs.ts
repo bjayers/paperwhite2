@@ -11,7 +11,10 @@ import { resolve, type Schema } from "../../../shared/schema.ts";
 export const BUFFS = "res/paperwhite2/entralink/buffs.json";
 export const BUFFS_SCHEMA = "res/paperwhite2/entralink/buffs.schema.json";
 export const BUFF_ICONS_DIR = "res/paperwhite2/entralink/buff_icons";
-export const buffIconPath = (name: string) => `${BUFF_ICONS_DIR}/${name}`;
+/** A category's icon (its pixels are palette indices) and a tier's palette (a swatch whose PNG palette is the tier's 16
+ * colors): the game draws each icon in the card's tier's palette, so one picture serves the three tiers. */
+export const categoryIconPath = (category: string) => `${BUFF_ICONS_DIR}/${category}.png`;
+export const tierPalettePath = (tier: Tier) => `${BUFF_ICONS_DIR}/tier_${tier}.png`;
 export const TIERS = ["blue", "purple", "gold"] as const;
 export type Tier = (typeof TIERS)[number];
 export const TIER_NOTES: Record<Tier, string> = {
@@ -41,7 +44,7 @@ const str = (v: JsonValue | undefined): string | undefined => (typeof v === "str
 const num = (v: JsonValue | undefined): number | undefined => (typeof v === "number" ? v : undefined);
 
 export interface Buff {
-  id: string; name: string; tier: Tier; description: string[]; icon?: string; weight: number; rounds: number[]; price?: number;
+  id: string; name: string; tier: Tier; description: string[]; category: string; weight: number; rounds: number[]; price?: number;
   pools: BuffPool[]; bucket?: string;
   // blue, purple
   step: number; softLimit?: number; cap: number; related: string[]; typeCard: boolean;
@@ -49,14 +52,15 @@ export interface Buff {
   theme?: string; core: boolean; ranks: number[];
   effect: JsonMap; kind: string;
 }
-export interface Theme { id: string; name: string; description: string; icon?: string }
+export interface Theme { id: string; name: string; description: string }
+export interface Category { id: string; name: string; description: string }
 export interface Bucket { id: string; name: string; description?: string; side: "attack" | "defense"; vanilla: number; cap: number; criticalOnly: boolean; reduces: boolean; event?: string }
 export interface BuildPick { buff: string; count: number }
 export interface Settings {
   offers: number; tierOdds: Record<Source, Record<Tier, number>>; bossGuaranteedGold: boolean; goldSlots: number; maxRank: number;
   damageCap: number; prices: Record<Tier, number>;
 }
-export interface Catalogue { settings: Settings; buckets: Bucket[]; themes: Theme[]; buffs: Buff[]; referenceHit: number; example: BuildPick[] }
+export interface Catalogue { settings: Settings; buckets: Bucket[]; categories: Category[]; themes: Theme[]; buffs: Buff[]; referenceHit: number; example: BuildPick[] }
 
 export const isTier = (v: unknown): v is Tier => TIERS.includes(v as Tier);
 
@@ -67,7 +71,7 @@ export function readBuff(v: JsonValue): Buff {
   return {
     id: str(m.get("id")) ?? "", name: str(m.get("name")) ?? "", tier: isTier(m.get("tier")) ? m.get("tier") as Tier : "blue",
     description: Array.isArray(desc) ? desc.map((d) => str(d) ?? "") : [str(desc) ?? ""],
-    icon: str(m.get("icon")), weight: num(m.get("weight")) ?? 0,
+    category: str(m.get("category")) ?? "", weight: num(m.get("weight")) ?? 0,
     rounds: asList(m.get("rounds")).map((r) => num(r) ?? 0), price: num(m.get("price")),
     pools: asList(m.get("pools")).filter((p): p is BuffPool => BUFF_POOLS.includes(p as BuffPool)),
     bucket: str(m.get("bucket")),
@@ -98,9 +102,13 @@ export function readCatalogue(data: JsonValue | null | undefined): Catalogue {
         criticalOnly: b.get("critical_only") === true, reduces: b.get("reduces") === true, event: str(b.get("event")),
       } as Bucket;
     }),
+    categories: asList(d.get("categories")).map((v) => {
+      const c = asMap(v);
+      return { id: str(c.get("id")) ?? "", name: str(c.get("name")) ?? "", description: str(c.get("description")) ?? "" };
+    }),
     themes: asList(d.get("themes")).map((v) => {
       const t = asMap(v);
-      return { id: str(t.get("id")) ?? "", name: str(t.get("name")) ?? "", description: str(t.get("description")) ?? "", icon: str(t.get("icon")) };
+      return { id: str(t.get("id")) ?? "", name: str(t.get("name")) ?? "", description: str(t.get("description")) ?? "" };
     }),
     buffs: asList(d.get("buffs")).map(readBuff),
     referenceHit: num(balance.get("reference_hit")) ?? 600,
@@ -166,9 +174,9 @@ export function newBuff(tier: Tier, taken: Iterable<string>, theme: string | und
   const id = uniqueId(`new_${tier}`, taken);
   const common = { id, name: `New ${tier}`, tier };
   const plain = tier === "gold"
-    ? { ...common, description: ["+10% damage", "+20% damage", "+30% damage"], weight: 10, pools: ["after_battle", "gift", "buff_room", "shop"],
+    ? { ...common, description: ["+10% damage", "+20% damage", "+30% damage"], category: "power", weight: 10, pools: ["after_battle", "gift", "buff_room", "shop"],
         theme: theme ?? "", ranks: [10, 20, 30], bucket: "final", effect: { kind: "damage_ratio" } }
-    : { ...common, description: "+4% all damage", weight: 10, pools: ["after_battle", "buff_room", "shop"], step: 4, cap: 20, bucket: "final",
+    : { ...common, description: "+4% all damage", category: "power", weight: 10, pools: ["after_battle", "buff_room", "shop"], step: 4, cap: 20, bucket: "final",
         effect: { kind: "damage_ratio" } };
   return withFields(fromPlain(plain) as JsonMap, {}, order);
 }
@@ -201,13 +209,18 @@ export function changeTier(record: JsonMap, tier: Tier, maxRank: number, firstTh
   return withFields(record, { tier, related: tier === "blue" ? undefined : record.get("related"), type_card: tier === "blue" ? undefined : record.get("type_card") }, order);
 }
 
-/** The icon a card shows: its own, else its theme's (golds), else its tier's (buff_icons/<tier>.png). */
-export function shownIcon(buff: IconOf, themes: Theme[]): string {
-  if (buff.icon) return buff.icon;
-  const theme = buff.tier === "gold" ? themes.find((t) => t.id === buff.theme) : undefined;
-  return theme?.icon ?? `${buff.tier}.png`;
+/** An icon's RGBA pixels in a tier's colors: each pixel is a palette index, 0 clear, the rest the tier palette's color
+ * at that index (as the game will draw a 16-color texture with the tier's palette). */
+export function tintIcon(pixels: ArrayLike<number>, palette: readonly (readonly [number, number, number])[]): Uint8ClampedArray {
+  const out = new Uint8ClampedArray(pixels.length * 4);
+  for (let i = 0; i < pixels.length; i++) {
+    const index = pixels[i];
+    if (!index) continue;
+    const [r, g, b] = palette[index] ?? [0, 0, 0];
+    out.set([r, g, b, 255], i * 4);
+  }
+  return out;
 }
-type IconOf = Pick<Buff, "icon" | "tier" | "theme">;
 
 /** The cards a filter keeps: a tier, a theme (a gold's, or a purple related to it), a pool, text in the name, id or
  * description. */
@@ -295,12 +308,15 @@ export function checkBuffs(cat: Catalogue): BuffProblem[] {
   if (buckets.size !== cat.buckets.length) err("A bucket id is used twice.");
   for (const b of cat.buckets) if (b.reduces && b.cap > 99) err(`${b.name}: a reducing bucket's cap must stay under 100.`);
   const themes = new Set(cat.themes.map((t) => t.id));
+  const categories = new Set(cat.categories.map((c) => c.id));
+  if (categories.size !== cat.categories.length) err("A category id is used twice.");
   if (themes.size !== cat.themes.length) err("A theme id is used twice.");
   const cores = new Map<string, string>();
   const ids = new Set<string>();
   cat.buffs.forEach((b, i) => {
     const at = `${b.name || b.id}`;
     if (!ID.test(b.id)) err(`${at}: its id isn't snake_case.`, i);
+    if (!categories.has(b.category)) err(`${at}: its category "${b.category}" isn't one of the categories.`, i);
     if (ids.has(b.id)) err(`${at}: the id ${b.id} is used twice.`, i);
     ids.add(b.id);
     if (b.tier === "gold") {

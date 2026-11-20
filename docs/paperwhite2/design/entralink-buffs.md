@@ -216,7 +216,7 @@ stages (Simple), as in the user's example; Adaptability is in Type mastery.
 | Gold | Effect (r1 / r2 / r3) | Bucket | Feasibility | Notes |
 | --- | --- | --- | --- | --- |
 | **Adaptability** (core) | STAB ×2.0 / ×2.15 / ×2.25 | STAB | Easy: vanilla Adaptability | The user's "STAB twice as effective"; fills STAB at r3 |
-| Spectral | 20% / 40% / 60% chance that a hit ignores the type chart and is super effective (×2) | type chart | Medium: `CHECK_TYPE_EFFECTIVENESS` (`ServerEvent_CheckTypeEffectiveness`, `btl_server_flow.c:6724`) only offers the ignore-immunity and force-neutral flags, so ×2 needs an `#ifdef` hook where the defender's types' results are combined, rolled once a hit | Generic since 2026-11-19 (it was Ghost's chart). It doesn't override an immunity: a Normal move still misses a Ghost. On a resisted matchup it lifts ×0.5 to ×2, never above the reference hit (5.1) |
+| Spectral | 20% / 40% / 60% chance that a hit is super effective (×2) whatever the chart says, **even against a type immune to it** (a Ghost move on a Normal type); otherwise the usual result, the usual immunity included | type chart | Medium: `CHECK_TYPE_EFFECTIVENESS` (`ServerEvent_CheckTypeEffectiveness`, `btl_server_flow.c:6724`) only offers the ignore-immunity and force-neutral flags. The `#ifdef` hook goes at the top of `ServerControl_CheckMoveEffectiveness` (:6640, after the `TYPE_NULL` check), before the two types' results are combined and before the immune result shows "doesn't affect" (:6669): a successful roll returns super effective there, so the immunity is never reached. Rolled once a hit and target; whether that function is called more than once for one hit (a check with `flag` false) isn't checked (unsure), so the roll may need keeping for the move. Type immunity only: abilities' immunities (Levitate, Volt Absorb, Wonder Guard...) still hold | The user's idea, Ghost moves usable on Normal types, made generic on 2026-11-19. On a resisted matchup it lifts ×0.5 to ×2, never above the reference hit (5.1) |
 | Expert | super-effective hits +15% / +25% / +40% | MATCH | Easy: vanilla Expert Belt | Fills MATCH at r3 |
 | Tinted | resisted hits ×1.5 / ×1.75 / ×2 | MATCH (exempt from the cap) | Easy: vanilla Tinted Lens | |
 | Coverage | your non-STAB moves get a STAB of ×1.25 / ×1.35 / ×1.5 | STAB | Medium: `CHECK_SAME_TYPE` and `SAME_TYPE_BONUS` | For mixed movesets |
@@ -336,11 +336,11 @@ mostly at ranks 1-2. Rank 3 everywhere is out of reach in one run; shops selling
 
 Vanilla handlers multiply outside the buckets: stat stages (+2 ×2, +6 ×4), Huge Power ×2, Choice Band or Specs ×1.5,
 Life Orb ×1.3, Expert Belt ×1.2, weather ×1.5, Helping Hand ×1.5, a 4× weakness ×2 over the reference.
-- The ceiling with one +2 stage: 35,400-47,300 × 2 = **70,800-94,600**, over the cap: the final clamp shows **MAX**.
+- The ceiling with one +2 stage: 35,400-47,300 × 2 = **70,800-94,600**, over the cap: the final clamp at 60,000 holds them (the number is red, the top tier, from 40,000).
 - The typical build (5.3) with +2 and Life Orb: 4,500-6,100 × 2.6 = **11,700-15,900**, well under.
-- So the cap holds for buffs alone, and for typical builds with setup; only a near-ceiling build plus setup reaches MAX,
+- So the cap holds for buffs alone, and for typical builds with setup; only a near-ceiling build plus setup reaches the clamp,
   which matches "a boss can be one-shot only with an extremely good combination". Vanilla boosts stay on top of the
-  buckets (decision 1): MAX should be very hard to reach, not impossible.
+  buckets (decision 1): the clamp should be very hard to reach, not impossible.
 - **Entries to watch:** Simple with Opening Gambit and Baton (stages ×4 come cheaply), Merciless and Focus (a sure CRIT
   bucket), Spectral (super effective on any matchup). Trim those first if playtests overshoot.
 - **The balance meter** (the Buffs tab; `ceiling()` in `entralink_buffs.py`) computes 5.2 and 5.3 from the data: each
@@ -362,8 +362,8 @@ Life Orb ×1.3, Expert Belt ×1.2, weather ×1.5, Helping Hand ×1.5, a 4× weak
 - **Overflow** (3.8): power stays a u16 (150 × 8 = 1,200); `power × attack × 42` = 1,200 × 12,000 × 42 = 6.0e8, under
   2^32 (4.3e9) by ×7; `DAMAGE_RATIO`'s `value × ratio` at ×10 overflows only past about 104,000 damage. Safe, but the
   saturating multiply that 3.8 recommends is still worth adding under `#ifdef PAPERWHITE2`.
-- **The final clamp** goes after `DAMAGE_CALCULATED` (0x48), on the u32 damage, before any `(u16)` cast, and sets the
-  flag that shows MAX. Where the first u16 truncation happens isn't checked (unsure).
+- **The final clamp** goes after `DAMAGE_CALCULATED` (0x48), on the u32 damage, before any `(u16)` cast. There is no MAX text:
+  the damage number's colour tier shows the size, red (from 40,000) the top one (section 8). Where the first u16 truncation happens isn't checked (unsure).
 
 ### 5.7 The defensive side
 
@@ -387,7 +387,7 @@ Life Orb ×1.3, Expert Belt ×1.2, weather ×1.5, Helping Hand ×1.5, a 4× weak
 
 The draft's open questions, answered:
 
-1. **Vanilla boosts** stay on top of the buckets, outside their caps. MAX stays reachable with setup, but very hard.
+1. **Vanilla boosts** stay on top of the buckets, outside their caps. The clamp stays reachable with setup, but very hard.
 2. **Bosses get several health bars** (design pending): visual layers of one HP pool, and damage over time is a
    fraction of one bar, not of the whole pool. Bosses are mostly triple and raid battles (content). Fixed-damage moves
    (Super Fang, Endeavor, OHKO moves, Night Shade and the like) are blocked or capped on bosses.
@@ -406,31 +406,42 @@ The draft's open questions, answered:
 Also decided: purples stack like blues, with no slots; golds have 5 slots and ranks; each battle offers 1 of 3 cards,
 their tiers by source (enemy 70/25/5, challenge 40/45/15, boss 10/40/50 with at least one gold); golds are more common
 in shops; no pity; the golds held steer the themes offered; purples can be marked related to gold themes. Type
-mastery's Spectral is generic (4.8); Tag team and Harvest are gone and Stall (4.13) is new.
+mastery's Spectral is generic and works through type immunities (4.8); Tag team and Harvest are gone and Stall (4.13)
+is new. Icons are one per category, coloured by tier (section 7); the later phases' decisions are in section 8.
 
 ## 7. The data (phase 1)
 
 `res/paperwhite2/entralink/buffs.json` holds the whole catalogue, against `buffs.schema.json` beside it. The Entree
 page's **Buffs** tab edits it; `tools/paperwhite2/entralink_buffs.py` checks it in the hack's build and writes
-`paperwhite2/entralink_buffs_config.h` (the buffs', themes', buckets', effect kinds' and tiers' IDs and the settings as
-`ENTRALINK_BUFF_*` values), which nothing includes yet: the next phase adds the tables with the C that reads them.
+`paperwhite2/entralink_buffs_config.h` (the buffs', categories', themes', buckets', effect kinds' and tiers' IDs and the
+settings as `ENTRALINK_BUFF_*` values), which nothing includes yet: the next phase adds the tables with the C that
+reads them.
 
 - **settings:** `offers` (3), `tier_odds` by source, `boss_guaranteed_gold`, `shop_gold_weight` and
   `held_theme_weight` (percent of the others' weight), `gold_slots` (5), `max_rank` (3), `damage_cap` (60,000),
-  `type_card_team_weight`, and the tiers' default `prices` in Dream Dust (blue 60, purple 150, gold 400).
+  `skip_dust` (Dream Dust for skipping an offer, 20), `type_card_team_weight`, and the tiers' default `prices` in Dream
+  Dust (blue 60, purple 150, gold 400; tunable).
 - **buckets:** section 1's table: `id`, `name`, `side` (attack, defense), `vanilla` (the factor the sum adds to in
   hundredths: STAB 150, CRIT 200), `cap`, `critical_only` (CRIT), `reduces` (GUARD), `event`. A bucket's factor is
   (vanilla + sum) / vanilla, or / 100 for a critical-only one; a reducing one's (100 − sum) / 100.
 - **balance:** the meter's `reference_hit` (600) and its `example` build (5.3's picks; a gold's count is its rank).
-- **themes:** `id` (stable), `name`, `description`, `icon`.
+- **categories:** the icons' categories, `id`, `name`, `description`: attack, defense, speed, hp, power, critical,
+  type, status, weather, stages, heal, utility (12).
+- **themes:** `id` (stable), `name`, `description`.
 - **buffs:** every card. All have `id` (stable snake_case; renaming the card keeps it), `name`, `tier`, `description`
-  (one menu line; a line per rank for golds), `icon` (optional, `buff_icons/<name>.png`; left out, the theme's or the
-  tier's), `weight`, `rounds` (optional), `price` (optional; the tier's default), `pools` (`after_battle`, `gift`,
-  `buff_room`, `shop`), `bucket` (where the kind adds to one) and `effect`. Blues and purples have `step`,
-  `soft_limit` (optional: picks past it add half), `cap`, and purples `related` (gold themes) and `type_card`. Golds have
-  `theme`, `core` and `ranks` (1-3 values, each rank's own).
-- **Icons:** `buff_icons/` has placeholder 16 by 16 icons, one per tier and one per theme (`theme_<id>.png`), listed on
-  Graphics & Palettes' Sprite sheets page with the markers (`entralink_marker_art.py`).
+  (one menu line; a line per rank for golds), `category` (its icon), `weight`, `rounds` (optional), `price` (optional;
+  the tier's default), `pools` (`after_battle`, `gift`, `buff_room`, `shop`), `bucket` (where the kind adds to one) and
+  `effect`. Blues and purples have `step`, `soft_limit` (optional: picks past it add half), `cap`, and purples
+  `related` (gold themes) and `type_card`. Golds have `theme`, `core` and `ranks` (1-3 values, each rank's own).
+- **Icons (decided 2026-11-19):** no icon of its own per card. A card shows its **category's** icon, and its **tier
+  decides the palette**, so one picture serves the three tiers. `buff_icons/<category>.png` is 16 by 16, its pixels
+  palette indices (0 clear; the placeholders use 1 the outline, 2-4 the badge's dark, mid and light, 5 the symbol, 6 its
+  shadow); its own PNG colours are only a preview. `buff_icons/tier_<tier>.png` is the tier's palette: a 16 by 16 swatch
+  (colour i in the 4 by 4 cell i) whose PNG palette is the 16 colours. Chosen as the simplest for the game: each icon
+  becomes one 16-colour texture (`GX_TEXFMT_PLTT16`, as the markers are) and each tier one 16-colour palette, and the
+  card is drawn with the texture and its tier's palette, nothing recoloured at run time. Both are placeholders for the
+  user to draw on Graphics & Palettes' Sprite sheets page (Buff icon, Buff tier palette; `entralink_marker_art.py`
+  lists them with the markers); the editor shows every card's icon in its tier's colours.
 
 ### 7.1 Effect kinds
 
@@ -467,7 +478,7 @@ full value at 1 HP), `speed_gap` (at twice the target's Speed) or `attack_stage`
 | `status_resist` | percent less | | Hardy |
 | `status_cure_chance` | percent a turn | | Shed Skin |
 | `status_roll` | percent (vanilla 25, 50) | roll (full_paralysis, confusion_self_hit) | Lockjaw, Madness |
-| `type_chart` | percent chance a hit is affected | mode (super_effective_chance), overrides_immunity | Spectral |
+| `type_chart` | percent chance a hit is affected | mode (super_effective_chance), overrides_immunity (Spectral: true, even on an immune type) | Spectral |
 | `weather_turns` | turns; 255 is the whole battle | mode (add, set) | Damp Rock, Stormcaller |
 | `screen_turns` | turns | | Light Clay |
 | `endure_chance` | percent | | Focus Band |
@@ -478,3 +489,22 @@ full value at 1 HP), `speed_gap` (at twice the target's Speed) or `attack_stage`
 
 A new kind is a new `effect_<kind>` definition in the schema (the editor's kind picker and parameter rows read it from
 there), a number in the header, and its handler in the game.
+
+## 8. Decisions for the later phases (the user, 2026-11-19)
+
+Recorded now, built later; none of it is in phase 1.
+
+- **Boss health bars:** automatic, by the boss's HP, up to **10 bars** for the strongest bosses. They are visual layers
+  of one HP pool, each bar's colour contrasting with the one before. Damage over time counts as a fraction of **one
+  bar** (decision 2). Later, the editor gets a **per-enemy scaling multiplier** on top of the automatic scaling, for
+  enemies that come out too easy or too hard (Darkrai is too easy now).
+- **The chooser:** no rarity word on the cards; the text is coloured by tier (blue, purple, gold), with a gold's rank
+  as a numeral: "Galvanic II — +80% damage to paralyzed foes". **Skipping** an offer is allowed and gives a little
+  Dream Dust (`settings.skip_dust`, 20 to start).
+- **Prices:** blue 60, purple 150, gold 400 Dream Dust (`settings.prices`), tunable.
+- **Damage numbers:** drawn from the user's sheet (coming). Each digit is a 16 by 32 cell with one blank column on
+  each side; row 1 holds the digits 0-9 every 16 pixels, and the rows below it each digit's shine frames. The size
+  tiers swap two palette colours. There is **no "MAX" text**: red is the top tier, the one to work toward, from
+  **40,000**; the clamp stays at 60,000 (`damage_cap`).
+- **Enemy scaling** is tunable data; a later phase simulates runs outside the game to suggest its starting values.
+- **A separate later project:** the C-Gear's run display, the hub and Dream Shards.

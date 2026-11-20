@@ -101,7 +101,8 @@ def test_broken_catalogues_are_refused(tmp_path):
         (lambda d: entry(d, "defense").update(bucket="atk"), "defense side"),
         (lambda d: entry(d, "galvanic").update(description=["one line"]), "a line per rank"),
         (lambda d: entry(d, "attack").update(step=90), "within the cap"),
-        (lambda d: entry(d, "attack").update(icon="nothing.png"), "doesn't exist"),
+        (lambda d: entry(d, "attack").update(category="sword"), "isn't one of categories'"),
+        (lambda d: d["categories"].append({"id": "sword", "name": "Sword", "description": "A sword"}), "doesn't exist"),
         (lambda d: d["settings"]["tier_odds"]["boss"].update(gold=60), "add up to 100"),
         (lambda d: entry(d, "type_affinity").update(related=["harvest"]), "related theme"),
         (lambda d: d["balance"]["example"].append({"buff": "galvanic", "count": 3}) or
@@ -129,4 +130,15 @@ def test_header_is_written_once(tmp_path):
     data = entralink_buffs.load()
     output.write_text(entralink_buffs.header(data, entralink_buffs.effect_kinds()))
     assert "ENTRALINK_BUFF_THEME_STALL" in output.read_text()
+    assert "ENTRALINK_BUFF_CATEGORY_HEAL" in output.read_text()
     assert "ENTRALINK_BUFF_KIND_STATUS_ROLL" in output.read_text()
+
+
+def test_one_icon_a_category_in_each_tiers_palette():
+    data = entralink_buffs.load()
+    for category in data["categories"]:
+        assert (entralink_buffs.SOURCE / "buff_icons" / f"{category['id']}.png").is_file()
+    palettes = [entralink_buffs.tier_palette(entralink_buffs.SOURCE, t) for t in entralink_buffs.TIERS]
+    assert all(len(p) == 16 for p in palettes)
+    assert len({tuple(p) for p in palettes}) == 3
+    assert {e["category"] for e in data["buffs"]} <= {c["id"] for c in data["categories"]}

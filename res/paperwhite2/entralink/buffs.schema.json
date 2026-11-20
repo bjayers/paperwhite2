@@ -7,6 +7,7 @@
   "required": [
     "settings",
     "buckets",
+    "categories",
     "themes",
     "buffs"
   ],
@@ -168,7 +169,13 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 65535,
-          "description": "The final clamp on a hit's damage (the number shows MAX)"
+          "description": "The final clamp on a hit's damage"
+        },
+        "skip_dust": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 999,
+          "description": "Dream Dust for skipping an offer"
         },
         "type_card_team_weight": {
           "type": "integer",
@@ -259,6 +266,15 @@
         }
       }
     },
+    "categories": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {
+        "$ref": "#/$defs/category"
+      },
+      "description": "The icons' categories: one icon each (buff_icons/<id>.png), drawn in the card's tier's palette (buff_icons/tier_<tier>.png)"
+    },
     "themes": {
       "type": "array",
       "minItems": 1,
@@ -337,6 +353,33 @@
         }
       }
     },
+    "category": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "description"
+      ],
+      "description": "An icon category: one 16 by 16 icon of up to 15 colors and transparency, whose indices the tier palettes color",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$",
+          "description": "Its stable id: buff_icons/<id>.png"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^.{1,24}$",
+          "description": "Its name"
+        },
+        "description": {
+          "type": "string",
+          "pattern": "^.{1,80}$",
+          "description": "What cards it is for"
+        }
+      }
+    },
     "theme": {
       "type": "object",
       "additionalProperties": false,
@@ -361,11 +404,6 @@
           "type": "string",
           "pattern": "^.{1,80}$",
           "description": "One line"
-        },
-        "icon": {
-          "type": "string",
-          "pattern": "^[a-z0-9_]+\\.png$",
-          "description": "A 16 by 16 PNG in buff_icons/; left out, the theme's (golds) or the tier's"
         }
       }
     },
@@ -388,6 +426,7 @@
         "name",
         "tier",
         "description",
+        "category",
         "weight",
         "pools",
         "step",
@@ -418,10 +457,10 @@
           "pattern": "^.{1,60}$",
           "description": "One menu line"
         },
-        "icon": {
+        "category": {
           "type": "string",
-          "pattern": "^[a-z0-9_]+\\.png$",
-          "description": "A 16 by 16 PNG in buff_icons/; left out, the theme's (golds) or the tier's"
+          "pattern": "^[a-z0-9_]+$",
+          "description": "Its icon's category (categories' ids): buff_icons/<category>.png in its tier's palette"
         },
         "weight": {
           "type": "integer",
@@ -512,6 +551,7 @@
         "name",
         "tier",
         "description",
+        "category",
         "weight",
         "pools",
         "theme",
@@ -546,10 +586,10 @@
           },
           "description": "One menu line per rank"
         },
-        "icon": {
+        "category": {
           "type": "string",
-          "pattern": "^[a-z0-9_]+\\.png$",
-          "description": "A 16 by 16 PNG in buff_icons/; left out, the theme's (golds) or the tier's"
+          "pattern": "^[a-z0-9_]+$",
+          "description": "Its icon's category (categories' ids): buff_icons/<category>.png in its tier's palette"
         },
         "weight": {
           "type": "integer",
@@ -1445,7 +1485,7 @@
         },
         "overrides_immunity": {
           "type": "boolean",
-          "description": "Also on a type that is immune to the move (the draft says no)"
+          "description": "Also on a type that is immune to the move (a Ghost move on a Normal type): the roll comes before the type immunity; abilities' immunities still hold"
         }
       }
     },

@@ -5,15 +5,19 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 ## 2026-11-19: Entralink buffs, phase 1: the catalogue as data and the Entree page's Buffs tab (ROM session, on a branch)
 
 - **The doc** (`design/entralink-buffs.md`) has the user's decisions (section 6, the open questions answered), Spectral
-  made generic (20/40/60% that a hit ignores the chart and is super effective; never over an immunity), Tag team and
-  Harvest gone, and a **Stall** theme (4.13): Overflow (core: healing past max HP hits a foe), Parasite (Leech Seed
-  1/6, 1/5, 1/4, spreading at r3), Thorn Guard (Protect heals and hurts blocked contact), Mending, Regrowth, Siphon,
-  each with its hook point checked in the code. Section 7 is the data and the effect kinds.
+  made generic (20/40/60% that a hit is super effective, even on a type immune to it: the `#ifdef` hook at the top of
+  `ServerControl_CheckMoveEffectiveness`, before the immunity), Tag team and Harvest gone, and a **Stall** theme
+  (4.13): Overflow (core: healing past max HP hits a foe), Parasite (Leech Seed 1/6, 1/5, 1/4, spreading at r3),
+  Thorn Guard (Protect heals and hurts blocked contact), Mending, Regrowth, Siphon, each with its hook point checked in
+  the code. Section 7 is the data and the effect kinds; section 8 the later phases' decisions (boss health bars, the
+  chooser, skipping, damage numbers with no MAX text, enemy scaling).
 - **The data:** `res/paperwhite2/entralink/buffs.json` (10 blues, 35 purples, 68 golds, 13 themes, the 9 buckets, the
   offers' settings, the meter's reference and example) against `buffs.schema.json`, whose 31 `effect_*` definitions are
   the effect kinds (`damage_ratio`, `stat_ratio`, ... `ability_like`, `custom`): the game will implement kinds, not
-  cards. Placeholder 16x16 icons in `buff_icons/` (one a tier, one a theme), listed on Graphics & Palettes with the
-  markers (`entralink_marker_art.py`).
+  cards. Icons: one per **category** (12; each card names one), drawn in its **tier's palette**
+  (`buff_icons/<category>.png` indices, `tier_<tier>.png` a swatch whose PNG palette is the tier's 16 colours: one
+  16-colour texture an icon and one palette a tier for the game); placeholders, listed on Graphics & Palettes with the
+  markers (`entralink_marker_art.py`) and shown in the tier's colours in the editor.
 - **The packer:** `tools/paperwhite2/entralink_buffs.py` (configure.py, hack builds) checks it (ids, themes, one core a
   theme, buckets by kind and side, ranks, icons, odds) and writes `paperwhite2/entralink_buffs_config.h` (IDs and
   settings, included by nothing yet); `--check` prints the balance meter. Tests in `test_entralink_buffs.py` (pytest
@@ -24,7 +28,7 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
 - **The Buffs tab:** list with tier, theme, pool and text filters, Add / Duplicate / Delete (stable ids); Basics,
   Offer, Effect (kind and parameters from the schema, the bucket, step/soft limit/cap or ranks), Relations; the meter
   with an editable reference and example build; Themes; Offers settings; Checks. Build clean, `verify_dsi_rom.py`
-  intact, editor tests pass (258), screenshots in the scratchpad's `buffs1/`.
+  intact, editor tests pass (259), screenshots in the scratchpad's `buffs1/`.
 - **Next (phase 2):** the tables in the header and the C that reads them; the card offer after battles.
 
 ## 2026-11-19: follower shadow, final tuning: 15 and 14a built in, the centers' offset x 0.85 (ROM session, on a branch)

@@ -7,16 +7,23 @@
 The catalogue (docs/paperwhite2/design/entralink-buffs.md, buffs.schema.json beside it) holds every buff card: its
 tier (blue, purple, gold), its offer (weight, rounds, price, pools), its numbers (a blue's or purple's step, soft limit
 and cap; a gold's ranks), the damage bucket it adds to and its effect, one of the effect kinds that the schema's
-effect_* definitions list, so the game implements kinds, not entries. Beside them: the gold themes, the buckets with
-their caps, the offers' settings and the balance meter's inputs.
+effect_* definitions list, so the game implements kinds, not entries. Beside them: the icon categories, the gold
+themes, the buckets with their caps, the offers' settings and the balance meter's inputs.
 
-The game reads nothing of it yet (phase 1). The header gives the next phase its numbers: the buffs', themes', effect
-kinds' and tiers' IDs and the settings, as ENTRALINK_BUFF_* values; the tables follow with the C that reads them.
+Icons: a card names a category, not a picture. Each category is one icon, buff_icons/<category>.png, 16 by 16, its
+pixels palette indices (0 clear); each tier is one palette, buff_icons/tier_<tier>.png, a 16 by 16 swatch whose PNG
+palette is the tier's 16 colors (color i in the 4 by 4 cell i). The game will load each icon as one 16-color texture
+and draw it with the card's tier's palette, so one picture serves the three tiers. The icons' own PNG palettes are
+only a preview.
 
-The checks beyond the schema's: unique IDs; each gold's theme and each purple's related themes exist, one core gold a
-theme; a bucket where the effect kind needs one (and none where it doesn't), on the right side; a gold's ranks and
-rank lines agree and fit max_rank; a step within its cap; the icons are 16 by 16 PNGs of 16 colors, index 0 clear; the
-tier odds add up to 100. The balance meter (ceiling(), example_hit(); the editor's buffs.ts is the same arithmetic,
+The game reads nothing of it yet (phase 1). The header gives the next phase its numbers: the buffs', categories',
+themes', effect kinds' and tiers' IDs and the settings, as ENTRALINK_BUFF_* values; the tables follow with the C that
+reads them.
+
+The checks beyond the schema's: unique IDs; each card's category, each gold's theme and each purple's related themes
+exist, one core gold a theme; a bucket where the effect kind needs one (and none where it doesn't), on the right side;
+a gold's ranks and rank lines agree and fit max_rank; a step within its cap; each category's icon and each tier's
+palette is a 16 by 16 PNG of 16 colors; the tier odds add up to 100. The balance meter (ceiling(), example_hit(); the editor's buffs.ts is the same arithmetic,
 the doc's section 5) warns when the strongest possible hit on the reference passes the damage cap.
 """
 import argparse
@@ -139,12 +146,19 @@ def example_hit(data: dict, reference: int | None = None) -> dict:
 # ---- The checks -----------------------------------------------------------------------------------------------------
 
 def check_icon(directory: Path, name: str, where: str):
+    """A category's icon or a tier's palette: a 16 by 16 indexed PNG of at most 16 colors."""
     path = directory / "buff_icons" / name
     if not path.is_file():
-        error(where, f"its icon buff_icons/{name} doesn't exist")
+        error(where, f"buff_icons/{name} doesn't exist")
     width, height, pixels, _ = read_indexed_png(path)
     if (width, height) != (ICON_SIZE, ICON_SIZE) or (pixels and max(pixels) >= ICON_COLORS):
-        error(where, f"buff_icons/{name} isn't a {ICON_SIZE} by {ICON_SIZE} icon of {ICON_COLORS} colors")
+        error(where, f"buff_icons/{name} isn't a {ICON_SIZE} by {ICON_SIZE} picture of {ICON_COLORS} colors")
+
+
+def tier_palette(directory: Path, tier: str) -> list[tuple[int, int, int]]:
+    """A tier's 16 colors, the palette of buff_icons/tier_<tier>.png, which the game draws every icon of the tier in."""
+    _, _, _, colors = read_indexed_png(directory / "buff_icons" / f"tier_{tier}.png")
+    return (list(colors) + [(0, 0, 0)] * ICON_COLORS)[:ICON_COLORS]
 
 
 def problems(data: dict, directory: Path = SOURCE) -> list[str]:
@@ -167,8 +181,14 @@ def problems(data: dict, directory: Path = SOURCE) -> list[str]:
         if theme["id"] in themes:
             error(f"themes.{theme['id']}", "a theme ID is used twice")
         themes[theme["id"]] = theme
-        if "icon" in theme:
-            check_icon(directory, theme["icon"], f"themes.{theme['id']}")
+    categories = set()
+    for category in data["categories"]:
+        if category["id"] in categories:
+            error(f"categories.{category['id']}", "a category ID is used twice")
+        categories.add(category["id"])
+        check_icon(directory, f"{category['id']}.png", f"categories.{category['id']}")
+    for tier in TIERS:
+        check_icon(directory, f"tier_{tier}.png", f"the {tier} tier's palette")
     ids = set()
     cores = {}
     for entry in data["buffs"]:
@@ -178,8 +198,8 @@ def problems(data: dict, directory: Path = SOURCE) -> list[str]:
         ids.add(entry["id"])
         effect = entry["effect"]
         kind = effect["kind"]
-        if "icon" in entry:
-            check_icon(directory, entry["icon"], where)
+        if entry["category"] not in categories:
+            error(where, f"its category {entry['category']!r} isn't one of categories'")
         if entry["tier"] == "gold":
             if entry["theme"] not in themes:
                 error(where, f"its theme {entry['theme']!r} isn't one of themes'")
@@ -254,6 +274,9 @@ def header(data: dict, kinds: list[str]) -> str:
         "// Damage buckets, with their caps in hundredths",
         *[f"#define ENTRALINK_BUFF_BUCKET_{macro(b['id'])} {i}" for i, b in enumerate(data["buckets"])],
         *[f"#define ENTRALINK_BUFF_BUCKET_{macro(b['id'])}_CAP {b['cap']}" for b in data["buckets"]], "",
+        "// Icon categories (buff_icons/<category>.png, drawn in buff_icons/tier_<tier>.png's palette)",
+        f"#define ENTRALINK_BUFF_CATEGORY_COUNT {len(data['categories'])}",
+        *[f"#define ENTRALINK_BUFF_CATEGORY_{macro(c['id'])} {i}" for i, c in enumerate(data["categories"])], "",
         "// Gold themes",
         *[f"#define ENTRALINK_BUFF_THEME_{macro(t['id'])} {i}" for i, t in enumerate(data["themes"])], "",
         "// Buffs",
@@ -268,6 +291,7 @@ def header(data: dict, kinds: list[str]) -> str:
         f"#define ENTRALINK_BUFF_GOLD_SLOTS {settings['gold_slots']}",
         f"#define ENTRALINK_BUFF_MAX_RANK {settings['max_rank']}",
         f"#define ENTRALINK_BUFF_DAMAGE_CAP {settings['damage_cap']}",
+        f"#define ENTRALINK_BUFF_SKIP_DUST {settings.get('skip_dust', 0)}",
         f"#define ENTRALINK_BUFF_TYPE_CARD_TEAM_WEIGHT {settings.get('type_card_team_weight', 100)}",
         *[f"#define ENTRALINK_BUFF_PRICE_{macro(t)} {settings['prices'][t]}" for t in TIERS],
         "", f"#endif // {GUARD}", "",

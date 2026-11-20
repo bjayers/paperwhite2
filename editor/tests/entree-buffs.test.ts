@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileText, parseJson, setIn, type JsonMap, type JsonPath, type JsonValue } from "../shared/json.ts";
@@ -13,7 +13,7 @@ import { validate, type Schema } from "../shared/schema.ts";
 import { Python } from "../server/python.ts";
 import {
   BUFFS, BUFFS_SCHEMA, ceilingHit, changeTier, checkBuffs, duplicateBuff, effectKinds, exampleHit, fieldOrder, filterBuffs, newBuff,
-  pickedValue, readBuff, readCatalogue, shownIcon, uniqueId,
+  categoryIconPath, pickedValue, readBuff, readCatalogue, tierPalettePath, tintIcon, uniqueId,
 } from "../src/modules/entree/buffs.ts";
 
 const ROOT = resolve(import.meta.dirname, "../..");
@@ -166,7 +166,21 @@ test("filters and the icon a card shows", () => {
   assert.ok(stall.includes("overflow") && stall.includes("big_root"));
   assert.deepEqual(filterBuffs(cat.buffs, { text: "leech seed" }).map((i) => cat.buffs[i].id), ["parasite"]);
   assert.ok(filterBuffs(cat.buffs, { pool: "gift" }).every((i) => cat.buffs[i].tier !== "blue"));
-  const overflow = cat.buffs.find((b) => b.id === "overflow")!;
-  assert.equal(shownIcon(overflow, cat.themes), "theme_stall.png");
-  assert.equal(shownIcon(cat.buffs[0], cat.themes), "blue.png");
+  assert.equal(cat.buffs.find((b) => b.id === "overflow")!.category, "heal");
+});
+
+test("one icon a category, every tier's palette: each card's category exists, and an icon takes the tier's colors", () => {
+  const cat = readCatalogue(data());
+  assert.ok(cat.categories.length >= 10 && cat.categories.length <= 14);
+  for (const c of cat.categories) assert.ok(existsSync(join(ROOT, categoryIconPath(c.id))), c.id);
+  for (const t of ["blue", "purple", "gold"] as const) assert.ok(existsSync(join(ROOT, tierPalettePath(t))), t);
+  const ids = new Set(cat.categories.map((c) => c.id));
+  assert.ok(cat.buffs.every((b) => ids.has(b.category)));
+  // Index 0 clear, the others the palette's color at that index
+  const rgba = tintIcon([0, 1, 5], [[0, 0, 0], [10, 20, 30], [0, 0, 0], [0, 0, 0], [0, 0, 0], [200, 100, 50]]);
+  assert.deepEqual([...rgba], [0, 0, 0, 0, 10, 20, 30, 255, 200, 100, 50, 255]);
+  // A card with an unknown category is an error, in the editor and the packer
+  const bad = at(data(), ["buffs", 0, "category"], "sword");
+  assert.ok(checkBuffs(readCatalogue(bad)).some((p) => p.severity === "error" && /category/.test(p.message)));
+  assert.match(packerCheck(bad).output, /isn't one of categories'/);
 });

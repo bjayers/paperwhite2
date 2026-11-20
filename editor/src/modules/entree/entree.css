@@ -187,4 +187,8 @@
 .en-theme-head { display: flex; align-items: center; gap: 6px; }
 .en-theme-head input { flex: 1; min-width: 0; }
 .en-theme-foot { display: flex; align-items: center; gap: 8px; }
+.en-icon-tiers { display: inline-flex; gap: 4px; }
+.en-categories { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; }
+.en-category { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px; align-items: center; }
+.en-category-icons { display: inline-flex; gap: 2px; }
 .en-odds { display: grid; grid-template-columns: 80px repeat(3, 60px); gap: 4px 8px; align-items: center; margin-bottom: 10px; }
