@@ -17,7 +17,7 @@
 // shops) sees it with no other hook, and the real bag stays untouched in the save's block, which any save writes
 
 // The most rooms a run has, the pre-boss rests and the final's included
-#define ENTRALINK_RUN_ROOMS_MAX 20
+#define ENTRALINK_RUN_ROOMS_MAX 32
 // The most enemies of a battle
 #define ENTRALINK_RUN_ENEMIES_MAX 3
 // A room's forward doors (ENTRALINK_DOOR_COUNT), and no room behind one

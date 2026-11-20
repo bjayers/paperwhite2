@@ -424,6 +424,8 @@ export const api = {
   /** The address of an image under res/. */
   assetUrl: (path: string) => `/api/asset?path=${encodeURIComponent(path)}`,
   constants: () => request<Record<string, number>>("GET", "/api/constants"),
+  /** The names of each constant list in generated/ ({list: names}). */
+  constantLists: () => request<Record<string, string[]>>("GET", "/api/constant-lists"),
   /** The comments that include/constants/ gives the constants of a prefix, by name. */
   constantNotes: (prefix: string) => request<Record<string, string>>("GET", `/api/constant-notes?prefix=${encodeURIComponent(prefix)}`),
   /** The sprite sheets that build tools pack whole. */

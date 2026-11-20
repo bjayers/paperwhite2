@@ -60,13 +60,45 @@ export function isHiddenConstant(name: string): boolean {
   return hiddenConstants.has(name);
 }
 
+let listsByPrefix = new Map<string, ReadonlySet<string>>();
+
+/** The longest prefix, up to an underscore, that every name shares ("MOVE_" for moves.txt, "MOVE_CODE_" for
+ * move_codes.txt). */
+export function sharedPrefix(names: readonly string[]): string {
+  if (!names.length) return "";
+  let common = names[0];
+  for (const name of names) {
+    let i = 0;
+    while (i < common.length && i < name.length && common[i] === name[i]) i++;
+    common = common.slice(0, i);
+  }
+  return common.slice(0, common.lastIndexOf("_") + 1);
+}
+
+/** generated/'s lists ({list: names}): a picker of a prefix that one or more lists share exactly offers those lists'
+ * names alone, so MOVE_ is the moves, not also the MOVE_CODE_, MOVE_TARGET_ and MOVE_FLAG_ constants that start the
+ * same; a prefix no list shares exactly offers every constant that starts with it, as before. */
+export function setConstantLists(lists: Record<string, readonly string[]>) {
+  const byPrefix = new Map<string, Set<string>>();
+  for (const names of Object.values(lists)) {
+    const prefix = sharedPrefix(names);
+    if (!prefix) continue;
+    const set = byPrefix.get(prefix) ?? new Set<string>();
+    names.forEach((n) => set.add(n));
+    byPrefix.set(prefix, set);
+  }
+  listsByPrefix = byPrefix;
+  optionCache = new WeakMap();
+}
+
 export function constantOptions(constants: Constants, prefix: string): Option[] {
   let byPrefix = optionCache.get(constants);
   if (!byPrefix) optionCache.set(constants, (byPrefix = new Map()));
   let options = byPrefix.get(prefix);
   if (!options) {
+    const list = listsByPrefix.get(prefix);
     options = [...constants]
-      .filter(([name]) => name.startsWith(prefix) && !hiddenConstants.has(name))
+      .filter(([name]) => name.startsWith(prefix) && !hiddenConstants.has(name) && (!list || list.has(name)))
       .sort((a, b) => a[1] - b[1])
       .map(([name, value]) => ({ value: name, label: constantLabel(name, prefix), detail: String(value) }));
     byPrefix.set(prefix, options);

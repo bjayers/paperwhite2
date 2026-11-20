@@ -46,7 +46,7 @@
 // The most rounds a run has (run.json's rounds)
 #define ENTRALINK_RUN_ROUNDS_MAX 3
 // The most rooms of role room a run has (8 a round), the size of a stat's table of room percents
-#define ENTRALINK_RUN_SCALED_ROOMS_MAX 24
+#define ENTRALINK_RUN_SCALED_ROOMS_MAX 32
 // Any type: a boss or final room's draw
 #define ENTRALINK_TYPE_ANY 0xff
 

@@ -16,6 +16,7 @@ export function pythonFor(root: string): string {
 
 export class Python {
   private constantsCache: Record<string, number> | null = null;
+  private constantListsCache: Record<string, string[]> | null = null;
   private validator: ChildProcessWithoutNullStreams | null = null;
   private waiting: ((result: { ok: boolean; error?: string }) => void)[] = [];
   private screens = new Map<string, Buffer>();
@@ -32,9 +33,19 @@ export class Python {
     return this.constantsCache!;
   }
 
+  /** The names of each list in generated/ ({list: names}), for the pickers to offer a list's own names. */
+  constantLists(): Record<string, string[]> {
+    if (!this.constantListsCache) {
+      const out = execFileSync(pythonFor(this.root), [join(HERE, "constant_lists.py")], { cwd: this.root, maxBuffer: 64 << 20 });
+      this.constantListsCache = JSON.parse(out.toString());
+    }
+    return this.constantListsCache!;
+  }
+
   /** The constants changed on disk; they are read again when next asked for, and the validator restarts. */
   invalidate() {
     this.constantsCache = null;
+    this.constantListsCache = null;
     this.validator?.kill();
     this.validator = null;
   }

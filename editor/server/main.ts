@@ -377,6 +377,7 @@ const routes: Record<string, Handler> = {
     }
   },
   "GET /api/constants": (_req, res) => json(res, python.constants()),
+  "GET /api/constant-lists": (_req, res) => json(res, python.constantLists()),
   // The comments of include/constants/'s #defines of a prefix ("MOVE_QUALITY_INFLICT": "Inflicts a condition, as
   // Thunder Wave"), for pickers to explain their choices
   "GET /api/constant-notes": (_req, res, url) => {

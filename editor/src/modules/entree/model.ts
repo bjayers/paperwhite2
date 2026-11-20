@@ -471,7 +471,7 @@ export const inRound = (room: Room, round: Round) => !room.rounds.length || room
 // ---- The run: run.json's rounds and how the game draws their rooms --------------------------------------------------
 
 /** The rooms of a run, the pre-boss rests and the final's included (the game's ENTRALINK_RUN_ROOMS_MAX). */
-export const RUN_ROOMS_MAX = 20;
+export const RUN_ROOMS_MAX = 32;
 
 export interface RunRound {
   rooms: number; boss: boolean; fieldWeather?: string;

@@ -125,7 +125,7 @@ DEFAULT_SPRITES = {"item": "OBJ_CODE_110", "rest": "OBJ_CODE_LADY", "buff": "OBJ
 BATTLES_MAX = 1024
 CATCHES_MAX = 512
 # The rooms of a run, the pre-boss rests and the final's included (ENTRALINK_RUN_ROOMS_MAX)
-RUN_ROOMS_MAX = 20
+RUN_ROOMS_MAX = 32
 
 
 def error(where: str, message: str):
