@@ -17,6 +17,57 @@ def copy_data(tmp_path: Path) -> Path:
     return directory
 
 
+def fixture_data(tmp_path: Path) -> Path:
+    """Entralink data of the tests' own: the real schemas and art, but a small set of rooms, templates and a run.json
+    written here, so the tests don't depend on the rooms the user has made.
+    Rooms: alpha, beta, gamma (generic enemy rooms; with choose, 4 generic rooms), choose (enemy_choice, two battles), first_boss (round 1),
+    second_boss (round 2), last (final). Templates: rest, item, buff, shop, pre_boss_rest. Rounds: 2 rooms and a
+    boss, 2 rooms and a boss, 2 rooms (12 places with the pre-boss rests and the final room)."""
+    directory = tmp_path / "entralink"
+    shutil.copytree(entralink_run.SOURCE, directory, ignore=shutil.ignore_patterns(
+        "rooms", "templates", "run.json", "progress_ids.json"))
+    (directory / "rooms").mkdir()
+    (directory / "templates").mkdir()
+    progress = iter(range(100))
+
+    def make_room(name, role="room", battles=1, **extra):
+        formats = []
+        for i in range(battles):
+            formats.append({"id": f"battle{i}", "progress_id": next(progress), "format": "single",
+                            "enemies": [{"species": "SPECIES_PIKACHU", "level": 50}]})
+        npcs = [{"type": "battle", "battle": b["id"], "sprite": "OBJ_CODE_LADY", "x": 12 + 3 * i, "z": 14,
+                 "facing": "DIR_DOWN"} for i, b in enumerate(formats)]
+        return {"name": name, "role": role, **extra, "battles": formats, "npcs": npcs}
+
+    def make_template(name, kind, npc_type, **npc):
+        return {"name": f"{name} (template)", "role": "room", "type": kind, "battles": [],
+                "npcs": [{"type": npc_type, "x": 15, "z": 14, "facing": "DIR_DOWN", **npc}]}
+
+    rooms = {"alpha": make_room("Alpha"), "beta": make_room("Beta"), "gamma": make_room("Gamma"),
+             "choose": make_room("Choose", battles=2, type="enemy_choice"),
+             "first_boss": make_room("First boss", "boss", rounds=[1]),
+             "second_boss": make_room("Second boss", "boss", rounds=[2]),
+             "last": make_room("Last", "final")}
+    templates = {"rest": make_template("Rest", "rest", "heal", sprite="OBJ_CODE_NURSE"),
+                 "item": make_template("Item", "item", "item", item="ITEM_POTION"),
+                 "buff": make_template("Buff", "buff", "buff", sprite="OBJ_CODE_LADY"),
+                 "shop": make_template("Shop", "shop", "shop", sprite="OBJ_CODE_82"),
+                 "pre_boss_rest": make_template("Pre-boss rest", "rest", "heal", sprite="OBJ_CODE_NURSE")}
+    for name, data in rooms.items():
+        (directory / "rooms" / f"{name}.json").write_text(json.dumps(data))
+    for name, data in templates.items():
+        (directory / "templates" / f"{name}.json").write_text(json.dumps(data))
+    (directory / "run.json").write_text(json.dumps({
+        "rounds": [{"rooms": 2, "boss": True, "field_weather": "WEATHER_CUSTOM_TINT_9"},
+                   {"rooms": 2, "boss": True, "field_weather": "WEATHER_CUSTOM_TINT_8"},
+                   {"rooms": 2, "field_weather": "WEATHER_CUSTOM_TINT_7"}],
+        "room_maps": ["ZONE_ENTREE_FOREST", "ZONE_ENTREE_FOREST_6"], "final_map": "ZONE_ENTREE_FOREST_2",
+        "pre_boss_map": "ZONE_ENTREE_FOREST_10", "unknown_chance": 5,
+        "marker_spots": {"north": [15, 12], "east": [21, 16], "west": [9, 16]}}))
+    (directory / "progress_ids.json").write_text(json.dumps({"next_battle": 50, "next_catch": 0}))
+    return directory
+
+
 def edit(path: Path, change):
     data = json.loads(path.read_text())
     change(data)
@@ -90,17 +141,17 @@ def test_npc_names_a_missing_battle(tmp_path):
 
 
 def test_draw_problems(tmp_path):
-    directory = copy_data(tmp_path)
+    directory = fixture_data(tmp_path)
     run, rooms = entralink_run.load_run(directory), entralink_run.load_rooms(directory)
-    # The real run: 9 rooms from 4 generic ones repeat, a warning only
-    assert entralink_run.draw_problems(run, rooms) == [("warning", "the rounds draw 9 rooms from 4, so rooms come up "
+    # 6 rooms drawn from the 4 generic ones repeat: a warning only
+    assert entralink_run.draw_problems(run, rooms) == [("warning", "the rounds draw 6 rooms from 4, so rooms come up "
                                                         "more than once in a run (the least used first, never twice in a row)")]
-    assert entralink_run.boss_pool(rooms, 1) == ["ho_oh"] and entralink_run.boss_pool(rooms, 2) == ["time_and_space"]
+    assert entralink_run.boss_pool(rooms, 1) == ["first_boss"] and entralink_run.boss_pool(rooms, 2) == ["second_boss"]
     # More rooms in a round than can come up in it still packs
     edit(directory / "run.json", lambda data: data["rounds"][0].update(rooms=4))
     entralink_run.tables(directory)
     # A round with no room at all can't, without the templates (step 6)
-    for name in ("dialga", "prince_or_princess", "rayquaza_raid", "the_illusionist"):
+    for name in ("alpha", "beta", "gamma", "choose"):
         edit(room(directory, name), lambda data: data.update(rounds=[2, 3]))
     rooms = entralink_run.load_rooms(directory)
     assert ("error", "round 1 draws 4 rooms, but no room can come up in it (role room, rounds left out or naming "
@@ -186,20 +237,20 @@ def test_dialogue_and_requirements_pack(tmp_path):
 
 
 def test_markers_and_round_fogs_pack(tmp_path):
-    directory = copy_data(tmp_path)
-    edit(room(directory, "ho_oh"), lambda data: data["npcs"][0].update(marker="rest"))
-    edit(room(directory, "dialga"), lambda data: data.update(marker="challenge"))
+    directory = fixture_data(tmp_path)
+    edit(room(directory, "first_boss"), lambda data: data["npcs"][0].update(marker="rest"))
+    edit(room(directory, "alpha"), lambda data: data.update(marker="challenge"))
     edit(directory / "run.json", lambda data: (data.pop("pre_boss_map"), data.pop("marker_spots"),
                                                  data["rounds"][1].pop("field_weather"),
                                                  data.update(field_weather="WEATHER_RAIN", unknown_chance=40)))
     data = entralink_run.tables(directory)
     rows = {name: row for name, row in zip(data["ids"], data["rooms"])}
     markers = entralink_run.MARKER_TYPES
-    assert rows["dialga"]["marker"] == markers.index("challenge")
-    assert rows["ho_oh"]["marker"] == markers.index("boss") and rows["darkrai"]["marker"] == markers.index("final")
-    assert rows["rayquaza_raid"]["marker"] == markers.index("enemy")
-    assert data["npcs"][rows["ho_oh"]["firstNpc"]]["marker"] == data["npc_markers"].index("rest")
-    assert data["npcs"][rows["dialga"]["firstNpc"]]["marker"] == entralink_run.NPC_MARKER_NONE
+    assert rows["alpha"]["marker"] == markers.index("challenge")
+    assert rows["first_boss"]["marker"] == markers.index("boss") and rows["last"]["marker"] == markers.index("final")
+    assert rows["beta"]["marker"] == markers.index("enemy")
+    assert data["npcs"][rows["first_boss"]["firstNpc"]]["marker"] == data["npc_markers"].index("rest")
+    assert data["npcs"][rows["alpha"]["firstNpc"]]["marker"] == entralink_run.NPC_MARKER_NONE
     weathers = entralink_run.field_weathers()
     # A round without a fog takes the run's field_weather
     assert [w for _, _, w, _ in data["rounds"]] == [weathers["WEATHER_CUSTOM_TINT_9"], weathers["WEATHER_RAIN"],
@@ -246,13 +297,13 @@ def test_ground_markers_are_packed_upside_down(tmp_path):
 
 
 def test_room_types_and_templates_pack(tmp_path):
-    directory = copy_data(tmp_path)
-    edit(room(directory, "dialga"), lambda data: data.update(type="challenge"))
+    directory = fixture_data(tmp_path)
+    edit(room(directory, "alpha"), lambda data: data.update(type="challenge"))
     edit(directory / "run.json", lambda data: data["rounds"][0].update(type_weights={"shop": 0, "enemy": 7}))
     data = entralink_run.tables(directory)
     rows = {row["name"]: row for row in data["rooms"]}
     markers, types = entralink_run.MARKER_TYPES, entralink_run.ROOM_TYPES
-    assert rows["dialga"]["type"] == types["challenge"] and rows["dialga"]["marker"] == markers.index("challenge")
+    assert rows["alpha"]["type"] == types["challenge"] and rows["alpha"]["marker"] == markers.index("challenge")
     assert rows["templates/item"]["template"] == 1 and rows["templates/item"]["marker"] == markers.index("gift")
     assert rows["templates/pre_boss_rest"]["type"] == types["rest"]
     assert rows["templates/pre_boss_rest"]["marker"] == markers.index("rest")
@@ -260,8 +311,8 @@ def test_room_types_and_templates_pack(tmp_path):
     assert data["type_templates"][types["shop"]] == data["templates"]["shop"]
     weights = data["rounds"][0][3]
     assert weights[types["shop"]] == 0 and weights[types["enemy"]] == 7 and weights[types["rest"]] == 10
-    # The pre-boss rests count: 3 rounds of 3 rooms, 2 bosses, 3 rests and the final
-    assert entralink_run.place_count(entralink_run.load_run(directory)) == 15
+    # The pre-boss rests count: 3 rounds of 2 rooms, 2 bosses, 3 rests and the final
+    assert entralink_run.place_count(entralink_run.load_run(directory)) == 12
 
 
 def test_missing_template(tmp_path):
@@ -341,14 +392,18 @@ def test_enemy_choice_and_room_problems(tmp_path):
     assert entralink_run.ROOM_TYPES["enemy_choice"] == 7 and entralink_run.MARKER_TYPES[-1] == "enemy_choice"
     assert entralink_run.MARKER_TYPES.index("catch") == 9
     assert entralink_run.DEFAULT_TYPE_WEIGHTS["enemy"] == 42 and entralink_run.DEFAULT_TYPE_WEIGHTS["enemy_choice"] == 8
-    directory = copy_data(tmp_path)
-    edit(room(directory, "prince_or_princess"), lambda data: data.update(type="enemy_choice"))
-    edit(room(directory, "dialga"), lambda data: data.update(type="enemy_choice"))
+    directory = fixture_data(tmp_path)
+    assert entralink_run.room_problems(entralink_run.load_rooms(directory)) == []
+    edit(room(directory, "alpha"), lambda data: data.update(type="enemy_choice"))
+    edit(room(directory, "choose"), lambda data: data.update(type="enemy"))
     rooms = entralink_run.load_rooms(directory)
-    assert entralink_run.room_problems(rooms) == [("warning", "rooms/dialga.json: an enemy_choice room has battles to "
-                                                   "choose from, but it has 1")]
+    assert entralink_run.room_problems(rooms) == [
+        ("warning", "rooms/alpha.json: an enemy_choice room has battles to choose from, but it has 1"),
+        ("warning", "rooms/choose.json: an enemy room has one battle, but it has 2: several to choose from make it "
+                    "an enemy_choice room")]
+    edit(room(directory, "choose"), lambda data: data.update(type="enemy_choice"))
     data = entralink_run.tables(directory)
-    row = data["rooms"][data["ids"].index("prince_or_princess")]
+    row = data["rooms"][data["ids"].index("choose")]
     assert row["type"] == 7 and row["marker"] == entralink_run.MARKER_TYPES.index("enemy_choice")
     assert len(entralink_run.marker_members(directory)) == len(entralink_run.MARKER_TYPES) + len(
         entralink_run.npc_marker_names(directory)) + data["icon_count"]
