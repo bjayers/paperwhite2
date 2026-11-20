@@ -180,6 +180,7 @@
 #define ENTRALINK_RUN_NPC_ITEM_CHOICE 8
 #define ENTRALINK_RUN_NPC_BUFF_CHOICE 9
 #define ENTRALINK_RUN_NPC_SWAP 10
+#define ENTRALINK_RUN_NPC_AMBIENT 11
 // The room's ball on the ground (run.json's ground_item_chance), and a choice NPC whose choice was made: no NPC type's
 #define ENTRALINK_RUN_NPC_GROUND 100
 #define ENTRALINK_RUN_NPC_DONE 101

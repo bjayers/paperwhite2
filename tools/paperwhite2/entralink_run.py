@@ -38,7 +38,14 @@ FORMATS = {"single": 0, "double": 1, "triple": 2, "raid": 3}
 ENEMY_COUNTS = {"single": 1, "double": 2, "triple": 3, "raid": 1}
 ROLES = {"room": 0, "boss": 1, "final": 2}
 NPC_TYPES = {"battle": 0, "item": 1, "rest": 2, "buff": 3, "heal": 4, "revive": 5, "gift": 6, "shop": 7,
-             "item_choice": 8, "buff_choice": 9, "swap": 10}
+             "item_choice": 8, "buff_choice": 9, "swap": 10, "ambient": 11}
+# An ambient's reaction (ENTRALINK_AMBIENT_*) and its distances' defaults: it reacts within near tiles of the player, a
+# fading one with return comes back once the player is far tiles away, a fleeing one runs distance tiles
+AMBIENT_BEHAVIOURS = {"fade": 0, "flee": 1}
+AMBIENT_NEAR = 3
+AMBIENT_FAR = 6
+AMBIENT_DISTANCE = 4
+AMBIENT_KEYS = ("behaviour", "near", "return", "far", "distance")
 # A room's type (ENTRALINK_TYPE_*), which its doors draw by the round's weights, and the marker it shows by default.
 # enemy_choice (step 7) is an enemy room with several battles to choose from, one NPC each
 ROOM_TYPES = {"enemy": 0, "challenge": 1, "rest": 2, "item": 3, "buff": 4, "shop": 5, "event": 6, "enemy_choice": 7}
@@ -122,7 +129,8 @@ DEFAULT_LEVEL = 70
 # The sprites an NPC shows without its own: an item NPC the item ball, rest and buff NPCs the Lady
 DEFAULT_SPRITES = {"item": "OBJ_CODE_110", "rest": "OBJ_CODE_LADY", "buff": "OBJ_CODE_LADY", "heal": "OBJ_CODE_LADY",
                    "revive": "OBJ_CODE_LADY", "gift": "OBJ_CODE_LADY", "shop": "OBJ_CODE_LADY",
-                   "item_choice": "OBJ_CODE_110", "buff_choice": "OBJ_CODE_110", "swap": "OBJ_CODE_LADY"}
+                   "item_choice": "OBJ_CODE_110", "buff_choice": "OBJ_CODE_110", "swap": "OBJ_CODE_LADY",
+                   "ambient": "OBJ_CODE_LADY"}
 # The save's bits (include/paperwhite2/entralink_progress.h)
 BATTLES_MAX = 1024
 CATCHES_MAX = 512
@@ -241,6 +249,14 @@ def check_room(directory: Path, where: str, room: dict):
                 error(where, f"{at}: {enemy['species']} has no walking sprite, so the NPC needs a sprite of its own")
         elif npc["type"] == "item" and "item" not in npc:
             error(where, f"{at} is an item NPC without an item")
+        if npc["type"] == "ambient":
+            if npc.get("return") and npc.get("behaviour", "fade") != "fade":
+                error(where, f"{at} is a fleeing ambient with return: only a fading one comes back")
+            if npc.get("return") and npc.get("far", AMBIENT_FAR) <= npc.get("near", AMBIENT_NEAR):
+                error(where, f"{at} comes back at {npc.get('far', AMBIENT_FAR)} tiles, not farther than it fades at "
+                      f"({npc.get('near', AMBIENT_NEAR)})")
+        elif any(key in npc for key in AMBIENT_KEYS):
+            error(where, f"{at} has an ambient's reaction, but is a {npc['type']} NPC")
         if "marker" in npc and npc["marker"] not in npc_marker_names(directory):
             error(where, f"{at}'s marker {npc['marker']!r} has no npc_markers/{npc['marker']}.png")
 
@@ -423,6 +439,13 @@ def text_line(text: str) -> str:
     return text.replace("\r", "").replace("\n", "\\n")
 
 
+def spoken(npc: dict, key: str) -> bool:
+    """Whether an NPC's message ("before" or "after") goes into the text bank: one that is set, a battle NPC's after
+    and anyone's before but an ambient's, which has nothing to say."""
+    return bool(npc.get("dialogue", {}).get(key)) and npc["type"] != "ambient" and (key == "before" or
+                                                                                  npc["type"] == "battle")
+
+
 def dialogue_lines(directory: Path = SOURCE) -> list[str]:
     """The script text bank entralink_dialogue: every NPC's before and after lines, room by room, then template by
     template, in tables()'s order. Its first line is empty, so the bank is never empty and no NPC's message is 0."""
@@ -431,7 +454,7 @@ def dialogue_lines(directory: Path = SOURCE) -> list[str]:
         for npc in room["npcs"]:
             dialogue = npc.get("dialogue", {})
             for key in ("before", "after"):
-                if dialogue.get(key) and (key == "before" or npc["type"] == "battle"):
+                if spoken(npc, key):
                     lines.append(text_line(dialogue[key]))
     return lines
 
@@ -606,7 +629,7 @@ def room_row(name: str, room: dict, template: bool, rooms: dict[str, dict], tabl
         dialogue = npc.get("dialogue", {})
         messages = []
         for key in ("before", "after"):
-            if dialogue.get(key) and (key == "before" or npc["type"] == "battle"):
+            if spoken(npc, key):
                 messages.append(message[0])
                 message[0] += 1
             else:
@@ -631,6 +654,10 @@ def room_row(name: str, room: dict, template: bool, rooms: dict[str, dict], tabl
             "beforeStyle": STYLES[dialogue.get("before_style", "talk")],
             "afterStyle": STYLES[dialogue.get("after_style", "talk")],
             "marker": npc_markers[npc["marker"]] if "marker" in npc else NPC_MARKER_NONE,
+            "behaviour": AMBIENT_BEHAVIOURS[npc.get("behaviour", "fade")],
+            "near": npc.get("near", AMBIENT_NEAR),
+            "far": npc.get("far", AMBIENT_FAR) if npc.get("return") else 0,
+            "distance": npc.get("distance", AMBIENT_DISTANCE),
         })
     rounds = 0
     for number in room.get("rounds", []):
@@ -809,7 +836,8 @@ def header(directory: Path) -> str:
     npcs = [f"/* {n['name']} */ {{ {n['item']}, {n['sprite']}, {n['firstRequirement']}, "
             f"0x{n['before']:x}, 0x{n['after']:x}, {n['type']}, {n['battle']}, {n['enemy']}, {n['count']}, "
             f"{n['chance']}, {n['x']}, {n['z']}, {n['direction']}, {n['requirementCount']}, {n['beforeStyle']}, "
-            f"{n['afterStyle']}, 0x{n['marker']:02x} }}" for n in data["npcs"]]
+            f"{n['afterStyle']}, 0x{n['marker']:02x}, {n['behaviour']}, {n['near']}, {n['far']}, {n['distance']} }}"
+            for n in data["npcs"]]
     rounds = [f"{{ {rooms_}, {boss}, 0x{weather:02x}, {{ {', '.join(map(str, weights))} }} }}"
               for rooms_, boss, weather, weights in data["rounds"]]
     items = [f"/* {i['name']} */ {{ {i['item']}, {i['price']}, {i['weight']}, 0x{i['rounds']:x}, 0x{i['pools']:x}, "

@@ -824,6 +824,13 @@ const routes: Record<string, Handler> = {
     if (!MOVE.test(move)) return error(res, 400, "Name a move");
     return entryTool(res, MOVES_TOOL, ["uses", move]);
   },
+  "GET /api/moves/learnable": (_req, res, url) => {
+    const species = url.searchParams.get("species") ?? "";
+    const form = Number(url.searchParams.get("form") ?? 0);
+    if (!/^SPECIES_[A-Z0-9_]+$/.test(species) || !Number.isInteger(form) || form < 0 || form > 255)
+      return error(res, 400, "Name a species and a form number");
+    return entryTool(res, MOVES_TOOL, ["learnable", species, "--form", String(form)]);
+  },
   "POST /api/moves/add": async (req, res) => {
     const b = (await readJson(req)) as NewMoveBody;
     if (typeof b.name !== "string" || !b.name || (b.from !== "blank" && !MOVE.test(b.from ?? ""))

@@ -20,6 +20,7 @@ import { validate, type Constants, type Schema } from "../../../shared/schema.ts
 import { SearchSelect, type Option } from "../../shell/SearchSelect.tsx";
 import { constantLabel, constantOptions } from "../schema-form/form.tsx";
 import { SpeciesIcon } from "../pokemon/SpeciesIcon.tsx";
+import { useMoveOptions } from "../moves/learnable.ts";
 import { MapView } from "../overworld/MapView.tsx";
 import { ModelPicker, SpriteImage } from "../overworld/fields.tsx";
 import type { Entity } from "../overworld/entities.ts";
@@ -43,6 +44,7 @@ import {
   ROOM_TYPES, ROOM_TYPE_NOTES, TEMPLATES, TEMPLATES_DIR, TEMPLATE_NOTES, TEMPLATE_TYPES, WEIGHT_ORDER, checkTemplates, defaultMarker,
   isTemplateFile, newTemplateData, percent, readFlowerTiles, setFlowerTiles, templatePath, typeChances, type RoomType,
   type Round, type Exit, type MapInfo, type NpcType, type Problem, type ProgressCounters, type Role, type Room,
+  AMBIENT_BEHAVIOURS, AMBIENT_DEFAULTS, type AmbientBehaviour,
 } from "./model.ts";
 
 // The run's dialogue: its script puts the player's name in word 0 before every message (global_10490.s)
@@ -67,12 +69,18 @@ const FORMAT_NOTES: Record<string, string> = {
 const TYPE_NOTES = NPC_TYPE_NOTES;
 const TYPE_LABELS: Record<NpcType, string> = {
   battle: "Battle", item: "Item", heal: "Heal", revive: "Revive", gift: "Gift", shop: "Shop", swap: "Swap", item_choice: "Item choice",
-  buff_choice: "Buff choice", rest: "Rest (old)", buff: "Buff (old)",
+  buff_choice: "Buff choice", ambient: "Ambient", rest: "Rest (old)", buff: "Buff (old)",
+};
+/** What an ambient's reactions do, for its Behaviour switch. */
+const AMBIENT_NOTES: Record<AmbientBehaviour, string> = {
+  fade: "Fades out where it stands (about a quarter of a second); with Return it fades back in once the player is Far tiles away",
+  flee: "Turns and runs Distance tiles away from the player (fewer where its way is blocked), fading as it goes, then is gone for the room",
 };
 /** The NPC types in the Add and Type pickers, grouped. */
 const TYPE_GROUPS: [string, NpcType[]][] = [
   ["Battles and items", ["battle", "item"]],
   ["Rests and choices", ["heal", "revive", "gift", "shop", "swap", "item_choice", "buff_choice"]],
+  ["Scenery", ["ambient"]],
   ["Old placeholders", ["rest", "buff"]],
 ];
 /** What a message box asks for, by the NPC's type. */
@@ -796,8 +804,7 @@ function RunSection({ rooms, templates }: { rooms: { id: string; room: Room }[];
         <div className="en-run">
           <span className="muted small">Raid HP ×</span>
           <span className="en-run-controls">
-            <input type="number" className="en-number" style={{ width: 64 }} min={0.1} max={20} step={0.1} value={run.raidHpFactor}
-                   onChange={(e) => setKey("raid_hp_factor", Math.min(20, Math.max(0.1, Math.round((Number(e.target.value) || 0) * 10) / 10)))} />
+            <NumberBox value={run.raidHpFactor} min={0.1} max={20} step={0.1} onChange={(n) => setKey("raid_hp_factor", n)} />
           </span>
         </div>
         <span className="muted small">A raid in a room (three attackers against one foe) has its HP multiplied by this on top of the curve's, the other stats as the room's (3.0 if left out; a raid as a boss or the final room takes the Boss values)</span>
@@ -1097,6 +1104,7 @@ function EnemyCard({ at, index, over, constants, get, set, setField, remove, bat
   const f = (key: string, v: JsonValue | undefined) => setField(at, "enemy", key, v);
   const species = String(e.get("species") ?? "");
   const moves = asList(e.get("moves")).map(String);
+  const moveOptions = useMoveOptions(species, Number(e.get("form") ?? 0), constants);
   const setMove = (i: number, v: string) => {
     const next = [0, 1, 2, 3].map((j) => (j === i ? v : moves[j] ?? "MOVE_NONE"));
     while (next.length && (next[next.length - 1] === "MOVE_NONE" || !next[next.length - 1])) next.pop();
@@ -1135,7 +1143,7 @@ function EnemyCard({ at, index, over, constants, get, set, setField, remove, bat
         </Row>
         <Row label="Moves" hint={moves.length ? undefined : "Left empty: the moves of its level"}>
           <span className="en-moves">
-            {[0, 1, 2, 3].map((i) => <SearchSelect key={i} value={moves[i] ?? ""} placeholder="—" options={constantOptions(constants, "MOVE_")} onChange={(v) => setMove(i, v)} />)}
+            {[0, 1, 2, 3].map((i) => <SearchSelect key={i} value={moves[i] ?? ""} placeholder="—" options={moveOptions} onChange={(v) => setMove(i, v)} />)}
           </span>
         </Row>
         <Row label="Ability">
@@ -1183,6 +1191,12 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
   const npc = selected !== null ? room.npcs[selected] : undefined;
   const at: JsonPath = ["npcs", selected ?? 0];
   const f = (key: string, v: JsonValue | undefined) => setField(at, "npc", key, v);
+  /** Several of its fields at once, in one edit. */
+  const fields = (changes: Record<string, JsonValue | undefined>) => {
+    let next = asMap(get(at));
+    for (const [k, v] of Object.entries(changes)) next = put(next, k, v, npcOrder);
+    set(at, next);
+  };
   const markerSet = useMemo(() => new Set(npcMarkers), [npcMarkers]);
   const changeType = (type: NpcType) => {
     if (!npc || selected === null) return;
@@ -1228,7 +1242,8 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
           const s = npcSprite(n, room, constants);
           const what = n.type === "battle" ? `${n.battle ?? "?"}${shownEnemy(n, room) ? `, ${label(shownEnemy(n, room)!.species, "SPECIES_")}` : ""}`
             : n.type === "item" ? `${label(n.item, "ITEM_")}${(n.count ?? 1) > 1 ? ` ×${n.count}` : ""}`
-            : n.type === "item_choice" ? "drawn from the item room pool" : n.type === "gift" ? "3 from the gift pool" : "";
+            : n.type === "item_choice" ? "drawn from the item room pool" : n.type === "gift" ? "3 from the gift pool"
+            : n.type === "ambient" ? ((n.behaviour ?? AMBIENT_DEFAULTS.behaviour) === "flee" ? "flees" : n.return ? "fades, returns" : "fades") : "";
           return (
             <button key={i} className={`en-npc ${i === selected ? "selected" : ""}`} onClick={() => select(i === selected ? null : i)}>
               {s ? <SpriteImage model={s} direction={n.facing} size={24} /> : <span className="en-nosprite">?</span>}
@@ -1247,7 +1262,8 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
             <button title="Remove the NPC" onClick={() => { set(["npcs"], asList(get(["npcs"])).filter((_, j) => j !== selected)); select(null); }}>Remove</button>
           </div>
           <div className="ow-condition">
-            <Row label="Type" hint={CHOICE_NOTE.has(npc.type) ? "Using it is the room's choice: the room's other heal, revive, gift, shop and item-choice NPCs go and the room is done (battle NPCs stay, optional)" : undefined}>
+            <Row label="Type" hint={CHOICE_NOTE.has(npc.type) ? "Using it is the room's choice: the room's other heal, revive, gift, shop and item-choice NPCs go and the room is done (battle NPCs stay, optional)"
+              : npc.type === "ambient" ? "No talk action, and it never keeps the room from being done. It stands on its tile like any NPC (the checks for exits, the arrival tile and the doors' markers apply) and blocks the way while shown. Use several as decoys round the room's real battle NPC" : undefined}>
               <select value={npc.type} onChange={(e) => changeType(e.target.value as NpcType)} title={TYPE_NOTES[npc.type]}>
                 <TypeOptions />
               </select>
@@ -1274,6 +1290,34 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
                 <NumberBox value={npc.count ?? DEFAULT_COUNT} min={1} max={99} width={56} onChange={(n) => f("count", n === 1 ? undefined : n)} />
               </Row>
             )}
+            {npc.type === "ambient" && <>
+              <Row label="Behaviour" hint={AMBIENT_NOTES[npc.behaviour ?? AMBIENT_DEFAULTS.behaviour]}>
+                <Switch<AmbientBehaviour> value={npc.behaviour ?? AMBIENT_DEFAULTS.behaviour} options={AMBIENT_BEHAVIOURS} titles={AMBIENT_NOTES}
+                                          onChange={(v) => fields(v === "flee"
+                                            // (a fleeing one doesn't come back, and a fading one doesn't run)
+                                            ? { behaviour: v, return: undefined, far: undefined }
+                                            : { behaviour: undefined, distance: undefined })} />
+              </Row>
+              <Row label="Near" hint="It reacts once the player is this close, in tiles either way (a square round it), while no event runs">
+                <NumberBox value={npc.near ?? AMBIENT_DEFAULTS.near} min={1} max={15} onChange={(n) => f("near", n === AMBIENT_DEFAULTS.near ? undefined : n)} />
+                <span className="muted">tiles</span>
+              </Row>
+              {(npc.behaviour ?? AMBIENT_DEFAULTS.behaviour) === "fade" ? (
+                <Row label="Return" hint={npc.return ? "Faded, its actor goes (it doesn't block the way) and comes back, fading in, once the player is Far tiles from its tile" : "Gone for the rest of the room once faded"}>
+                  <label className="ow-check small"><input type="checkbox" checked={!!npc.return} onChange={(e) => fields(e.target.checked ? { return: true } : { return: undefined, far: undefined })} /> Fades back in</label>
+                  {npc.return && <>
+                    <span className="muted">Far</span>
+                    <NumberBox value={npc.far ?? AMBIENT_DEFAULTS.far} min={2} max={31} onChange={(n) => f("far", n === AMBIENT_DEFAULTS.far ? undefined : n)} />
+                    <span className="muted">tiles</span>
+                  </>}
+                </Row>
+              ) : (
+                <Row label="Distance" hint="The tiles it runs away from the player (fewer where trees or the clearing's edge stop it), a tile about every 8 frames, fading over the last quarter of a second">
+                  <NumberBox value={npc.distance ?? AMBIENT_DEFAULTS.distance} min={1} max={15} onChange={(n) => f("distance", n === AMBIENT_DEFAULTS.distance ? undefined : n)} />
+                  <span className="muted">tiles</span>
+                </Row>
+              )}
+            </>}
             <Row label="Look" hint={npc.sprite ? "Its own sprite" : defaultSprite === ITEM_BALL_SPRITE ? (npc.type === "buff_choice" ? "The item ball (a buff ball's own look comes later; its marker tells it apart)" : "The item ball") : defaultSprite === LADY_SPRITE ? "The Lady, the default for people" : defaultSprite ? "Its enemy's walking Pokémon" : "Its enemy has no overworld sprite: Browse for one"}>
               {sprite ? <SpriteImage model={sprite} direction={npc.facing} size={32} /> : <span className="en-nosprite">?</span>}
               <span className="small">{sprite ? label(sprite, "OBJ_CODE_") : "none"}</span>
@@ -1313,6 +1357,7 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
               <span className="muted">{FACING_NAMES[npc.facing]}</span>
             </Row>
           </div>
+          {npc.type !== "ambient" && <>
           <h6 className="en-sub">Dialogue <span className="muted">typed here; the build makes its text</span></h6>
           <div className="ow-condition en-dialogue">
             <Row label={npc.type === "battle" ? "Before" : "On talking"}>
@@ -1328,6 +1373,7 @@ function NpcsSection({ room, constants, get, set, setField, selected, select, ad
               </Row>
             )}
           </div>
+          </>}
         </div>
       )}
       {!npc && room.npcs.length > 0 && <p className="muted small">Choose an NPC here or on the map to edit it.</p>}

@@ -312,6 +312,28 @@ class EntriesTest(unittest.TestCase):
         self.assertEqual((tms["TM01"], tms["TM30"], tms["HM01"], tms["HM06"], tms["TM95"]),
                          ("MOVE_HONE_CLAWS", "MOVE_SHADOW_BALL", "MOVE_CUT", "MOVE_DIVE", "MOVE_SNARL"))
 
+    def test_learnable(self):
+        """moves.py learnable: every move of a species' learnset once, with each way it learns it, a TM as its
+        move; a form with its own record reads that record; an unknown species is refused."""
+        from tools.paperwhite2 import battle_entries
+        tms = dict(battle_entries.tm_moves())
+        for species, form, path in (("SPECIES_DARKRAI", 0, "darkrai/data.json"), ("SPECIES_ROTOM", 1, "rotom/form_1.json"),
+                                    ("SPECIES_DARKRAI", 3, "darkrai/data.json")):
+            with self.subTest(species=species, form=form):
+                result = moves.learnable(species, form)
+                self.assertEqual(result["path"], f"res/pokemon/{path}")
+                learnset = json.loads((ROOT / "res/pokemon" / path).read_text())["learnset"]
+                how = {m["move"]: m["how"] for m in result["moves"]}
+                self.assertEqual(len(how), len(result["moves"]))
+                for level, move in learnset["by_level"]:
+                    self.assertIn(f"Lv. {level}" if level else "Evolving", how[move])
+                for tm in learnset["by_tm"]:
+                    self.assertIn(tm, how[tms[tm]])
+                for move in learnset["by_tutor"]:
+                    self.assertIn("Tutor", how[move])
+        with self.assertRaisesRegex(battle_entries.EntryError, "no res/pokemon"):
+            moves.learnable("SPECIES_NOT_A_SPECIES")
+
 
 class EasyChatTest(unittest.TestCase):
     def test_counts(self):

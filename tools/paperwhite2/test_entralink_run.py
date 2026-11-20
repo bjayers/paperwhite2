@@ -427,3 +427,31 @@ def test_enemy_scaling_and_scale(tmp_path):
     edit(room(directory, "dialga"), lambda data: data["battles"][0]["enemies"][0].update(scale=5))
     with pytest.raises(datajson.DataError, match="scale"):
         entralink_run.tables(directory)
+
+
+def test_ambients(tmp_path):
+    """Room ambients: their reactions packed with the defaults (near 3, no return, distance 4), a returning one's far,
+    no dialogue packed, the Lady by default, and the rules: only a fading one returns, farther than it fades, and the
+    ambient keys only on an ambient."""
+    directory = copy_data(tmp_path)
+    name = sorted(path.stem for path in (directory / "rooms").glob("*.json"))[0]
+    base = {"type": "ambient", "z": 3, "facing": "DIR_DOWN", "sprite": "OBJ_CODE_POKEMON_DARKRAI"}
+    lines = len(entralink_run.dialogue_lines(directory))
+    edit(room(directory, name), lambda data: data["npcs"].extend([
+        {**base, "x": 2, "dialogue": {"before": "Unused"}}, {**base, "x": 4, "return": True, "far": 8, "near": 2},
+        {**base, "x": 6, "behaviour": "flee", "distance": 5}, {"type": "ambient", "x": 8, "z": 3, "facing": "DIR_UP"}]))
+    data = entralink_run.tables(directory)
+    row = data["rooms"][data["ids"].index(name)]
+    npcs = data["npcs"][row["firstNpc"] + row["npcCount"] - 4:row["firstNpc"] + row["npcCount"]]
+    assert [(n["type"], n["behaviour"], n["near"], n["far"], n["distance"]) for n in npcs] == [
+        (11, 0, 3, 0, 4), (11, 0, 2, 8, 4), (11, 1, 3, 0, 5), (11, 0, 3, 0, 4)]
+    assert npcs[0]["before"] == entralink_run.NONE16 and len(entralink_run.dialogue_lines(directory)) == lines
+    assert npcs[3]["sprite"] == datajson.constants()["OBJ_CODE_LADY"]
+    assert "#define ENTRALINK_RUN_NPCS" in entralink_run.header(directory)
+    for change, message in ((lambda n: n.update({"behaviour": "flee", "return": True}), "only a fading one"),
+                            (lambda n: n.update({"return": True, "far": 2}), "not farther"),
+                            (lambda n: n.update(type="rest"), "ambient's reaction")):
+        edit(room(directory, name), lambda data: change(data["npcs"][-3]))
+        with pytest.raises(datajson.DataError, match=message):
+            entralink_run.tables(directory)
+        edit(room(directory, name), lambda data: data["npcs"].__setitem__(-3, {**base, "x": 4, "near": 2}))

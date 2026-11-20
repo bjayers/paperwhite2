@@ -7,6 +7,7 @@ from generated/moves.txt and res/moves/, the header the hack's build generates f
     moves.py header build/.../paperwhite2/moves_config.h
     moves.py json                                  # JSON: the added moves, the next ID, the limits, the handlers
     moves.py uses MOVE                             # JSON: the species that learn it, the trainers and files naming it
+    moves.py learnable SPECIES [--form N]          # JSON: the moves a species (or its form's own record) can learn
     moves.py add NAME (--from MOVE | --blank) [--animation MOVE] [--handlers-like MOVE | --handlers-like none]
                       [--effect BATTLE_EFFECT_X] [--description TEXT] [--check]
     moves.py remove MOVE [--check]                 # only the last added move
@@ -38,6 +39,7 @@ editor's pickers (learnsets, trainers) leave it out. unretire undoes it.
 """
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -138,6 +140,37 @@ def json_info() -> dict:
             "nameLength": move_list.NAME_LENGTH, "moves": out, "handlers": move_list.handler_rows(),
             "subIdCompared": list(move_list.SUB_ID_COMPARED), "battleCode": rel(move_list.BATTLE_CODE),
             "handlersCode": rel(move_list.HANDLERS_CODE), "retired": [m["move"] for m in out if m["retired"]]}
+
+
+def learnable(species: str, form: int = 0) -> dict:
+    """The moves a species can learn, each with how: its levels ("Lv. 46", 0 for "Evolving"), its TMs and HMs, "Tutor"
+    and "Egg", in the learnset's order (level-up, TMs, tutor, egg). A form with a record of its own (form_N.json)
+    reads that record's learnset; egg moves are the species' only, so a form takes its species'. The Entree page's
+    move pickers list these first."""
+    from tools.paperwhite2.battle_entries import EntryError, POKEMON, read, rel, tm_moves
+    if not re.fullmatch(r"SPECIES_[A-Z0-9_]+", species):
+        raise EntryError(f"{species} isn't a species constant")
+    folder = POKEMON / species.removeprefix("SPECIES_").lower()
+    base = folder / "data.json"
+    if not base.is_file():
+        raise EntryError(f"{species} has no {rel(base)}")
+    own = folder / f"form_{form}.json"
+    path = own if form and own.is_file() else base
+    learnset = read(path).get("learnset", {})
+    egg = read(base).get("learnset", {}).get("egg_moves", [])
+    tms = dict(tm_moves())
+    how: dict[str, list[str]] = {}
+    for level, move in learnset.get("by_level", []):
+        how.setdefault(move, []).append(f"Lv. {level}" if level else "Evolving")
+    for tm in learnset.get("by_tm", []):
+        if tm in tms:
+            how.setdefault(tms[tm], []).append(tm)
+    for move in learnset.get("by_tutor", []):
+        how.setdefault(move, []).append("Tutor")
+    for move in egg:
+        how.setdefault(move, []).append("Egg")
+    return {"species": species, "form": form, "path": rel(path),
+            "moves": [{"move": move, "how": ways} for move, ways in how.items() if move != "MOVE_NONE"]}
 
 
 def uses(name: str) -> dict:
@@ -320,6 +353,9 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("json")
     commands.add_parser("uses").add_argument("move")
+    p = commands.add_parser("learnable")
+    p.add_argument("species")
+    p.add_argument("--form", type=int, default=0)
     p = commands.add_parser("add")
     p.add_argument("name")
     source = p.add_mutually_exclusive_group(required=True)
@@ -340,6 +376,8 @@ def main():
             result = json_info()
         elif args.command == "uses":
             result = uses(args.move)
+        elif args.command == "learnable":
+            result = learnable(args.species, args.form)
         elif args.command == "add":
             result = add(args.name, args.template, args.animation, args.handlers_like, args.effect,
                          args.description, args.check)

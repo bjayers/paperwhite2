@@ -119,7 +119,7 @@ An NPC:
 
 | Field | What |
 | --- | --- |
-| `type` | `battle` (talking starts the battle it names), `item` (gives an item into the run's bag, then goes), `rest` or `buff` (for now their `before` dialogue, or "This nightmare isn't ready for you yet..."; their menus come later) |
+| `type` | `battle` (talking starts the battle it names), `item` (gives an item into the run's bag, then goes), `rest` or `buff` (for now their `before` dialogue, or "This nightmare isn't ready for you yet..."; their menus come later), the step 6 and 7 types below, and `ambient` (scenery that fades or runs away as the player comes near; below) |
 | `battle` | A battle NPC's battle, by `id`. Several NPCs may start one battle (Kyogre and Groudon side by side for one double battle); several battles, one NPC each, let the player choose: **winning one opens the room and every battle NPC goes**, the other battles too |
 | `enemy` | A battle NPC's enemy (0 the first, the default) whose overworld sprite it shows and whose cry it plays |
 | `item`, `count` | An item NPC's item (`ITEM_*`) and how many (1); if the run's bag has no room, it says so and stays |
@@ -129,6 +129,7 @@ An NPC:
 | `dialogue` | Optional `before` (on talking; a battle NPC's before its battle) and `after` (a battle NPC's, after its battle is won or its enemy caught, before the room opens): a message in the text files' codes (below); `before_style` and `after_style`, each message's window (below; `talk` if left out) |
 | `x`, `z`, `facing` | Its tile (0-31) and `DIR_*` |
 | `marker` | Optional (step 5): an icon floating over its head, `npc_markers/<marker>.png` by name |
+| `behaviour`, `near`, `return`, `far`, `distance` | An ambient's only (2026-11-20, below): `fade` (the default) or `flee`; the tiles from the player at which it reacts (3); a fading one's `return` (false) and the tiles at which it comes back (6, more than `near`); a fleeing one's run (4 tiles) |
 
 **Dialogue** is written as a line of `res/text/` with real line breaks (or `\n`): `{be01}` waits for a key and
 `{be00}` starts a new page after one, as the text files use them, and **`{0100:0}` is the player's name** (the script
@@ -987,6 +988,60 @@ py-desmume (scripts in the session's scratchpad `applin/`):
   savestate hit the undefined instruction within the first turn, and a write watch on 0-0x400 caught
   `PML_CryptoRun` writing there from `TrAI_Think`.
 - Cost: a few instructions of overlay 12; nothing at run time.
+
+## Room ambients and the Entree page's inputs (2026-11-20)
+
+### Room ambients
+
+An NPC of type **`ambient`** is scenery: an actor with any sprite (its `sprite`, the Lady without one) and nothing to
+say, which reacts when the player comes within `near` tiles (3; either way, a square round it, as the overworld's
+ambients measure it) while no event runs. The user's case: many Darkrai in the final room, one of them the real battle
+NPC, the others decoys that fade as the player comes near.
+
+- **`fade`** (the default): its sprite fades out over 15 frames (the alpha of its actor's billboard, 31 down to 1, as
+  the footprints fade). Without `return` it is gone for the rest of the room (its `npcsGone` bit). With `return` its
+  actor goes once faded (so it doesn't block the way) and comes back at its tile, fading in, once the player is `far`
+  tiles away (6); coming near again while it fades in fades it out from where it got to.
+- **`flee`**: it turns and runs `distance` tiles (4) away from the player (`ACMD_WALK_4F` a tile at a time, about 8
+  frames a tile): away along the farther way, else away along the other, else that other's opposite, the first that is
+  open (`ActorRouteCollCheckOneTileInDir`, so trees, the clearing's edge and other actors stop it); it fades over the
+  last 15 frames of its run, then is gone for the room.
+- **Spawning** is any NPC's (`requires`, `chance`, rolled as the room is entered), and so are the editor's placement
+  checks (exits, the arrival tile, two on a tile, blocked tiles, the doors' marker spots): while shown it blocks the
+  way like any NPC. An ambient **never keeps a room from being done** (`EntralinkRun_EnterRoom` leaves it out of
+  `cleared`, `EntralinkRun_CheckRoomDone` skips it), so a room of ambients only is free.
+- **Talking** to one (it can be reached in the frames it fades) does nothing: Script_9 returns at once for
+  `ENTRALINK_RUN_NPC_AMBIENT`, before `ActorSetEyeToEye`, so it doesn't turn to the player. Its dialogue isn't packed
+  (the packer's `spoken`), and the editor hides the Dialogue section for it and warns of one in the file.
+- **Code:** `src/paperwhite2/ov012/paperwhite2_entralink_ambients.c`, `PaperWhite2_EntralinkAmbientsUpdate`, called
+  from the field's update beside the markers (`fieldmap.c`); `paperwhite2_entralink_run.c` gives it
+  `EntralinkRun_GetAmbient`, `EntralinkRun_SpawnAmbient` (spawned hidden, shown once its billboard has the fade's
+  first alpha) and `EntralinkRun_RemoveAmbient`. After a battle the room's NPCs are spawned again, and a faded
+  returning one stands at home. The overworld's ambients (`paperwhite2_ambients.c`) are billboards without actors made
+  from a zone's records, so they weren't reused; only their measure of "near" is.
+- **Packing:** `EntralinkNpc` gains `behaviour`, `near`, `far` (0: doesn't return) and `distance` (4 bytes per NPC,
+  26 bytes each); the packer refuses a fleeing ambient with `return`, a `far` not past `near`, and the ambient keys on
+  another type. The schema says the defaults.
+- **Not yet:** the actor's shadow stays solid while its sprite fades, and an NPC marker over an ambient doesn't fade
+  (it goes with the actor).
+- **Memory:** overlay 12 grows by about 1.1 KB of code (966 bytes for the new file) and 49 bytes of BSS; the NPC table
+  by 4 bytes per NPC (25 NPCs now: 100 bytes). No heap or VRAM.
+
+### The Entree page's number boxes and move pickers
+
+- **Number boxes** (`parts.tsx`'s `NumberBox`, every number of the page: an enemy's level, form and Scale, the Run
+  section's tables, Raid HP, weights, chances, prices, Dust, the Buffs tab) keep what is typed while focused and
+  commit on blur, Enter or Ctrl+S (Escape goes back): a value out of range is shown red with its range in the tooltip
+  and **clamped when it commits**, an empty box goes back to its value. Typing 300 over 100 in Scale no longer snaps.
+  Other editors with a box that clamps at each keystroke (not changed): the Trainer Editor's party numbers, the
+  Pokémon Editor's stats and learnset levels, the Shop Editor's prices, Join Avenue's trainer id, the Pokémon Center
+  Editor's numbers, the Encounter Editor's percents and party level.
+- **Move pickers:** an enemy's (and the Trainer Editor's party moves, the same SearchSelect) list first the moves its
+  species can learn, under **Learns (N)**, each with how ("Lv. 46", "Evolving", "TM26", "HM01", "Tutor", "Egg"), then
+  **All moves**; the search runs across both. A form with its own record (`form_N.json`) reads that record's learnset,
+  with its species' egg moves. They come from `moves.py learnable SPECIES [--form N]` (`GET /api/moves/learnable`),
+  read from disk once a session per species and form. SearchSelect's options can carry a `group`: a heading is shown
+  where it changes.
 
 ## The re-entry question
 

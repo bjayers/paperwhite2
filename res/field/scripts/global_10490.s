@@ -354,8 +354,11 @@ Movement_RunExitBack3:
 // Step 7: the Dream Dust a win gives, and the shop's screen
 Script_9:
     ActorsPauseAll
-    ActorSetEyeToEye
     EntralinkRun ENTRALINK_RUN_ACTION_TALK, 0, 0, 0x8000
+    // Paper White 2: an ambient has nothing to say, and doesn't turn to the player
+    WorkCmpConst 0x8000, ENTRALINK_RUN_NPC_AMBIENT
+    VMJumpIf CMP_EQ, L_RunNpcEnd
+    ActorSetEyeToEye
     WorkCmpConst 0x8000, ENTRALINK_RUN_NPC_BATTLE
     VMJumpIf CMP_EQ, L_RunBattleNpc
     WorkCmpConst 0x8000, ENTRALINK_RUN_NPC_ITEM
