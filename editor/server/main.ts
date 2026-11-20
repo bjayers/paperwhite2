@@ -1058,7 +1058,7 @@ const SPRITE_SHEETS: SpriteSheet[] = [
 
 /** Tools that list sheets of their own data (`TOOL list` prints a JSON list of SpriteSheet), so that art that comes and
  * goes with res/ (the Entralink run's markers) needs no entry here. */
-const SPRITE_SHEET_LISTERS = ["tools/paperwhite2/entralink_marker_art.py"];
+const SPRITE_SHEET_LISTERS = ["tools/paperwhite2/entralink_marker_art.py", "tools/paperwhite2/damage_digits.py"];
 
 async function spriteSheets(): Promise<SpriteSheet[]> {
   const listed: SpriteSheet[] = [];

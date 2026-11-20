@@ -461,6 +461,72 @@ def max_hp_limit(data: dict) -> int:
     return min(limits) if limits else 999
 
 
+# The damage numbers (phase 6, settings' damage_numbers): what a setting left out is, and the battles they show in
+DAMAGE_NUMBER_BATTLES = ["off", "run", "all"]
+DAMAGE_NUMBER_SHINES = ["off", "critical", "always"]
+DEFAULT_DAMAGE_NUMBERS = {
+    "battles": "run",
+    "tiers": [{"from": 0, "light": "#f8f8f8", "dark": "#a8a8b8"},
+              {"from": 1000, "light": "#58b0f8", "dark": "#2058c0"},
+              {"from": 5000, "light": "#c878f8", "dark": "#7028b0"},
+              {"from": 10000, "light": "#f8d038", "dark": "#c07808"},
+              {"from": 40000, "light": "#f84838", "dark": "#a01010"}],
+    "overlap": 2,
+    "group_space": 3,
+    "start_scale": 300,
+    "start_alpha": 8,
+    "shrink_frames": 5,
+    "hold_frames": 30,
+    "fade_frames": 12,
+    "rise": 10,
+    "height": 48,
+    "shine": "critical",
+    "shine_frame_time": 2,
+    "shine_delay": 2,
+    "hp_numbers": True,
+}
+
+
+def damage_numbers(settings: dict) -> dict:
+    """settings' damage_numbers with the defaults of what it leaves out."""
+    return {**DEFAULT_DAMAGE_NUMBERS, **settings.get("damage_numbers", {})}
+
+
+def rgb555(text: str) -> int:
+    r, g, b = (int(text[i:i + 2], 16) >> 3 for i in (1, 3, 5))
+    return r | g << 5 | b << 10
+
+
+def damage_number_lines(settings: dict) -> list[str]:
+    numbers = damage_numbers(settings)
+    tiers = numbers["tiers"]
+    return [
+        "// The damage numbers (phase 6): the battles they show in (0 none, 1 the run's, 2 all but link battles), the",
+        "// tiers' thresholds and their two colours (RGB555, the digits' palette entries 14 and 15), the digits' overlap",
+        "// and the thousands' space in pixels, the pop-up's start (scale in percent, alpha of 31) and its frames, its",
+        "// rise while it fades and its height over the Pokémon's feet in pixels, the shine (0 none, 1 critical hits",
+        "// and capped ones, 2 every hit), its frames' length and its delay from one digit to the next, and whether",
+        "// a foe's gauge shows its HP in the run's battles",
+        f"#define ENTRALINK_DAMAGE_NUMBERS_BATTLES {DAMAGE_NUMBER_BATTLES.index(numbers['battles'])}",
+        f"#define ENTRALINK_DAMAGE_NUMBERS_TIER_COUNT {len(tiers)}",
+        "#define ENTRALINK_DAMAGE_NUMBERS_TIERS { " + ", ".join(
+            f"{{ {t['from']}, 0x{rgb555(t['light']):04x}, 0x{rgb555(t['dark']):04x} }}" for t in tiers) + " }",
+        f"#define ENTRALINK_DAMAGE_NUMBERS_OVERLAP {numbers['overlap']}",
+        f"#define ENTRALINK_DAMAGE_NUMBERS_GROUP_SPACE {numbers['group_space']}",
+        f"#define ENTRALINK_DAMAGE_NUMBERS_START_SCALE {numbers['start_scale']}",
+        f"#define ENTRALINK_DAMAGE_NUMBERS_START_ALPHA {numbers['start_alpha']}",
+        f"#define ENTRALINK_DAMAGE_NUMBERS_SHRINK_FRAMES {numbers['shrink_frames']}",
+        f"#define ENTRALINK_DAMAGE_NUMBERS_HOLD_FRAMES {numbers['hold_frames']}",
+        f"#define ENTRALINK_DAMAGE_NUMBERS_FADE_FRAMES {numbers['fade_frames']}",
+        f"#define ENTRALINK_DAMAGE_NUMBERS_RISE {numbers['rise']}",
+        f"#define ENTRALINK_DAMAGE_NUMBERS_HEIGHT {numbers['height']}",
+        f"#define ENTRALINK_DAMAGE_NUMBERS_SHINE {DAMAGE_NUMBER_SHINES.index(numbers['shine'])}",
+        f"#define ENTRALINK_DAMAGE_NUMBERS_SHINE_FRAME_TIME {numbers['shine_frame_time']}",
+        f"#define ENTRALINK_DAMAGE_NUMBERS_SHINE_DELAY {numbers['shine_delay']}",
+        f"#define ENTRALINK_DAMAGE_NUMBERS_HP_NUMBERS {int(numbers['hp_numbers'])}",
+    ]
+
+
 def effect_lines(data: dict, directory: Path = SOURCE) -> list[str]:
     enums = effect_enums(directory)
     lines = ["// The effects' parameters (phase 3, buffs.schema.json's enums in their order): stats, statuses (bits),",
@@ -591,6 +657,9 @@ def problems(data: dict, directory: Path = SOURCE) -> list[str]:
             error("balance.example", f"{pick['buff']!r} isn't a buff's ID")
         if entries[pick["buff"]]["tier"] == "gold" and pick["count"] > len(entries[pick["buff"]]["ranks"]):
             error("balance.example", f"{pick['buff']} has {len(entries[pick['buff']]['ranks'])} ranks")
+    thresholds = [tier["from"] for tier in damage_numbers(settings)["tiers"]]
+    if thresholds[0] != 0 or thresholds != sorted(set(thresholds)):
+        error("settings.damage_numbers.tiers", "the tiers' thresholds must start at 0 and rise")
     top = ceiling(data)
     if top["critical_hit"] > settings["damage_cap"]:
         warnings.append(f"balance: the strongest critical hit on the reference ({top['critical_hit']:,.0f}) passes "
@@ -651,6 +720,7 @@ def header(data: dict, kinds: list[str], directory: Path = SOURCE) -> str:
         "#define ENTRALINK_BUFF_BAR_COLORS { " + ", ".join(
             f"{{ 0x{light:04x}, 0x{dark:04x} }}" for light, dark in bar_colors(settings)) + " }",
         f"#define ENTRALINK_BUFF_MAX_HP_LIMIT {max_hp_limit(data)}",
+        *damage_number_lines(settings),
         "// The cards that choose the battles' weather when taken (handler forecast, phase 4)",
         f"#define ENTRALINK_BUFF_WEATHER_CHOICE_COUNT {len(weather_choice_cards(data))}",
         "#define ENTRALINK_BUFF_WEATHER_CHOICE { " + ", ".join(str(i) for i in weather_choice_cards(data)) + " }",

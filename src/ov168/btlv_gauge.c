@@ -39,6 +39,7 @@
 #include "system/str_tool.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/battle_type_icons.h"
+#include "paperwhite2/damage_numbers.h"
 #include "paperwhite2/health_bars.h"
 #endif
 
@@ -496,7 +497,13 @@ static void BtlvGauge_CreateActors(BtlvGauge *gauge, u32 type, int index) {
     gauge->entries[index].nameChars = ClActSys_LoadChars(gauge->arc, charsFile, FALSE, CLACT_VRAM_MAIN, gauge->heapId);
     gauge->entries[index].nameCellAnims = ClActSys_LoadCellAnims(gauge->arc, cellFile, animFile, gauge->heapId);
     gauge->entries[index].hpNumChars = ClActSys_LoadChars(gauge->arc, 0x1c8, FALSE, CLACT_VRAM_MAIN, gauge->heapId);
+#ifdef PAPERWHITE2
+    // Paper White 2: a foe's HP numbers are a line of 64 pixels, its HP and its bars left (paperwhite2/health_bars.h)
+    gauge->entries[index].hpNumCellAnims = ClActSys_LoadCellAnims(
+        gauge->arc, index & 1 ? DAMAGE_NUMBERS_HP_LINE_CELL : 0x1c9, 0x1ca, gauge->heapId);
+#else
     gauge->entries[index].hpNumCellAnims = ClActSys_LoadCellAnims(gauge->arc, 0x1c9, 0x1ca, gauge->heapId);
+#endif
     gauge->entries[index].hpBarChars = ClActSys_LoadChars(gauge->arc, 0x1bf, FALSE, CLACT_VRAM_MAIN, gauge->heapId);
     gauge->entries[index].hpBarCellAnims = ClActSys_LoadCellAnims(gauge->arc, 0x1c0, 0x1c1, gauge->heapId);
     gauge->entries[index].damageChars = ClActSys_LoadChars(gauge->arc, 0x1c2, FALSE, CLACT_VRAM_MAIN, gauge->heapId);
@@ -1271,8 +1278,8 @@ static void BtlvGauge_DrawHpNumbers(BtlvGauge *gauge, BtlvGaugeEntry *entry, s32
         return;
     }
 #ifdef PAPERWHITE2
-    // Paper White 2: a foe past 999 HP shows its health bars left instead (paperwhite2/health_bars.h)
-    if (PaperWhite2_HealthBarsDrawNumbers(gauge, entry)) {
+    // Paper White 2: a foe's HP line, its HP to 5 digits and its health bars left (paperwhite2/health_bars.h)
+    if (PaperWhite2_HealthBarsDrawNumbers(gauge, entry, hp)) {
         return;
     }
 #endif

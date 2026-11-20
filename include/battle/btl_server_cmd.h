@@ -114,6 +114,9 @@ typedef enum {
     // gains, which the client's gauge fills in gold (paperwhite2/prestige.h)
     SC_PRESTIGE_FROM,
     SC_PRESTIGE_GAIN,
+    // Paper White 2: a hit's damage number over its target, before the hit's SC_OP_SUBTRACT_HP: the target, its
+    // DAMAGE_NUMBER_* flags and the hit's full damage (paperwhite2/damage_numbers.h)
+    SC_DAMAGE_NUMBER,
 #endif
     // What BtlServerCmdQueue_Read returns when no command is left
     SC_NONE,

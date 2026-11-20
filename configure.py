@@ -373,13 +373,18 @@ HACK_ARCHIVE_MEMBERS = {"a/0/9/6": ("tools/paperwhite2/conditions.py", "res/pape
                         # sprite's visible middle is (tools/paperwhite2/pokedex_sprites.py), and Area's index of the
                         # wild encounters (tools/paperwhite2/encounters.py) and its icons
                         # (tools/paperwhite2/pokedex_area.py)
-                        "a/1/5/7": ("tools/paperwhite2/pokedex_evo.py", "res/paperwhite2/pokedex_art")}
+                        "a/1/5/7": ("tools/paperwhite2/pokedex_evo.py", "res/paperwhite2/pokedex_art"),
+                        # The battle view's: the damage numbers' digits and a foe's HP line's cell
+                        # (tools/paperwhite2/damage_digits.py, paperwhite2_damage_numbers.c)
+                        "a/0/1/1": ("tools/paperwhite2/damage_digits.py", "res/paperwhite2/battle")}
 HACK_MEMBER_EXTRA_SOURCES = {"a/1/2/7": ["res/paperwhite2/conditions", "res/pokemon/*/data.json"],
                              "a/1/5/7": ["res/pokemon/*/data.json", "res/pokemon/**/front*", "res/pokemon/**/back*",
                                          "res/paperwhite2/encounters", "res/paperwhite2/conditions",
                                          "res/paperwhite2/level_scaling.json", "res/town_map", "res/field/zones/*.json",
                                          "include/system/zone_weather.h", "include/paperwhite2/weather_groups.h"],
-                             "a/1/2/6": ["res/paperwhite2/conditions", "res/field/events"]}
+                             "a/1/2/6": ["res/paperwhite2/conditions", "res/field/events"],
+                             # The digits' member's number (DAMAGE_DIGITS_MEMBER)
+                             "a/0/1/1": ["include/paperwhite2/damage_numbers.h"]}
 # Paper White 2: a file the hack's build makes from the user's own ROMs for an archive's members, with the option that
 # hands it to the members' tool: the Pokédex Info page's Flavour, the other games' Pokédex entries, which
 # tools/paperwhite2/dex_flavour.py takes from the ROMs in orig/ that are there (DEX_FLAVOUR_ROMS) into build/, never

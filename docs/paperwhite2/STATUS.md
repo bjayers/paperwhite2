@@ -2,6 +2,24 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-20: Entralink buffs, phase 6: damage numbers and a foe's HP numbers (ROM session, on a branch)
+
+- **Damage numbers:** each hit of the team's on a foe pops its full damage over the foe as the drain starts (a new
+  server command, `SC_DAMAGE_NUMBER`), once per hit of a multi-hit move; drawn as 3D quads after the scene, so they
+  start large (300%) and see-through and shrink into place in 5 frames, hold, then fade rising. No OBJ or affine
+  slots; 10 KB of texture VRAM. Colour tiers (white, blue 1,000, purple 5,000, gold 10,000, red 40,000) swap the
+  digits' palette entries 14 and 15; the shine rows sweep left to right on critical and capped hits. All of it is in
+  `buffs.json`'s `settings.damage_numbers` (the Buffs tab's Damage numbers section); `battles: all` exists, `run` is set.
+- **The digits' sheet** is a placeholder in the user's layout (`res/paperwhite2/battle/damage_digits.png`, 160 wide,
+  16×32 cells, row 1 the digits, rows below the shine frames), on Graphics & Palettes → Sprite sheets; the spec is
+  `entralink-buffs.md` section 13.3, packed by `tools/paperwhite2/damage_digits.py` into the battle view's archive.
+- **A foe's HP numbers** in run battles: `43 232 ×9` under its bar, 5 digits and the bars left.
+- **Tested** in py-desmume (scratchpad `buffs6/h/`, section 13.5): single, double and triple battles, every tier, a
+  multi-hit move, a capped critical with the shine, the shrink frame by frame, 5-digit HP lines; gauges and menus
+  intact. Hack build clean, DSi ROM intact, plain modules match, Python and editor tests pass.
+- **Memory:** overlay 168 +1.9 KB, 167 ~0.2 KB; texture VRAM 10 KB, its palettes 160 bytes.
+- **For the user:** draw the digits' sheet to the spec; playtest the timing settings; the calls in section 13.7.
+
 ## 2026-11-20: Entralink buffs, phase 5: enemy scaling and health bars (ROM session, on a branch)
 
 - **A run simulator** (`tools/paperwhite2/entralink_sim.py`, stdlib): picks per place from the tier odds, three builds

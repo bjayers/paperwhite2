@@ -3292,6 +3292,10 @@ u32 ServerControl_DamageListCore(BtlServerFlow *flow, BattleMon *attacker, BtlMo
         return total;
     }
     ServerControl_BeforeDamageDisplay(flow, param, attacker, hitCount, sHitMons);
+#ifdef PAPERWHITE2
+    // Paper White 2: the team's hits on foes show their full damage over them (paperwhite2/damage_numbers.h)
+    EntralinkBattle_PutDamageNumbers(flow, attacker, hitCount, sHitMons, sHitCritical);
+#endif
     ServerDisplay_Damage(flow, param, hitCount, sHitEffectiveness, sHitMons, sHitDamages, sHitCritical,
                          flags.multipleTargets);
     if (!BtlFlowHitWork_IsMultiHit(hitWork)) {

@@ -22,6 +22,20 @@ async function toBase64(file: File): Promise<string> {
   return btoa(text);
 }
 
+/** Whether a PNG's size can be the sheet's: its size, or for a sheet of rows any multiple of its row's height. */
+function sizeFits(sheet: SpriteSheet, [width, height]: [number, number]): boolean {
+  if (width !== sheet.width) return false;
+  if (!sheet.heightStep) return height === sheet.height;
+  return height > 0 && height % sheet.heightStep === 0 && height <= (sheet.maxHeight ?? sheet.height);
+}
+
+/** The size a sheet takes, as the page says it. */
+function sizeText(sheet: SpriteSheet): string {
+  return sheet.heightStep
+    ? `${sheet.width} wide by a multiple of ${sheet.heightStep} up to ${sheet.maxHeight ?? sheet.height} tall`
+    : `${sheet.width}×${sheet.height}`;
+}
+
 /** A PNG's width and height, from its header. */
 async function pngSize(file: File): Promise<[number, number] | null> {
   const head = new DataView(await file.slice(0, 24).arrayBuffer());
@@ -72,8 +86,8 @@ export function SpriteSheetsPage() {
     }
     const next = { file: file.name, base64: await toBase64(file), size: `${size[0]}×${size[1]}` };
     setChosen(next);
-    if (size[0] !== sheet.width || size[1] !== sheet.height) {
-      setResult({ ok: false, message: `${file.name} is ${next.size}; the sheet must be ${sheet.width}×${sheet.height}.`, written: false, preview: null });
+    if (!sizeFits(sheet, size)) {
+      setResult({ ok: false, message: `${file.name} is ${next.size}; the sheet must be ${sizeText(sheet)}.`, written: false, preview: null });
       return;
     }
     setBusy(true);
@@ -196,7 +210,7 @@ export function SpriteSheetsPage() {
             <div className="art-about">
               <p>{sheet.description}</p>
               <p className="muted pal-hint">
-                A {sheet.width}×{sheet.height} PNG (indexed with color 0 transparent, or RGBA); colors are rounded to the
+                A {sizeText(sheet)} PNG (indexed with color 0 transparent, or RGBA); colors are rounded to the
                 DS's (5 bits an axis). {sheet.palette
                   ? "The previews show the picture as the game does, clear pixels over a checkerboard. A PNG with more than 16 colors, or a color index past 15, is refused; a picture with no clear pixel is warned about."
                   : "The previews show the sheet as the game does, on the page's grey, over the grey copies."} Checked by <code>{sheet.tool}</code>; written to <code>{sheet.path}</code>.
@@ -218,7 +232,7 @@ export function SpriteSheetsPage() {
             <section className="pal-panel art-screen">
               <div className="pal-row wrap">
                 <h3>{sheet.palette ? "New picture" : "New sheet"}</h3>
-                <label className="pal-file-button" title={`A ${sheet.width}×${sheet.height} PNG`}>
+                <label className="pal-file-button" title={`A ${sizeText(sheet)} PNG`}>
                   {chosen ? "Choose another PNG…" : "Import PNG…"}
                   <input type="file" accept=".png" onChange={(e) => { const f = e.target.files?.[0]; if (f) choose(f); e.target.value = ""; }} />
                 </label>

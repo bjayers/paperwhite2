@@ -6,6 +6,7 @@
 #include "battle/btl_main.h"
 #include "battle/btl_pokeparam.h"
 #include "battle/btl_pospoke.h"
+#include "battle/btl_server_cmd.h"
 #include "battle/btl_server_flow.h"
 #include "constants/abilities.h"
 #include "constants/battle.h"
@@ -15,6 +16,7 @@
 #include "gfl/std.h"
 #include "nitro/fx.h"
 #include "nitro/mi.h"
+#include "paperwhite2/damage_numbers.h"
 #include "paperwhite2/entralink_bars.h"
 #include "paperwhite2/entralink_battle.h"
 #include "paperwhite2/entralink_buffs.h"
@@ -99,10 +101,10 @@ static struct {
     u8 movesUsed[BATTLE_MONS];
     u8 turns[BATTLE_MONS];
     u8 dropsBlocked[BATTLE_MONS];
-    // The last hit's full damage, its target and whether the clamp cut it
-    u32 lastDamage;
-    u8 lastTarget;
-    u8 lastClamped;
+    // Each Pokémon's last hit taken: its full damage (at most 65,535) and, by its bit, whether the clamp cut it (the
+    // damage numbers, phase 6)
+    u16 hitDamage[BATTLE_MONS];
+    u32 hitCapped;
     // Phase 4: whether Forecast's weather was tried (the team's first entry), the hits Spectral made super effective,
     // and Baton's stages kept from a switch-out for the Pokémon that enters at the position (0 for none kept: a stage
     // is kept as BATTLEMON_STAT_STAGE_NEUTRAL-based, 1 to 13)
@@ -1699,19 +1701,60 @@ BOOL EntralinkBattle_IsRun(void) {
 }
 
 u32 EntralinkBattle_ClampDamage(BattleMon *defender, u32 damage) {
-    if (!sBattle.run) {
-        return damage;
+    u32 monId = GetMonID(defender);
+    BOOL capped = sBattle.run && damage > ENTRALINK_BUFF_DAMAGE_CAP;
+
+    if (capped) {
+        damage = ENTRALINK_BUFF_DAMAGE_CAP;
     }
-    sBattle.lastDamage = damage;
-    sBattle.lastTarget = GetMonID(defender);
-    sBattle.lastClamped = damage > ENTRALINK_BUFF_DAMAGE_CAP;
-    return sBattle.lastClamped ? ENTRALINK_BUFF_DAMAGE_CAP : damage;
+    if (monId < BATTLE_MONS) {
+        sBattle.hitDamage[monId] = damage < 0xffff ? damage : 0xffff;
+        if (capped) {
+            sBattle.hitCapped |= 1 << monId;
+        } else {
+            sBattle.hitCapped &= ~(1 << monId);
+        }
+    }
+    return damage;
 }
 
-u32 EntralinkBattle_GetLastHitDamage(u8 *monId, BOOL *clamped) {
-    *monId = sBattle.lastTarget;
-    *clamped = sBattle.lastClamped;
-    return sBattle.lastDamage;
+// Whether the battle shows damage numbers (settings' damage_numbers.battles)
+static BOOL ShowsDamageNumbers(BtlServerFlow *flow) {
+    switch (ENTRALINK_DAMAGE_NUMBERS_BATTLES) {
+    case DAMAGE_NUMBERS_BATTLES_RUN:
+        return sBattle.run;
+    case DAMAGE_NUMBERS_BATTLES_ALL:
+        return sBattle.run || !GetCommMode(flow->mainModule);
+    default:
+        return FALSE;
+    }
+}
+
+void EntralinkBattle_PutDamageNumbers(BtlServerFlow *flow, BattleMon *attacker, u32 count, BattleMon **targets,
+                                      const u8 *critical) {
+    u32 player;
+    u32 monId;
+    u32 flags;
+    u32 i;
+
+    if (!ShowsDamageNumbers(flow)) {
+        return;
+    }
+    player = GetPlayerClientID(flow->mainModule);
+    if (!IsAllyClientID(GetClientIDFromMonID(GetMonID(attacker)), player)) {
+        return;
+    }
+    for (i = 0; i < count; i++) {
+        monId = GetMonID(targets[i]);
+        if (monId >= BATTLE_MONS || IsAllyClientID(GetClientIDFromMonID(monId), player)) {
+            continue;
+        }
+        flags = critical[i] ? DAMAGE_NUMBER_CRITICAL : 0;
+        if (sBattle.hitCapped & (1 << monId)) {
+            flags |= DAMAGE_NUMBER_CAPPED;
+        }
+        BtlServerCmdQueue_Put(flow->queue, SC_DAMAGE_NUMBER, monId, flags, sBattle.hitDamage[monId]);
+    }
 }
 
 u32 EntralinkBattle_GetResidualMaxHP(BattleMon *mon) {

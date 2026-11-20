@@ -42,6 +42,7 @@
 #include "system/pms_data.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/battle_handlers.h"
+#include "paperwhite2/damage_numbers.h"
 #include "paperwhite2/entralink_run_battle.h"
 #include "paperwhite2/moves.h"
 #include "paperwhite2/prestige.h"
@@ -673,6 +674,7 @@ static BOOL BattleClient_ScExpGain(BtlClient *client, s32 *seq, const u32 *args)
 #ifdef PAPERWHITE2
 static BOOL BattleClient_ScPrestigeFrom(BtlClient *client, s32 *seq, const u32 *args);
 static BOOL BattleClient_ScPrestigeGain(BtlClient *client, s32 *seq, const u32 *args);
+static BOOL BattleClient_ScDamageNumber(BtlClient *client, s32 *seq, const u32 *args);
 #endif
 static BOOL BattleClient_ForgetMoveSECallback(u32 arg0);
 static BOOL BattleClient_LearnMoveSeq(BtlClient *client, s32 *seq, BattleMon *mon);
@@ -4943,6 +4945,7 @@ static const BtlClientServerCmdEntry sServerCmdTable[] = {
 #ifdef PAPERWHITE2
     { SC_PRESTIGE_FROM, BattleClient_ScPrestigeFrom },
     { SC_PRESTIGE_GAIN, BattleClient_ScPrestigeGain },
+    { SC_DAMAGE_NUMBER, BattleClient_ScDamageNumber },
 #endif
     { SC_BALL_THROW, BattleClient_ScBallThrow },
     { SC_BALL_THROW_TRAINER, BattleClient_ScBallThrowTrainer },
@@ -5944,6 +5947,17 @@ static BOOL BattleClient_ScPrestigeGain(BtlClient *client, s32 *seq, const u32 *
         break;
     }
     return FALSE;
+}
+
+// Paper White 2: a hit's damage number, which the view pops over its target and moves on by itself, so the battle
+// doesn't wait (paperwhite2/damage_numbers.h)
+static BOOL BattleClient_ScDamageNumber(BtlClient *client, s32 *seq, const u32 *args) {
+    u32 pos = MonIDToViewPos(client->mainModule, client->pokeCon, args[0]);
+
+    if (pos != 0xff && !BattleClient_IsChapterSkipping(client)) {
+        PaperWhite2_DamageNumbersShow(pos, args[2], args[1]);
+    }
+    return TRUE;
 }
 
 #endif

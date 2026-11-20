@@ -155,6 +155,9 @@ export interface SpriteSheet {
   description: string;
   /** Arguments the tool's check takes after the PNG's path (a listing tool's marker says its size here) */
   toolArgs?: string[];
+  /** A sheet whose height may vary (rows of frames): any multiple of this up to maxHeight; height is the current one */
+  heightStep?: number;
+  maxHeight?: number;
   /** The sheet is a picture of up to 16 colors whose palette the page edits: its tool takes --palette, --output and
    * --info, and the check says the colors */
   palette?: boolean;

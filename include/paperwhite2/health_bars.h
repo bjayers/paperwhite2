@@ -9,7 +9,8 @@
 // (paperwhite2/entralink_bars.h) draws the current bar full width over the next one's colour, its colours from
 // buffs.json's bar_colors in the gauge's palette (the green bar's entries for the current bar, the red bar's for the
 // one behind, or a female foe's the Exp. bar's blue); the last bar is vanilla's bar (green, yellow, red) by its own HP.
-// The bars left show as "xN" in the gauge's HP numbers' actor, under the bar's right end. The lost HP's blink is left
+// The bars left show as "xN" in the gauge's HP numbers' actor, under the bar's right end, after the foe's HP in the
+// run's battles (phase 6). The lost HP's blink is left
 // out, and the bar drains a bar's 48 pixels in about half a second. Hooks in btlv_gauge.c
 
 // Whether a gauge shows several bars
@@ -17,10 +18,12 @@ BOOL PaperWhite2_HealthBarsActive(const BtlvGaugeEntry *entry);
 // Draws the HP bar of a gauge with several bars, or restores vanilla's colours to one whose palette holds a bar's;
 // returns whether it drew the bar (BtlvGauge_DrawBar's HP bar)
 BOOL PaperWhite2_HealthBarsDraw(BtlvGauge *gauge, int index);
-// A foe's gauge with more than 999 max HP: draws the bars left in its HP numbers' tiles instead of its HP, which
-// vanilla's three digits can't show; returns whether it did (BtlvGauge_DrawHpNumbers)
-BOOL PaperWhite2_HealthBarsDrawNumbers(BtlvGauge *gauge, BtlvGaugeEntry *entry);
-// Places a foe's bar count under its bar's right end (BtlvGauge_SetPos), the gauge's name box at x, y
+// A foe's gauge in the run's battles (phase 6, settings' damage_numbers.hp_numbers), or with more than 999 max HP:
+// draws its HP line instead of vanilla's three digits, its HP (up to 5 digits, a gap before the thousands) and "xN",
+// its bars left, in its HP numbers' actor (64 pixels wide on a foe's gauge); returns whether it did
+// (BtlvGauge_DrawHpNumbers)
+BOOL PaperWhite2_HealthBarsDrawNumbers(BtlvGauge *gauge, BtlvGaugeEntry *entry, s32 hp);
+// Places a foe's HP line under its bar, ending at its right end (BtlvGauge_SetPos), the gauge's name box at x, y
 void PaperWhite2_HealthBarsSetPos(BtlvGaugeEntry *entry, int x, int y);
 // The HP a frame the bar drains by (vanilla 1): a bar in about 32 frames past 999 max HP
 u32 PaperWhite2_HealthBarsSpeed(const BtlvGaugeEntry *entry);

@@ -20,10 +20,13 @@ void EntralinkBattle_Start(BtlServerFlow *flow);
 BOOL EntralinkBattle_IsRun(void);
 
 // The damage of a hit as ServerEvent_CalcDamage cuts it to 16 bits: in a run battle, at most the damage cap
-// (settings' damage_cap, 60,000), and the last hit's full damage and whether it was clamped kept for the damage numbers
+// (settings' damage_cap, 60,000); in every battle, the hit's full damage (at most 65,535) and whether the cap cut it
+// kept for its target's damage number
 u32 EntralinkBattle_ClampDamage(BattleMon *defender, u32 damage);
-// The last hit's full damage before the clamp, its target, and whether the clamp cut it (the damage numbers, phase 6)
-u32 EntralinkBattle_GetLastHitDamage(u8 *monId, BOOL *clamped);
+// Phase 6: before the damage of a move's hit shows (ServerControl_DamageListCore), puts each foe's damage number
+// (SC_DAMAGE_NUMBER, paperwhite2/damage_numbers.h) when the attacker is the player's side's and the battle shows them
+void EntralinkBattle_PutDamageNumbers(BtlServerFlow *flow, BattleMon *attacker, u32 count, BattleMon **targets,
+                                      const u8 *critical);
 
 // Phase 5: the enemies' scaling (entralink-buffs.md, section 12). A BattleMon was created from its party's source
 // (PokeCon_CreateClientParty, for the server's and the client's copies): in a run battle, an enemy's place in its party

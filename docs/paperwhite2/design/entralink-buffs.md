@@ -933,3 +933,120 @@ the gauge's tiles, palettes and HP-numbers actor.
 - Speed scales to ×1.5 by the end: late enemies match an unbuffed team, the Speed blue wins it back.
 - Not done: a Pokémon transformed into a scaled enemy copies its scaled stats (vanilla Transform); the bar count in a
   triple battle sits tight between the stacked gauges.
+
+## 13. Phase 6: damage numbers and a foe's HP numbers (2026-11-20)
+
+Each hit of the team's on a foe pops its damage over the foe, and a foe's gauge shows its HP to five digits with the
+bars left. Code: `src/paperwhite2/ov168/paperwhite2_damage_numbers.c` (`include/paperwhite2/damage_numbers.h`), the
+server's `EntralinkBattle_PutDamageNumbers` and the per-target damage in `EntralinkBattle_ClampDamage`
+(`paperwhite2_entralink_battle.c`), the new server command `SC_DAMAGE_NUMBER` (`btl_server_cmd.h`, its client
+handler in `btl_client.c`), the HP line in `paperwhite2_health_bars.c`; the sheet's tool
+`tools/paperwhite2/damage_digits.py`; the settings `buffs.json`'s `settings.damage_numbers` (the editor's Entree →
+Buffs, **Damage numbers** section).
+
+### 13.1 How it is drawn
+
+- **3D, not OBJ.** The numbers are textured quads drawn after the scene's 3D each frame (`BtlvEffect_Main`, after the
+  particles), in an orthographic projection of the screen. A polygon has its own alpha (0-31) and any size, so the
+  number can start very large and see-through and shrink smoothly. OBJ couldn't: a double-size affine OBJ clips past
+  ×2, and see-through OBJ use the one blend register pair that the message window's fade owns (`BtlvScuWinFade`). So
+  the numbers use **no OBJ, no affine parameters and no 2D palette**; they sit over the Pokémon and effects and under
+  the gauges and the message window (OBJ and BG1 are above the 3D layer).
+- **VRAM:** each digit of each sheet row is a 16×32 texture of 16 colours (256 bytes): 10 KB of texture VRAM with the
+  placeholder's 4 rows, at 0x3500 in a battle (the stage's textures below it; the Pokémon sprites' fixed area starts
+  at 0x24000, so there is room). Each colour tier is a 16-colour palette in texture palette VRAM (5 tiers: 160 bytes,
+  at 0x1c0, below the sprites' 0x1000). Loaded once a battle by the VRAM transfer manager; the 10 KB file is in the
+  battle's heap for three frames only. If either allocation fails, the battle simply shows no numbers.
+- **Timing:** the server puts `SC_DAMAGE_NUMBER (target, flags, full damage)` just before each hit's damage display
+  (`ServerControl_DamageListCore`, before `ServerDisplay_Damage` puts `SC_OP_SUBTRACT_HP`), so the client pops the
+  number as the hit's HP drain starts, once per hit of a multi-hit move and once per foe of a spread move. Nothing waits
+  for it. A new number on a Pokémon sends its last one into its fade; six can be up at once.
+- **Which hits:** the attacker on the player's side (the lead or a partner), the target a foe; direct hits only (not a
+  substitute's, not recoil, poison or confusion). The number is the hit's **full computed damage** (overkill
+  included), at most the damage cap in a run (60,000: a capped hit shows 60 000, red).
+- **Where:** the foe's position on screen (`BtlvMcss_GetDefaultPos`, projected), `height` pixels over its feet, kept on
+  screen at its normal size; fixed once it pops (the camera's moves during an attack don't carry it).
+
+### 13.2 The animation (all settings, `settings.damage_numbers`)
+
+| Setting | Now | What |
+| --- | --- | --- |
+| `battles` | `run` | `off`, `run` (the run's battles), `all` (every battle but link battles) |
+| `start_scale`, `start_alpha` | 300, 8 | it appears at 300% and 8/31 opaque... |
+| `shrink_frames` | 5 | ...and shrinks to 100% and opaque in 5 frames, ease-out (the square of the frames left) |
+| `hold_frames` | 30 | holds |
+| `fade_frames`, `rise` | 12, 10 | fades out over 12 frames, rising 10 pixels |
+| `height` | 48 | pixels over the Pokémon's feet |
+| `overlap`, `group_space` | 2, 3 | pixels the digits overlap; the space before the thousands (`12 345`) |
+| `shine` | `critical` | the shine rows play: `off`, `critical` (critical hits and hits at the cap), `always` |
+| `shine_frame_time`, `shine_delay` | 2, 2 | frames a shine row shows; the delay from one digit to the next (a sweep left to right) |
+| `hp_numbers` | true | a foe's gauge shows its HP in the run's battles |
+| `tiers` | 0 white, 1,000 blue, 5,000 purple, 10,000 gold, 40,000 red | each `{from, light, dark}` |
+
+The ease is one function, `DamageNumbers_Scale`: an elastic curve (overshoot and settle) goes there later. The shine
+starts once the number has landed.
+
+### 13.3 The sheet spec, for the user's art
+
+`res/paperwhite2/battle/damage_digits.png`, on the Graphics & Palettes → **Sprite sheets** page as "Damage numbers'
+digits" (it checks an import, previews it with a sample `12 345` in each tier, and edits its 16 colours):
+- **An indexed PNG of 16 colours, 160 pixels wide.** Cells of **16×32**, the digits **0 to 9 left to right**, every 16
+  pixels; each cell keeps **one blank column at each side** (the glyph is at most 14 wide). The check warns if a cell
+  draws in its side columns.
+- **Row 1** (y 0-31) is the digits as they show. **Each row under it is one shine frame**, played in order and back to
+  row 1: 1 to 8 rows in all, so the height is 32, 64, ... up to 256 (the placeholder has 4: 3 shine frames). The game
+  reads the row count from the sheet.
+- **Index 0 is transparent.** **Palette entries 14 (light) and 15 (dark) are the tier colours**: every tier replaces
+  them with its two colours, so draw the parts that change colour (the fill and its shade) with 14 and 15. The
+  sheet's own 14 and 15 are only a preview. The other entries (1-13) show as the sheet has them in every tier (the
+  placeholder: 1 the outline, 13 the shine's white, 2-12 a grey ramp, unused).
+- **Layout in game:** digit cells are placed `16 - 2 - overlap` pixels apart (12 now), plus `group_space` (3) before
+  the thousands; no comma, no "MAX".
+- `tools/paperwhite2/damage_digits.py placeholder` writes the placeholder again (bold digits, the tier colours light
+  above and dark from two-thirds down, a white band sweeping across them in the shine rows).
+
+### 13.4 A foe's HP numbers
+
+In the run's battles a foe's gauge shows its HP under its bar, right-aligned to the bar's end: up to 5 digits in the
+gauge's own slanted digits, 7 pixels apart, a 2-pixel gap before the thousands, then `×N` (the bars left, phase 5) after
+a 3-pixel gap: `43 232 ×9`, at most 62 pixels. The foe's HP-numbers actor (vanilla's, unused on a foe) takes a new
+64-pixel cell (two 32×8 pieces, the archive's member 574, made from vanilla's member 457 by `damage_digits.py`). The
+number follows the drain. Outside the run a foe's gauge is as vanilla (the HP line shows only past 999 max HP, which
+only a run foe has).
+
+### 13.5 Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `buffs6/h/`)
+
+Battles entered from the run's room 1 through a door at a set place (`t6.py make`), the foes' moves set to Splash where
+it held and the lead's Attack poked to reach each tier; `PaperWhite2_DamageNumbersShow` and `ClampDamage` hooked:
+- **Single** (Dialga, place 2): Arm Thrust's three hits popped 38, 36, 36, one per hit as its drain starts; the foe's
+  hit on the lead showed none. Frames 0-1 nothing (the 3D's one-frame lag), 2-3 large and see-through, landed by 6,
+  faded and gone by about frame 50 (`shots/single1_sheet.png`).
+- **Tiers:** 746 white, 2,418 and 2,792 blue, 6,042 purple, 18,524 and 16,824 gold (Darkrai, a two-hit Arm Thrust),
+  and a critical hit of 76,802 computed: capped at 60,000, flags critical and capped, **red with the shine sweeping**
+  left to right (`shots/red_sheet.png`, `shots/shrink_gold.png`).
+- **Double** (Ho-Oh and Lugia, place 5): Klink's hit on Lugia popped over Lugia (`shots/dbl_sheet.png`). **Triple**
+  (Dialga, Giratina, Palkia, place 10): the hit on Giratina popped over the middle foe (`shots/tri_sheet.png`).
+- **HP numbers:** `6 765 ×2` (the raid's Rayquaza), `43 232 ×9` (Darkrai, draining to `37 382 ×8`), `15 510 ×4`,
+  `20 370 ×5`, `14 784 ×3` in the triple, each under its bar; the gauges, status icons, the player's numbers and the
+  move and target menus were untouched in every screenshot.
+- The textures load in every battle checked (key at 0x3500, palettes at 0x1c0). Hack build clean, `verify_dsi_rom.py`
+  intact, the plain build's modules match; Python tests (`test_damage_digits.py` and the buffs' and run's) and the
+  editor's typecheck and tests pass.
+- **Not tested:** `battles: all` in a non-run battle (the same path with the run check off), a spread move (the test
+  couldn't set the lead's move; one `SC_DAMAGE_NUMBER` per target is put the same way).
+
+### 13.6 Memory
+
+Overlay 168 +1.9 KB code (the numbers 1.6 KB, the HP line 0.3 KB) and 176 bytes of BSS; overlay 167 about 0.2 KB of
+code and its battle state +46 bytes (each Pokémon's last hit). Texture VRAM 10 KB and texture palette VRAM 160 bytes in a battle
+that shows numbers; 10 KB of the battle heap for three frames. No OBJ, OAM, affine or 2D palette slots; at most 30
+quads a frame. The battle view's archive +10.3 KB (the sheet) and 111 bytes (the cell).
+
+### 13.7 Calls made, for the user
+
+- Drawn as 3D quads (13.1) rather than affine OBJ: real transparency and any size, and no OBJ budget to share.
+- The HP line shows the foe's current HP only (no max), so that five digits and `×10` fit the 64-pixel line.
+- Tier colours are palette entries **14 and 15**; the shine plays on critical and capped hits, left to right after
+  the number lands; a new number on a foe fades the previous one.
+- `battles: all` is implemented (not link battles) but the setting stays `run`.
+- `EntralinkBattle_GetLastHitDamage` (phase 3, unused) gave way to each Pokémon's last hit, which every battle keeps.

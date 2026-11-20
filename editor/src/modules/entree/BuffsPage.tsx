@@ -197,6 +197,7 @@ export function BuffsPage({ constants }: { constants: Constants }) {
         <CategoriesSection cat={cat} data={data} setTop={setTop} />
         <ThemesSection cat={cat} data={data} setTop={setTop} />
         <SettingsSection cat={cat} data={data} setTop={setTop} />
+        <DamageNumbersSection data={data} setTop={setTop} />
         <Section title="Checks" summary={errors || warnings ? [errors && `${errors} error${errors > 1 ? "s" : ""}`, warnings && `${warnings} warning${warnings > 1 ? "s" : ""}`].filter(Boolean).join(", ") : "none"}>
           {errors || warnings ? (
             <ul className="en-problems">
@@ -575,6 +576,70 @@ function ThemesSection({ cat, data, setTop }: { cat: Catalogue; data: JsonMap; s
             </div>
           );
         })}
+      </div>
+    </Section>
+  );
+}
+
+const DAMAGE_BATTLES = ["off", "run", "all"] as const;
+const DAMAGE_SHINES = ["off", "critical", "always"] as const;
+
+/** Phase 6's damage numbers (settings.damage_numbers): the battles, the colour tiers, the layout and the pop-up. Their
+ * digits are the Graphics & Palettes page's "Damage numbers' digits" sheet. */
+function DamageNumbersSection({ data, setTop }: { data: JsonMap; setTop(key: string, v: JsonValue): void }) {
+  const settings = asMap(data.get("settings"));
+  const numbers = asMap(settings.get("damage_numbers"));
+  const set = (key: string, value: JsonValue) => setTop("settings", setIn(settings, ["damage_numbers", key], value));
+  const n = (key: string) => (numbers.get(key) as number | undefined) ?? 0;
+  const tiers = asList(numbers.get("tiers")).map(asMap);
+  const setTier = (i: number, key: string, value: JsonValue) =>
+    set("tiers", tiers.map((t, k) => (k === i ? new Map(t).set(key, value) : t)));
+  const battles = (numbers.get("battles") as (typeof DAMAGE_BATTLES)[number] | undefined) ?? "run";
+  const shine = (numbers.get("shine") as (typeof DAMAGE_SHINES)[number] | undefined) ?? "critical";
+  return (
+    <Section title="Damage numbers" summary={battles === "off" ? "off" : `${battles === "run" ? "the run's battles" : "all battles"}, ${tiers.length} tiers`}>
+      <div className="ow-condition">
+        <Row label="Battles" hint="Where a hit of the team's on a foe shows its full damage over it; all leaves out link battles">
+          <Switch value={battles} options={DAMAGE_BATTLES} onChange={(v) => set("battles", v)}
+                  labels={{ off: "Off", run: "Run's", all: "All" }} />
+        </Row>
+        <Row label="Tiers" hint="From this damage up, the digits' palette entries 14 and 15 (light, dark) take these colours">
+          <span className="en-damage-tiers">
+            {tiers.map((t, i) => (
+              <span key={i} className="en-damage-tier">
+                <NumberBox value={(t.get("from") as number | undefined) ?? 0} min={0} max={65535} width={68} title="The tier's least damage"
+                           onChange={(v) => setTier(i, "from", v)} />
+                <input type="color" value={String(t.get("light") ?? "#ffffff")} title="Light (palette entry 14)" onChange={(e) => setTier(i, "light", e.target.value)} />
+                <input type="color" value={String(t.get("dark") ?? "#808080")} title="Dark (palette entry 15)" onChange={(e) => setTier(i, "dark", e.target.value)} />
+                <button className="icon" title="Remove the tier" disabled={tiers.length <= 1} onClick={() => set("tiers", tiers.filter((_, k) => k !== i))}>×</button>
+              </span>
+            ))}
+            <button disabled={tiers.length >= 8} onClick={() => set("tiers", [...tiers, fromPlain({ from: Math.min(65535, ((tiers.at(-1)?.get("from") as number | undefined) ?? 0) + 1000), light: "#ffffff", dark: "#808080" })])}>+ Tier</button>
+          </span>
+        </Row>
+        <Row label="Layout" hint="Pixels the digits overlap, the space before the thousands (12 345), the number's height over the Pokémon's feet">
+          <NumberBox value={n("overlap")} min={0} max={6} width={44} title="Pixels the digits overlap" onChange={(v) => set("overlap", v)} />
+          <NumberBox value={n("group_space")} min={0} max={8} width={44} title="Pixels before the thousands" onChange={(v) => set("group_space", v)} />
+          <NumberBox value={n("height")} min={0} max={96} width={52} title="Pixels over the Pokémon's feet" onChange={(v) => set("height", v)} />
+        </Row>
+        <Row label="Appear" hint="Starting size (percent) and opacity (of 31), and the frames it shrinks into place in">
+          <NumberBox value={n("start_scale")} min={100} max={400} width={56} title="Starting size, percent" onChange={(v) => set("start_scale", v)} />
+          <NumberBox value={n("start_alpha")} min={1} max={31} width={44} title="Starting opacity, of 31" onChange={(v) => set("start_alpha", v)} />
+          <NumberBox value={n("shrink_frames")} min={1} max={30} width={44} title="Frames to shrink into place" onChange={(v) => set("shrink_frames", v)} />
+        </Row>
+        <Row label="Leave" hint="Frames it holds, frames it fades in, pixels it rises as it fades (60 frames a second)">
+          <NumberBox value={n("hold_frames")} min={0} max={120} width={52} title="Frames it holds" onChange={(v) => set("hold_frames", v)} />
+          <NumberBox value={n("fade_frames")} min={1} max={60} width={44} title="Frames it fades in" onChange={(v) => set("fade_frames", v)} />
+          <NumberBox value={n("rise")} min={0} max={32} width={44} title="Pixels it rises" onChange={(v) => set("rise", v)} />
+        </Row>
+        <Row label="Shine" hint="When the digits play the sheet's shine rows left to right once it lands (critical: critical hits and hits at the damage cap); each row's frames, the delay from digit to digit">
+          <Switch value={shine} options={DAMAGE_SHINES} onChange={(v) => set("shine", v)} />
+          <NumberBox value={n("shine_frame_time")} min={1} max={15} width={44} title="Frames each shine row shows" onChange={(v) => set("shine_frame_time", v)} />
+          <NumberBox value={n("shine_delay")} min={0} max={15} width={44} title="Frames from one digit to the next" onChange={(v) => set("shine_delay", v)} />
+        </Row>
+        <Row label="Foe HP" hint="In the run's battles a foe's gauge shows its HP (5 digits) and its bars left">
+          <label className="ow-check small"><input type="checkbox" checked={numbers.get("hp_numbers") !== false} onChange={(e) => set("hp_numbers", e.target.checked)} /> Shown</label>
+        </Row>
       </div>
     </Section>
   );

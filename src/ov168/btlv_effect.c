@@ -42,6 +42,7 @@
 #include "system/vm.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/battle_type_icons.h"
+#include "paperwhite2/damage_numbers.h"
 #include "paperwhite2/moves.h"
 #endif
 
@@ -328,6 +329,10 @@ void BtlvEffect_Init(BtlvEffectSetup *setup, Font *font, HeapID heapId) {
     }
     BtlvMcss_SetFlatAll(sBtlvEffect->mcss);
     Particle_Init(heapId);
+#ifdef PAPERWHITE2
+    // Paper White 2: the damage numbers' digits, in texture VRAM after the stage's (paperwhite2/damage_numbers.h)
+    PaperWhite2_DamageNumbersInit(sBtlvEffect->setup.mainModule, heapId);
+#endif
     for (i = 0; i < 8; i++) {
         sBtlvEffect->trainers[i] = -1;
     }
@@ -344,6 +349,10 @@ void BtlvEffect_Init(BtlvEffectSetup *setup, Font *font, HeapID heapId) {
 
 void BtlvEffect_Exit(void) {
     if (sBtlvEffect != NULL) {
+#ifdef PAPERWHITE2
+        // Paper White 2: the damage numbers' VRAM (paperwhite2/damage_numbers.h)
+        PaperWhite2_DamageNumbersExit();
+#endif
         PokeVoice_FreeMulti();
         BtlvEffect_EndAllTasks();
         PaletteFade_FreeBuffer(sBtlvEffect->palFade, PALFADE_BUFFER_MAIN_BG);
@@ -395,6 +404,10 @@ void BtlvEffect_Main(void) {
         reg_G3X_LISTRAM_COUNT;
         Particle_DrawAndUpdateAll();
         reg_G3X_LISTRAM_COUNT;
+#ifdef PAPERWHITE2
+        // Paper White 2: the damage numbers, over the scene and its effects (paperwhite2/damage_numbers.h)
+        PaperWhite2_DamageNumbersDraw();
+#endif
         GFL_G3DSysReqSwapBuffers();
     }
 }

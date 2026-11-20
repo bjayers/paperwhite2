@@ -331,6 +331,132 @@
           "maximum": 1000,
           "description": "A type card's weight for the team's own types, in percent of the others'"
         },
+        "damage_numbers": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "The damage numbers over a foe the team hits and a foe's HP on its gauge (phase 6); what is left out takes its default",
+          "properties": {
+            "battles": {
+              "enum": [
+                "off",
+                "run",
+                "all"
+              ],
+              "description": "The battles that show them: none, the run's, or every battle but link battles"
+            },
+            "tiers": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 8,
+              "description": "The colour tiers by the hit's damage, from 0 up: each swaps the digits' palette entries 14 (light) and 15 (dark) for its colours",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "from",
+                  "light",
+                  "dark"
+                ],
+                "properties": {
+                  "from": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 65535,
+                    "description": "The least damage of the tier"
+                  },
+                  "light": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "description": "Palette entry 14's colour"
+                  },
+                  "dark": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "description": "Palette entry 15's colour"
+                  }
+                }
+              }
+            },
+            "overlap": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 6,
+              "description": "Pixels the digits overlap (each digit's cell has a blank column at each side)"
+            },
+            "group_space": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 8,
+              "description": "Pixels between the thousands and the rest (12 345), instead of a comma"
+            },
+            "start_scale": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 400,
+              "description": "The number's size as it appears, in percent of its normal size"
+            },
+            "start_alpha": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 31,
+              "description": "Its opacity as it appears (31 opaque)"
+            },
+            "shrink_frames": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30,
+              "description": "Frames it takes to shrink to its normal size and opacity"
+            },
+            "hold_frames": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 120,
+              "description": "Frames it holds at its normal size"
+            },
+            "fade_frames": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60,
+              "description": "Frames it fades out in, rising"
+            },
+            "rise": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 32,
+              "description": "Pixels it rises while it fades"
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 96,
+              "description": "Pixels its middle is over the Pokémon's feet"
+            },
+            "shine": {
+              "enum": [
+                "off",
+                "critical",
+                "always"
+              ],
+              "description": "When the digits play their shine frames left to right once the number lands: never, on critical hits and hits at the damage cap, or on every hit"
+            },
+            "shine_frame_time": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 15,
+              "description": "Frames each shine frame shows"
+            },
+            "shine_delay": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 15,
+              "description": "Frames from one digit's shine to the next's"
+            },
+            "hp_numbers": {
+              "type": "boolean",
+              "description": "A foe's gauge shows its HP (up to 5 digits) and its bars left in the run's battles"
+            }
+          }
+        },
         "prices": {
           "type": "object",
           "additionalProperties": false,

@@ -10,6 +10,7 @@
 #include "nitro/math.h"
 #include "nitro/mi.h"
 #include "nnsys/g2d.h"
+#include "paperwhite2/damage_numbers.h"
 #include "paperwhite2/entralink_bars.h"
 #include "paperwhite2/health_bars.h"
 #include "system/hp_gauge.h"
@@ -34,11 +35,17 @@
 #define COLOR_EMPTY_DARK 14
 // A gauge's sex for a female Pokémon (its sign in red)
 #define GAUGE_SEX_FEMALE 1
-// The gauge's digits (8 by 8, 0 to 9 a tile apart) and its blank tile, as byte offsets in its characters; the HP
-// numbers' actor's 7 tiles (the HP, the slash, the max HP)
+// The gauge's digits (8 by 8, 0 to 9 a tile apart), as a byte offset in its characters
 #define TILE_DIGITS 0x520
-#define TILE_BLANK 0x660
-#define NUMBER_TILES 7
+// A foe's HP line (phase 6): its actor's 8 tiles in a row (damage_digits.py's cell), the gauge's slanted digits 7
+// pixels apart, 2 more before the thousands, 3 more before "x" and the bars left, and the HP's most digits
+#define LINE_TILES 8
+#define LINE_WIDTH (LINE_TILES * 8)
+#define GLYPH_WIDTH 8
+#define GLYPH_ADVANCE 7
+#define THOUSANDS_GAP 2
+#define BARS_GAP 3
+#define HP_DIGITS_MAX 5
 // The most HP vanilla's three digits show
 #define NUMBERS_MAX_HP 999
 // The frames a bar takes to drain
@@ -181,44 +188,100 @@ BOOL PaperWhite2_HealthBarsDraw(BtlvGauge *gauge, int index) {
         }
         MI_CpuCopy16(tile, vram + (i + 1) * TILE_SIZE, TILE_SIZE);
     }
-    PaperWhite2_HealthBarsDrawNumbers(gauge, entry);
+    PaperWhite2_HealthBarsDrawNumbers(gauge, entry, entry->mon.hpMoving ? entry->mon.hpAnim : entry->mon.hp);
     return TRUE;
 }
 
-BOOL PaperWhite2_HealthBarsDrawNumbers(BtlvGauge *gauge, BtlvGaugeEntry *entry) {
+// Whether a foe's gauge shows its HP line: in the run's battles (phase 6), and for any foe past vanilla's three digits
+static BOOL HealthBars_ShowsLine(const BtlvGaugeEntry *entry) {
+    return entry->mon.side && entry->hpNumActor != NULL &&
+           (PaperWhite2_DamageNumbersFoeHP() || entry->mon.maxHp > NUMBERS_MAX_HP);
+}
+
+// Draws a glyph's tile into the line's pixels at x, over what is there: its pixels of colour 0 are clear
+static void HealthBars_DrawGlyph(u8 *line, const u8 *glyph, s32 x) {
+    u32 row;
+    u32 column;
+    u32 color;
+    u32 at;
+
+    for (row = 0; row < 8; row++) {
+        for (column = 0; column < 8; column++) {
+            color = (glyph[row * 4 + column / 2] >> ((column & 1) * 4)) & 0xf;
+            if (color == 0 || x + column >= LINE_WIDTH) {
+                continue;
+            }
+            at = (x + column) / 8 * TILE_SIZE + row * 4 + (x + column) % 8 / 2;
+            if ((x + column) & 1) {
+                line[at] = (line[at] & 0x0f) | color << 4;
+            } else {
+                line[at] = (line[at] & 0xf0) | color;
+            }
+        }
+    }
+}
+
+// The line's width from its glyphs' advances: the HP's digits with a gap before the thousands, a wider gap, then
+// "x" and the bars left
+static s32 HealthBars_LineWidth(u32 count, u32 bars) {
+    s32 width = count * GLYPH_ADVANCE + (count > 3 ? THOUSANDS_GAP : 0);
+
+    if (bars >= 2) {
+        width += BARS_GAP + GLYPH_ADVANCE * (bars >= 10 ? 3 : 2);
+    }
+    return width + GLYPH_WIDTH - GLYPH_ADVANCE;
+}
+
+BOOL PaperWhite2_HealthBarsDrawNumbers(BtlvGauge *gauge, BtlvGaugeEntry *entry, s32 hp) {
     NNSG2dImageProxy proxy;
-    const u8 *tiles[NUMBER_TILES];
-    u8 *vram;
-    u32 bar;
+    u8 line[LINE_TILES * TILE_SIZE];
+    u8 digits[HP_DIGITS_MAX];
+    u32 count = 0;
+    u32 bars = 0;
     u32 inBar;
     u32 size;
+    s32 x;
     u32 i;
 
-    if (!entry->mon.side || entry->mon.maxHp <= NUMBERS_MAX_HP || entry->hpNumActor == NULL) {
+    if (!HealthBars_ShowsLine(entry)) {
         return FALSE;
     }
-    for (i = 0; i < NUMBER_TILES; i++) {
-        tiles[i] = gauge->chars + TILE_BLANK;
+    if (hp < 0) {
+        hp = 0;
     }
-    // The bars left, the current one included, from 2: "x10" or "x7" at the right
+    // The HP, from the ones up
+    do {
+        digits[count++] = hp % 10;
+        hp /= 10;
+    } while (hp != 0 && count < HP_DIGITS_MAX);
+    // The bars left, the current one included, from 2
     if (PaperWhite2_HealthBarsActive(entry)) {
-        bar = EntralinkBars_GetBar(entry->mon.hpMoving ? entry->mon.hpAnim : entry->mon.hp, entry->mon.maxHp, &inBar,
-                                   &size);
-        if (bar >= 10) {
-            tiles[NUMBER_TILES - 3] = sTimesTile;
-            tiles[NUMBER_TILES - 2] = gauge->chars + TILE_DIGITS + bar / 10 * TILE_SIZE;
-        } else if (bar >= 2) {
-            tiles[NUMBER_TILES - 2] = sTimesTile;
+        bars = EntralinkBars_GetBar(entry->mon.hpMoving ? entry->mon.hpAnim : entry->mon.hp, entry->mon.maxHp, &inBar,
+                                    &size);
+    }
+    MI_CpuFill8(line, 0, sizeof(line));
+    // Right-aligned in the line, which ends under the bar's right end
+    x = LINE_WIDTH - HealthBars_LineWidth(count, bars);
+    for (i = count; i-- > 0;) {
+        HealthBars_DrawGlyph(line, gauge->chars + TILE_DIGITS + digits[i] * TILE_SIZE, x);
+        x += GLYPH_ADVANCE;
+        if (i == 3) {
+            x += THOUSANDS_GAP;
         }
-        if (bar >= 2) {
-            tiles[NUMBER_TILES - 1] = gauge->chars + TILE_DIGITS + bar % 10 * TILE_SIZE;
+    }
+    if (bars >= 2) {
+        x += BARS_GAP;
+        HealthBars_DrawGlyph(line, sTimesTile, x);
+        x += GLYPH_ADVANCE;
+        if (bars >= 10) {
+            HealthBars_DrawGlyph(line, gauge->chars + TILE_DIGITS + bars / 10 * TILE_SIZE, x);
+            x += GLYPH_ADVANCE;
         }
+        HealthBars_DrawGlyph(line, gauge->chars + TILE_DIGITS + bars % 10 * TILE_SIZE, x);
     }
     ClActor_GetImageProxy(entry->hpNumActor, &proxy);
-    vram = (u8 *)G2_GetOBJCharPtr() + proxy.vramLocation.baseAddrOfVram[NNS_G2D_VRAM_TYPE_2DMAIN];
-    for (i = 0; i < NUMBER_TILES; i++) {
-        MI_CpuCopy16(tiles[i], vram + i * TILE_SIZE, TILE_SIZE);
-    }
+    MI_CpuCopy16(line, (u8 *)G2_GetOBJCharPtr() + proxy.vramLocation.baseAddrOfVram[NNS_G2D_VRAM_TYPE_2DMAIN],
+                 sizeof(line));
     return TRUE;
 }
 
@@ -229,7 +292,7 @@ void PaperWhite2_HealthBarsSetPos(BtlvGaugeEntry *entry, int x, int y) {
         return;
     }
     // Vanilla leaves a foe's HP numbers where the actor was made, at 0, 0
-    if (entry->mon.maxHp > NUMBERS_MAX_HP) {
+    if (HealthBars_ShowsLine(entry)) {
         pos.x = x + 8;
         pos.y = y + 13;
     }

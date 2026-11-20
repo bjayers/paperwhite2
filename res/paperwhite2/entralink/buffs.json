@@ -55,6 +55,49 @@
             "blue": 60,
             "purple": 150,
             "gold": 400
+        },
+        "damage_numbers": {
+            "battles": "run",
+            "tiers": [
+                {
+                    "from": 0,
+                    "light": "#f8f8f8",
+                    "dark": "#a8a8b8"
+                },
+                {
+                    "from": 1000,
+                    "light": "#58b0f8",
+                    "dark": "#2058c0"
+                },
+                {
+                    "from": 5000,
+                    "light": "#c878f8",
+                    "dark": "#7028b0"
+                },
+                {
+                    "from": 10000,
+                    "light": "#f8d038",
+                    "dark": "#c07808"
+                },
+                {
+                    "from": 40000,
+                    "light": "#f84838",
+                    "dark": "#a01010"
+                }
+            ],
+            "overlap": 2,
+            "group_space": 3,
+            "start_scale": 300,
+            "start_alpha": 8,
+            "shrink_frames": 5,
+            "hold_frames": 30,
+            "fade_frames": 12,
+            "rise": 10,
+            "height": 48,
+            "shine": "critical",
+            "shine_frame_time": 2,
+            "shine_delay": 2,
+            "hp_numbers": true
         }
     },
     "buckets": [
