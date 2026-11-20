@@ -169,6 +169,11 @@ open problem"). The Map Editor and the Overworld Editor stay separate editors on
 - **Shiny palettes:** above.
 - **The move and ability effect designer:** later. The pieces for it are in `paperwhite2_battle.c` (small rules kept
   apart on purpose; `design/moves-and-abilities.md` section 9, step 6), with custom animations.
+- **Rail maps' precision (Castelia's waterfront and other rail maps):** parked 2026-11-19. Vanilla rails place actors
+  loosely: NPCs seem to float as the camera moves, the player can step onto tiles that look unwalkable, and the follower
+  draws over a curb or railing in two spots of `castelia_city` (the player doesn't). Fixing it means tracing the rail
+  system's fixed-point maths from rail line to world position and the rails' own collision grid
+  (`following-pokemon.md` has the camera side); a large investigation, not a quick fix.
 - **Later ideas:** day/night encounter tables per season, party-wide Exp. Share, DexNav starting the searched Pokémon's
   battle, an HGSS-style Pokédex grid, roaming legendaries, a new species' real art as the user draws it.
 - **The full fresh-save playtest:** after more features land. Test findings and the decisions that wait for it are in
