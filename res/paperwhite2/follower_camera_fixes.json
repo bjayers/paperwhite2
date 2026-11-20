@@ -42,10 +42,10 @@
             "z_buffer": false,
             "near": null,
             "scale_offset": false,
-            "w_pull": 0.009,
+            "w_pull": 0.0,
             "w_pull_built_in": true,
             "low_oval": true,
-            "note": "W-buffered, the weather fog tuned for it: variant 15 built in (tested in melonDS), the follower's oval lowered to a quarter of a unit over the ground and the actors 2.6 units nearer at 288 (14a's 6.9 let the railings and streetlights in front lose rows to them)"
+            "note": "W-buffered, the weather fog tuned for it: the follower's oval lowered to a quarter of a unit over the ground and the actors not pulled (2026-11-19: variant 15's pull of 0.009, 2.6 units at 288, still let a streetlight and a railing lose rows to them in two spots; 14a's 6.9 let more)"
         },
         {
             "setup": 4,
