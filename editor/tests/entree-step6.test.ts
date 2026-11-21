@@ -129,13 +129,16 @@ test("the rounds' type weights and the run's chances: read with their defaults, 
   assert.deepEqual(typeChances(DEFAULT_TYPE_WEIGHTS), { enemy: 42, enemy_choice: 8, challenge: 12, item: 10, buff: 10, rest: 10, event: 5, shop: 3 });
   assert.equal(percent(100 / 3), "33%");
   assert.equal(percent(3.333), "3.3%");
-  // The draw: with the templates known, a round of only generic enemy rooms skips enemy_choice, challenge and event; weights of 0 are
+  // The draw: with the templates known, a round of only generic enemy rooms skips challenge and event (enemy_choice
+  // doors take random rooms, unless random rooms are off); weights of 0 are
   // an error; a round with no premade room draws from the templates
   const rooms = ["a", "b", "c"].map((id) => ({ id, room: readRoom(newRoomData(id)) }));
   rooms.push({ id: "f", room: { ...readRoom(newRoomData("f")), role: "final" } });
   const all = new Set(TEMPLATES);
   const messages = (r: Parameters<typeof runProblems>[0], t = all as ReadonlySet<string>) => runProblems(r, rooms, t).map((p) => `${p.severity}: ${p.message}`);
   assert.deepEqual(messages({ rounds: [{ rooms: 2, boss: false, typeWeights: DEFAULT_TYPE_WEIGHTS }] }),
+    ["warning: Round 1: no challenge or event room can come up, so those types are skipped (the other types' chances rise)."]);
+  assert.deepEqual(messages({ rounds: [{ rooms: 2, boss: false, typeWeights: DEFAULT_TYPE_WEIGHTS }], randomEnemyChance: 0 }),
     ["warning: Round 1: no enemy_choice or challenge or event room can come up, so those types are skipped (the other types' chances rise)."]);
   const zero = Object.fromEntries(WEIGHT_ORDER.map((t) => [t, 0])) as typeof DEFAULT_TYPE_WEIGHTS;
   assert.deepEqual(messages({ rounds: [{ rooms: 2, boss: false, typeWeights: zero }] }),
@@ -147,7 +150,7 @@ test("the rounds' type weights and the run's chances: read with their defaults, 
   // A premade challenge room makes challenge drawable
   rooms.push({ id: "ch", room: { ...readRoom(newRoomData("ch")), type: "challenge" } });
   assert.deepEqual(messages({ rounds: [{ rooms: 2, boss: false, typeWeights: DEFAULT_TYPE_WEIGHTS }] }),
-    ["warning: Round 1: no enemy_choice or event room can come up, so those types are skipped (the other types' chances rise)."]);
+    ["warning: Round 1: no event room can come up, so that type is skipped (the other types' chances rise)."]);
 });
 
 test("the item table: entries read and written valid, each pool's chances, the Nightmare Ball only while catchable, the checks", () => {

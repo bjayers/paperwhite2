@@ -25,6 +25,47 @@
         "east": [ 21, 16 ],
         "west": [ 9, 16 ]
     },
+    "random_enemy_chance": 50,
+    "random_rooms": {
+        "format_weights": {
+            "single": 40,
+            "double": 35,
+            "triple": 25
+        },
+        "bst": [
+            {
+                "min": 300,
+                "max": 480
+            },
+            {
+                "min": 380,
+                "max": 540
+            },
+            {
+                "min": 450,
+                "max": 600
+            }
+        ],
+        "theme_chance": 70,
+        "level": 70,
+        "move_pool": 7,
+        "tm_chance": 25,
+        "hidden_ability_chance": 5,
+        "anchors": [
+            [
+                [ 15, 15 ]
+            ],
+            [
+                [ 12, 15 ],
+                [ 19, 15 ]
+            ],
+            [
+                [ 10, 15 ],
+                [ 15, 15 ],
+                [ 20, 15 ]
+            ]
+        ]
+    },
     "raid_hp_factor": 3.0,
     "boss_double_factor": 0.85,
     "boss_triple_factor": 0.7,

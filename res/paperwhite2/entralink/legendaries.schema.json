@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Entralink legendaries",
+  "description": "The legendary and mythical species, which random rooms never draw (run.json's random_rooms; tools/paperwhite2/entralink_random.py). The species data has no such flag, so a new legendary species goes here too. Species that never enter the Pokédex (\"pokedex\": false) are left out anyway.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [ "species" ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "species": {
+      "type": "array", "uniqueItems": true,
+      "items": { "type": "string", "x-constant": "SPECIES_" }
+    }
+  }
+}

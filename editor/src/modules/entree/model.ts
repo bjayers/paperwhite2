@@ -520,6 +520,58 @@ export interface RunRound {
 export const WEIGHT_ORDER: readonly RoomType[] = ["enemy", "enemy_choice", "challenge", "item", "buff", "rest", "event", "shop"];
 export const DEFAULT_TYPE_WEIGHTS: Record<RoomType, number> = { enemy: 42, enemy_choice: 8, challenge: 12, item: 10, buff: 10, rest: 10, event: 5, shop: 3 };
 export const DEFAULT_CUSTOM_CHANCE = 25;
+/** Random enemy rooms (run.json's random_enemy_chance and random_rooms, tools/paperwhite2/entralink_random.py): the
+ * chance an enemy or enemy_choice door leads to one, and how they are made. */
+export const DEFAULT_RANDOM_ENEMY_CHANCE = 50;
+export const RANDOM_FORMATS = ["single", "double", "triple"] as const;
+export type RandomFormat = (typeof RANDOM_FORMATS)[number];
+export interface RandomRooms {
+  formatWeights: Record<RandomFormat, number>;
+  /** Rounds 1, 2 and 3's base stat total bands (the last given for those left out). */
+  bst: { min: number; max: number }[];
+  themeChance: number;
+  level: number;
+  movePool: number;
+  tmChance: number;
+  hiddenAbilityChance: number;
+  /** The battles' tiles for 1, 2 and 3 choices. */
+  anchors: [number, number][][];
+}
+export const DEFAULT_RANDOM_ROOMS: RandomRooms = {
+  formatWeights: { single: 40, double: 35, triple: 25 },
+  bst: [{ min: 300, max: 480 }, { min: 380, max: 540 }, { min: 450, max: 600 }],
+  themeChance: 70, level: 70, movePool: 7, tmChance: 25, hiddenAbilityChance: 5,
+  anchors: [[[15, 15]], [[12, 15], [19, 15]], [[10, 15], [15, 15], [20, 15]]],
+};
+/** random_rooms' value for run.json, keys in the schema's order. */
+export function randomRoomsJson(r: RandomRooms): Map<string, JsonValue> {
+  return new Map<string, JsonValue>([
+    ["format_weights", new Map<string, JsonValue>(RANDOM_FORMATS.map((f) => [f, r.formatWeights[f]]))],
+    ["bst", r.bst.map((b) => new Map<string, JsonValue>([["min", b.min], ["max", b.max]]))],
+    ["theme_chance", r.themeChance], ["level", r.level], ["move_pool", r.movePool], ["tm_chance", r.tmChance],
+    ["hidden_ability_chance", r.hiddenAbilityChance],
+    ["anchors", r.anchors.map((group) => group.map(([x, z]) => [x, z]))],
+  ]);
+}
+/** run.json's random_rooms with its defaults. */
+export function readRandomRooms(value: JsonValue | undefined): RandomRooms {
+  const m = asMap(value);
+  const d = DEFAULT_RANDOM_ROOMS;
+  const fw = asMap(m.get("format_weights"));
+  const given = asList(m.get("bst")).map((b) => ({ min: num(asMap(b).get("min")) ?? 0, max: num(asMap(b).get("max")) ?? 0 }));
+  const bands = given.length ? given : d.bst;
+  const anchors = asList(m.get("anchors")).map((g) => asList(g).map((a) => asList(a).map((v) => num(v) ?? 0) as [number, number]));
+  return {
+    formatWeights: Object.fromEntries(RANDOM_FORMATS.map((f) => [f, num(fw.get(f)) ?? d.formatWeights[f]])) as Record<RandomFormat, number>,
+    bst: ROUNDS.map((_, i) => bands[Math.min(i, bands.length - 1)]),
+    themeChance: num(m.get("theme_chance")) ?? d.themeChance,
+    level: num(m.get("level")) ?? d.level,
+    movePool: num(m.get("move_pool")) ?? d.movePool,
+    tmChance: num(m.get("tm_chance")) ?? d.tmChance,
+    hiddenAbilityChance: num(m.get("hidden_ability_chance")) ?? d.hiddenAbilityChance,
+    anchors: anchors.length === 3 ? anchors : d.anchors,
+  };
+}
 export const DEFAULT_GROUND_ITEM_CHANCE = 30;
 export const DEFAULT_HIDDEN_ITEM_CHANCE = 20;
 /** Dream Dust (step 7): what a battle won gives by its room, times its round's percent (the packer's DEFAULT_DUST), and
@@ -583,6 +635,8 @@ export interface RunLayout {
   preBossMap?: string;
   unknownChance: number;
   customChance: number;
+  randomEnemyChance: number;
+  randomRooms: RandomRooms;
   groundItemChance: number;
   hiddenItemChance: number;
   markerSpots: Record<Door, [number, number]>;
@@ -615,6 +669,8 @@ export function readRun(data: JsonValue | null | undefined): RunLayout {
     preBossMap: str(m.get("pre_boss_map")),
     unknownChance: num(m.get("unknown_chance")) ?? DEFAULT_UNKNOWN_CHANCE,
     customChance: num(m.get("custom_chance")) ?? DEFAULT_CUSTOM_CHANCE,
+    randomEnemyChance: num(m.get("random_enemy_chance")) ?? DEFAULT_RANDOM_ENEMY_CHANCE,
+    randomRooms: readRandomRooms(m.get("random_rooms")),
     groundItemChance: num(m.get("ground_item_chance")) ?? DEFAULT_GROUND_ITEM_CHANCE,
     hiddenItemChance: num(m.get("hidden_item_chance")) ?? DEFAULT_HIDDEN_ITEM_CHANCE,
     dust: Object.fromEntries(DUST_KINDS.map((k) => [k, num(asMap(m.get("dust")).get(k)) ?? DEFAULT_DUST[k]])) as Record<DustKind, number>,
@@ -679,7 +735,7 @@ export function roundSummary(rooms: { id: string; room: Room }[], round: Round, 
 /** The checks of the run's draw, as tools/paperwhite2/entralink_run.py's draw_problems makes them (the build fails on
  * the errors and prints the warnings). The game draws each room from its round's pool, one of the least used so far
  * other than the room just before, so too few rooms only means repeats: a warning. */
-export function runProblems(run: Pick<RunLayout, "rounds">, rooms: { id: string; room: Room }[], templates?: ReadonlySet<string>): { severity: Severity; message: string }[] {
+export function runProblems(run: Pick<RunLayout, "rounds"> & Partial<Pick<RunLayout, "randomEnemyChance">>, rooms: { id: string; room: Room }[], templates?: ReadonlySet<string>): { severity: Severity; message: string }[] {
   const out: { severity: Severity; message: string }[] = [];
   const add = (severity: Severity, message: string) => out.push({ severity, message });
   if (!rooms.some((r) => r.room.role === "final")) add("error", "No room is the final room, which every run ends with.");
@@ -695,7 +751,10 @@ export function runProblems(run: Pick<RunLayout, "rounds">, rooms: { id: string;
     // Step 6, with the templates given: a round's doors draw room types by its weights, the template types from the
     // templates too, and a type with no room is skipped
     const weights = r.typeWeights ?? DEFAULT_TYPE_WEIGHTS;
-    const drawable = (t: RoomType) => typePool(rooms, round, t).length > 0 || (!!templates && TEMPLATE_ROOM_TYPES.includes(t) && templates.has(t));
+    // (an enemy or enemy_choice door has a random room while random_enemy_chance is above 0)
+    const randomOn = (run.randomEnemyChance ?? DEFAULT_RANDOM_ENEMY_CHANCE) > 0;
+    const drawable = (t: RoomType) => typePool(rooms, round, t).length > 0 || (!!templates && TEMPLATE_ROOM_TYPES.includes(t) && templates.has(t))
+      || (!!templates && randomOn && (t === "enemy" || t === "enemy_choice"));
     const typed = !!templates && WEIGHT_ORDER.some((t) => weights[t] && drawable(t));
     if (templates && r.rooms) {
       const skipped = WEIGHT_ORDER.filter((t) => weights[t] && !drawable(t));

@@ -1309,6 +1309,23 @@ def main():
                           "generated/items.txt", "generated/abilities.txt", "generated/zones.txt",
                           "generated/obj_codes.txt", "include/constants/battle.h", "include/constants/directions.h"])
         constant_headers.append(output)
+        # Paper White 2: the Entralink roguelike's random enemy rooms' settings and species, from run.json, the
+        # legendaries' list and the species' data
+        n.rule("entralink_random", "$python tools/paperwhite2/entralink_random.py $out", "Generating $out",
+               restat="1")
+        output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "entralink_random_config.h"
+        n.build([output], "entralink_random",
+                ["res/paperwhite2/entralink/run.json", "res/paperwhite2/entralink/run.schema.json",
+                 "res/paperwhite2/entralink/legendaries.json", "res/paperwhite2/entralink/legendaries.schema.json",
+                 *sorted(str(path) for path in Path("res/pokemon").glob("*/data.json")),
+                 *sorted(str(path) for path in Path("res/moves").glob("*/data.json")),
+                 *sorted(str(path) for path in Path("res/field/maps/models").glob("entree_forest*/terrain_0.csv"))],
+                implicit=["tools/paperwhite2/entralink_random.py",
+                          *script_imports("tools/paperwhite2/entralink_random.py"),
+                          "tools/paperwhite2/entralink_run.py", "tools/paperwhite2/entralink_flowers.py",
+                          "tools/data/datajson.py", "tools/data/species_list.py", "generated/species.txt",
+                          "generated/moves.txt", "generated/types.txt", "generated/obj_codes.txt"])
+        constant_headers.append(output)
         # Paper White 2: the Entralink roguelike's buff catalogue (docs/paperwhite2/design/entralink-buffs.md), checked
         # with its balance meter; the game reads none of it yet, the header gives the next phase its IDs and settings
         n.rule("entralink_buffs", "$python tools/paperwhite2/entralink_buffs.py $out", "Generating $out", restat="1")

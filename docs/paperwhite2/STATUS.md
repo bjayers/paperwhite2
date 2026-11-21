@@ -2,6 +2,21 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-21: Entralink random enemy rooms (ROM session, on a branch)
+
+- **Random rooms:** an enemy or enemy choice door leads to a random room at run.json's `random_enemy_chance` (50; a
+  random room too when no premade one fits): 1 battle, or a choice of 2-3; each single, double or triple (weights 40,
+  35, 25); never a raid, boss or final. Made as the room is entered, kept in ARM9 main through its battle.
+- **Enemies:** Pokédex species with a walking sprite, not in `legendaries.json`, from the round's base stat total band
+  (300-480, 380-540, 450-600); a double's or triple's share a type or family at 70%; a room's choices differ in types
+  and families. Level 70, 4 of the last 7 level-up moves (a TM/tutor/egg move at 25%, always a damaging move), a random
+  ability (hidden 5%), no item, gender by ratio; room curve scaling, enemy/enemy choice Dust.
+- **Layout:** anchors in run.json (15,15 / 12,15 19,15 / 10,15 15,15 20,15), checked by the build; triples as Time and
+  Space stands them. Editor: the Run section's Random rooms settings, a note in Templates.
+- **Tested** in py-desmume (forced 100%): 13 rooms in rounds 1 and 3, all in band and varied; a single, a double, a
+  triple and a 3-choice room's battle won, each room cleared. Details: `entralink-roguelike-prototype.md`, "Random enemy
+  rooms"; memory `entralink-buffs.md` 17 (overlay 12 +7.4 KB, main +0.5 KB).
+
 ## 2026-11-20: Entralink fixes from the third playtest (ROM session, on a branch)
 
 - **Boss HP:** round 1's bonus x1.6 (round 2 x2.3, final x5), and new `boss_double_factor` 0.85 / `boss_triple_factor`

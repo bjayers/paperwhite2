@@ -45,6 +45,7 @@ import {
   isTemplateFile, newTemplateData, percent, readFlowerTiles, setFlowerTiles, templatePath, typeChances, type RoomType,
   type Round, type Exit, type MapInfo, type NpcType, type Problem, type ProgressCounters, type Role, type Room,
   AMBIENT_BEHAVIOURS, AMBIENT_DEFAULTS, type AmbientBehaviour,
+  RANDOM_FORMATS, randomRoomsJson, type RandomRooms, type RunLayout,
 } from "./model.ts";
 
 // The run's dialogue: its script puts the player's name in word 0 before every message (global_10490.s)
@@ -490,6 +491,7 @@ export function EntreeEditor({ constants }: ToolProps) {
             ))}
             {!listed.length && <p className="muted en-empty">{rooms.length ? "No room matches the filters." : "No rooms yet."}</p>}
             <h5 className="en-group-head">Templates <span className="muted">every generated room of a type is its template</span></h5>
+            <p className="muted small en-empty">Random enemy rooms have no template: their battles are made as the room is entered, by the Run section's Random rooms settings.</p>
             {[...TEMPLATES, ...(templateIds.has("event") ? ["event"] : [])].map((id) => {
               const t = templates.find((x) => x.id === id);
               if (!t) return (
@@ -615,6 +617,61 @@ function readRunOpen(): boolean {
   try { return localStorage.getItem(RUN_OPEN_KEY) !== "0"; } catch { return true; }
 }
 
+/** The Run section's random enemy rooms: the chance an enemy or enemy choice door leads to one, and how one is made
+ * (run.json's random_enemy_chance and random_rooms; tools/paperwhite2/entralink_random.py checks and packs them). */
+function RandomRoomsSettings({ run, setKey }: { run: RunLayout; setKey: (key: string, v: JsonValue | undefined) => void }) {
+  const r = run.randomRooms;
+  const set = (change: Partial<RandomRooms>) => setKey("random_rooms", randomRoomsJson({ ...r, ...change }));
+  const row = (label: string, value: number, min: number, max: number, unit: string, title: string, onChange: (n: number) => void) => (
+    <div className="en-run" title={title}>
+      <span className="muted small">{label}</span>
+      <span className="en-run-controls">
+        <NumberBox value={value} min={min} max={max} width={52} onChange={onChange} />
+        {unit && <span className="small">{unit}</span>}
+      </span>
+    </div>
+  );
+  return <>
+    <h6 className="en-sub en-run-head">Random rooms <span className="muted">enemy and enemy choice doors</span></h6>
+    {row("Random rooms", run.randomEnemyChance, 0, 100, "%", "The chance that an enemy or enemy choice door leads to a random room rather than a premade one; a random room too when no premade one fits, unless this is 0",
+      (n) => setKey("random_enemy_chance", n))}
+    <span className="muted small">A random room has one battle behind an enemy door, a choice of 2 or 3 behind an enemy choice door; never a raid, boss or final room. Its enemies are made as it is entered, scaled by the room curve</span>
+    {RANDOM_FORMATS.map((f) => row(cap(f), r.formatWeights[f], 0, 255, "weight", `The weight a random battle is a ${f} by`,
+      (n) => set({ formatWeights: { ...r.formatWeights, [f]: n } })))}
+    {r.bst.map((band, i) => (
+      <div key={i} className="en-run">
+        <span className="muted small">Round {i + 1} BST</span>
+        <span className="en-run-controls" title={`Round ${i + 1}'s random enemies' base stat total, from min to max`}>
+          <NumberBox value={band.min} min={1} max={1530} width={64} onChange={(n) => set({ bst: r.bst.map((b, k) => (k === i ? { ...b, min: n } : b)) })} />
+          <span className="small">to</span>
+          <NumberBox value={band.max} min={1} max={1530} width={64} onChange={(n) => set({ bst: r.bst.map((b, k) => (k === i ? { ...b, max: n } : b)) })} />
+        </span>
+      </div>
+    ))}
+    <span className="muted small">Any species of the Pokédex with a walking sprite but those of legendaries.json, from its round's base stat total band; the choices of one room of different types and families</span>
+    {row("Themed battles", r.themeChance, 0, 100, "%", "The chance that a double or triple's enemies all share a type or an evolution family with its first", (n) => set({ themeChance: n }))}
+    {row("Level", r.level, 1, 100, "", "The random enemies' level", (n) => set({ level: n }))}
+    {row("Move pool", r.movePool, 4, 12, "moves", "Its 4 moves are drawn from this many of the last level-up moves it knows at its level", (n) => set({ movePool: n }))}
+    {row("TM moves", r.tmChance, 0, 100, "%", "The chance that one move is replaced by a TM, HM, tutor or egg move; one move is always damaging", (n) => set({ tmChance: n }))}
+    {row("Hidden ability", r.hiddenAbilityChance, 0, 100, "%", "The chance of its hidden ability rather than one of its two", (n) => set({ hiddenAbilityChance: n }))}
+    {r.anchors.map((group, n) => group.map(([x, z], k) => {
+      const move = (axis: 0 | 1, v: number) => set({ anchors: r.anchors.map((g, j) => (j === n ? g.map((a, i) => (i === k ? (axis ? [a[0], v] : [v, a[1]]) as [number, number] : a)) : g)) });
+      return (
+        <div key={`${n}-${k}`} className="en-run">
+          <span className="muted small">{n ? `${n + 1} choices, ${["1st", "2nd", "3rd"][k]}` : "1 choice"}</span>
+          <span className="en-run-controls" title="The battle's tile: a single's enemy on it, a double's there and to its right, a triple's there and one tile back on either side">
+            <span className="small">x</span>
+            <NumberBox value={x} min={0} max={31} width={52} onChange={(v) => move(0, v)} />
+            <span className="small">z</span>
+            <NumberBox value={z} min={0} max={31} width={52} onChange={(v) => move(1, v)} />
+          </span>
+        </div>
+      );
+    }))}
+    <span className="muted small">Where the battles stand, facing down; the build checks every format's tiles against every clearing's walls, the exits, the markers and the arrival, and that choices stand 2 tiles apart</span>
+  </>;
+}
+
 /** run.json: the forest's field weather, the rounds (how many rooms each draws and whether a boss ends rounds 1 and
  * 2; the final room ends the last), with each round's pool and the draw's checks (model.ts, runProblems, as the build
  * makes them), and the maps the rooms are in, read only. */
@@ -703,6 +760,7 @@ function RunSection({ rooms, templates }: { rooms: { id: string; room: Room }[];
           </span>
         </div>
         <span className="muted small">The chance that a rest, item, buff or shop door leads to a premade room of the type (if one fits) instead of its template</span>
+        <RandomRoomsSettings run={run} setKey={setKey} />
         <div className="en-run">
           <span className="muted small">Ground items</span>
           <span className="en-run-controls">

@@ -27,6 +27,7 @@
 #include "nitro/math.h"
 #include "paperwhite2/entralink_buffs.h"
 #include "paperwhite2/entralink_progress.h"
+#include "paperwhite2/entralink_random_rooms.h"
 #include "paperwhite2/entralink_reserve.h"
 #include "paperwhite2/entralink_run.h"
 #include "paperwhite2/entralink_run_actions.h"
@@ -138,7 +139,35 @@ static const EntralinkRoom *EntralinkRun_GetRoom(void) {
     if (state->room == 0) {
         return NULL;
     }
+    // A random room's row stands for the room made as the player entered it
+    if (sRooms[state->order[state->room - 1]].random) {
+        return &EntralinkRun_GetRandomRoom()->room;
+    }
     return &sRooms[state->order[state->room - 1]];
+}
+
+// A room's NPC, battle, and a battle's enemy, by their places in the room and the battle: the tables', or those of the
+// random room made (a random room's row has none)
+static const EntralinkNpc *EntralinkRun_GetNpc(const EntralinkRoom *room, u32 index) {
+    if (room->random) {
+        return &EntralinkRun_GetRandomRoom()->npcs[index];
+    }
+    return &sNpcs[room->firstNpc + index];
+}
+
+static const EntralinkBattle *EntralinkRun_GetBattle(const EntralinkRoom *room, u32 index) {
+    if (room->random) {
+        return &EntralinkRun_GetRandomRoom()->battles[index];
+    }
+    return &sBattles[room->firstBattle + index];
+}
+
+static const EntralinkEnemy *EntralinkRun_GetEnemy(const EntralinkRoom *room, const EntralinkBattle *battle,
+                                                   u32 index) {
+    if (room->random) {
+        return &EntralinkRun_GetRandomRoom()->enemies[battle->firstEnemy + index];
+    }
+    return &sEnemies[battle->firstEnemy + index];
 }
 
 // Whether a room fits a draw: not a template, of its role and type, and fitting its round (round 0: any) as its pool
@@ -334,15 +363,30 @@ static u32 EntralinkRun_DrawDoorRoom(EntralinkRunState *state, u32 role, u32 rou
     return EntralinkRun_DrawRoom(state, role, round, type, excluded);
 }
 
-// A room of a type behind a door: enemy, enemy choice and challenge rooms are rooms/'s, an event room rooms/'s, else
-// its template if there is one; a rest, item, buff or shop room is rooms/'s at run.json's custom chance if one fits,
-// else its type's template. ENTRALINK_RUN_ROOM_NONE if the type has none
+// An enemy or enemy choice door's random room: at run.json's random enemy chance, or when no premade room of the type
+// fits (unless the chance is 0); else ENTRALINK_RUN_ROOM_NONE
+static u32 EntralinkRun_DrawRandomRoom(u32 type, BOOL premade) {
+    if (ENTRALINK_RUN_RANDOM_ENEMY_CHANCE == 0 || (premade && GFL_RandomLC(100) >= ENTRALINK_RUN_RANDOM_ENEMY_CHANCE)) {
+        return ENTRALINK_RUN_ROOM_NONE;
+    }
+    return type == ENTRALINK_TYPE_ENEMY_CHOICE ? ENTRALINK_RUN_RANDOM_CHOICE_ROOM : ENTRALINK_RUN_RANDOM_ENEMY_ROOM;
+}
+
+// A room of a type behind a door: enemy and enemy choice rooms are random rooms at run.json's random enemy chance,
+// else rooms/'s (a random room if none fits); challenge rooms are rooms/'s, an event room rooms/'s, else its template
+// if there is one; a rest, item, buff or shop room is rooms/'s at run.json's custom chance if one fits, else its
+// type's template. ENTRALINK_RUN_ROOM_NONE if the type has none
 static u32 EntralinkRun_DrawRoomOfType(EntralinkRunState *state, u32 round, u32 type) {
     u32 room;
 
     switch (type) {
     case ENTRALINK_TYPE_ENEMY:
     case ENTRALINK_TYPE_ENEMY_CHOICE:
+        room = EntralinkRun_DrawRandomRoom(type, TRUE);
+        if (room == ENTRALINK_RUN_ROOM_NONE) {
+            room = EntralinkRun_DrawDoorRoom(state, ENTRALINK_ROLE_ROOM, round, type);
+        }
+        return room != ENTRALINK_RUN_ROOM_NONE ? room : EntralinkRun_DrawRandomRoom(type, FALSE);
     case ENTRALINK_TYPE_CHALLENGE:
         return EntralinkRun_DrawDoorRoom(state, ENTRALINK_ROLE_ROOM, round, type);
     case ENTRALINK_TYPE_EVENT:
@@ -450,9 +494,9 @@ static BOOL EntralinkRun_RoomHasCatch(GameData *gameData, const EntralinkRoom *r
     u32 j;
 
     for (i = 0; i < room->battleCount; i++) {
-        battle = &sBattles[room->firstBattle + i];
+        battle = EntralinkRun_GetBattle(room, i);
         for (j = 0; j < battle->enemyCount; j++) {
-            if (EntralinkRun_CanCatch(gameData, &sEnemies[battle->firstEnemy + j])) {
+            if (EntralinkRun_CanCatch(gameData, EntralinkRun_GetEnemy(room, battle, j))) {
                 return TRUE;
             }
         }
@@ -574,7 +618,7 @@ static BOOL EntralinkRun_IsNpcTile(EntralinkRunState *state, const EntralinkRoom
     u32 i;
 
     for (i = 0; i < room->npcCount; i++) {
-        npc = &sNpcs[room->firstNpc + i];
+        npc = EntralinkRun_GetNpc(room, i);
         if ((state->npcsSpawned & (1 << i)) && npc->x == x && npc->z == z) {
             return TRUE;
         }
@@ -691,7 +735,7 @@ static BOOL EntralinkRun_HasItemNpc(const EntralinkRoom *room) {
     u32 i;
 
     for (i = 0; i < room->npcCount; i++) {
-        type = sNpcs[room->firstNpc + i].type;
+        type = EntralinkRun_GetNpc(room, i)->type;
         if (type == ENTRALINK_NPC_ITEM || type == ENTRALINK_NPC_ITEM_CHOICE) {
             return TRUE;
         }
@@ -742,7 +786,7 @@ static void EntralinkRun_DrawRoomItems(GameData *gameData, EntralinkRunState *st
     MI_CpuFill8(state->roomOffer, 0, sizeof(state->roomOffer));
     MI_CpuFill8(state->shopBuffs, 0, sizeof(state->shopBuffs));
     for (i = 0; i < room->npcCount; i++) {
-        type = sNpcs[room->firstNpc + i].type;
+        type = EntralinkRun_GetNpc(room, i)->type;
         if (!(state->npcsSpawned & (1 << i))) {
             continue;
         }
@@ -799,17 +843,23 @@ static void EntralinkRun_DrawRoomItems(GameData *gameData, EntralinkRunState *st
 // done from the start (nothing came up), its round's field weather, its items, and the rooms behind its doors
 static void EntralinkRun_EnterRoom(GameData *gameData) {
     EntralinkRunState *state = EntralinkRun_GetState();
-    const EntralinkRoom *room = EntralinkRun_GetRoom();
+    const EntralinkRoom *room;
     const EntralinkNpc *npc;
     u32 blocking = 0;
     u32 round;
     u32 i;
 
+    // A random room's battles, enemies and NPCs are made now, for the place's round
+    EntralinkRun_GetPlace(state->room, &round);
+    if (sRooms[state->order[state->room - 1]].random) {
+        EntralinkRun_MakeRandomRoom(&sRooms[state->order[state->room - 1]], round);
+    }
+    room = EntralinkRun_GetRoom();
     state->npcsSpawned = 0;
     state->npcsGone = 0;
     state->npcsUsed = 0;
     for (i = 0; i < room->npcCount; i++) {
-        npc = &sNpcs[room->firstNpc + i];
+        npc = EntralinkRun_GetNpc(room, i);
         if (!EntralinkRun_MeetsRequirements(gameData, npc->firstRequirement, npc->requirementCount)) {
             continue;
         }
@@ -823,7 +873,6 @@ static void EntralinkRun_EnterRoom(GameData *gameData) {
         }
     }
     state->cleared = blocking == 0;
-    EntralinkRun_GetPlace(state->room, &round);
     state->fieldWeather = sRounds[round - 1].fieldWeather;
     EntralinkRun_DrawRoomItems(gameData, state, room, round);
     EntralinkRun_DrawDoors(state);
@@ -846,8 +895,13 @@ void EntralinkRun_Start(GameData *gameData) {
     if (role == ENTRALINK_ROLE_PRE_BOSS) {
         room = ENTRALINK_RUN_PRE_BOSS_REST;
     } else {
-        room = EntralinkRun_DrawRoom(state, role, EntralinkRun_GetDrawRound(role, round),
-                                     role == ENTRALINK_ROLE_ROOM ? ENTRALINK_TYPE_ENEMY : ENTRALINK_TYPE_ANY, excluded);
+        room = role == ENTRALINK_ROLE_ROOM ? EntralinkRun_DrawRandomRoom(ENTRALINK_TYPE_ENEMY, TRUE)
+                                           : ENTRALINK_RUN_ROOM_NONE;
+        if (room == ENTRALINK_RUN_ROOM_NONE) {
+            room = EntralinkRun_DrawRoom(state, role, EntralinkRun_GetDrawRound(role, round),
+                                         role == ENTRALINK_ROLE_ROOM ? ENTRALINK_TYPE_ENEMY : ENTRALINK_TYPE_ANY,
+                                         excluded);
+        }
     }
     if (room == ENTRALINK_RUN_ROOM_NONE) {
         room = EntralinkRun_DrawRoom(state, role, EntralinkRun_GetDrawRound(role, round), ENTRALINK_TYPE_ANY, excluded);
@@ -979,7 +1033,7 @@ static void EntralinkRun_SpawnNpc(Field *field, TPokeData *pokemonData, const En
     if (npc->sprite != 0) {
         modelId = npc->sprite;
     } else {
-        enemy = &sEnemies[sBattles[room->firstBattle + npc->battle].firstEnemy + npc->enemy];
+        enemy = EntralinkRun_GetEnemy(room, EntralinkRun_GetBattle(room, npc->battle), npc->enemy);
         modelId =
             GetPokemonFieldOBJCODE(pokemonData, enemy->species, enemy->gender == ENTRALINK_GENDER_FEMALE, enemy->form);
     }
@@ -999,7 +1053,7 @@ void EntralinkRun_SpawnRoom(GameSystem *gsys) {
     pokemonData = LoadTPokeData(Field_GetHeapID(field));
     for (i = 0; i < room->npcCount; i++) {
         if ((state->npcsSpawned & (1 << i)) && !(state->npcsGone & (1 << i))) {
-            EntralinkRun_SpawnNpc(field, pokemonData, room, &sNpcs[room->firstNpc + i], i);
+            EntralinkRun_SpawnNpc(field, pokemonData, room, EntralinkRun_GetNpc(room, i), i);
         }
     }
     FreeTPokeData(pokemonData);
@@ -1034,7 +1088,7 @@ const EntralinkNpc *EntralinkRun_GetAmbient(u32 index) {
         (state->npcsGone & (1 << index))) {
         return NULL;
     }
-    npc = &sNpcs[room->firstNpc + index];
+    npc = EntralinkRun_GetNpc(room, index);
     return npc->type == ENTRALINK_NPC_AMBIENT ? npc : NULL;
 }
 
@@ -1046,7 +1100,7 @@ FieldActor *EntralinkRun_SpawnAmbient(Field *field, u32 index) {
         return NULL;
     }
     // (an ambient always has a sprite of its own, so its spawn reads no Pokémon data)
-    EntralinkRun_SpawnNpc(field, NULL, room, &sNpcs[room->firstNpc + index], index);
+    EntralinkRun_SpawnNpc(field, NULL, room, EntralinkRun_GetNpc(room, index), index);
     actor = FindFieldActor(Field_GetActorSystem(field), index);
     if (actor != NULL) {
         SetActorHidden(actor, TRUE);
@@ -1086,7 +1140,7 @@ static BOOL EntralinkRun_IsChoicePending(EntralinkRunState *state, const Entrali
         return FALSE;
     }
     for (i = 0; i < room->npcCount; i++) {
-        if ((state->npcsSpawned & (1 << i)) && EntralinkRun_IsChoiceType(sNpcs[room->firstNpc + i].type)) {
+        if ((state->npcsSpawned & (1 << i)) && EntralinkRun_IsChoiceType(EntralinkRun_GetNpc(room, i)->type)) {
             return TRUE;
         }
     }
@@ -1100,7 +1154,7 @@ static void EntralinkRun_ClearRoom(GameSystem *gsys, const EntralinkRoom *room) 
     u32 i;
 
     for (i = 0; i < room->npcCount; i++) {
-        if (sNpcs[room->firstNpc + i].type == ENTRALINK_NPC_BATTLE) {
+        if (EntralinkRun_GetNpc(room, i)->type == ENTRALINK_NPC_BATTLE) {
             EntralinkRun_RemoveNpc(gsys, i);
         }
     }
@@ -1128,7 +1182,7 @@ static void EntralinkRun_CheckRoomDone(void) {
         if (!(state->npcsSpawned & (1 << i))) {
             continue;
         }
-        type = sNpcs[room->firstNpc + i].type;
+        type = EntralinkRun_GetNpc(room, i)->type;
         if (type == ENTRALINK_NPC_AMBIENT) {
             continue;
         }
@@ -1155,12 +1209,12 @@ static void EntralinkRun_MakeChoice(GameSystem *gsys) {
     state->choiceMade = TRUE;
     for (i = 0; i < room->npcCount; i++) {
         if (i != state->talkedNpc && (state->npcsSpawned & (1 << i)) && !(state->npcsGone & (1 << i)) &&
-            EntralinkRun_IsChoiceType(sNpcs[room->firstNpc + i].type)) {
+            EntralinkRun_IsChoiceType(EntralinkRun_GetNpc(room, i)->type)) {
             EntralinkRun_RemoveNpc(gsys, i);
         }
     }
     // A buff ball goes once its card is taken, as an item room's ball does with its item
-    if (sNpcs[room->firstNpc + state->talkedNpc].type == ENTRALINK_NPC_BUFF_CHOICE &&
+    if (EntralinkRun_GetNpc(room, state->talkedNpc)->type == ENTRALINK_NPC_BUFF_CHOICE &&
         !(state->npcsGone & (1 << state->talkedNpc))) {
         EntralinkRun_RemoveNpc(gsys, state->talkedNpc);
     }
@@ -1248,7 +1302,7 @@ u32 EntralinkRun_GetNpcMarker(u32 index) {
         (state->npcsGone & (1 << index))) {
         return ENTRALINK_NPC_MARKER_NONE;
     }
-    npc = &sNpcs[room->firstNpc + index];
+    npc = EntralinkRun_GetNpc(room, index);
     if (npc->type == ENTRALINK_NPC_ITEM_CHOICE) {
         icon = EntralinkRun_GetItemIcon(state->npcItems[index]);
         if (icon != ENTRALINK_ICON_NONE) {
@@ -1326,9 +1380,9 @@ static void EntralinkRun_SetEnemyScale(EntralinkRunState *state, const Entralink
         for (i = 0; i < ENTRALINK_RUN_ENEMIES_MAX; i++) {
             // A raid's three are its one enemy
             if (raid) {
-                enemy = &sEnemies[battle->firstEnemy];
+                enemy = EntralinkRun_GetEnemy(room, battle, 0);
             } else if (i < battle->enemyCount) {
-                enemy = &sEnemies[battle->firstEnemy + i];
+                enemy = EntralinkRun_GetEnemy(room, battle, i);
             } else {
                 state->enemyScale[i][stat] = 100;
                 continue;
@@ -1363,11 +1417,11 @@ static GameEvent *EntralinkRun_CreateBattle(GameSystem *gsys, const EntralinkRoo
     EntralinkRun_SetEnemyScale(state, room, battle);
     if (battle->format == ENTRALINK_FORMAT_RAID) {
         for (i = 0; i < 3; i++) {
-            EntralinkRun_AddEnemy(gameData, party, &sEnemies[battle->firstEnemy], i, i != RAID_CENTER_SLOT);
+            EntralinkRun_AddEnemy(gameData, party, EntralinkRun_GetEnemy(room, battle, 0), i, i != RAID_CENTER_SLOT);
         }
     } else {
         for (i = 0; i < battle->enemyCount; i++) {
-            EntralinkRun_AddEnemy(gameData, party, &sEnemies[battle->firstEnemy + i], i, FALSE);
+            EntralinkRun_AddEnemy(gameData, party, EntralinkRun_GetEnemy(room, battle, i), i, FALSE);
         }
     }
     SaveBtlFieldStatus(&status, gameData, field);
@@ -1869,9 +1923,9 @@ BOOL Scrcmd_PaperWhite2_EntralinkRun(VM *vm, FieldScriptEnv *env) {
 
     result = ScriptReadVar(vm, env);
     if (room != NULL && state->talkedNpc < room->npcCount) {
-        npc = &sNpcs[room->firstNpc + state->talkedNpc];
+        npc = EntralinkRun_GetNpc(room, state->talkedNpc);
         if (npc->type == ENTRALINK_NPC_BATTLE) {
-            battle = &sBattles[room->firstBattle + npc->battle];
+            battle = EntralinkRun_GetBattle(room, npc->battle);
         }
     }
 
@@ -1890,7 +1944,7 @@ BOOL Scrcmd_PaperWhite2_EntralinkRun(VM *vm, FieldScriptEnv *env) {
             *result = ENTRALINK_RUN_NPC_GROUND;
         } else if (GetActorUID(actor) < room->npcCount) {
             state->talkedNpc = GetActorUID(actor);
-            *result = sNpcs[room->firstNpc + state->talkedNpc].type;
+            *result = EntralinkRun_GetNpc(room, state->talkedNpc)->type;
             // A choice NPC whose choice was made only wishes the player well, but a shop that was the choice opens
             // again
             if (EntralinkRun_IsChoiceType(*result) && state->choiceMade &&
@@ -1903,7 +1957,7 @@ BOOL Scrcmd_PaperWhite2_EntralinkRun(VM *vm, FieldScriptEnv *env) {
         *result = state->talkedNpc;
         return FALSE;
     case ENTRALINK_RUN_ACTION_GET_SPECIES:
-        *result = battle != NULL ? sEnemies[battle->firstEnemy + npc->enemy].species : 0;
+        *result = battle != NULL ? EntralinkRun_GetEnemy(room, battle, npc->enemy)->species : 0;
         return FALSE;
     case ENTRALINK_RUN_ACTION_DIALOGUE:
         *result = EntralinkRun_GetDialogue(npc, arg);

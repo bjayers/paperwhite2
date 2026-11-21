@@ -240,6 +240,9 @@ typedef struct {
     u8 battleCount;
     u16 firstNpc;
     u8 npcCount;
+    // Whether it is a random room's row (an enemy or an enemy choice room), whose battles, enemies and NPCs are made
+    // as the player enters it (paperwhite2/entralink_random_rooms.h) rather than the tables'
+    u8 random;
 } EntralinkRoom;
 
 typedef struct {

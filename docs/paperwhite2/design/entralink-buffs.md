@@ -1697,3 +1697,18 @@ text bank +4 short messages. ARM9 main, heaps and VRAM unchanged.
 - The viewer shows STAB and CRIT as their whole factor (x2.40, as the cards say "x2.25"), the others over 1.
 - The double's HP line: nothing changed without a cause found (16.2).
 
+
+## 17. Random enemy rooms (2026-11-21)
+
+Enemy and enemy choice doors lead to a random room at run.json's `random_enemy_chance` (50): one battle or a choice of 2-3,
+each single, double or triple, of non-legendary species from a base stat total band that rises by round, at level 70
+with 4 of their last level-up moves (an extra TM, tutor or egg move at 25%). The full description, the data and the
+tests are in `entralink-roguelike-prototype.md`, "Random enemy rooms".
+
+- **Scaling:** a random room is a room of role room, so its enemies take the room curve at its depth (12.2, 15.2), with
+  scale 100 and no boss bonus or protections; the simulator's room tables hold for them as for premade rooms.
+- **Dust:** an enemy room's or an enemy choice room's (40 or 50 times the round's percent).
+- **Buffs:** nothing changes; team-aware offers (15.7) read the team, not the foes.
+- **Memory:** overlay 12 +7.4 KB (the 523 species' table 5.2 KB, the code 2 KB, the rows and accessors 0.1 KB), so the
+  main arena's start moves about 7.4 KB; ARM9 main +0.5 KB of BSS (the room made, 500 bytes). At a random room's entry a
+  species' personal data (76 bytes) and egg moves, briefly, from the event heap. No VRAM.

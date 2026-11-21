@@ -64,6 +64,10 @@ TEMPLATE_NONE = 0xff
 DEFAULT_CUSTOM_CHANCE = 25
 DEFAULT_GROUND_ITEM_CHANCE = 30
 DEFAULT_HIDDEN_ITEM_CHANCE = 20
+# Random enemy rooms (tools/paperwhite2/entralink_random.py): the chance an enemy or enemy_choice door leads to one,
+# and the types of their two rows of the room table, after the templates (EntralinkRoom's random)
+DEFAULT_RANDOM_ENEMY_CHANCE = 50
+RANDOM_TYPES = ["enemy", "enemy_choice"]
 # Dream Dust (step 7): what a battle won gives by its room (ENTRALINK_DUST_* order), times its round's percent; and a
 # shop's goods
 DUST_KINDS = ["enemy", "enemy_choice", "challenge", "boss", "final"]
@@ -482,16 +486,18 @@ def type_pool(rooms: dict[str, dict], number: int, kind: str) -> list[str]:
     return [n for n in room_pool(rooms, number) if rooms[n].get("type", "enemy") == kind]
 
 
-def type_problems(round_: dict, number: int, rooms: dict[str, dict], templates: dict[str, dict]) -> \
-        list[tuple[str, str]]:
+def type_problems(round_: dict, number: int, rooms: dict[str, dict], templates: dict[str, dict],
+                  random_chance: int = 0) -> list[tuple[str, str]]:
     """A round's room types: its weights adding up to 0, no type with a weight that has a room (an error each), a type
-    with a weight and no room, which the game skips (a warning)."""
+    with a weight and no room, which the game skips (a warning). An enemy or enemy_choice door always has a random room
+    while run.json's random_enemy_chance (random_chance) is above 0."""
     if not round_["rooms"]:
         return []
     weights = round_weights(round_)
 
     def drawable(kind):
-        return bool(type_pool(rooms, number, kind)) or (kind in TEMPLATES and kind in templates)
+        return bool(type_pool(rooms, number, kind)) or (kind in TEMPLATES and kind in templates) or (
+            kind in RANDOM_TYPES and random_chance > 0)
     skipped = [kind for kind in ROOM_TYPES if weights[kind] and not drawable(kind)]
     if not any(weights.values()):
         return [("error", f"round {number}'s room type weights add up to 0, so its doors can't draw a room")]
@@ -525,7 +531,8 @@ def draw_problems(run: dict, rooms: dict[str, dict], templates: dict[str, dict] 
         pool = room_pool(rooms, number)
         if templates is not None:
             # With the templates, only the types that need rooms/' rooms count, and a round with none still draws
-            problems += type_problems(round_, number, rooms, templates)
+            problems += type_problems(round_, number, rooms, templates,
+                                      run.get("random_enemy_chance", DEFAULT_RANDOM_ENEMY_CHANCE))
             pool = [n for kind in PREMADE_TYPES for n in type_pool(rooms, number, kind)]
         if round_["rooms"] and not pool:
             if templates is None:
@@ -677,7 +684,7 @@ def room_row(name: str, room: dict, template: bool, rooms: dict[str, dict], tabl
         "marker": MARKER_TYPES.index(room.get("marker", default_marker)),
         "type": ROOM_TYPES[kind], "template": int(template),
         "firstBattle": first_battle, "battleCount": len(battles) - first_battle,
-        "firstNpc": first_npc, "npcCount": len(npcs) - first_npc,
+        "firstNpc": first_npc, "npcCount": len(npcs) - first_npc, "random": 0,
     }
 
 
@@ -736,6 +743,12 @@ def tables(directory: Path) -> dict:
     for name, template in templates.items():
         template_index[name] = len(room_rows)
         room_rows.append(room_row(name, template, True, rooms, tables_, message, npc_markers))
+    random_index = {}
+    for kind in RANDOM_TYPES:
+        random_index[kind] = len(room_rows)
+        room_rows.append({"name": f"random/{kind}", "role": ROLES["room"], "rounds": 0, "weather": WEATHER_FIELD,
+                          "marker": MARKER_TYPES.index(TYPE_MARKERS[kind]), "type": ROOM_TYPES[kind], "template": 1,
+                          "firstBattle": 0, "battleCount": 0, "firstNpc": 0, "npcCount": 0, "random": 1})
     if len(room_rows) >= TEMPLATE_NONE:
         error("rooms", f"{len(room_rows)} rooms and templates, more than {TEMPLATE_NONE - 1}")
     # The template a door of each type takes when no premade room comes up (enemy and challenge have none)
@@ -759,6 +772,8 @@ def tables(directory: Path) -> dict:
     return {
         "ids": list(rooms),
         "templates": template_index,
+        "random_rooms": random_index,
+        "random_enemy_chance": run.get("random_enemy_chance", DEFAULT_RANDOM_ENEMY_CHANCE),
         "rooms": room_rows,
         **tables_,
         "rounds": round_rows,
@@ -854,7 +869,7 @@ def header(directory: Path) -> str:
     data = tables(directory)
     rooms = [f"/* {r['name']} */ {{ {r['role']}, 0x{r['rounds']:x}, 0x{r['weather']:02x}, {r['marker']}, "
              f"{r['type']}, {r['template']}, {r['firstBattle']}, {r['battleCount']}, {r['firstNpc']}, "
-             f"{r['npcCount']} }}" for r in data["rooms"]]
+             f"{r['npcCount']}, {r['random']} }}" for r in data["rooms"]]
     battles = [f"/* {b['name']} */ {{ {b['format']}, {b['enemyCount']}, {b['firstEnemy']}, {b['progressId']} }}"
                for b in data["battles"]]
     enemies = [f"/* {e['name']} */ {{ {e['species']}, {e['item']}, {{ {', '.join(map(str, e['moves']))} }}, "
@@ -897,6 +912,10 @@ def header(directory: Path) -> str:
         f"#define ENTRALINK_RUN_PRE_BOSS_REST {pre_boss_rest}",
         f"#define ENTRALINK_RUN_UNKNOWN_CHANCE {data['unknown_chance']}",
         f"#define ENTRALINK_RUN_CUSTOM_CHANCE {data['custom_chance']}",
+        "// Random enemy rooms: the chance an enemy or enemy choice door leads to one, and their rows",
+        f"#define ENTRALINK_RUN_RANDOM_ENEMY_CHANCE {data['random_enemy_chance']}",
+        f"#define ENTRALINK_RUN_RANDOM_ENEMY_ROOM {data['random_rooms']['enemy']}",
+        f"#define ENTRALINK_RUN_RANDOM_CHOICE_ROOM {data['random_rooms']['enemy_choice']}",
         f"#define ENTRALINK_RUN_GROUND_ITEM_CHANCE {data['ground_item_chance']}",
         f"#define ENTRALINK_RUN_HIDDEN_ITEM_CHANCE {data['hidden_item_chance']}",
         "// Dream Dust: a battle won's by its room (ENTRALINK_DUST_* order), times its round's percent; a shop's goods",
@@ -931,7 +950,7 @@ def header(directory: Path) -> str:
         f"#define ENTRALINK_RUN_ITEM_ICON_COUNT {data['icon_count']}",
         *(f"#define ENTRALINK_NPC_MARKER_{name.upper()} {i}" for i, name in enumerate(data["npc_markers"])),
         "// EntralinkRoom: role, rounds, weather, marker, type, template, first battle, battle count, first NPC,",
-        "// NPC count",
+        "// NPC count, random",
         f"#define ENTRALINK_RUN_ROOMS {initializer(rooms)}",
         "// EntralinkBattle: format, enemy count, first enemy, progress id",
         f"#define ENTRALINK_RUN_BATTLES {initializer(battles)}",

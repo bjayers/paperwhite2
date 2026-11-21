@@ -1043,6 +1043,65 @@ NPC, the others decoys that fade as the player comes near.
   read from disk once a session per species and form. SearchSelect's options can carry a `group`: a heading is shown
   where it changes.
 
+## Random enemy rooms (2026-11-21)
+
+Decided with the user the same day. A door that draws an `enemy` or `enemy_choice` room leads, at run.json's
+`random_enemy_chance` (50), to a **random room** rather than a premade one of the type; to a random room too when no
+premade one fits (unless the chance is 0). The first room of a run follows the same chance. Random rooms are never
+raids, bosses or the final room.
+
+| Where | What |
+| --- | --- |
+| `run.json` | `random_enemy_chance` (0-100, 50) and `random_rooms`: `format_weights` (single 40, double 35, triple 25), `bst` (a `{ min, max }` base stat total band for rounds 1-3, the last given for those left out; 300-480, 380-540, 450-600), `theme_chance` (70), `level` (70), `move_pool` (7), `tm_chance` (25), `hidden_ability_chance` (5), `anchors` (the battles' tiles for 1, 2 and 3 choices: `[15, 15]`; `[12, 15]`, `[19, 15]`; `[10, 15]`, `[15, 15]`, `[20, 15]`) |
+| `legendaries.json` | The legendary and mythical species (the species data has no such flag), never drawn; a new legendary species goes here |
+| `tools/paperwhite2/entralink_random.py` | Checks them and writes `paperwhite2/entralink_random_config.h`: the settings and the species table (`EntralinkRandomSpecies`: species, walking sprite with a bit for a female sprite next, evolution family as its line's first species, base stat total, types; 10 bytes each) |
+| `tools/paperwhite2/entralink_run.py` | Two rows after the templates, `random/enemy` and `random/enemy_choice` (`EntralinkRoom`'s new `random`, `isTemplate` so never in a pool, their types' markers), `ENTRALINK_RUN_RANDOM_ENEMY_ROOM`, `_CHOICE_ROOM` and `_ENEMY_CHANCE`; a round's enemy and enemy_choice types are never "skipped" while the chance is above 0 (`type_problems`, the editor's `runProblems`) |
+
+**The species:** those of the Pokédex (`species_list.pokedex_species`, so never a `"pokedex": false` one), the hack's
+new ones included, but legendaries.json's, that have a walking sprite (the packer's `walking_sprite`: 523 today; many
+Unova species have none and so never come up) and know a damaging level-up move (power above 0) at the rooms' level.
+
+**Making a room** (`EntralinkRun_MakeRandomRoom`, `src/paperwhite2/ov012/paperwhite2_entralink_random_rooms.c`, as the
+player enters it, before its NPCs come up): 1 battle (enemy) or 2-3 at even odds (enemy choice); each battle's format
+by the weights; its enemies from the round's band, the first at random and, at `theme_chance`, the others sharing a
+type or the family with it; every enemy keeps off the types and families of the room's earlier choices and no species
+comes twice in a battle. A rule no species fits is dropped, in the order theme-and-apart, theme, apart, distinct.
+Each enemy: the level, 4 moves drawn from the last `move_pool` level-up moves it knows at it (`PML_LearnsetLvUpLoad`),
+at `tm_chance` one replaced (or added, with fewer than 4) by a TM or HM (the personal data's TM bits), tutor (the free
+and paid tutors' bits, `paperwhite2/move_tutors.h`) or egg move (a/1/2/4); then, if none of them is damaging
+(`PML_MoveIsDamaging`), one replaced by a damaging one of those it knows. One of its two abilities at random, its
+hidden one at `hidden_ability_chance` (if it has one); no item; male or female by its gender ratio (set, so the NPC's
+sprite matches), genderless left to the PID; never shiny or catchable; scale 100 and progress id `ENTRALINK_NONE` (a
+win sets no bit). The NPCs: one per enemy, its walking sprite (`OBJ_CODE_POKEMON_*`, the female's where the sexes
+differ), facing down; a single on its anchor, a double on it and one to the right, a triple on it with the other two
+one tile back on either side (as Time and Space stands them). Talking to any of a battle's NPCs starts that battle.
+
+**Kept in ARM9 main:** `EntralinkRandomRoom` (`include/paperwhite2/entralink_random_rooms.h`,
+`src/paperwhite2/main/paperwhite2_entralink_random_room.c`) holds the room's record, its battles, enemies and NPCs as
+the tables' structs (500 bytes), so they outlast the battle. The run's code reads every NPC, battle and enemy through
+`EntralinkRun_GetNpc`, `_GetBattle` and `_GetEnemy`, and `EntralinkRun_GetRoom` gives the made room for a random row:
+spawning, battles, catches, ground items, clearing and dust read a random room as any other.
+
+**Scaling and Dust:** the room curve at the room's depth, no boss bonus and no per-enemy scale (entralink-buffs.md 12
+and 15); Dream Dust as an enemy or enemy_choice room's.
+
+**The editor:** the Run section's **Random rooms** (the chance, the three format weights, each round's band, Themed
+battles, Level, Move pool, TM moves, Hidden ability, and the anchors as x and z per choice); a note in the Templates
+group that random rooms have no template. The anchors stay in run.json rather than a template file: a template holds
+whole NPCs, while random rooms need only a tile per battle, and the build checks them (every format's tiles walkable
+in all the clearings and off the exits, markers and arrival, choices 2 tiles apart).
+
+**Tested** (py-desmume, the user's save copy, a build with `random_enemy_chance` 100 and the doors' weights poked to
+enemy 1 and enemy_choice 1; scripts in the session's scratchpad `randrooms/h/`): 13 random rooms, places 1-4 (round 1)
+and 16-18 (round 3, the run's place poked): 20 battles, 39 enemies, every species within its round's band, no
+legendary; 12 of the 15 doubles and triples themed (type or family: Charmander, Charmeleon and Torchic; Primeape and
+Machamp), the choices of each room of different types and families; every moveset distinct with a damaging move, 7 with
+an extra move, 1 hidden ability. Layouts (shots `layout_r3_1` single, `layout_r1_0` double, `layout_r1_1` triple,
+`layout_r3_2` three choices single/double/single, `layout_r3_4` three doubles): as above. Battles: a single (Stunfisk,
+round 3, 3,465 HP on the curve), a double started from its second NPC (Voltorb, with Joltik), a triple (Unown, Beldum,
+Exeggcute), and the first of three doubles in a choice room: each won, the room cleared, every NPC gone (the other
+choices too), Dream Dust 40, 40, 80 and 100 (enemy and enemy choice times the round's percent), the doors' markers shown.
+
 ## The re-entry question
 
 **Re-entering the same map works as a fresh room.** Tested by poking the room-maps table in RAM to `entree_forest`
