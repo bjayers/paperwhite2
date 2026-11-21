@@ -1,6 +1,7 @@
 #include "types.h"
 #include "nitro/mi.h"
 #include "paperwhite2/entralink_buffs.h"
+#include "paperwhite2/entralink_run_party.h"
 #include "paperwhite2/entralink_run_state.h"
 
 // Paper White 2: what the Entralink run holds of the buffs, in ARM9 main for the battle's effects (phase 3). See
@@ -37,6 +38,53 @@ BOOL EntralinkBuffs_NeedsWeather(void) {
         }
     }
     return FALSE;
+}
+
+// Rebalance 2: the cards that raise a stat on every hit, and the buckets' caps
+static const EntralinkBuffStatCard sStatCards[ENTRALINK_BUFF_STAT_CARD_COUNT] = ENTRALINK_BUFF_STAT_CARDS;
+static const u16 sBucketCaps[ENTRALINK_BUFF_BUCKET_COUNT] = ENTRALINK_BUFF_BUCKET_CAPS;
+
+// Whether a stat card's stat is a stat: the same, or the attacking (defending) one for both attacking (defending)
+static BOOL EntralinkBuffs_IsCardStat(u32 cardStat, u32 stat) {
+    if (cardStat == stat) {
+        return TRUE;
+    }
+    if (cardStat == ENTRALINK_BUFF_STAT_ATTACKING) {
+        return stat == ENTRALINK_BUFF_STAT_ATTACK || stat == ENTRALINK_BUFF_STAT_SP_ATTACK;
+    }
+    if (cardStat == ENTRALINK_BUFF_STAT_DEFENDING) {
+        return stat == ENTRALINK_BUFF_STAT_DEFENSE || stat == ENTRALINK_BUFF_STAT_SP_DEFENSE;
+    }
+    return FALSE;
+}
+
+u32 EntralinkBuffs_GetBuffedStat(u32 stat, u32 value) {
+    s32 sums[ENTRALINK_BUFF_BUCKET_COUNT];
+    const EntralinkBuffStatCard *card;
+    s32 percent;
+    u32 i;
+
+    if (!EntralinkRun_IsPartyKept()) {
+        return value;
+    }
+    MI_CpuFill32(sums, 0, sizeof(sums));
+    for (i = 0; i < NELEMS(sStatCards); i++) {
+        card = &sStatCards[i];
+        if (card->buff == ENTRALINK_BUFF_NONE || !EntralinkBuffs_IsCardStat(card->stat, stat)) {
+            continue;
+        }
+        percent = EntralinkBuffs_GetValue(card->buff, EntralinkBuffs_GetLevel(card->buff));
+        if (card->bucket == ENTRALINK_BUFF_NONE) {
+            value = value * (100 + percent) / 100;
+        } else {
+            sums[card->bucket] += percent;
+        }
+    }
+    for (i = 0; i < ENTRALINK_BUFF_BUCKET_COUNT; i++) {
+        percent = sums[i] < sBucketCaps[i] ? sums[i] : sBucketCaps[i];
+        value = value * (100 + percent) / 100;
+    }
+    return value;
 }
 
 u32 EntralinkBuffs_GetLevel(u32 buff) {

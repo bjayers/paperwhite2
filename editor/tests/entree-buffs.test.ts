@@ -54,14 +54,8 @@ test("the catalogue reads, writes back byte for byte and is valid in both checks
   assert.deepEqual(errors(data()), []);
   assert.deepEqual(buildCheck(data()), { ok: true });
   const cat = readCatalogue(data());
-  assert.deepEqual(checkBuffs(cat), []);
-  const tiers = cat.buffs.map((b) => b.tier);
-  assert.deepEqual([tiers.filter((t) => t === "blue").length, tiers.filter((t) => t === "purple").length, tiers.filter((t) => t === "gold").length], [10, 35, 68]);
-  assert.equal(cat.themes.length, 13);
-  assert.ok(cat.themes.some((t) => t.id === "stall") && !cat.themes.some((t) => t.id === "tag_team" || t.id === "harvest"));
-  assert.equal(cat.settings.damageCap, 60000);
-  assert.equal(cat.settings.goldSlots, 5);
-  for (const t of cat.themes) assert.equal(cat.buffs.filter((b) => b.theme === t.id && b.core).length, 1, t.id);
+  assert.deepEqual(checkBuffs(cat).filter((p) => p.severity === "error"), []);
+  assert.ok(cat.buffs.every((b) => ["blue", "purple", "gold"].includes(b.tier)));
 });
 
 test("the effect kinds come from the schema, and every card's kind is one of them", () => {
@@ -76,34 +70,61 @@ test("the effect kinds come from the schema, and every card's kind is one of the
   for (const b of readCatalogue(data()).buffs) assert.ok(names.has(b.kind), b.id);
 });
 
-test("the meter gives the doc's numbers, as the packer does", () => {
-  const cat = readCatalogue(data());
+/** A fixture catalogue of the real one's shape (rebalance 2: no facts about the user's own cards): three attack cards
+ * of known values, the buckets' caps fixed, and an example build. */
+function fixture(): JsonMap {
+  let d = data();
+  const pick = (id: string) => list(d).find((r) => readBuff(r).id === id) as JsonMap;
+  const card = (record: JsonMap, changes: Record<string, JsonValue>) => {
+    let r = record;
+    for (const [k, v] of Object.entries(changes)) r = setIn(r, [k], v) as JsonMap;
+    return r;
+  };
+  const attack = card(pick("attack"), { step: 10, soft_limit: 6, cap: 80, bucket: "atk", effect: parseJson('{"kind": "stat_ratio", "stat": "attack"}') });
+  const affinity = card(pick("type_affinity"), { step: 15, cap: 60, bucket: "pow", effect: parseJson('{"kind": "damage_ratio", "condition": {"card_type": true}}') });
+  const galvanic = card(pick("galvanic"), { ranks: parseJson("[60, 80, 100]"), bucket: "cond", effect: parseJson('{"kind": "damage_ratio", "condition": {"defender_status": ["paralysis"]}}') });
+  d = at(d, ["buffs"], [attack, affinity, galvanic]);
+  const caps: Record<string, number> = { atk: 100, pow: 100, stab: 75, match: 40, cond: 125, crit: 50, final: 25, def: 100, guard: 50 };
+  (d.get("buckets") as JsonValue[]).forEach((b, i) => { d = at(d, ["buckets", i, "cap"], caps[(b as JsonMap).get("id") as string]); });
+  d = at(d, ["balance"], parseJson('{"reference_hit": 600, "example": [{"buff": "attack", "count": 3}, {"buff": "galvanic", "count": 2}], "typical_factor": [1, 50]}'));
+  return d;
+}
+
+test("the meter multiplies the buckets held to their caps, as the packer does", () => {
+  const d = fixture();
+  const cat = readCatalogue(d);
   const top = ceilingHit(cat, 600);
-  // 5.2: 2.0 x 2.0 x 1.5 x 1.4 x 2.25 x 1.25 = 23.6 (14,200 on 600); a critical hit x2 x1.25 = 59.1 (35,400)
-  assert.equal(Math.round(top.factor * 1000) / 1000, 23.625);
-  assert.equal(Math.round(top.criticalFactor * 100) / 100, 59.06);
-  assert.equal(Math.round(top.hit), 14175);
-  assert.equal(Math.round(top.criticalHit), 35438);
-  assert.equal(Math.round(ceilingHit(cat, 800).criticalHit), 47250);
-  assert.ok(top.lines.filter((l) => l.bucket.side === "attack").every((l) => l.capped));
-  // 5.3: ATK 1.3 x POW 2.0 x STAB 1.33 x MATCH 1.08 x COND 2.02 = 7.6 (4,500 on 600)
+  // ATK 1.8 x POW 1.6 x COND 2.0 = 5.76; a critical hit x2 (no CRIT entry)
+  assert.equal(Math.round(top.factor * 1000) / 1000, 5.76);
+  assert.equal(Math.round(top.criticalFactor * 100) / 100, 11.52);
+  assert.equal(Math.round(top.hit), 3456);
+  assert.equal(Math.round(ceilingHit(cat, 800).criticalHit), 9216);
+  // ATK 1.3 x COND 1.8
   const typical = exampleHit(cat, cat.example, 600);
-  assert.equal(Math.round(typical.factor * 100) / 100, 7.56);
-  assert.equal(Math.round(typical.hit), 4538);
-  const packed = packerCheck(data());
+  assert.equal(Math.round(typical.factor * 100) / 100, 2.34);
+  assert.equal(Math.round(typical.hit), 1404);
+  const packed = packerCheck(d);
   assert.ok(packed.ok, packed.output);
-  assert.match(packed.output, /critical x59\.06 = 35,438/);
-  assert.match(packed.output, /example build: x7\.56 = 4,538/);
+  assert.match(packed.output, /critical x11\.52 = 6,912/);
+  assert.match(packed.output, /example build: x2\.34 = 1,404/);
   // A blue's picks halve past the soft limit; the cap holds
   assert.equal(pickedValue(10, 6, 80, 7), 65);
   assert.equal(pickedValue(10, 6, 80, 30), 80);
   assert.equal(pickedValue(-1, undefined, -2, 3), -2);
 });
 
-test("a bigger reference warns in the editor and the packer alike", () => {
-  const big = at(data(), ["balance", "reference_hit"], 2000);
-  assert.ok(checkBuffs(readCatalogue(big)).some((p) => p.severity === "warning" && p.message.includes("passes the damage cap")));
+test("a typical build past the clamp or outside its band warns in the editor and the packer alike; an extreme one doesn't", () => {
+  const big = at(at(fixture(), ["balance", "reference_hit"], 9999), ["settings", "damage_cap"], 20000);
+  const warns = (d: JsonMap, text: string) => checkBuffs(readCatalogue(d)).some((p) => p.severity === "warning" && p.message.includes(text));
+  assert.ok(warns(big, "passes the damage cap"));
   assert.match(packerCheck(big).output, /passes the damage cap/);
+  // No example: the strongest hit past the clamp alone is an extreme build's, fine
+  const extreme = at(big, ["balance", "example"], []);
+  assert.ok(!warns(extreme, "damage cap"));
+  assert.doesNotMatch(packerCheck(extreme).output, /damage cap \(/);
+  const band = at(fixture(), ["balance", "typical_factor"], parseJson("[10, 20]"));
+  assert.ok(warns(band, "outside the typical band"));
+  assert.match(packerCheck(band).output, /outside the typical band x10-20/);
 });
 
 test("new, duplicated and re-tiered cards are valid, with stable new ids", () => {
@@ -122,14 +143,16 @@ test("new, duplicated and re-tiered cards are valid, with stable new ids", () =>
   d = at(d, ["buffs", list(d).length], copy);
   // Attack to gold and back, Galvanic to purple
   const attack = list(d).findIndex((r) => readBuff(r).id === "attack");
+  const step = readBuff(list(d)[attack]).step;
   const goldAttack = changeTier(list(d)[attack] as JsonMap, "gold", 3, "speed", fieldOrder(schema, "gold"));
-  assert.deepEqual(readBuff(goldAttack).ranks, [10, 20, 30]);
+  assert.deepEqual(readBuff(goldAttack).ranks, [step, 2 * step, 3 * step]);
   assert.equal(readBuff(goldAttack).description.length, 3);
   d = at(d, ["buffs", attack], goldAttack);
   const galvanic = list(d).findIndex((r) => readBuff(r).id === "galvanic");
+  const ranks = readBuff(list(d)[galvanic]).ranks;
   const purple = changeTier(list(d)[galvanic] as JsonMap, "purple", 3, undefined, fieldOrder(schema, "purple"));
-  assert.equal(readBuff(purple).step, 60);
-  assert.equal(readBuff(purple).cap, 100);
+  assert.equal(readBuff(purple).step, ranks[0]);
+  assert.equal(readBuff(purple).cap, ranks[ranks.length - 1]);
   d = at(d, ["buffs", galvanic], purple);
   assert.deepEqual(errors(d), []);
   assert.deepEqual(buildCheck(d), { ok: true });

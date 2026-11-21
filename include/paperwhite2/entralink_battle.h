@@ -44,7 +44,11 @@ u32 EntralinkBattle_GetSrcHP(BattleMon *mon);
 // The max HP that damage over time on a Pokémon is a fraction of: a run battle's foe's one health bar's
 // (paperwhite2/entralink_bars.h: its max HP with a single bar), anyone else's its max HP
 u32 EntralinkBattle_GetResidualMaxHP(BattleMon *mon);
-// DivideMaxHPZeroCheck on that max HP
+// Rebalance 2: the most HP a heal can raise a Pokémon to: a run battle's foe with health bars no higher than the top of
+// the bar its HP is in (once a bar is broken, no heal brings it back), anyone else its max HP. HPAdd holds every heal
+// to it on the server's and the client's copies alike, and ServerControl_RecoverHPCheckFail fails a heal at it
+u32 EntralinkBattle_GetHealLimit(BattleMon *mon);
+// DivideMaxHPZeroCheck on the max HP that damage over time is a fraction of
 u32 EntralinkBattle_DivideResidualHP(BattleMon *mon, u32 divisor);
 // Bad poison's counter for its damage: on a boss, at most boss_toxic_cap sixteenths
 u32 EntralinkBattle_GetToxicCounter(BattleMon *mon, u32 counter);

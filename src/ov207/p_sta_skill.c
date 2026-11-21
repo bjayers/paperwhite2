@@ -19,6 +19,7 @@
 #include "system/app_menu_common.h"
 #include "system/hp_gauge.h"
 #ifdef PAPERWHITE2
+#include "paperwhite2/entralink_buffs.h"
 #include "text/system/p_sta_sys.h"
 #endif
 
@@ -207,6 +208,13 @@ static const u8 sStatRowParams[][3] = {
     { PKM_PARAM_SP_DEFENSE, PKM_PARAM_EV_SP_DEFENSE, PKM_PARAM_IV_SP_DEFENSE },
     { PKM_PARAM_SPEED, PKM_PARAM_EV_SPEED, PKM_PARAM_IV_SPEED },
 };
+// The rows' stats as the Entralink run's buffs name them (rebalance 2; HP's row has none: the HP blue raises the
+// copies' own max HP), and the colour of a value they raise
+static const u8 sStatRowBuffStats[] = {
+    ENTRALINK_BUFF_NONE,           ENTRALINK_BUFF_STAT_ATTACK,     ENTRALINK_BUFF_STAT_DEFENSE,
+    ENTRALINK_BUFF_STAT_SP_ATTACK, ENTRALINK_BUFF_STAT_SP_DEFENSE, ENTRALINK_BUFF_STAT_SPEED,
+};
+#define BUFFED_STAT_COLOR PRINT_COLOR(10, 2, 0)
 #endif
 
 PStaSkillWork *PStaSkill_Create(PStatusWork *wk) {
@@ -1512,6 +1520,8 @@ static void PStaSkill_PrintStatRows(PStatusWork *wk, PStaSkillWork *skill, Party
     BmpWin *window;
     u32 evTotal = 0;
     u32 evsLeft = 0;
+    u32 value;
+    u32 buffed;
     u32 i;
 
     for (i = 0; i <= 6; i++) {
@@ -1543,9 +1553,14 @@ static void PStaSkill_PrintStatRows(PStatusWork *wk, PStaSkillWork *skill, Party
         if (skill->showHidden == TRUE) {
             PStaSkill_PrintHiddenRow(wk, window, pkm, i, evsLeft);
         } else {
+            // In an Entralink run, the run's stat buffs on its copies, as its battles raise them, in their own colour
+            // (rebalance 2)
+            value = PokeParty_GetParam(pkm, sStatRowParams[i][0], NULL);
+            buffed = EntralinkBuffs_GetBuffedStat(sStatRowBuffStats[i], value);
             wordSet = GFL_WordSetSystemCreateDefault(wk->heapId);
-            WordSetNumber(wordSet, 0, PokeParty_GetParam(pkm, sStatRowParams[i][0], NULL), 3, 1, 1);
-            PStatus_PrintFormattedRightToWindow(wk, window, wordSet, 0x77 + i, 105, 1, PRINT_COLOR(1, 2, 0));
+            WordSetNumber(wordSet, 0, buffed, buffed > 999 ? 4 : 3, 1, 1);
+            PStatus_PrintFormattedRightToWindow(wk, window, wordSet, 0x77 + i, 105, 1,
+                                                buffed != value ? BUFFED_STAT_COLOR : PRINT_COLOR(1, 2, 0));
             GFL_WordSetSystemFree(wordSet);
         }
     }

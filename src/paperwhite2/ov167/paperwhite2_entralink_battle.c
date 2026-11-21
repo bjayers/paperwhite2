@@ -1766,6 +1766,20 @@ u32 EntralinkBattle_GetResidualMaxHP(BattleMon *mon) {
     return maxHP;
 }
 
+u32 EntralinkBattle_GetHealLimit(BattleMon *mon) {
+    u32 maxHP = GetBattleMonStat(mon, BATTLEMON_MAX_HP);
+    u32 hp = GetBattleMonStat(mon, BATTLEMON_HP);
+    u32 inBar;
+    u32 size;
+
+    // The foes the run scaled carry their place in its party, on the server's copy and the client's
+    if (mon->core.entralinkScale == 0 || EntralinkBars_GetCount(maxHP) == 1) {
+        return maxHP;
+    }
+    EntralinkBars_GetBar(hp, maxHP, &inBar, &size);
+    return hp - inBar + size;
+}
+
 // ---- Phase 5: the enemies' scaling ---------------------------------------------------------------------------------
 
 void EntralinkBattle_ScaleMon(BtlMainModule *mainModule, BattleMon *mon, u32 clientId, u32 index) {

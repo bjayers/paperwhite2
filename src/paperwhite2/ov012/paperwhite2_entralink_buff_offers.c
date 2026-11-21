@@ -1,5 +1,6 @@
 #include "types.h"
 #include "constants/arc.h"
+#include "constants/moves.h"
 #include "constants/pokemon.h"
 #include "constants/script_text_banks.h"
 #include "field/field_msgbg.h"
@@ -10,6 +11,7 @@
 #include "paperwhite2/entralink_buffs.h"
 #include "paperwhite2/entralink_run_party.h"
 #include "paperwhite2/entralink_run_state.h"
+#include "pml/move.h"
 #include "pml/poke_party.h"
 #include "system/bmp_menuwork.h"
 #include "system/game_data.h"
@@ -29,6 +31,18 @@
 
 static const EntralinkBuff sBuffs[ENTRALINK_BUFF_COUNT] = ENTRALINK_BUFF_TABLE;
 static const u8 sOdds[ENTRALINK_BUFF_SOURCE_COUNT][3] = ENTRALINK_BUFF_ODDS;
+// Rebalance 2: the themes' team tags, each theme's moves (abilities) from its start to the next theme's
+static const u16 sTeamMoves[ENTRALINK_BUFF_TEAM_MOVE_COUNT] = ENTRALINK_BUFF_TEAM_MOVES;
+static const u16 sTeamMoveStarts[ENTRALINK_BUFF_THEME_COUNT + 1] = ENTRALINK_BUFF_TEAM_MOVE_STARTS;
+static const u16 sTeamAbilities[ENTRALINK_BUFF_TEAM_ABILITY_COUNT] = ENTRALINK_BUFF_TEAM_ABILITIES;
+static const u16 sTeamAbilityStarts[ENTRALINK_BUFF_THEME_COUNT + 1] = ENTRALINK_BUFF_TEAM_ABILITY_STARTS;
+
+// What weighs the cards of a draw: the themes of the golds held, a bit each, and each theme's weight by the team, in
+// percent
+typedef struct {
+    u32 heldThemes;
+    u16 team[ENTRALINK_BUFF_THEME_COUNT];
+} DrawWeights;
 
 // The text a list or a message of cards is made of: the text bank SCRIPT_TEXT_ENTRALINK_BUFFS, the script's words,
 // and three strings
@@ -88,6 +102,118 @@ static u32 EntralinkBuffs_GetHeldThemes(void) {
     return themes;
 }
 
+// Whether a value is in a part of a list
+static BOOL EntralinkBuffs_IsListed(const u16 *list, u32 start, u32 end, u32 value) {
+    u32 i;
+
+    for (i = start; i < end; i++) {
+        if (list[i] == value) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+// What the team's scan reads of a Pokémon, once a draw: its ability, its moves, and whether each is a damaging move of
+// one of its own types
+typedef struct {
+    u16 ability;
+    u16 moves[4];
+    u8 stabMoves;
+} TeamMember;
+
+static void EntralinkBuffs_ReadMember(PartyPkm *pkm, TeamMember *member) {
+    u32 type1 = PokeParty_GetParam(pkm, PKM_PARAM_TYPE1, NULL);
+    u32 type2 = PokeParty_GetParam(pkm, PKM_PARAM_TYPE2, NULL);
+    u32 type;
+    u32 i;
+
+    member->ability = PokeParty_GetParam(pkm, PKM_PARAM_ABILITY, NULL);
+    member->stabMoves = 0;
+    for (i = 0; i < 4; i++) {
+        member->moves[i] = PokeParty_GetParam(pkm, PKM_PARAM_MOVE1 + i, NULL);
+        if (member->moves[i] == MOVE_NONE || !(ENTRALINK_BUFF_TEAM_STAB_THEMES)) {
+            continue;
+        }
+        // The type first: the move's power is read only for one of the Pokémon's own types
+        type = PML_MoveGetType(member->moves[i]);
+        if ((type == type1 || type == type2) && PML_MoveIsDamaging(member->moves[i])) {
+            member->stabMoves |= 1 << i;
+        }
+    }
+}
+
+// Whether a Pokémon plays a theme (rebalance 2): it has one of the theme's moves or abilities (buffs.json's team_tags),
+// or for a theme that counts them, a damaging move of one of its own types
+static BOOL EntralinkBuffs_PlaysTheme(const TeamMember *member, u32 theme) {
+    u32 i;
+
+    if (EntralinkBuffs_IsListed(sTeamAbilities, sTeamAbilityStarts[theme], sTeamAbilityStarts[theme + 1],
+                                member->ability)) {
+        return TRUE;
+    }
+    if ((ENTRALINK_BUFF_TEAM_STAB_THEMES & (1 << theme)) && member->stabMoves != 0) {
+        return TRUE;
+    }
+    for (i = 0; i < 4; i++) {
+        if (member->moves[i] != MOVE_NONE &&
+            EntralinkBuffs_IsListed(sTeamMoves, sTeamMoveStarts[theme], sTeamMoveStarts[theme + 1], member->moves[i])) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+// The weights a draw uses: the themes of the golds held, and each theme's weight in percent by the Pokémon of the run's
+// team that play it (rebalance 2: team_theme_weight each, at most team_theme_max), scanned as the cards are drawn so a
+// swap counts
+static void EntralinkBuffs_GetDrawWeights(GameData *gameData, DrawWeights *weights) {
+    PokeParty *party = GameData_GetParty(gameData);
+    PartyPkm *pkm;
+    TeamMember member;
+    int count = PokeParty_GetPkmCount(party);
+    u32 theme;
+    int i;
+
+    weights->heldThemes = EntralinkBuffs_GetHeldThemes();
+    for (theme = 0; theme < ENTRALINK_BUFF_THEME_COUNT; theme++) {
+        weights->team[theme] = 100;
+    }
+    for (i = 0; i < count; i++) {
+        pkm = PokeParty_GetPkm(party, i);
+        if (PokeParty_GetParam(pkm, PKM_PARAM_IS_EGG, NULL)) {
+            continue;
+        }
+        EntralinkBuffs_ReadMember(pkm, &member);
+        for (theme = 0; theme < ENTRALINK_BUFF_THEME_COUNT; theme++) {
+            if (EntralinkBuffs_PlaysTheme(&member, theme)) {
+                weights->team[theme] += ENTRALINK_BUFF_TEAM_THEME_WEIGHT;
+            }
+        }
+    }
+    for (theme = 0; theme < ENTRALINK_BUFF_THEME_COUNT; theme++) {
+        if (weights->team[theme] > ENTRALINK_BUFF_TEAM_THEME_MAX) {
+            weights->team[theme] = ENTRALINK_BUFF_TEAM_THEME_MAX;
+        }
+    }
+}
+
+// The team's weight for a card in percent: a gold's theme's, a purple's best related theme's, 100 for the others
+static u32 EntralinkBuffs_GetTeamWeight(const EntralinkBuff *entry, const DrawWeights *weights) {
+    u32 best = 100;
+    u32 theme;
+
+    if (entry->tier == ENTRALINK_BUFF_TIER_GOLD) {
+        return entry->theme != ENTRALINK_BUFF_THEME_NONE ? weights->team[entry->theme] : 100;
+    }
+    for (theme = 0; theme < ENTRALINK_BUFF_THEME_COUNT; theme++) {
+        if ((entry->related & (1 << theme)) && weights->team[theme] > best) {
+            best = weights->team[theme];
+        }
+    }
+    return best;
+}
+
 // A type's weight for a type card: none once its count is at the card's highest, more for the team's types
 static u32 EntralinkBuffs_GetTypeWeight(u32 buff, u32 type, u32 teamTypes) {
     if (EntralinkBuffs_GetTypeCount(buff, type) >= sBuffs[buff].maxLevel) {
@@ -138,9 +264,9 @@ static BOOL EntralinkBuffs_CanRise(u32 buff) {
 
 // A buff's weight in a draw from a pool in a round: none outside them, below none of the excluded cards, or when it
 // can't rise; its own weight, times rank_up_weight for a gold held, times held_theme_weight for another gold of a
-// theme held or a purple related to one
+// theme held or a purple related to one, times the team's weight for its theme (rebalance 2)
 static u32 EntralinkBuffs_GetWeight(u32 buff, u32 pool, u32 round, const EntralinkCard *excluded, u32 count,
-                                    u32 heldThemes) {
+                                    const DrawWeights *weights) {
     const EntralinkBuff *entry = &sBuffs[buff];
     u32 weight = entry->weight * WEIGHT_SCALE;
     u32 i;
@@ -159,24 +285,24 @@ static u32 EntralinkBuffs_GetWeight(u32 buff, u32 pool, u32 round, const Entrali
     if (entry->tier == ENTRALINK_BUFF_TIER_GOLD) {
         if (EntralinkBuffs_GetGoldRank(buff) != 0) {
             weight = weight * ENTRALINK_BUFF_RANK_UP_WEIGHT / 100;
-        } else if (heldThemes & (1 << entry->theme)) {
+        } else if (weights->heldThemes & (1 << entry->theme)) {
             weight = weight * ENTRALINK_BUFF_HELD_THEME_WEIGHT / 100;
         }
-    } else if (entry->related & heldThemes) {
+    } else if (entry->related & weights->heldThemes) {
         weight = weight * ENTRALINK_BUFF_HELD_THEME_WEIGHT / 100;
     }
-    return weight;
+    return weight * EntralinkBuffs_GetTeamWeight(entry, weights) / 100;
 }
 
 // The total weight of a tier's buffs in a draw
 static u32 EntralinkBuffs_GetTierWeight(u32 tier, u32 pool, u32 round, const EntralinkCard *excluded, u32 count,
-                                        u32 heldThemes) {
+                                        const DrawWeights *weights) {
     u32 total = 0;
     u32 buff;
 
     for (buff = 0; buff < ENTRALINK_BUFF_COUNT; buff++) {
         if (sBuffs[buff].tier == tier) {
-            total += EntralinkBuffs_GetWeight(buff, pool, round, excluded, count, heldThemes);
+            total += EntralinkBuffs_GetWeight(buff, pool, round, excluded, count, weights);
         }
     }
     return total;
@@ -184,9 +310,8 @@ static u32 EntralinkBuffs_GetTierWeight(u32 tier, u32 pool, u32 round, const Ent
 
 // A buff of a tier at random by the weights, as a card with its type; ENTRALINK_CARD_NONE if none fits
 static void EntralinkBuffs_DrawOfTier(GameData *gameData, u32 tier, u32 pool, u32 round, const EntralinkCard *excluded,
-                                      u32 count, EntralinkCard *card) {
-    u32 heldThemes = EntralinkBuffs_GetHeldThemes();
-    u32 total = EntralinkBuffs_GetTierWeight(tier, pool, round, excluded, count, heldThemes);
+                                      u32 count, const DrawWeights *weights, EntralinkCard *card) {
+    u32 total = EntralinkBuffs_GetTierWeight(tier, pool, round, excluded, count, weights);
     u32 roll;
     u32 weight;
     u32 buff;
@@ -202,7 +327,7 @@ static void EntralinkBuffs_DrawOfTier(GameData *gameData, u32 tier, u32 pool, u3
         if (sBuffs[buff].tier != tier) {
             continue;
         }
-        weight = EntralinkBuffs_GetWeight(buff, pool, round, excluded, count, heldThemes);
+        weight = EntralinkBuffs_GetWeight(buff, pool, round, excluded, count, weights);
         if (roll < weight) {
             break;
         }
@@ -218,10 +343,10 @@ static void EntralinkBuffs_DrawOfTier(GameData *gameData, u32 tier, u32 pool, u3
     }
 }
 
-void EntralinkBuffs_DrawCard(GameData *gameData, u32 source, u32 round, const EntralinkCard *excluded, u32 count,
-                             EntralinkCard *card) {
+// EntralinkBuffs_DrawCard with the draw's weights worked out
+static void EntralinkBuffs_DrawCardWeighted(GameData *gameData, u32 source, u32 round, const EntralinkCard *excluded,
+                                            u32 count, const DrawWeights *drawWeights, EntralinkCard *card) {
     u32 pool = EntralinkBuffs_GetPool(source);
-    u32 heldThemes = EntralinkBuffs_GetHeldThemes();
     u32 weights[3];
     u32 total = 0;
     u32 roll;
@@ -233,7 +358,7 @@ void EntralinkBuffs_DrawCard(GameData *gameData, u32 source, u32 round, const En
         if (source == ENTRALINK_BUFF_SOURCE_SHOP && tier == ENTRALINK_BUFF_TIER_GOLD) {
             weights[tier] = weights[tier] * ENTRALINK_BUFF_SHOP_GOLD_WEIGHT / 100;
         }
-        if (EntralinkBuffs_GetTierWeight(tier, pool, round, excluded, count, heldThemes) == 0) {
+        if (EntralinkBuffs_GetTierWeight(tier, pool, round, excluded, count, drawWeights) == 0) {
             weights[tier] = 0;
         }
         total += weights[tier];
@@ -241,7 +366,7 @@ void EntralinkBuffs_DrawCard(GameData *gameData, u32 source, u32 round, const En
     if (total == 0) {
         // Every tier with a buff to draw has odds of 0: any that has one
         for (tier = 0; tier < 3; tier++) {
-            if (EntralinkBuffs_GetTierWeight(tier, pool, round, excluded, count, heldThemes) != 0) {
+            if (EntralinkBuffs_GetTierWeight(tier, pool, round, excluded, count, drawWeights) != 0) {
                 break;
             }
         }
@@ -258,18 +383,29 @@ void EntralinkBuffs_DrawCard(GameData *gameData, u32 source, u32 round, const En
         card->kind = ENTRALINK_CARD_NONE;
         return;
     }
-    EntralinkBuffs_DrawOfTier(gameData, tier, pool, round, excluded, count, card);
+    EntralinkBuffs_DrawOfTier(gameData, tier, pool, round, excluded, count, drawWeights, card);
+}
+
+void EntralinkBuffs_DrawCard(GameData *gameData, u32 source, u32 round, const EntralinkCard *excluded, u32 count,
+                             EntralinkCard *card) {
+    DrawWeights weights;
+
+    EntralinkBuffs_GetDrawWeights(gameData, &weights);
+    EntralinkBuffs_DrawCardWeighted(gameData, source, round, excluded, count, &weights, card);
 }
 
 u32 EntralinkBuffs_DrawOffer(GameData *gameData, u32 source, u32 round, EntralinkCard *cards, u32 count) {
     EntralinkCard replaced;
     EntralinkCard gold;
+    DrawWeights weights;
     u32 drawn = 0;
     u32 slot;
     u32 i;
 
+    // The team is scanned once an offer (it reads the moves' data)
+    EntralinkBuffs_GetDrawWeights(gameData, &weights);
     for (i = 0; i < count; i++) {
-        EntralinkBuffs_DrawCard(gameData, source, round, cards, i, &cards[i]);
+        EntralinkBuffs_DrawCardWeighted(gameData, source, round, cards, i, &weights, &cards[i]);
     }
     for (i = 0; i < count; i++) {
         if (cards[i].kind != ENTRALINK_CARD_NONE) {
@@ -289,7 +425,7 @@ u32 EntralinkBuffs_DrawOffer(GameData *gameData, u32 source, u32 round, Entralin
     replaced = cards[slot];
     cards[slot].kind = ENTRALINK_CARD_NONE;
     EntralinkBuffs_DrawOfTier(gameData, ENTRALINK_BUFF_TIER_GOLD, ENTRALINK_BUFF_POOL_AFTER_BATTLE, round, cards, count,
-                              &gold);
+                              &weights, &gold);
     if (gold.kind == ENTRALINK_CARD_NONE) {
         cards[slot] = replaced;
         return drawn;

@@ -766,20 +766,20 @@ function RunSection({ rooms, templates }: { rooms: { id: string; room: Room }[];
         <span className="muted small">How many box Pokémon the Entralink's Reserve Box NPC lets the player set aside for swaps (saved as links: each is used as it is in its box when called)</span>
 
         <h6 className="en-sub en-run-head">Enemy scaling <span className="muted">stats in percent, by depth</span></h6>
-        <span className="muted small">A room (a raid in a room too) multiplies its enemies' stat by a curve of its depth across the whole run: First room, rising to Last room along the depth raised to Curve / 100 (so changing a round's rooms keeps the run's arc). A round's boss (round 3's: the final room) takes its Boss value; then each enemy's own Scale. tools/paperwhite2/entralink_sim.py simulates a run with them</span>
+        <span className="muted small">A room (a raid in a room too) multiplies its enemies' stat by a curve of its depth across the whole run: First room, rising to Last room along the depth raised to Curve / 100 (so changing a round's rooms keeps the run's arc). A round's boss (round 3's: the final room) takes the curve at its round's last room times its Boss bonus; then each enemy's own Scale. tools/paperwhite2/entralink_sim.py simulates a run with them (and --fit proposes them)</span>
         <table className="en-scaling">
           <thead>
             <tr>
               <th />
               {CURVE_KEYS.map((key) => <th key={key} className="muted small" title={CURVE_KEY_TITLES[key]}>{CURVE_KEY_NAMES[key]}</th>)}
-              {run.rounds.map((_, i) => <th key={i} className="muted small" title={i === run.rounds.length - 1 ? `Round ${i + 1}'s boss: the final room` : `Round ${i + 1}'s boss`}>Boss R{i + 1}</th>)}
+              {run.rounds.map((_, i) => <th key={i} className="muted small" title={`${i === run.rounds.length - 1 ? `Round ${i + 1}'s boss: the final room` : `Round ${i + 1}'s boss`}, in percent of the curve at its round's last room`}>Boss bonus R{i + 1}</th>)}
             </tr>
           </thead>
           <tbody>
             {SCALED_STATS.map((stat) => {
               const set = (change: (v: StatScaling) => StatScaling) => setKey("enemy_scaling", fromPlain(Object.fromEntries(SCALED_STATS.map((s) => {
                 const v = s === stat ? change(run.enemyScaling[s]) : run.enemyScaling[s];
-                return [s, { start: v.start, end: v.end, curve: v.curve, boss: v.boss.slice(0, run.rounds.length) }];
+                return [s, { start: v.start, end: v.end, curve: v.curve, boss_bonus: v.bossBonus.slice(0, run.rounds.length) }];
               }))));
               return (
                 <tr key={stat}>
@@ -792,8 +792,8 @@ function RunSection({ rooms, templates }: { rooms: { id: string; room: Room }[];
                   ))}
                   {run.rounds.map((_, i) => (
                     <td key={i}>
-                      <NumberBox value={run.enemyScaling[stat].boss[i]} min={10} max={50000} width={76}
-                                 onChange={(n) => set((v) => ({ ...v, boss: v.boss.map((b, j) => (j === i ? n : b)) }))} />
+                      <NumberBox value={run.enemyScaling[stat].bossBonus[i]} min={10} max={50000} width={76}
+                                 onChange={(n) => set((v) => ({ ...v, bossBonus: v.bossBonus.map((b, j) => (j === i ? n : b)) }))} />
                     </td>
                   ))}
                 </tr>
@@ -807,7 +807,7 @@ function RunSection({ rooms, templates }: { rooms: { id: string; room: Room }[];
             <NumberBox value={run.raidHpFactor} min={0.1} max={20} step={0.1} onChange={(n) => setKey("raid_hp_factor", n)} />
           </span>
         </div>
-        <span className="muted small">A raid in a room (three attackers against one foe) has its HP multiplied by this on top of the curve's, the other stats as the room's (3.0 if left out; a raid as a boss or the final room takes the Boss values)</span>
+        <span className="muted small">A raid (three attackers against one foe) has its HP multiplied by this on top of its place's (a room's curve, or a boss's), the other stats as its place's (3.0 if left out)</span>
 
         <h6 className="en-sub en-run-head">Rounds <span className="muted">then the final room</span></h6>
         <div className="en-list-actions">

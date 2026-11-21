@@ -76,11 +76,15 @@ DEFAULT_SWAP_DUST = 100
 DEFAULT_RESERVE_SLOTS = 6
 # Phase 5 (entralink-buffs.md, section 12) and the rebalance (2026-11-20): the enemies' stat multipliers, in
 # EntralinkScaling's order (ENTRALINK_STAT_*): a room curve keyed by the room's depth across the run (start, end and a
-# curve exponent in hundredths) and a boss value per round; an enemy's own scale; and a raid's extra HP factor
+# curve exponent in hundredths) and a boss bonus per round over the curve (rebalance 2); an enemy's own scale; and a
+# raid's extra HP factor
 SCALED_STATS = ["hp", "attack", "defense", "sp_attack", "sp_defense", "speed"]
 SCALING_DEFAULTS = {"start": 100, "end": 100, "curve": 100}
 DEFAULT_SCALE = 100
 DEFAULT_RAID_HP_FACTOR = 3.0
+# Rebalance 2: a boss is the room curve at its round's last room times its bonus (percent); the game's percents are u16
+DEFAULT_BOSS_BONUS = 100
+MAX_PERCENT = 0xffff
 # The item table's pools (ENTRALINK_POOL_*, bits)
 POOLS = {"item_room": 0, "gift": 1, "shop": 2, "ground": 3}
 # An item without a bag icon in the model table
@@ -792,19 +796,32 @@ def run_room_count(run: dict) -> int:
     return sum(round_["rooms"] for round_ in run["rounds"])
 
 
+def boss_room_index(run: dict, round_index: int) -> int:
+    """The room a round's boss is scaled at (rebalance 2): its round's last room, among all the run's rooms; for round
+    3 (the final room's) and past the rounds given, the run's last room."""
+    count = run_room_count(run)
+    if round_index >= len(run["rounds"]) - 1:
+        return max(0, count - 1)
+    return max(0, sum(r["rooms"] for r in run["rounds"][:round_index + 1]) - 1)
+
+
 def enemy_scaling(run: dict) -> dict[str, dict]:
-    """run.json's enemy_scaling with its defaults: each stat's start, end and curve, its boss values (one for each of
-    the 3 rounds, a round left out taking the last one given) and `rooms`, the room curve's percent for every room of
-    the run by its depth across the run (the game's table)."""
+    """run.json's enemy_scaling with its defaults: each stat's start, end and curve, its boss bonuses (one for each of
+    the 3 rounds, a round left out taking the last one given), `rooms`, the room curve's percent for every room of
+    the run by its depth across the run (the game's table), and `boss`, each round's boss's percent: the curve at its
+    round's last room times its bonus (rebalance 2; at most MAX_PERCENT)."""
     table = run.get("enemy_scaling", {})
     count = run_room_count(run)
     out = {}
     for stat in SCALED_STATS:
         entry = table.get(stat, {})
         curve = {key: entry.get(key, default) for key, default in SCALING_DEFAULTS.items()}
-        boss = entry.get("boss") or [100]
-        out[stat] = {**curve, "boss": [boss[min(i, len(boss) - 1)] for i in range(3)],
-                     "rooms": [room_percent(curve, i, count) for i in range(count)]}
+        bonus = entry.get("boss_bonus") or [DEFAULT_BOSS_BONUS]
+        bonus = [bonus[min(i, len(bonus) - 1)] for i in range(3)]
+        rooms = [room_percent(curve, i, count) for i in range(count)]
+        boss = [min(MAX_PERCENT, round(room_percent(curve, boss_room_index(run, i), count) * bonus[i] / 100))
+                for i in range(3)]
+        out[stat] = {**curve, "boss_bonus": bonus, "boss": boss, "rooms": rooms}
     return out
 
 
@@ -880,7 +897,8 @@ def header(directory: Path) -> str:
         f"#define ENTRALINK_RUN_RESERVE_SLOTS {data['reserve_slots']}",
         "// EntralinkScaling (phase 5), a stat each (ENTRALINK_STAT_* order): the percent in each room of the run by its",
         "// depth across the run (run.json's start, end and curve worked out), then the percent of the three rounds'",
-        "// bosses (the last: the final room). A raid in a room has its HP times the raid factor (percent) as well",
+        "// bosses (the last: the final room; the curve at the round's last room times its boss_bonus). A raid has its",
+        "// HP times the raid factor (percent) as well, wherever it is",
         "#define ENTRALINK_RUN_ENEMY_SCALING { " + ", ".join(
             "{ { " + ", ".join(map(str, data["enemy_scaling"][stat]["rooms"])) + " }, { "
             + ", ".join(map(str, data["enemy_scaling"][stat]["boss"])) + " } }" for stat in SCALED_STATS) + " }",

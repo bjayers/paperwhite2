@@ -461,23 +461,24 @@ def test_icon_shift():
 
 
 def test_enemy_scaling_and_scale(tmp_path):
-    """Phase 5 and its rebalance: run.json's enemy_scaling, a stat each (a room curve by depth across the run, a boss
-    value a round: the last given for the others, the defaults for what is left out), the raid's HP factor, and an
-    enemy's own scale (100 if left out), in the header."""
+    """Phase 5 and its rebalances: run.json's enemy_scaling, a stat each (a room curve by depth across the run, a boss
+    bonus a round over the curve at its round's last room: the last given for the others, the defaults for what is
+    left out), the raid's HP factor, and an enemy's own scale (100 if left out), in the header."""
     directory = copy_data(tmp_path)
     edit(directory / "run.json", lambda data: data.update(
         rounds=[{"rooms": 3}, {"rooms": 2}], raid_hp_factor=2.5,
-        enemy_scaling={"hp": {"start": 100, "end": 500, "curve": 200, "boss": [5000]}}))
+        enemy_scaling={"hp": {"start": 100, "end": 500, "curve": 200, "boss_bonus": [300]}}))
     edit(room(directory, "dialga"), lambda data: data["battles"][0]["enemies"][0].update(scale=150))
     data = entralink_run.tables(directory)
-    assert data["enemy_scaling"]["hp"] == {"start": 100, "end": 500, "curve": 200, "boss": [5000, 5000, 5000],
-                                           "rooms": [100, 125, 200, 325, 500]}
-    assert data["enemy_scaling"]["speed"] == {"start": 100, "end": 100, "curve": 100, "boss": [100] * 3,
-                                              "rooms": [100] * 5}
+    # Round 1's boss at its last room (200%), round 2's (the last: the final room's) and round 3's at the run's last
+    assert data["enemy_scaling"]["hp"] == {"start": 100, "end": 500, "curve": 200, "boss_bonus": [300] * 3,
+                                           "boss": [600, 1500, 1500], "rooms": [100, 125, 200, 325, 500]}
+    assert data["enemy_scaling"]["speed"] == {"start": 100, "end": 100, "curve": 100, "boss_bonus": [100] * 3,
+                                              "boss": [100] * 3, "rooms": [100] * 5}
     assert data["raid_hp_percent"] == 250
     assert {e["scale"] for e in data["enemies"] if e["name"].startswith("dialga/")} == {150}
     text = entralink_run.header(directory)
-    assert "#define ENTRALINK_RUN_ENEMY_SCALING { { { 100, 125, 200, 325, 500 }, { 5000, 5000, 5000 } }, " in text
+    assert "#define ENTRALINK_RUN_ENEMY_SCALING { { { 100, 125, 200, 325, 500 }, { 600, 1500, 1500 } }, " in text
     assert "#define ENTRALINK_RUN_RAID_HP_PERCENT 250" in text
     edit(room(directory, "dialga"), lambda data: data["battles"][0]["enemies"][0].update(scale=5))
     with pytest.raises(datajson.DataError, match="scale"):

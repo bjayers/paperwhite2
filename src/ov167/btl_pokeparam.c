@@ -1084,10 +1084,18 @@ void HPSub(BattleMon *mon, u16 amount) {
 }
 
 void HPAdd(BattleMon *mon, u16 amount) {
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink run's foe with health bars heals no higher than the top of the bar it is in (a bar
+    // broken stays broken), and the sum is worked out wide, since a scaled foe's HP comes near the 16 bits' top
+    u32 limit = EntralinkBattle_GetHealLimit(mon);
+
+    mon->core.hp = (u32)mon->core.hp + amount > limit ? limit : mon->core.hp + amount;
+#else
     mon->core.hp += amount;
     if (mon->core.hp > mon->core.maxHP) {
         mon->core.hp = mon->core.maxHP;
     }
+#endif
 }
 
 void HPZero(BattleMon *mon) {

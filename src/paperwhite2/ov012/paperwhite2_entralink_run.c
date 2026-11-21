@@ -1286,8 +1286,9 @@ static void EntralinkRun_AddEnemy(GameData *gameData, PokeParty *party, const En
 // are fainted copies of its enemy, so the enemy stands in the center and the battle plays as any triple with two foes
 // down
 // The battle's enemies' stat multipliers (phase 5 and the rebalance), which the battle applies at its start: a room's
-// (a raid in a room too) by its depth across the run, a boss's and the final room's by the round's boss values, times
-// each enemy's own scale, at most 0xffff. A raid's HP also takes the raid factor, as three players hit it
+// (a raid in a room too) by its depth across the run, a boss's and the final room's by the round's boss values (the
+// curve at its round's last room times its bonus, rebalance 2), times each enemy's own scale, at most 0xffff. A
+// raid's HP also takes the raid factor, wherever it is, as three players hit it
 static void EntralinkRun_SetEnemyScale(EntralinkRunState *state, const EntralinkRoom *room,
                                        const EntralinkBattle *battle) {
     static const EntralinkScaling SCALING[ENTRALINK_STAT_COUNT] = ENTRALINK_RUN_ENEMY_SCALING;
@@ -1308,9 +1309,9 @@ static void EntralinkRun_SetEnemyScale(EntralinkRunState *state, const Entralink
             percent = scaling->boss[round - 1];
         } else {
             percent = scaling->rooms[depth];
-            if (raid && stat == ENTRALINK_STAT_HP) {
-                percent = percent * ENTRALINK_RUN_RAID_HP_PERCENT / 100;
-            }
+        }
+        if (raid && stat == ENTRALINK_STAT_HP) {
+            percent = percent * ENTRALINK_RUN_RAID_HP_PERCENT / 100;
         }
         for (i = 0; i < ENTRALINK_RUN_ENEMIES_MAX; i++) {
             // A raid's three are its one enemy

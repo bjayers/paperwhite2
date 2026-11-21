@@ -37,6 +37,8 @@
         "boss_guaranteed_gold": true,
         "shop_gold_weight": 200,
         "held_theme_weight": 200,
+        "team_theme_weight": 75,
+        "team_theme_max": 400,
         "rank_up_weight": 200,
         "gold_slots": 5,
         "max_rank": 3,
@@ -102,7 +104,7 @@
             "name": "ATK",
             "description": "The attacking stat (Attack or Sp. Atk)",
             "side": "attack",
-            "cap": 100,
+            "cap": 150,
             "event": "BATTLE_EVENT_ATTACK_STAT"
         },
         {
@@ -110,7 +112,7 @@
             "name": "POW",
             "description": "Move power: type bonuses, move kinds",
             "side": "attack",
-            "cap": 100,
+            "cap": 150,
             "event": "BATTLE_EVENT_MOVE_POWER_RATIO"
         },
         {
@@ -119,7 +121,7 @@
             "description": "The same-type bonus, vanilla x1.5",
             "side": "attack",
             "vanilla": 150,
-            "cap": 75,
+            "cap": 150,
             "event": "BATTLE_EVENT_SAME_TYPE_BONUS"
         },
         {
@@ -127,7 +129,7 @@
             "name": "MATCH",
             "description": "Super-effective and resisted hits",
             "side": "attack",
-            "cap": 40,
+            "cap": 60,
             "event": "BATTLE_EVENT_DAMAGE_RATIO"
         },
         {
@@ -135,7 +137,7 @@
             "name": "COND",
             "description": "Situations: the foe's status, weather, HP, speed gap",
             "side": "attack",
-            "cap": 125,
+            "cap": 175,
             "event": "BATTLE_EVENT_MOVE_POWER_RATIO"
         },
         {
@@ -144,7 +146,7 @@
             "description": "Critical damage, vanilla x2",
             "side": "attack",
             "vanilla": 200,
-            "cap": 50,
+            "cap": 75,
             "critical_only": true,
             "event": "BATTLE_EVENT_DAMAGE_RATIO"
         },
@@ -153,7 +155,7 @@
             "name": "FINAL",
             "description": "All damage",
             "side": "attack",
-            "cap": 25,
+            "cap": 40,
             "event": "BATTLE_EVENT_DAMAGE_RATIO"
         },
         {
@@ -161,7 +163,7 @@
             "name": "DEF",
             "description": "Your defending stat (Defense or Sp. Def)",
             "side": "defense",
-            "cap": 100,
+            "cap": 150,
             "event": "BATTLE_EVENT_DEFENSE_STAT"
         },
         {
@@ -210,10 +212,11 @@
                 "count": 1
             },
             {
-                "buff": "sp_attack",
+                "buff": "attack",
                 "count": 3
             }
-        ]
+        ],
+        "typical_factor": [ 15, 22 ]
     },
     "categories": [
         {
@@ -281,136 +284,401 @@
         {
             "id": "paralysis",
             "name": "Paralysis",
-            "description": "Paralyze foes, then hit them harder; Electric's power"
+            "description": "Paralyze foes, then hit them harder; Electric's power",
+            "team_tags": {
+                "moves": [
+                    "MOVE_THUNDER_WAVE",
+                    "MOVE_STUN_SPORE",
+                    "MOVE_GLARE",
+                    "MOVE_ZAP_CANNON",
+                    "MOVE_BODY_SLAM",
+                    "MOVE_FORCE_PALM",
+                    "MOVE_DISCHARGE",
+                    "MOVE_SPARK",
+                    "MOVE_LICK",
+                    "MOVE_DRAGON_BREATH",
+                    "MOVE_BOUNCE",
+                    "MOVE_THUNDER",
+                    "MOVE_THUNDER_FANG",
+                    "MOVE_THUNDERBOLT",
+                    "MOVE_THUNDER_PUNCH"
+                ],
+                "abilities": [ "ABILITY_STATIC" ]
+            }
         },
         {
             "id": "sleep",
             "name": "Sleep",
-            "description": "Put foes to sleep and keep them there; damage while they sleep"
+            "description": "Put foes to sleep and keep them there; damage while they sleep",
+            "team_tags": {
+                "moves": [
+                    "MOVE_SPORE",
+                    "MOVE_SLEEP_POWDER",
+                    "MOVE_HYPNOSIS",
+                    "MOVE_SING",
+                    "MOVE_LOVELY_KISS",
+                    "MOVE_GRASS_WHISTLE",
+                    "MOVE_YAWN",
+                    "MOVE_DARK_VOID",
+                    "MOVE_REST",
+                    "MOVE_SLEEP_TALK",
+                    "MOVE_DREAM_EATER",
+                    "MOVE_NIGHTMARE",
+                    "MOVE_RELIC_SONG"
+                ],
+                "abilities": [ "ABILITY_BAD_DREAMS", "ABILITY_EFFECT_SPORE" ]
+            }
         },
         {
             "id": "poison",
             "name": "Poison",
-            "description": "Stronger poison, and more damage to poisoned foes"
+            "description": "Stronger poison, and more damage to poisoned foes",
+            "team_tags": {
+                "moves": [
+                    "MOVE_TOXIC",
+                    "MOVE_POISON_POWDER",
+                    "MOVE_POISON_GAS",
+                    "MOVE_TOXIC_SPIKES",
+                    "MOVE_POISON_JAB",
+                    "MOVE_SLUDGE_BOMB",
+                    "MOVE_SLUDGE_WAVE",
+                    "MOVE_CROSS_POISON",
+                    "MOVE_POISON_FANG",
+                    "MOVE_VENOSHOCK",
+                    "MOVE_GUNK_SHOT",
+                    "MOVE_SLUDGE",
+                    "MOVE_SMOG",
+                    "MOVE_POISON_TAIL"
+                ],
+                "abilities": [ "ABILITY_POISON_POINT", "ABILITY_POISON_TOUCH" ]
+            }
         },
         {
             "id": "burn",
             "name": "Burn",
-            "description": "Stronger burns, burned foes hit softer, and a burn that helps you"
+            "description": "Stronger burns, burned foes hit softer, and a burn that helps you",
+            "team_tags": {
+                "moves": [
+                    "MOVE_WILL_O_WISP",
+                    "MOVE_SCALD",
+                    "MOVE_LAVA_PLUME",
+                    "MOVE_FIRE_BLAST",
+                    "MOVE_FLAMETHROWER",
+                    "MOVE_FIRE_PUNCH",
+                    "MOVE_FLAME_WHEEL",
+                    "MOVE_FIRE_FANG",
+                    "MOVE_SACRED_FIRE",
+                    "MOVE_FLARE_BLITZ",
+                    "MOVE_INFERNO",
+                    "MOVE_BLUE_FLARE",
+                    "MOVE_HEAT_WAVE",
+                    "MOVE_EMBER",
+                    "MOVE_SEARING_SHOT",
+                    "MOVE_BLAZE_KICK",
+                    "MOVE_ICE_BURN"
+                ],
+                "abilities": [ "ABILITY_FLAME_BODY" ]
+            }
         },
         {
             "id": "frost",
             "name": "Frost",
-            "description": "Frostbite in place of freeze, and Ice's power"
+            "description": "Frostbite in place of freeze, and Ice's power",
+            "team_tags": {
+                "moves": [
+                    "MOVE_ICE_BEAM",
+                    "MOVE_BLIZZARD",
+                    "MOVE_ICE_PUNCH",
+                    "MOVE_ICE_FANG",
+                    "MOVE_POWDER_SNOW",
+                    "MOVE_ICY_WIND",
+                    "MOVE_ICE_SHARD",
+                    "MOVE_AVALANCHE",
+                    "MOVE_ICICLE_CRASH",
+                    "MOVE_ICICLE_SPEAR",
+                    "MOVE_FROST_BREATH",
+                    "MOVE_GLACIATE",
+                    "MOVE_FREEZE_SHOCK",
+                    "MOVE_AURORA_BEAM",
+                    "MOVE_SHEER_COLD",
+                    "MOVE_TRI_ATTACK"
+                ],
+                "abilities": []
+            }
         },
         {
             "id": "confusion",
             "name": "Confusion",
-            "description": "Confused foes hit themselves more and harder"
+            "description": "Confused foes hit themselves more and harder",
+            "team_tags": {
+                "moves": [
+                    "MOVE_CONFUSE_RAY",
+                    "MOVE_SWAGGER",
+                    "MOVE_FLATTER",
+                    "MOVE_SUPERSONIC",
+                    "MOVE_SWEET_KISS",
+                    "MOVE_TEETER_DANCE",
+                    "MOVE_DYNAMIC_PUNCH",
+                    "MOVE_HURRICANE",
+                    "MOVE_PSYBEAM",
+                    "MOVE_CONFUSION",
+                    "MOVE_WATER_PULSE",
+                    "MOVE_SIGNAL_BEAM",
+                    "MOVE_ROCK_CLIMB",
+                    "MOVE_CHATTER"
+                ],
+                "abilities": []
+            }
         },
         {
             "id": "weather",
             "name": "Weather",
-            "description": "Longer weather, and more from it"
+            "description": "Longer weather, and more from it",
+            "team_tags": {
+                "moves": [
+                    "MOVE_RAIN_DANCE",
+                    "MOVE_SUNNY_DAY",
+                    "MOVE_SANDSTORM",
+                    "MOVE_HAIL",
+                    "MOVE_WEATHER_BALL",
+                    "MOVE_THUNDER",
+                    "MOVE_HURRICANE",
+                    "MOVE_BLIZZARD",
+                    "MOVE_SOLAR_BEAM",
+                    "MOVE_MOONLIGHT",
+                    "MOVE_MORNING_SUN",
+                    "MOVE_SYNTHESIS"
+                ],
+                "abilities": [
+                    "ABILITY_DRIZZLE",
+                    "ABILITY_DROUGHT",
+                    "ABILITY_SAND_STREAM",
+                    "ABILITY_SNOW_WARNING",
+                    "ABILITY_SWIFT_SWIM",
+                    "ABILITY_CHLOROPHYLL",
+                    "ABILITY_SAND_RUSH",
+                    "ABILITY_SAND_FORCE",
+                    "ABILITY_SAND_VEIL",
+                    "ABILITY_SNOW_CLOAK",
+                    "ABILITY_RAIN_DISH",
+                    "ABILITY_ICE_BODY",
+                    "ABILITY_DRY_SKIN",
+                    "ABILITY_SOLAR_POWER",
+                    "ABILITY_HYDRATION",
+                    "ABILITY_LEAF_GUARD",
+                    "ABILITY_FORECAST",
+                    "ABILITY_FLOWER_GIFT"
+                ]
+            }
         },
         {
             "id": "type_mastery",
             "name": "Type mastery",
-            "description": "STAB, super-effective hits and the type chart"
+            "description": "STAB, super-effective hits and the type chart",
+            "team_tags": {
+                "moves": [],
+                "abilities": [ "ABILITY_ADAPTABILITY", "ABILITY_TINTED_LENS" ],
+                "stab_moves": true
+            }
         },
         {
             "id": "last_stand",
             "name": "Last stand",
-            "description": "Low HP, recoil and risk"
+            "description": "Low HP, recoil and risk",
+            "team_tags": {
+                "moves": [
+                    "MOVE_DOUBLE_EDGE",
+                    "MOVE_FLARE_BLITZ",
+                    "MOVE_BRAVE_BIRD",
+                    "MOVE_WOOD_HAMMER",
+                    "MOVE_HEAD_SMASH",
+                    "MOVE_VOLT_TACKLE",
+                    "MOVE_WILD_CHARGE",
+                    "MOVE_TAKE_DOWN",
+                    "MOVE_SUBMISSION",
+                    "MOVE_HEAD_CHARGE",
+                    "MOVE_REVERSAL",
+                    "MOVE_FLAIL",
+                    "MOVE_ENDEAVOR",
+                    "MOVE_ENDURE",
+                    "MOVE_FINAL_GAMBIT"
+                ],
+                "abilities": [
+                    "ABILITY_GUTS",
+                    "ABILITY_RECKLESS",
+                    "ABILITY_ROCK_HEAD",
+                    "ABILITY_BLAZE",
+                    "ABILITY_TORRENT",
+                    "ABILITY_OVERGROW",
+                    "ABILITY_SWARM",
+                    "ABILITY_MARVEL_SCALE"
+                ]
+            }
         },
         {
             "id": "stat_stages",
             "name": "Stat stages",
-            "description": "Bigger, cheaper and kept stat boosts"
+            "description": "Bigger, cheaper and kept stat boosts",
+            "team_tags": {
+                "moves": [
+                    "MOVE_SWORDS_DANCE",
+                    "MOVE_NASTY_PLOT",
+                    "MOVE_DRAGON_DANCE",
+                    "MOVE_CALM_MIND",
+                    "MOVE_BULK_UP",
+                    "MOVE_QUIVER_DANCE",
+                    "MOVE_SHELL_SMASH",
+                    "MOVE_CURSE",
+                    "MOVE_COIL",
+                    "MOVE_HONE_CLAWS",
+                    "MOVE_WORK_UP",
+                    "MOVE_GROWTH",
+                    "MOVE_AMNESIA",
+                    "MOVE_IRON_DEFENSE",
+                    "MOVE_COSMIC_POWER",
+                    "MOVE_BELLY_DRUM",
+                    "MOVE_SHIFT_GEAR",
+                    "MOVE_TAIL_GLOW",
+                    "MOVE_COTTON_GUARD",
+                    "MOVE_ACID_ARMOR",
+                    "MOVE_HOWL",
+                    "MOVE_MEDITATE",
+                    "MOVE_CHARGE_BEAM",
+                    "MOVE_BATON_PASS"
+                ],
+                "abilities": [
+                    "ABILITY_SIMPLE",
+                    "ABILITY_MOODY",
+                    "ABILITY_CONTRARY",
+                    "ABILITY_MOXIE",
+                    "ABILITY_DEFIANT",
+                    "ABILITY_UNAWARE"
+                ]
+            }
         },
         {
             "id": "speed",
             "name": "Speed",
-            "description": "Outspeed and strike first"
+            "description": "Outspeed and strike first",
+            "team_tags": {
+                "moves": [
+                    "MOVE_QUICK_ATTACK",
+                    "MOVE_EXTREME_SPEED",
+                    "MOVE_MACH_PUNCH",
+                    "MOVE_BULLET_PUNCH",
+                    "MOVE_AQUA_JET",
+                    "MOVE_ICE_SHARD",
+                    "MOVE_SHADOW_SNEAK",
+                    "MOVE_SUCKER_PUNCH",
+                    "MOVE_VACUUM_WAVE",
+                    "MOVE_FAKE_OUT",
+                    "MOVE_AGILITY",
+                    "MOVE_ROCK_POLISH",
+                    "MOVE_TAILWIND",
+                    "MOVE_AUTOTOMIZE",
+                    "MOVE_U_TURN",
+                    "MOVE_VOLT_SWITCH",
+                    "MOVE_FLAME_CHARGE"
+                ],
+                "abilities": [
+                    "ABILITY_SPEED_BOOST",
+                    "ABILITY_PRANKSTER",
+                    "ABILITY_QUICK_FEET",
+                    "ABILITY_UNBURDEN",
+                    "ABILITY_MOTOR_DRIVE"
+                ]
+            }
         },
         {
             "id": "critical",
             "name": "Critical",
-            "description": "More, surer and harder critical hits"
+            "description": "More, surer and harder critical hits",
+            "team_tags": {
+                "moves": [
+                    "MOVE_SLASH",
+                    "MOVE_NIGHT_SLASH",
+                    "MOVE_STONE_EDGE",
+                    "MOVE_CROSS_CHOP",
+                    "MOVE_LEAF_BLADE",
+                    "MOVE_SHADOW_CLAW",
+                    "MOVE_PSYCHO_CUT",
+                    "MOVE_CRABHAMMER",
+                    "MOVE_KARATE_CHOP",
+                    "MOVE_AIR_CUTTER",
+                    "MOVE_ATTACK_ORDER",
+                    "MOVE_AEROBLAST",
+                    "MOVE_SPACIAL_REND",
+                    "MOVE_DRILL_RUN",
+                    "MOVE_RAZOR_LEAF",
+                    "MOVE_SKY_ATTACK",
+                    "MOVE_STORM_THROW",
+                    "MOVE_FOCUS_ENERGY"
+                ],
+                "abilities": [ "ABILITY_SUPER_LUCK", "ABILITY_SNIPER" ]
+            }
         },
         {
             "id": "stall",
             "name": "Stall",
-            "description": "Heal, protect and drain; healing past full HP hurts the foe"
+            "description": "Heal, protect and drain; healing past full HP hurts the foe",
+            "team_tags": {
+                "moves": [
+                    "MOVE_GIGA_DRAIN",
+                    "MOVE_DRAIN_PUNCH",
+                    "MOVE_HORN_LEECH",
+                    "MOVE_LEECH_LIFE",
+                    "MOVE_MEGA_DRAIN",
+                    "MOVE_ABSORB",
+                    "MOVE_RECOVER",
+                    "MOVE_ROOST",
+                    "MOVE_SOFTBOILED",
+                    "MOVE_SLACK_OFF",
+                    "MOVE_MILK_DRINK",
+                    "MOVE_WISH",
+                    "MOVE_HEAL_ORDER",
+                    "MOVE_LEECH_SEED",
+                    "MOVE_PROTECT",
+                    "MOVE_DETECT",
+                    "MOVE_INGRAIN",
+                    "MOVE_AQUA_RING"
+                ],
+                "abilities": [ "ABILITY_REGENERATOR", "ABILITY_POISON_HEAL" ]
+            }
         }
     ],
     "buffs": [
         {
             "id": "attack",
-            "name": "Attack",
+            "name": "Offense",
             "tier": "blue",
-            "description": "Attack +10%",
+            "description": "Attack and Sp. Atk +25%",
             "category": "attack",
             "weight": 10,
             "pools": [ "after_battle", "buff_room", "shop" ],
-            "step": 10,
+            "step": 25,
             "soft_limit": 6,
-            "cap": 80,
+            "cap": 150,
             "bucket": "atk",
             "effect": {
                 "kind": "stat_ratio",
-                "stat": "attack"
-            }
-        },
-        {
-            "id": "sp_attack",
-            "name": "Sp. Atk",
-            "tier": "blue",
-            "description": "Sp. Atk +10%",
-            "category": "attack",
-            "weight": 10,
-            "pools": [ "after_battle", "buff_room", "shop" ],
-            "step": 10,
-            "soft_limit": 6,
-            "cap": 80,
-            "bucket": "atk",
-            "effect": {
-                "kind": "stat_ratio",
-                "stat": "sp_attack"
+                "stat": "attacking"
             }
         },
         {
             "id": "defense",
-            "name": "Defense",
+            "name": "Bulwark",
             "tier": "blue",
-            "description": "Defense +10%",
+            "description": "Defense and Sp. Def +20%",
             "category": "defense",
             "weight": 10,
             "pools": [ "after_battle", "buff_room", "shop" ],
-            "step": 10,
+            "step": 20,
             "soft_limit": 6,
-            "cap": 80,
+            "cap": 150,
             "bucket": "def",
             "effect": {
                 "kind": "stat_ratio",
-                "stat": "defense"
-            }
-        },
-        {
-            "id": "sp_defense",
-            "name": "Sp. Def",
-            "tier": "blue",
-            "description": "Sp. Def +10%",
-            "category": "defense",
-            "weight": 10,
-            "pools": [ "after_battle", "buff_room", "shop" ],
-            "step": 10,
-            "soft_limit": 6,
-            "cap": 80,
-            "bucket": "def",
-            "effect": {
-                "kind": "stat_ratio",
-                "stat": "sp_defense"
+                "stat": "defending"
             }
         },
         {
@@ -449,11 +717,11 @@
             "id": "guard",
             "name": "Guard",
             "tier": "blue",
-            "description": "4% less damage taken",
+            "description": "5% less damage taken",
             "category": "defense",
             "weight": 10,
             "pools": [ "after_battle", "buff_room", "shop" ],
-            "step": 4,
+            "step": 5,
             "soft_limit": 5,
             "cap": 40,
             "bucket": "guard",
@@ -465,13 +733,13 @@
             "id": "power",
             "name": "Power",
             "tier": "blue",
-            "description": "All damage +4%",
+            "description": "All damage +10%",
             "category": "power",
             "weight": 10,
             "pools": [ "after_battle", "buff_room", "shop" ],
-            "step": 4,
+            "step": 10,
             "soft_limit": 3,
-            "cap": 20,
+            "cap": 40,
             "bucket": "final",
             "effect": {
                 "kind": "damage_ratio"
@@ -511,12 +779,12 @@
             "id": "type_affinity",
             "name": "Type Affinity",
             "tier": "purple",
-            "description": "Moves of the card's type +15% power",
+            "description": "Moves of the card's type +40% power",
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 15,
-            "cap": 60,
+            "step": 40,
+            "cap": 120,
             "bucket": "pow",
             "related": [ "paralysis", "burn", "frost", "poison", "type_mastery" ],
             "type_card": true,
@@ -551,12 +819,12 @@
             "id": "expert_edge",
             "name": "Expert Edge",
             "tier": "purple",
-            "description": "Super-effective hits +8%",
+            "description": "Super-effective hits +20%",
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 8,
-            "cap": 40,
+            "step": 20,
+            "cap": 60,
             "bucket": "match",
             "related": [ "type_mastery" ],
             "effect": {
@@ -570,12 +838,12 @@
             "id": "glancing_blow",
             "name": "Glancing Blow",
             "tier": "purple",
-            "description": "Resisted hits +15%",
+            "description": "Resisted hits +30%",
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 15,
-            "cap": 60,
+            "step": 30,
+            "cap": 120,
             "bucket": "match",
             "related": [ "type_mastery" ],
             "effect": {
@@ -590,12 +858,12 @@
             "id": "kinship",
             "name": "Kinship",
             "tier": "purple",
-            "description": "STAB +0.05",
+            "description": "STAB +0.15",
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 5,
-            "cap": 25,
+            "step": 15,
+            "cap": 60,
             "bucket": "stab",
             "related": [ "type_mastery" ],
             "effect": {
@@ -621,12 +889,12 @@
             "id": "heavy_crit",
             "name": "Heavy Crit",
             "tier": "purple",
-            "description": "Critical hits +0.1 damage",
+            "description": "Critical hits +0.2 damage",
             "category": "critical",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 10,
-            "cap": 30,
+            "step": 20,
+            "cap": 60,
             "bucket": "crit",
             "related": [ "critical" ],
             "effect": {
@@ -686,12 +954,12 @@
             "id": "opportunist",
             "name": "Opportunist",
             "tier": "purple",
-            "description": "+12% damage to foes with a major status",
+            "description": "+30% damage to foes with a major status",
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 12,
-            "cap": 36,
+            "step": 30,
+            "cap": 90,
             "bucket": "cond",
             "related": [ "paralysis", "sleep", "poison", "burn", "frost", "confusion" ],
             "effect": {
@@ -753,12 +1021,12 @@
             "id": "climate",
             "name": "Climate",
             "tier": "purple",
-            "description": "Moves your weather boosts +10%",
+            "description": "Moves your weather boosts +20%",
             "category": "weather",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 10,
-            "cap": 40,
+            "step": 20,
+            "cap": 80,
             "bucket": "cond",
             "related": [ "weather" ],
             "effect": {
@@ -788,12 +1056,12 @@
             "id": "tough_claws",
             "name": "Tough Claws",
             "tier": "purple",
-            "description": "Contact moves +10% power",
+            "description": "Contact moves (punches too) +20% power",
             "category": "power",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 10,
-            "cap": 30,
+            "step": 20,
+            "cap": 60,
             "bucket": "pow",
             "related": [ "last_stand" ],
             "effect": {
@@ -804,58 +1072,28 @@
             }
         },
         {
-            "id": "iron_fist",
-            "name": "Iron Fist",
-            "tier": "purple",
-            "description": "Punching moves +15% power",
-            "category": "power",
-            "weight": 10,
-            "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 15,
-            "cap": 45,
-            "bucket": "pow",
-            "effect": {
-                "kind": "damage_ratio",
-                "condition": {
-                    "punch": true
-                }
-            }
-        },
-        {
             "id": "technique",
             "name": "Technique",
             "tier": "purple",
-            "description": "Moves of power 60 or less +20%",
+            "description": "Moves of power 60 or less, and priority moves, +40%",
             "category": "power",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 20,
-            "cap": 60,
+            "step": 40,
+            "cap": 120,
             "bucket": "pow",
             "related": [ "speed" ],
             "effect": {
                 "kind": "damage_ratio",
                 "condition": {
-                    "power_at_most": 60
-                }
-            }
-        },
-        {
-            "id": "swift_hand",
-            "name": "Swift Hand",
-            "tier": "purple",
-            "description": "Priority moves +20% power",
-            "category": "speed",
-            "weight": 10,
-            "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 20,
-            "cap": 60,
-            "bucket": "pow",
-            "related": [ "speed" ],
-            "effect": {
-                "kind": "damage_ratio",
-                "condition": {
-                    "priority": true
+                    "any": [
+                        {
+                            "power_at_most": 60
+                        },
+                        {
+                            "priority": true
+                        }
+                    ]
                 }
             }
         },
@@ -939,12 +1177,12 @@
             "id": "pinch_power",
             "name": "Pinch Power",
             "tier": "purple",
-            "description": "+12% damage below half HP",
+            "description": "+24% damage below half HP",
             "category": "attack",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 12,
-            "cap": 36,
+            "step": 24,
+            "cap": 72,
             "bucket": "cond",
             "related": [ "last_stand" ],
             "effect": {
@@ -1020,12 +1258,12 @@
             "id": "momentum_strike",
             "name": "Momentum Strike",
             "tier": "purple",
-            "description": "+5% damage per boost of the attacking stat",
+            "description": "+10% damage per boost of the attacking stat",
             "category": "stages",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 5,
-            "cap": 30,
+            "step": 10,
+            "cap": 60,
             "bucket": "cond",
             "related": [ "stat_stages" ],
             "effect": {
@@ -1037,12 +1275,12 @@
             "id": "first_blood",
             "name": "First Blood",
             "tier": "purple",
-            "description": "+15% damage on each Pokémon's first turn out",
+            "description": "+30% damage on each Pokémon's first turn out",
             "category": "speed",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 15,
-            "cap": 45,
+            "step": 30,
+            "cap": 90,
             "bucket": "cond",
             "related": [ "speed" ],
             "effect": {
@@ -1056,12 +1294,12 @@
             "id": "giant_slayer",
             "name": "Giant Slayer",
             "tier": "purple",
-            "description": "+10% damage to bosses and raid targets",
+            "description": "+20% damage to bosses and raid targets",
             "category": "power",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 10,
-            "cap": 20,
+            "step": 20,
+            "cap": 40,
             "bucket": "final",
             "related": [ "last_stand" ],
             "effect": {
@@ -1104,13 +1342,13 @@
             "id": "galvanic",
             "name": "Galvanic",
             "tier": "gold",
-            "description": [ "+60% damage to paralyzed foes", "+80% damage to paralyzed foes", "+100% damage to paralyzed foes" ],
+            "description": [ "+100% damage to paralyzed foes", "+140% damage to paralyzed foes", "+175% damage to paralyzed foes" ],
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "paralysis",
             "core": true,
-            "ranks": [ 60, 80, 100 ],
+            "ranks": [ 100, 140, 175 ],
             "bucket": "cond",
             "effect": {
                 "kind": "damage_ratio",
@@ -1123,12 +1361,12 @@
             "id": "overcharge",
             "name": "Overcharge",
             "tier": "gold",
-            "description": [ "Electric moves +40% power", "Electric moves +70% power", "Electric moves +100% power" ],
+            "description": [ "Electric moves +80% power", "Electric moves +120% power", "Electric moves +150% power" ],
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "paralysis",
-            "ranks": [ 40, 70, 100 ],
+            "ranks": [ 80, 120, 150 ],
             "bucket": "pow",
             "effect": {
                 "kind": "damage_ratio",
@@ -1240,12 +1478,12 @@
             "id": "dream_eater",
             "name": "Dream Eater",
             "tier": "gold",
-            "description": [ "+30% damage to sleeping foes", "+50% damage to sleeping foes", "+75% damage to sleeping foes" ],
+            "description": [ "+60% damage to sleeping foes", "+100% damage to sleeping foes", "+150% damage to sleeping foes" ],
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "sleep",
-            "ranks": [ 30, 50, 75 ],
+            "ranks": [ 60, 100, 150 ],
             "bucket": "cond",
             "effect": {
                 "kind": "damage_ratio",
@@ -1258,12 +1496,12 @@
             "id": "lullaby",
             "name": "Lullaby",
             "tier": "gold",
-            "description": [ "STAB +0.25 on sleeping foes", "STAB +0.4 on sleeping foes", "STAB +0.5 on sleeping foes" ],
+            "description": [ "STAB +0.5 on sleeping foes", "STAB +0.8 on sleeping foes", "STAB +1.0 on sleeping foes" ],
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "sleep",
-            "ranks": [ 25, 40, 50 ],
+            "ranks": [ 50, 80, 100 ],
             "bucket": "stab",
             "effect": {
                 "kind": "stab_bonus",
@@ -1307,12 +1545,12 @@
             "id": "venom_strike",
             "name": "Venom Strike",
             "tier": "gold",
-            "description": [ "+30% damage to poisoned foes", "+50% damage to poisoned foes", "+75% damage to poisoned foes" ],
+            "description": [ "+60% damage to poisoned foes", "+100% damage to poisoned foes", "+150% damage to poisoned foes" ],
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "poison",
-            "ranks": [ 30, 50, 75 ],
+            "ranks": [ 60, 100, 150 ],
             "bucket": "cond",
             "effect": {
                 "kind": "damage_ratio",
@@ -1400,12 +1638,12 @@
             "id": "kindling",
             "name": "Kindling",
             "tier": "gold",
-            "description": [ "+30% damage to burned foes", "+50% damage to burned foes", "+75% damage to burned foes" ],
+            "description": [ "+60% damage to burned foes", "+100% damage to burned foes", "+150% damage to burned foes" ],
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "burn",
-            "ranks": [ 30, 50, 75 ],
+            "ranks": [ 60, 100, 150 ],
             "bucket": "cond",
             "effect": {
                 "kind": "damage_ratio",
@@ -1457,15 +1695,15 @@
             "name": "Fire Within",
             "tier": "gold",
             "description": [
-                "Burned: no Attack drop, Attack +20%",
-                "Burned: no Attack drop, Attack +35%",
-                "Burned: no Attack drop, Attack +50%"
+                "Burned: no Attack drop, Attack +40%",
+                "Burned: no Attack drop, Attack +70%",
+                "Burned: no Attack drop, Attack +100%"
             ],
             "category": "attack",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "burn",
-            "ranks": [ 20, 35, 50 ],
+            "ranks": [ 40, 70, 100 ],
             "bucket": "atk",
             "effect": {
                 "kind": "stat_ratio",
@@ -1501,15 +1739,15 @@
             "name": "Shatter",
             "tier": "gold",
             "description": [
-                "+30% damage to frostbitten or frozen foes",
-                "+50% damage to frostbitten or frozen foes",
-                "+75% damage to frostbitten or frozen foes"
+                "+60% damage to frostbitten or frozen foes",
+                "+100% damage to frostbitten or frozen foes",
+                "+150% damage to frostbitten or frozen foes"
             ],
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "frost",
-            "ranks": [ 30, 50, 75 ],
+            "ranks": [ 60, 100, 150 ],
             "bucket": "cond",
             "effect": {
                 "kind": "damage_ratio",
@@ -1522,12 +1760,12 @@
             "id": "cold_snap",
             "name": "Cold Snap",
             "tier": "gold",
-            "description": [ "Ice moves +40% power", "Ice moves +70% power", "Ice moves +100% power" ],
+            "description": [ "Ice moves +80% power", "Ice moves +120% power", "Ice moves +150% power" ],
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "frost",
-            "ranks": [ 40, 70, 100 ],
+            "ranks": [ 80, 120, 150 ],
             "bucket": "pow",
             "effect": {
                 "kind": "damage_ratio",
@@ -1609,12 +1847,12 @@
             "id": "dizzy_strike",
             "name": "Dizzy Strike",
             "tier": "gold",
-            "description": [ "+25% damage to confused foes", "+40% damage to confused foes", "+60% damage to confused foes" ],
+            "description": [ "+50% damage to confused foes", "+80% damage to confused foes", "+120% damage to confused foes" ],
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "confusion",
-            "ranks": [ 25, 40, 60 ],
+            "ranks": [ 50, 80, 120 ],
             "bucket": "cond",
             "effect": {
                 "kind": "damage_ratio",
@@ -1697,12 +1935,12 @@
             "id": "heatwave",
             "name": "Heatwave",
             "tier": "gold",
-            "description": [ "Weather-boosted moves +25%", "Weather-boosted moves +40%", "Weather-boosted moves +60%" ],
+            "description": [ "Weather-boosted moves +50%", "Weather-boosted moves +80%", "Weather-boosted moves +120%" ],
             "category": "weather",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "weather",
-            "ranks": [ 25, 40, 60 ],
+            "ranks": [ 50, 80, 120 ],
             "bucket": "cond",
             "effect": {
                 "kind": "damage_ratio",
@@ -1775,13 +2013,13 @@
             "id": "adaptability",
             "name": "Adaptability",
             "tier": "gold",
-            "description": [ "STAB x2.0", "STAB x2.15", "STAB x2.25" ],
+            "description": [ "STAB x2.25", "STAB x2.6", "STAB x3.0" ],
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "type_mastery",
             "core": true,
-            "ranks": [ 50, 65, 75 ],
+            "ranks": [ 75, 110, 150 ],
             "bucket": "stab",
             "effect": {
                 "kind": "stab_bonus"
@@ -1811,12 +2049,12 @@
             "id": "expert",
             "name": "Expert",
             "tier": "gold",
-            "description": [ "Super-effective hits +15%", "Super-effective hits +25%", "Super-effective hits +40%" ],
+            "description": [ "Super-effective hits +30%", "Super-effective hits +45%", "Super-effective hits +60%" ],
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "type_mastery",
-            "ranks": [ 15, 25, 40 ],
+            "ranks": [ 30, 45, 60 ],
             "bucket": "match",
             "effect": {
                 "kind": "damage_ratio",
@@ -1848,12 +2086,12 @@
             "id": "coverage",
             "name": "Coverage",
             "tier": "gold",
-            "description": [ "Non-STAB moves get STAB x1.25", "Non-STAB moves get STAB x1.35", "Non-STAB moves get STAB x1.5" ],
+            "description": [ "Non-STAB moves get STAB x1.4", "Non-STAB moves get STAB x1.6", "Non-STAB moves get STAB x1.8" ],
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "type_mastery",
-            "ranks": [ 125, 135, 150 ],
+            "ranks": [ 140, 160, 180 ],
             "bucket": "stab",
             "effect": {
                 "kind": "stab_bonus",
@@ -1886,13 +2124,13 @@
             "id": "last_stand",
             "name": "Last Stand",
             "tier": "gold",
-            "description": [ "Up to +50% damage as HP falls", "Up to +75% damage as HP falls", "Up to +100% damage as HP falls" ],
+            "description": [ "Up to +100% damage as HP falls", "Up to +140% damage as HP falls", "Up to +175% damage as HP falls" ],
             "category": "attack",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "last_stand",
             "core": true,
-            "ranks": [ 50, 75, 100 ],
+            "ranks": [ 100, 140, 175 ],
             "bucket": "cond",
             "effect": {
                 "kind": "damage_ratio",
@@ -1901,18 +2139,18 @@
         },
         {
             "id": "bulwark",
-            "name": "Bulwark",
+            "name": "Bastion",
             "tier": "gold",
             "description": [
-                "Up to +40% Def and Sp. Def as HP falls",
-                "Up to +70% Def and Sp. Def as HP falls",
-                "Up to +100% Def and Sp. Def as HP falls"
+                "Up to +60% Def and Sp. Def as HP falls",
+                "Up to +100% Def and Sp. Def as HP falls",
+                "Up to +150% Def and Sp. Def as HP falls"
             ],
             "category": "defense",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "last_stand",
-            "ranks": [ 40, 70, 100 ],
+            "ranks": [ 60, 100, 150 ],
             "bucket": "def",
             "effect": {
                 "kind": "stat_ratio",
@@ -1943,15 +2181,15 @@
             "name": "Blood Price",
             "tier": "gold",
             "description": [
-                "Attacks cost 1/10 HP, +20% damage",
-                "Attacks cost 1/10 HP, +30% damage",
+                "Attacks cost 1/10 HP, +25% damage",
+                "Attacks cost 1/10 HP, +35% damage",
                 "Attacks cost 1/10 HP, +40% damage"
             ],
             "category": "attack",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "last_stand",
-            "ranks": [ 20, 30, 40 ],
+            "ranks": [ 25, 35, 40 ],
             "bucket": "final",
             "effect": {
                 "kind": "damage_ratio",
@@ -1962,12 +2200,12 @@
             "id": "reckless",
             "name": "Reckless",
             "tier": "gold",
-            "description": [ "Recoil moves +20% power", "Recoil moves +35% power", "Recoil moves +50% power, half recoil" ],
+            "description": [ "Recoil moves +40% power", "Recoil moves +70% power", "Recoil moves +100% power, half recoil" ],
             "category": "attack",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "last_stand",
-            "ranks": [ 20, 35, 50 ],
+            "ranks": [ 40, 70, 100 ],
             "bucket": "pow",
             "effect": {
                 "kind": "damage_ratio",
@@ -2073,13 +2311,13 @@
             "id": "slipstream",
             "name": "Slipstream",
             "tier": "gold",
-            "description": [ "Up to +10% damage when faster", "Up to +20% damage when faster", "Up to +30% damage when faster" ],
+            "description": [ "Up to +20% damage when faster", "Up to +40% damage when faster", "Up to +60% damage when faster" ],
             "category": "speed",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "speed",
             "core": true,
-            "ranks": [ 10, 20, 30 ],
+            "ranks": [ 20, 40, 60 ],
             "bucket": "cond",
             "effect": {
                 "kind": "damage_ratio",
@@ -2154,13 +2392,13 @@
             "id": "sniper",
             "name": "Sniper",
             "tier": "gold",
-            "description": [ "Critical hits x2.25", "Critical hits x2.4", "Critical hits x2.5" ],
+            "description": [ "Critical hits x2.4", "Critical hits x2.6", "Critical hits x2.75" ],
             "category": "critical",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "critical",
             "core": true,
-            "ranks": [ 25, 40, 50 ],
+            "ranks": [ 40, 60, 75 ],
             "bucket": "crit",
             "effect": {
                 "kind": "crit_damage"
@@ -2317,12 +2555,12 @@
             "id": "siphon",
             "name": "Siphon",
             "tier": "gold",
-            "description": [ "Draining moves +20% power", "Draining moves +35% power", "Draining moves +50% power" ],
+            "description": [ "Draining moves +40% power", "Draining moves +70% power", "Draining moves +100% power" ],
             "category": "heal",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "stall",
-            "ranks": [ 20, 35, 50 ],
+            "ranks": [ 40, 70, 100 ],
             "bucket": "pow",
             "effect": {
                 "kind": "damage_ratio",

@@ -14,7 +14,7 @@ import { documents, useDocuments } from "../../documents.ts";
 import { fromPlain, setIn, toPlain, type JsonMap, type JsonPath, type JsonValue } from "../../../shared/json.ts";
 import { resolve, validate, type Constants, type Schema } from "../../../shared/schema.ts";
 import { SearchSelect } from "../../shell/SearchSelect.tsx";
-import { BaseField, defaultFor, humanize, type FormContext } from "../schema-form/form.tsx";
+import { BaseField, constantLabel, constantOptions, defaultFor, humanize, type FormContext } from "../schema-form/form.tsx";
 import { NumberBox, Row, Section, Switch, cap } from "./parts.tsx";
 import { ROUNDS, ROUND_NOTES } from "./model.ts";
 import { readIndexedPng } from "../palettes/png.ts";
@@ -125,7 +125,7 @@ export function BuffsPage({ constants }: { constants: Constants }) {
     const balance = asMap(data.get("balance"));
     const changes: Record<string, JsonValue> = { buffs: list.filter((_, k) => k !== index) };
     if (cat.example.some((p) => p.buff === current.id))
-      changes.balance = withFields(balance, { example: asList(balance.get("example")).filter((p) => asMap(p).get("buff") !== current.id) }, ["reference_hit", "example"]);
+      changes.balance = withFields(balance, { example: asList(balance.get("example")).filter((p) => asMap(p).get("buff") !== current.id) }, ["reference_hit", "example", "typical_factor"]);
     documents.replace(BUFFS, withFields(data, changes, TOP_ORDER));
     setSelected(cat.buffs[index + 1]?.id ?? cat.buffs[index - 1]?.id ?? null);
   };
@@ -195,7 +195,7 @@ export function BuffsPage({ constants }: { constants: Constants }) {
       <aside className="en-buffs-side">
         <BalanceMeter cat={cat} data={data} setTop={setTop} />
         <CategoriesSection cat={cat} data={data} setTop={setTop} />
-        <ThemesSection cat={cat} data={data} setTop={setTop} />
+        <ThemesSection cat={cat} data={data} setTop={setTop} constants={constants} />
         <SettingsSection cat={cat} data={data} setTop={setTop} />
         <DamageNumbersSection data={data} setTop={setTop} />
         <Section title="Checks" summary={errors || warnings ? [errors && `${errors} error${errors > 1 ? "s" : ""}`, warnings && `${warnings} warning${warnings > 1 ? "s" : ""}`].filter(Boolean).join(", ") : "none"}>
@@ -469,14 +469,16 @@ function BalanceMeter({ cat, data, setTop }: { cat: Catalogue; data: JsonMap; se
   const example = useMemo(() => exampleHit(cat), [cat]);
   const [adding, setAdding] = useState("");
   const balance = asMap(data.get("balance"));
-  const setBalance = (changes: Record<string, JsonValue | undefined>) => setTop("balance", withFields(balance, changes, ["reference_hit", "example"]));
+  const setBalance = (changes: Record<string, JsonValue | undefined>) => setTop("balance", withFields(balance, changes, ["reference_hit", "example", "typical_factor"]));
+  const [low, high] = cat.typicalFactor;
+  const typical = example.factor >= low && example.factor <= high;
   const setExample = (picks: { buff: string; count: number }[]) => setBalance({ example: fromPlain(picks) });
   const limit = cat.settings.damageCap;
   const over = top.criticalHit > limit;
   const defense = top.lines.filter((l) => l.bucket.side === "defense");
   const share = defense.reduce((n, l) => n * (l.bucket.reduces ? l.factor : 1 / l.factor), 1);
   return (
-    <Section title="Balance meter" summary={over ? <span className="en-error">over the cap</span> : `under ${round(limit)}`}
+    <Section title="Balance meter" summary={<>example ×{example.factor.toFixed(1)} {typical ? `in ×${low}-${high}` : <span className="en-error">outside ×{low}-{high}</span>}{over ? `, strongest past ${round(limit)}` : ""}</>}
              actions={<>
                <span className="muted">Reference hit</span>
                <NumberBox value={cat.referenceHit} min={1} max={9999} onChange={(n) => setBalance({ reference_hit: n })}
@@ -487,8 +489,8 @@ function BalanceMeter({ cat, data, setTop }: { cat: Catalogue; data: JsonMap; se
       <Gauge label={`No critical ×${top.factor.toFixed(1)}`} value={top.hit} limit={limit} />
       <Gauge label={`Critical ×${top.criticalFactor.toFixed(1)}`} value={top.criticalHit} limit={limit} />
       {over
-        ? <p className="small en-error">A combination can pass the {round(limit)} cap: the clamp shows MAX. Lower a bucket's cap or a card's most.</p>
-        : <p className="small muted">Every combination stays under the {round(limit)} cap before vanilla's extras (stages, held items, weather), which multiply on top (the doc's 5.5).</p>}
+        ? <p className="small muted">The strongest combination passes the {round(limit)} clamp: fine for an extreme build (rebalance 2's target is ×60-80 there, the red tier). A typical build should stay in its band below.</p>
+        : <p className="small muted">Every combination stays under the {round(limit)} clamp before vanilla's extras (stages, held items, weather), which multiply on top (the doc's 5.5).</p>}
       <p className="small muted">Defence at its most: damage taken ×{share.toFixed(2)} ({defense.map((l) => `${l.bucket.name} ×${(l.bucket.reduces ? l.factor : 1 / l.factor).toFixed(2)}`).join(", ")}).</p>
 
       <h6 className="en-sub">Example build <span className="muted">{cat.example.length} card{cat.example.length === 1 ? "" : "s"}: ×{example.factor.toFixed(2)} = {round(example.hit)}</span></h6>
@@ -512,6 +514,15 @@ function BalanceMeter({ cat, data, setTop }: { cat: Catalogue; data: JsonMap; se
       </div>
       <HitTable hit={example} cat={cat} title="Example build" />
       <Gauge label="Example" value={example.hit} limit={limit} />
+      <div className="en-run">
+        <span className="muted small">Typical band ×</span>
+        <span className="en-run-controls">
+          <NumberBox value={low} min={1} max={500} width={52} title="A typical late build's lowest factor" onChange={(n) => setBalance({ typical_factor: fromPlain([n, high]) })} />
+          <span className="small">to</span>
+          <NumberBox value={high} min={1} max={500} width={52} title="A typical late build's highest factor" onChange={(n) => setBalance({ typical_factor: fromPlain([low, n]) })} />
+        </span>
+      </div>
+      <p className={`small ${typical ? "muted" : "en-error"}`}>The example build is ×{example.factor.toFixed(1)}: {typical ? "in" : "outside"} the band a typical late build should land in (entralink_sim.py shows the builds' factors along a run).</p>
     </Section>
   );
 }
@@ -543,10 +554,10 @@ function CategoriesSection({ cat, data, setTop }: { cat: Catalogue; data: JsonMa
   );
 }
 
-function ThemesSection({ cat, data, setTop }: { cat: Catalogue; data: JsonMap; setTop(key: string, v: JsonValue): void }) {
+function ThemesSection({ cat, data, setTop, constants }: { cat: Catalogue; data: JsonMap; setTop(key: string, v: JsonValue): void; constants: Constants }) {
   const [name, setName] = useState("");
   const list = asList(data.get("themes"));
-  const order = ["id", "name", "description"];
+  const order = ["id", "name", "description", "team_tags"];
   const setTheme = (i: number, changes: Record<string, JsonValue | undefined>) => setTop("themes", list.map((t, k) => (k === i ? withFields(asMap(t), changes, order) : t)));
   const add = () => {
     const id = uniqueId(name || "theme", cat.themes.map((t) => t.id));
@@ -573,11 +584,43 @@ function ThemesSection({ cat, data, setTop }: { cat: Catalogue; data: JsonMap; s
               <span className="en-theme-foot muted small">
                 {golds.length} gold{golds.length === 1 ? "" : "s"}{core ? `, core ${core.name}` : ", no core"}; {related} related purple{related === 1 ? "" : "s"}
               </span>
+              <TeamTags tags={asMap(asMap(list[i]).get("team_tags"))} constants={constants}
+                        onChange={(tags) => setTheme(i, { team_tags: tags.size ? tags : undefined })} />
             </div>
           );
         })}
       </div>
     </Section>
+  );
+}
+
+/** A theme's team tags (rebalance 2): the moves and abilities that show a team member plays it, and whether its own-type
+ * damaging moves count; each member that does weighs the theme's golds and related purples up (settings' Team row). */
+function TeamTags({ tags, constants, onChange }: { tags: JsonMap; constants: Constants; onChange(tags: JsonMap): void }) {
+  const order = ["moves", "abilities", "stab_moves"];
+  const lists: [string, string, string][] = [["moves", "MOVE_", "Add a move…"], ["abilities", "ABILITY_", "Add an ability…"]];
+  return (
+    <div className="en-theme-tags">
+      <span className="muted small" title="A team member with any of these plays the theme: its golds and related purples weigh more">Team tags</span>
+      {lists.map(([key, prefix, placeholder]) => {
+        const values = asList(tags.get(key)).map((v) => (typeof v === "string" ? v : ""));
+        const set = (next: string[]) => onChange(withFields(tags, { [key]: next.length ? fromPlain(next) : undefined }, order));
+        return (
+          <span key={key} className="en-chips">
+            {values.map((v) => (
+              <span key={v} className="en-chip small">{constantLabel(v, prefix)}
+                <button className="icon" title="Remove it" onClick={() => set(values.filter((x) => x !== v))}>×</button>
+              </span>
+            ))}
+            <SearchSelect value="" placeholder={placeholder} options={constantOptions(constants, prefix).filter((o) => !values.includes(o.value))}
+                          onChange={(v) => { if (v) set([...values, v]); }} />
+          </span>
+        );
+      })}
+      <label className="ow-check small" title="A damaging move of one of the member's own types counts too (type mastery: the team's STAB)">
+        <input type="checkbox" checked={tags.get("stab_moves") === true} onChange={(e) => onChange(withFields(tags, { stab_moves: e.target.checked || undefined }, order))} /> Own-type damaging moves
+      </label>
+    </div>
   );
 }
 
@@ -674,6 +717,10 @@ function SettingsSection({ cat, data, setTop }: { cat: Catalogue; data: JsonMap;
           <NumberBox value={n("held_theme_weight")} min={100} max={1000} width={56} title="A held theme's other golds and its related purples" onChange={(v) => set(["held_theme_weight"], v)} />
           <NumberBox value={n("rank_up_weight") || 100} min={100} max={1000} width={56} title="A held gold, offered again until its last rank" onChange={(v) => set(["rank_up_weight"], v)} />
           <NumberBox value={n("type_card_team_weight")} min={100} max={1000} width={56} title="A type card's types that the team has" onChange={(v) => set(["type_card_team_weight"], v)} />
+        </Row>
+        <Row label="Team" hint="Team-aware offers: the percent a theme's golds and related purples weigh more for each team member that plays it (the themes' team tags; 0 turns it off), and the most it gives">
+          <NumberBox value={n("team_theme_weight")} min={0} max={500} width={56} title="Percent more for each team member that plays the theme" onChange={(v) => set(["team_theme_weight"], v)} />
+          <NumberBox value={n("team_theme_max") || 100} min={100} max={2000} width={56} title="The most, in percent of the card's weight" onChange={(v) => set(["team_theme_max"], v)} />
         </Row>
         <Row label="Gifts, shops" hint="A gift card's chance to be a buff rather than an item (percent); the buffs each shop sells">
           <NumberBox value={n("gift_buff_chance")} min={0} max={100} width={56} title="Percent of a gift NPC's cards that are buffs" onChange={(v) => set(["gift_buff_chance"], v)} />

@@ -28,40 +28,40 @@
     "raid_hp_factor": 3.0,
     "enemy_scaling": {
         "hp": {
-            "start": 140,
-            "end": 750,
-            "curve": 130,
-            "boss": [ 2750, 6600, 22400 ]
+            "start": 150,
+            "end": 2000,
+            "curve": 150,
+            "boss_bonus": [ 220, 230, 500 ]
         },
         "attack": {
-            "start": 100,
-            "end": 150,
-            "curve": 200,
-            "boss": [ 300, 330, 450 ]
+            "start": 120,
+            "end": 250,
+            "curve": 175,
+            "boss_bonus": [ 110, 110, 110 ]
         },
         "defense": {
             "start": 100,
             "end": 130,
-            "curve": 150,
-            "boss": [ 110, 120, 130 ]
+            "curve": 100,
+            "boss_bonus": [ 100, 100, 100 ]
         },
         "sp_attack": {
-            "start": 100,
-            "end": 150,
-            "curve": 200,
-            "boss": [ 300, 330, 450 ]
+            "start": 120,
+            "end": 250,
+            "curve": 175,
+            "boss_bonus": [ 110, 110, 110 ]
         },
         "sp_defense": {
             "start": 100,
             "end": 130,
-            "curve": 150,
-            "boss": [ 110, 120, 130 ]
+            "curve": 100,
+            "boss_bonus": [ 100, 100, 100 ]
         },
         "speed": {
             "start": 100,
             "end": 145,
-            "curve": 150,
-            "boss": [ 115, 130, 150 ]
+            "curve": 100,
+            "boss_bonus": [ 100, 100, 100 ]
         }
     }
 }

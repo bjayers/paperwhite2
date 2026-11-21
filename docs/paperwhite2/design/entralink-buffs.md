@@ -4,7 +4,7 @@ First draft, 2026-11-19, marked up by the user the same day: their answers are t
 Stall theme (4.13) replaces Tag team and Harvest. The catalogue is data since phase 1 (section 7):
 `res/paperwhite2/entralink/buffs.json`, edited on the Entree page's Buffs tab and checked by
 `tools/paperwhite2/entralink_buffs.py`. Since phase 2 (section 9) the game offers the cards and the run holds them;
-since phase 3 (section 10) most of them work in battle, and since phase 4 (section 11) all of them. The mode itself is in `entralink-roguelike.md`
+since phase 3 (section 10) most of them work in battle, and since phase 4 (section 11) all of them. Section 15 (rebalance 2) merged four cards, doubled the attack values and put the bosses on the room curve. The mode itself is in `entralink-roguelike.md`
 (sections 1-2 for the design, 3.8 for the damage pipeline); how the hack adds battle effects is in
 `moves-and-abilities.md`. Every number below is a starting value to tune in playtests.
 
@@ -286,103 +286,95 @@ if wanted.
 
 ## 5. Balance check
 
+Rewritten for the second rebalance (section 15, 2026-11-20). The first draft's numbers (buckets at most x23.6 against
+bosses scaled x25 to x224) are in git history; the cards' values in sections 2-4 are the first draft's, and
+`buffs.json` holds today's (attack-side steps, gold ranks and bucket caps roughly doubled, section 15.3).
+
 ### 5.1 The reference hit
 
-A strong level-100 hit on a tanky boss, before buffs: about **400-800**, taken as **600**. It already includes STAB
-×1.5, a super-effective ×2 and the highest roll. Example: power 120, Sp. Atk 400 against Sp. Def 300:
-`120 × 400 × 42 / 300 / 50 + 2 = 136`, ×1.5 STAB = 204, ×2 = 408; a stronger attacker or a frailer boss gives 800.
+A strong level-100 hit on a tanky foe, before buffs: about **400-800**, taken as **600**. It already includes STAB
+x1.5, a super-effective x2 and the highest roll. Example: power 120, Sp. Atk 400 against Sp. Def 300:
+`120 × 400 × 42 / 300 / 50 + 2 = 136`, x1.5 STAB = 204, x2 = 408; a stronger attacker or a frailer foe gives 800.
 Chart changes (Magnetised, Spectral) turn a neutral hit into this reference; they don't go above it.
 
-### 5.2 Buckets at their caps (the ceiling of the buffs)
+### 5.2 The targets (decided with the user, 2026-11-20)
 
-| Bucket | Max factor |
-| --- | --- |
-| ATK | 2.0 |
-| POW | 2.0 |
-| STAB | 2.25 / 1.5 = 1.5 |
-| MATCH | 1.4 |
-| COND | 2.25 |
-| FINAL | 1.25 |
-| CRIT (a critical hit) | 2.5 / 2 = 1.25 |
+- **A typical late build is about x15-20** (gold-tier hits: 10,000+ on a good hit); `balance.typical_factor` holds the
+  band (15-22 today) and the meter marks the example build outside it.
+- **An extreme build reaches x60-80**, and with a critical hit or setup it passes the 60,000 clamp (red, the top tier):
+  that is fine, and the meter says so instead of warning.
+- **With 5 rooms a round,** a balanced build needs about **1.5-4 typical hits** for a room enemy and **5-10 good hits**
+  (super effective) for a boss's foes together across the run; an enemy's hit costs it **15-25%** of its HP, a boss's
+  **25-30%** (the bosses' Attack bonus is held to x1.1 as decided, so the simulator gives 20-22% a hit, but a boss is
+  two or three foes hitting each turn).
 
-- Without a critical hit: 2.0 × 2.0 × 1.5 × 1.4 × 2.25 × 1.25 = **23.6**. On the reference: 600 × 23.6 = **14,200**;
-  800 × 23.6 = **18,900**.
-- A critical hit (vanilla ×2 on top, as every hit's critical is): 23.6 × 2 × 1.25 = **59.1**. 600 × 59.1 = **35,400**;
-  800 × 59.1 = **47,300**.
-- **Every bucket at its cap stays under 60,000.** Whether the ceiling is even reachable: filling it needs five golds at
-  rank 3 (Galvanic, Overcharge, Adaptability, Expert, Sniper: 15 gold picks), eight Sp. Atk blues, two Power blues and
-  a few purples, and a sure critical needs a sixth gold (Merciless or Focus). It isn't reachable in one run (5.4).
+### 5.3 Buckets at their caps (the extreme build)
 
-### 5.3 The user's paralysis set, late in a typical run
+| Bucket | Cap of the sum | Max factor |
+| --- | --- | --- |
+| ATK | +150% | 2.5 |
+| POW | +150% | 2.5 |
+| STAB | +150 (x1.5 to x3.0) | 2.0 |
+| MATCH | +60% | 1.6 |
+| COND | +175% | 2.75 |
+| FINAL | +40% | 1.4 |
+| CRIT (a critical hit) | +75 (x2 to x2.75) | 1.375 |
+| DEF | +150% | 2.5 (damage x0.4) |
+| GUARD | -50% | 0.5 |
 
-About 20 picks: 7 gold, 7 purple, 6 blue.
-- Golds: Galvanic r2 (+80% COND), Overcharge r2 (+70% POW), Adaptability r1 (STAB ×2.0), Slipstream r1 (+10% COND),
-  Magnetised r1.
-- Purples: Type Affinity Electric ×2 (+30% POW), Opportunist (+12% COND), Expert Edge (+8% MATCH), and three that
-  aren't damage.
-- Blues: Sp. Atk ×3 (+30% ATK) and three defensive.
+- Without a critical hit: 2.5 × 2.5 × 2.0 × 1.6 × 2.75 × 1.4 = **x77**: 600 × 77 = **46,200**.
+- A critical hit (vanilla x2 on top): x77 × 2 × 1.375 = **x212**, 127,000: held to the clamp at 60,000.
+- Filling every bucket needs five golds at rank 3 and a dozen blues and purples: an extreme run, as decided.
 
-ATK 1.3 × POW 2.0 (1 + 0.7 + 0.3, at the cap) × STAB 1.33 × MATCH 1.08 × COND 2.02 = **7.6**: 600 × 7.6 = **4,500**,
-800 × 7.6 = **6,100**. One Nasty Plot (+2, ×2) gives **9,100-12,100**: the "about 10,000 for an archetype" target
-lands after one setup move. With Simple, one Nasty Plot is +4 (×3).
+### 5.4 The example build (section 5.3 of the first draft, the user's paralysis set, about 20 picks)
 
-### 5.4 Picks per run
+Golds Galvanic II (+140% COND), Overcharge II (+120% POW), Adaptability I (STAB x2.25), Slipstream I (+20% COND),
+Magnetised I; purples Type Affinity (Electric) x2 (+80% POW), Opportunist (+30% COND), Expert Edge (+20% MATCH); blues
+Offense x3 (+75% ATK). ATK 1.75 × POW 2.5 (capped) × STAB 1.5 × MATCH 1.2 × COND 2.75 (capped) = **x21.7**:
+600 × 21.7 = **13,000** on a good hit. One Nasty Plot (+2) doubles it.
 
-A run of 30-45 minutes is about 20 rewarded battles; say 12 enemies, 5 challenges and 3 bosses. The chance that a
-reward shows at least one gold: enemy 1 − 0.95³ = 14%, challenge 1 − 0.85³ = 39%, boss 100%.
-Expected gold picks: 12 × 0.14 + 5 × 0.39 + 3 = **about 6.6**, plus what shops sell. So a run ends with about four golds,
-mostly at ranks 1-2. Rank 3 everywhere is out of reach in one run; shops selling rank-ups are the lever (decision 4).
+### 5.5 Picks per run and the builds along it (the simulator)
 
-### 5.5 Vanilla extras on top
+`tools/paperwhite2/entralink_sim.py` (section 12.1, updated in 15.4) takes the expected picks of a run and three builds
+(balanced: attack and defence in turn; glass cannon: attack only; defensive). With **5 rooms a round** a run gives about
+**14 picks** before the final room: the glass cannon (all of them attack) reaches about **x14** on a good hit by the
+final room (x10 by round 3), the balanced build (half of them attack) about x7.6. The 20-pick example is x21.7. The
+tables, with the curves of 15.2, are in 15.4.
 
-Vanilla handlers multiply outside the buckets: stat stages (+2 ×2, +6 ×4), Huge Power ×2, Choice Band or Specs ×1.5,
-Life Orb ×1.3, Expert Belt ×1.2, weather ×1.5, Helping Hand ×1.5, a 4× weakness ×2 over the reference.
-- The ceiling with one +2 stage: 35,400-47,300 × 2 = **70,800-94,600**, over the cap: the final clamp at 60,000 holds them (the number is red, the top tier, from 40,000).
-- The typical build (5.3) with +2 and Life Orb: 4,500-6,100 × 2.6 = **11,700-15,900**, well under.
-- So the cap holds for buffs alone, and for typical builds with setup; only a near-ceiling build plus setup reaches the clamp,
-  which matches "a boss can be one-shot only with an extremely good combination". Vanilla boosts stay on top of the
-  buckets (decision 1): the clamp should be very hard to reach, not impossible.
-- **Entries to watch:** Simple with Opening Gambit and Baton (stages ×4 come cheaply), Merciless and Focus (a sure CRIT
-  bucket), Spectral (super effective on any matchup). Trim those first if playtests overshoot.
-- **The balance meter** (the Buffs tab; `ceiling()` in `entralink_buffs.py`) computes 5.2 and 5.3 from the data: each
-  attack bucket's entries at their most (a blue's or purple's cap, a gold's top rank), held to the bucket's cap,
-  multiplied, times the reference hit. It leaves out the resisted-only bonuses (Glancing Blow, Tinted) and Coverage, as
-  the strongest hit is super effective with STAB, and counts every other entry whether or not its conditions can hold
-  together, so it is an upper bound. With today's data every attack bucket reaches its cap: ×23.6, **14,175** on 600,
-  and **35,438** on a critical hit (47,250 on 800), under 60,000; the example build (5.3) gives ×7.56, **4,538**.
+### 5.6 Vanilla extras on top
 
-### 5.6 The engine's limits
+Vanilla handlers multiply outside the buckets: stat stages (+2 x2, +6 x4), Huge Power x2, Choice Band or Specs x1.5,
+Life Orb x1.3, Expert Belt x1.2, weather x1.5, Helping Hand x1.5, a 4x weakness x2 over the reference.
+- The typical build with one +2 setup: 13,000 × 2 = **26,000**; with Life Orb as well about 34,000, under the clamp.
+- The extreme build with any of these passes the clamp, which holds it at 60,000: the red tier, the one to work toward.
+- **Entries to watch:** Simple with Opening Gambit and Baton (stages x4 come cheaply), Merciless and Focus (a sure CRIT
+  bucket), Spectral (super effective on any matchup: with Expert it turns a neutral hit into x3.2, 15.1's Flame
+  Charge).
+- **The balance meter** (the Buffs tab; `ceiling()` and `example_hit()` in `entralink_buffs.py`) computes 5.3 and 5.4
+  from the data: each attack bucket's entries at their most, held to the bucket's cap, multiplied, times the reference
+  hit (it leaves out the resisted-only bonuses, Glancing Blow and Tinted, and Coverage). Since rebalance 2 the
+  strongest hit past the clamp is noted as fine for an extreme build; the packer and the editor warn only when the
+  **example** build passes the clamp or falls outside the typical band.
 
-| Host event | The draft's max | With vanilla extras | Engine clamp (3.8) |
+### 5.7 The engine's limits
+
+| Host event | Max from the buckets | With vanilla extras | Engine clamp (3.8) |
 | --- | --- | --- | --- |
-| `ATTACK_STAT` (ATK) | ×2.0 | ×6 (Huge Power, Choice, Guts) | ×32 |
-| `MOVE_POWER_RATIO` (POW, COND) | ×4.5 | about ×8 (Technician, plates) | ×512 |
-| `SAME_TYPE_BONUS` (STAB) | ×2.25 | the same (vanilla Adaptability adds into STAB: decide in the handler) | none checked |
-| `DAMAGE_RATIO` (MATCH, CRIT, FINAL, GUARD) | ×2.19 | about ×10 (Life Orb, Expert Belt, Tinted Lens, Sniper) | ×32 |
+| `ATTACK_STAT` (ATK) | x2.5 | x7.5 (Huge Power, Choice, Guts) | x32 |
+| `MOVE_POWER_RATIO` (POW, COND) | x6.9 | about x12 (Technician, plates) | x512 |
+| `SAME_TYPE_BONUS` (STAB) | x3.0 | the same | none checked |
+| `DAMAGE_RATIO` (MATCH, CRIT, FINAL, GUARD) | x3.1 | about x14 | x32 |
 
-- **Overflow** (3.8): power stays a u16 (150 × 8 = 1,200); `power × attack × 42` = 1,200 × 12,000 × 42 = 6.0e8, under
-  2^32 (4.3e9) by ×7; `DAMAGE_RATIO`'s `value × ratio` at ×10 overflows only past about 104,000 damage. Safe, but the
-  saturating multiply that 3.8 recommends is still worth adding under `#ifdef PAPERWHITE2`.
-- **The final clamp** goes after `DAMAGE_CALCULATED` (0x48), on the u32 damage, before any `(u16)` cast. There is no MAX text:
-  the damage number's colour tier shows the size, red (from 40,000) the top one (section 8). Where the first u16 truncation happens isn't checked (unsure).
+- **Overflow** (3.8): power stays a u16 (150 × 12 = 1,800); `power × attack × 42` = 1,800 × 12,000 × 42 = 9.1e8, under
+  2^32 by x4.7. `fixed_round` saturates (phase 3), and the hit is clamped at 60,000 after `DAMAGE_CALCULATED`.
 
-### 5.7 The defensive side
+### 5.8 The defensive side
 
-| Source | Max |
-| --- | --- |
-| DEF (blues +80%, Bulwark up to +100%) | ×2.0: damage ×0.5 |
-| GUARD (Guard blues −40%, Type Ward, Prism, Smoulder, Weather Ward, Thaw-proof; conditional ones only when they hold) | −50%: ×0.5 |
-| HP (+50%, but 999 at most) | about ×1.4 for a typical 500-HP Pokémon |
-
-- Buffs alone: 0.5 × 0.5 = **25% of the damage**, or about **18% of the HP share** with the HP bonus. Never immunity.
-- With vanilla extras (Reflect ×0.5, +6 Defense ×0.25, Multiscale ×0.5): 0.25 × 0.5 × 0.25 = 3%, close to a wall.
-  Vanilla answers exist (critical hits ignore screens and defensive boosts), and bosses could carry an Unaware-like
-  aura; for now there is no defence-ceiling rule (decision 7).
-- **Enemy damage scaling** should be set against an expected defence: if the typical late run has about ×0.7 (three
-  defensive blues), enemies scaled to that hurt a balanced team as early ones did, and a team with no defence takes
-  about 1.4× the share: hits that already took half its HP then one-shot it, as decided.
-- **Enemy Defense scaling** divides every number in 5.2-5.5. The draft assumes the bosses' Defense and Sp. Def grow at
-  most ×1.3 and HP carries the rest (decision 3).
+- Buffs alone: DEF x2.5 (damage x0.4) and GUARD -50%: **20% of the damage**, about 14% of the HP share with the HP
+  blue. Never immunity.
+- The enemies' Attack and Sp. Atk curve (15.2) is fitted so a balanced build (half its picks defensive) takes about 20%
+  of its HP a room enemy's hit; a glass cannon takes 30-45% late, a defensive build 11-15%.
+- Enemy Defense and Sp. Def still grow at most x1.3 (decision 3); HP carries the rest.
 
 ## 6. Decisions (the user, 2026-11-19)
 
@@ -935,6 +927,8 @@ the gauge's tiles, palettes and HP-numbers actor.
 
 ### 12.7 Rebalance (2026-11-20)
 
+(Bosses since rebalance 2, section 15.2: the room curve times a boss bonus, not absolute values; the tables below are the first rebalance's.)
+
 After the user's first playtest: room 2 was the Rayquaza raid, which phase 5 had given round 1's boss values (6,627 HP,
 ×27.5, Attack ×3), so their Dipplin's Dragon Breath, which one-shot it unscaled, barely dented it. Changed:
 
@@ -1293,3 +1287,223 @@ event heap while it is open, the list's strings while it shows; no VRAM.
 - **The swap is the room's choice**, like heal, revive and gift; a refusal, Cancel or No leave it open.
 - The hub NPC's look and place (`OBJ_CODE_CLERK_F`, (28, 43)) and the swap NPCs' places (rest x 21, pre-boss rest x 8,
   the Lady by default) are placeholders.
+
+## 15. Rebalance 2: buffs, bosses, broken bars, merged cards, team-aware offers (2026-11-20)
+
+After the user's second playtest (5 rooms a round): the round 1 boss (Ho-Oh and Lugia) had about 6,000 HP each, round
+2's three foes about 15,000 each; a debug-granted build (Adaptability, Expert, Tinted, Spectral and Prism at rank 3,
+five attack blues and purples, 31 IVs) hit them for 400-1,200, the bosses were nearly impossible and the rooms after
+them easy. The cause: the buffs multiplied at most x23.6 by design (5.2 of the first draft) while bosses were scaled
+x25 (round 1) to x224 (the final room) in HP, as absolute boss values unrelated to the room curve. Decided with the
+user: verify the buffs first, then bosses on the room curve with a modest bonus, stronger buffs tuned with the
+simulator, heals stopped at a broken bar, fewer cards, team-aware offers, and the buffed stats on the summary.
+
+### 15.1 Verification: the buffs apply as designed (no bug found)
+
+The user's build was set in the run state as the debug menu sets it (Adaptability, Expert, Tinted, Spectral, Prism at
+rank 3; Attack x5; Expert Edge, Opportunist, Tough Claws, Technique x1; Type Affinity left out, as it needs a type),
+then the Illusionist's Zoroark (Dark) fought at place 1, each of Pignite's moves from the same savestate with the
+battle's table as read and again with it emptied (the foe's moves Splash, Pignite made faster). The table the battle
+read held exactly the cards' values (Attack 50, Adaptability 75, Expert 40, Spectral 60, Tinted 100, Prism 35...).
+Before the rebalance:
+
+| Move | Without buffs | With | Ratio | The buckets' maths |
+| --- | --- | --- | --- | --- |
+| Arm Thrust (Fighting, physical, contact, power 15, super effective) | 50, 54 | 182, 213 | x3.9 | ATK 1.5 × POW 1.3 (Tough Claws, Technique) × STAB 1.5 × MATCH 1.4 = x4.1, less the formula's +2 and power rounding (15 × 1.3 = 19): 182-218 expected |
+| Smog (Poison, special, power 20, no STAB) | 14 | 19 | x1.36 | POW 1.2 (Technique) on 20 power: 17-20 expected |
+| Ember (Fire, special, power 40, STAB) | 42 | 85 | x2.0 | POW 1.2 × STAB 1.5 (Attack doesn't raise Sp. Atk): 74-87 expected |
+| Flame Charge (Fire, physical, contact, power 50, STAB) | 76 | 254 | x3.3 | ATK 1.5 × POW 1.3 × STAB 1.5 = x2.9 on the base before the roll: 221-261 expected |
+
+So the user's build multiplied a neutral STAB hit by about x2-3 and a super-effective one by x4, as the first draft's
+values said: no bug, the design itself was too weak against the bosses' x25-x224. **After** (same build, today's
+values, a place-1 Zoroark): Arm Thrust 490 (x10.5), Ember 989 (x20.6: Offense raises Sp. Atk too, Spectral made it
+super effective, Expert x1.6), Flame Charge 1,622 (x23). Scripts: the session's scratchpad `rebalance2/h/v1.py`.
+
+### 15.2 Bosses on the room curve
+
+- **The rule:** a boss's (and the final room's) multiplier is the room curve at its round's last room (the final
+  room's at the run's last room) times its round's **`boss_bonus`** (percent, a stat each, run.json's
+  `enemy_scaling.<stat>.boss_bonus`, replacing the absolute `boss` values), then the enemy's own `scale`. A raid's HP
+  takes `raid_hp_factor` wherever it is (a room, a boss, the final room). The packer works the bosses' percents out
+  (`entralink_run.enemy_scaling`, `boss_room_index`), so the game's table and code are unchanged but for the raid
+  factor on a boss raid.
+- **Values** (the simulator's fit for 5 rooms a round, rounded): HP 150% rising to 2,000% (curve 150), bosses' HP bonus
+  x2.2 / x2.3 / x5.0 (the final room is a single Darkrai, so its own bonus is larger, as decided: "the final room the
+  same rule, its own bonus"); Attack and Sp. Atk 120% to 250% (curve 175), bosses x1.1; Defense and Sp. Def 100% to
+  130% (straight), Speed 100% to 145%, bosses x1.0.
+- **In the game** (py-desmume, the user's save copy, `rebalance2/h/t2_stats.py`): the round 1 boss (Ho-Oh and Lugia,
+  place 7) **2,182-2,315 HP** each (x9.53 of their own 229-243; before about 6,000+), Attack and Sp. Atk x1.48,
+  Defense and Sp. Def x1.09, Speed x1.13. A round 2 room (Spooktober's Gengar, place 9) **1,143 HP** (x6.69), Attack
+  and Sp. Atk x1.5, defences x1.13, Speed x1.19.
+- **The editor:** the Run section's table shows Boss bonus R1-R3 (titles say "in percent of the curve at its round's
+  last room"); the notes under it and the Raid HP box say the new rule.
+
+### 15.3 Stronger buffs
+
+Attack-side steps, gold rank values and the bucket caps roughly doubled (`buffs.json`), so a typical late build is
+about x15-20 and an extreme one x60-80 (5.2-5.4):
+
+- **Bucket caps:** ATK and POW +150%, STAB +150 (x3.0 at most), MATCH +60%, COND +175%, CRIT +75, FINAL +40%, DEF
+  +150%; GUARD stays -50%.
+- **Blues:** Offense +25% a pick (to +150), Bulwark +20% (to +150), Power +10% (to +40), Guard 5% (to 40%); HP, Speed,
+  Accuracy and Vigor as they were.
+- **Purples:** Type Affinity +40% (to 120), Expert Edge +20% (60), Glancing Blow +30% (120), Kinship +0.15 (0.6),
+  Heavy Crit +0.2 (0.6), Opportunist +30% (90), Climate +20% (80), Tough Claws +20% (60), Technique +40% (120),
+  Pinch Power +24% (72), Momentum Strike +10% (60), First Blood +30% (90), Giant Slayer +20% (40).
+- **Golds:** Galvanic and Last Stand 100/140/175, Overcharge and Cold Snap 80/120/150, Dream Eater, Venom Strike,
+  Kindling and Shatter 60/100/150, Dizzy Strike and Heatwave 50/80/120, Lullaby 50/80/100, Fire Within, Reckless and
+  Siphon 40/70/100, Adaptability x2.25/x2.6/x3.0, Expert 30/45/60, Coverage x1.4/x1.6/x1.8, Bastion (the gold Bulwark)
+  60/100/150, Blood Price 25/35/40, Slipstream 20/40/60, Sniper x2.4/x2.6/x2.75. The others (chances, turns, the
+  defensive golds) are unchanged.
+- **The balance meter** (editor and packer): the strongest critical hit past the clamp is no longer a warning; the meter
+  says "past the clamp: fine for an extreme build". It warns instead when the **example** build passes the clamp or
+  falls outside the typical band, `balance.typical_factor` (new, 15-22: the 20-pick example is x21.7), which the Buffs
+  tab's meter edits under the example build ("Typical band x"), and its summary shows the example's factor against
+  the band.
+
+### 15.4 The simulator and its tables
+
+`entralink_sim.py` now: reads `boss_bonus`; counts a boss's foes (the average of the boss rooms each round can draw, a
+raid one foe) and its **good hits** (super effective, with the cards that hold only then) for all of them; the builds
+take Offense and Bulwark; `--fit` proposes the curves and the boss bonuses from the targets (rooms 1.5 rising to 4
+typical hits, bosses 6 / 8 / 9 good hits, a room enemy's hit 20% of a balanced build's HP, a boss's 25%, the bonuses
+held to HP x1.5-x5 and the other stats x1.0-x1.1).
+
+**5 rooms a round** (run.json today):
+
+| Place | Picks | Enemy HP (foes) | HP, Atk, Def, Spe % | Balanced: factor on a good hit | Balanced: typical hit, hits | Balanced: good hit, good hits for all foes | Balanced: hit taken | Glass cannon: hits (good hits) | Glass cannon: hit taken | Defensive: hit taken |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| R1 room 1 | 0 | 334 | 150, 120, 100, 100 | x1.0 | 228, 1.5 | 455, 0.7 | 20% | 1.5 (0.7) | 20% | 20% |
+| R1 room 2 | 0 | 413 | 185, 121, 102, 103 | x1.0 | 223, 1.8 | 447, 0.9 | 20% | 1.8 (0.9) | 20% | 20% |
+| R1 room 3 | 2 | 558 | 250, 124, 104, 106 | x1.6 | 356, 1.6 | 712, 0.8 | 20% | 1.6 (0.8) | 20% | 16% |
+| R1 room 4 | 2 | 745 | 334, 129, 106, 110 | x1.6 | 349, 2.1 | 699, 1.1 | 21% | 2.1 (1.1) | 21% | 17% |
+| R1 room 5 | 3 | 966 | 433, 135, 109, 113 | x1.6 | 340, 2.8 | 681, 1.4 | 18% | 2.4 (1.2) | 22% | 15% |
+| R1 boss | 3 | 2,125 (x2) | 953, 148, 109, 113 | x1.6 | 340, 6.2 | 681, 6.2 | 20% | 5.2 (5.2) | 24% | 16% |
+| R2 room 1 | 5 | 1,215 | 545, 141, 111, 116 | x3.2 | 667, 1.8 | 1,335, 0.9 | 18% | 1.2 (0.6) | 23% | 12% |
+| R2 room 2 | 6 | 1,492 | 669, 150, 113, 119 | x3.9 | 790, 1.9 | 1,580, 0.9 | 20% | 1.3 (0.7) | 25% | 12% |
+| R2 room 3 | 6 | 1,793 | 804, 159, 115, 122 | x3.9 | 774, 2.3 | 1,548, 1.2 | 21% | 1.6 (0.8) | 26% | 12% |
+| R2 room 4 | 7 | 2,116 | 949, 169, 117, 126 | x3.9 | 763, 2.8 | 1,526, 1.4 | 19% | 1.7 (0.8) | 28% | 12% |
+| R2 room 5 | 8 | 2,462 | 1104, 180, 119, 129 | x4.8 | 919, 2.7 | 1,838, 1.3 | 20% | 1.7 (0.8) | 29% | 12% |
+| R2 boss | 9 | 5,662 (x3) | 2539, 198, 119, 129 | x5.6 | 1,072, 5.3 | 2,145, 7.9 | 22% | 3.5 (5.2) | 32% | 12% |
+| R3 room 1 | 10 | 2,825 | 1267, 192, 121, 132 | x5.6 | 1,057, 2.7 | 2,113, 1.3 | 18% | 1.5 (0.7) | 32% | 11% |
+| R3 room 2 | 11 | 3,207 | 1438, 205, 124, 135 | x5.6 | 1,033, 3.1 | 2,067, 1.6 | 18% | 1.5 (0.8) | 33% | 11% |
+| R3 room 3 | 12 | 3,608 | 1618, 219, 126, 139 | x5.6 | 1,018, 3.5 | 2,036, 1.8 | 17% | 1.5 (0.8) | 36% | 12% |
+| R3 room 4 | 12 | 4,025 | 1805, 234, 128, 142 | x5.6 | 1,002, 4.0 | 2,005, 2.0 | 18% | 1.8 (0.9) | 38% | 13% |
+| R3 room 5 | 13 | 4,460 | 2000, 250, 130, 145 | x6.4 | 1,128, 4.0 | 2,256, 2.0 | 19% | 1.8 (0.9) | 41% | 14% |
+| R3 final | 14 | 22,300 | 10000, 275, 130, 145 | x7.6 | 1,339, 16.7 | 2,678, 8.3 | 21% | 8.8 (4.4) | 45% | 15% |
+
+**3 rooms a round** (the same data):
+
+| Place | Picks | Enemy HP (foes) | HP, Atk, Def, Spe % | Balanced: factor on a good hit | Balanced: typical hit, hits | Balanced: good hit, good hits for all foes | Balanced: hit taken | Glass cannon: hits (good hits) | Glass cannon: hit taken | Defensive: hit taken |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| R1 room 1 | 0 | 334 | 150, 120, 100, 100 | x1.0 | 228, 1.5 | 455, 0.7 | 20% | 1.5 (0.7) | 20% | 20% |
+| R1 room 2 | 0 | 517 | 232, 123, 104, 106 | x1.0 | 219, 2.4 | 438, 1.2 | 20% | 2.4 (1.2) | 20% | 20% |
+| R1 room 3 | 2 | 850 | 381, 131, 108, 111 | x1.6 | 343, 2.5 | 685, 1.2 | 22% | 2.5 (1.2) | 22% | 17% |
+| R1 boss | 2 | 1,869 (x2) | 838, 144, 108, 111 | x1.6 | 343, 5.5 | 685, 5.5 | 24% | 5.5 (5.5) | 24% | 19% |
+| R2 room 1 | 4 | 1,282 | 575, 143, 111, 117 | x3.2 | 667, 1.9 | 1,335, 1.0 | 19% | 1.6 (0.8) | 23% | 13% |
+| R2 room 2 | 4 | 1,793 | 804, 159, 115, 122 | x3.2 | 645, 2.8 | 1,290, 1.4 | 22% | 2.3 (1.2) | 26% | 15% |
+| R2 room 3 | 5 | 2,373 | 1064, 177, 119, 128 | x3.2 | 622, 3.8 | 1,245, 1.9 | 23% | 2.6 (1.3) | 29% | 15% |
+| R2 boss | 6 | 5,457 (x3) | 2447, 195, 119, 128 | x3.9 | 747, 7.3 | 1,494, 11.0 | 25% | 5.1 (7.6) | 32% | 15% |
+| R3 room 1 | 6 | 3,015 | 1352, 199, 122, 134 | x3.9 | 731, 4.1 | 1,461, 2.1 | 26% | 2.9 (1.4) | 32% | 15% |
+| R3 room 2 | 7 | 3,711 | 1664, 223, 126, 139 | x4.8 | 872, 4.3 | 1,745, 2.1 | 29% | 3.1 (1.5) | 36% | 16% |
+| R3 room 3 | 9 | 4,460 | 2000, 250, 130, 145 | x4.8 | 846, 5.3 | 1,692, 2.6 | 23% | 2.8 (1.4) | 41% | 15% |
+| R3 final | 9 | 22,300 | 10000, 275, 130, 145 | x4.8 | 846, 26.4 | 1,692, 13.2 | 25% | 13.9 (6.9) | 45% | 16% |
+
+What it shows: with 5 rooms a balanced build needs 1.5 to 4 typical hits a room enemy, about 6 good hits for round 1's
+two bosses, 8 for round 2's three and 8 for the final room; a room enemy's hit costs it 17-21%, a boss's 20-22% (the
+bosses' Attack bonus is held to x1.1). The glass cannon kills everything faster and takes 30-45% a hit late; the
+defensive build is slow (it has no attack picks) and takes 11-16%. With 3 rooms a round the run gives 9 picks, not 14,
+so the late rooms (4-5 hits) and the final room (13 good hits) are longer: someone running 3 rooms would lower the
+final room's HP bonus (`--fit --rooms 3` proposes HP 155-1,500% and bonuses x2.3 / x2.0 / x4.5).
+
+### 15.5 Heals stop at a broken bar
+
+Once a foe with health bars has lost a bar, no heal brings it back above that bar's top: `HPAdd` (every heal, on the
+server's and the client's copies alike: Recover and the like, drain, Leech Seed, berries, Leftovers, Wish,
+Regenerator, abilities) is held to `EntralinkBattle_GetHealLimit` (the top of the bar the HP is in, for a run's scaled
+foe with more than one bar), worked out in 32 bits (a scaled foe's HP near 65,535 could wrap in vanilla's u16 sum);
+`ServerControl_RecoverHPCheckFail` fails a heal at that top, and a recovery move there says "But it failed!".
+Tested (`rebalance2/h/t3_heal.py`): round 1's Lugia with its scale poked to 500% (11,102 HP, 3 bars of 3,701), its HP
+set to 7,102 (bar 2, whose top is 7,401), its moves all Recover: the first Recover healed it to **7,401** ("×2", a full
+bar 2; vanilla would have healed 5,551 to 11,102), the second did nothing ("The wild Lugia used Recover!", then the
+next move). Screenshots `rebalance2/shots/t3_t2_*.png` and `t3_t3_*.png`.
+
+### 15.6 Fewer, merged cards
+
+- **Offense** (id `attack`, kept): Attack and Sp. Atk +25% (stat `attacking`); **Sp. Atk** (`sp_attack`) removed.
+- **Bulwark** (id `defense`, kept): Defense and Sp. Def +20% (stat `defending`); **Sp. Def** (`sp_defense`) removed.
+  The gold that was called Bulwark keeps its id `bulwark` and is now **Bastion**.
+- **Tough Claws** absorbs **Iron Fist** (`iron_fist` removed): every punching move makes contact, so "contact moves
+  (punches too) +20%" covers both.
+- **Technique** absorbs **Swift Hand** (`swift_hand` removed): moves of power 60 or less, **or** priority moves, +40%
+  (a condition `any` of the two tests); both were the Speed theme's power purples.
+- Left apart: Expert Edge and Glancing Blow (one is super effective, the other resisted: two conditions of opposite
+  sense), Big Root and Vampiric, Hardy and Shed Skin (different kinds). 109 cards now (from 113); the ids kept keep
+  their places' meaning, and the removed ids are gone from the catalogue (no code named them).
+- Tested (`rebalance2/h/t7_offer.py`): an offer of Offense, Bulwark and Technique after a battle, each with its new
+  text, Offense taken ("Riku gained Offense!"); screenshot `rebalance2/shots/t7_02.png`.
+
+### 15.7 Team-aware offers
+
+- **The data:** each theme has `team_tags` in buffs.json: `moves`, `abilities` (constants) and `stab_moves` (type
+  mastery: a damaging move of the Pokémon's own type). The lists today: weather setters and users (Rain Dance, Sunny
+  Day, Sandstorm, Hail, Weather Ball, Thunder, Hurricane, Blizzard, Solar Beam, the weather abilities and their users),
+  sleep moves and Bad Dreams / Effect Spore, poison and burn moves and their contact abilities, Ice moves for frost,
+  confusing moves, recoil / Reversal / Flail / Endure with Guts-likes and the pinch abilities for last stand, boosting
+  moves and Simple / Moody / Contrary / Moxie / Defiant / Unaware for stat stages, priority and Speed moves with Speed
+  Boost / Prankster / Unburden for speed, high-critical moves with Super Luck / Sniper, drain, recovery, Leech Seed,
+  Protect and Regenerator / Poison Heal for stall. Editable on the Buffs tab's Themes section (Team tags: chips with a
+  move or ability picker each, and the own-type checkbox).
+- **The weights** (settings, the Buffs tab's Team row): `team_theme_weight` **75** (+75% for each Pokémon of the run's
+  team that plays the theme) and `team_theme_max` **400** (at most x4); a theme's golds and the purples related to it
+  (their best theme) are multiplied by it on top of the held-theme and rank-up weights. Others still come up.
+- **In the game** (overlay 12): the run's team is scanned once an offer (and once a shop's or gift's card), so a swap
+  counts at once: each Pokémon's ability, moves and, for themes that count them, whether a move is a damaging one of
+  its own types (the type read first, the power only for those). The tables are the packer's
+  (`ENTRALINK_BUFF_TEAM_*`).
+- **Tested** (`rebalance2/h/t5_weight.py`): the Illusionist's battle won, the frame before the after-battle draw kept;
+  300 draws each from it with the same 300 seeds (the RNG poked at the draw's entry), the source's odds set to all gold
+  or all purple, and the team set at the draw to a neutral one (Growl, Leer, Tail Whip, Splash; Keen Eye) or the same
+  with Sunny Day on the lead and Spore on the second:
+
+| 900 cards each | Neutral team | Weather + sleep team |
+| --- | --- | --- |
+| Weather golds | 80 | **120** (x1.5) |
+| Sleep golds | 66 | **106** (x1.6) |
+| Other themes' golds (each) | 64-82 | 56-74 |
+| Purples related to weather | 138 | **198** |
+| Purples related to sleep | 157 | **227** |
+
+  The offer is drawn in about 7 frames after its first (as before: the draw runs over a message).
+
+### 15.8 Buffed stats on the summary
+
+During a run (the game's party is the run's copies), the summary's stats page shows Attack, Defense, Sp. Atk, Sp. Def
+and Speed with the run's **stat cards that hold on every hit** applied, as the battle applies them: the `stat_ratio`
+cards with no condition and no scale (today Offense on Attack and Sp. Atk, Bulwark on Defense and Sp. Def, Speed),
+the ones in a bucket summed and held to its cap, Speed each multiplying. Conditional stat cards (Fire Within when
+burned, Storm Speed in weather, Bastion by missing HP) aren't shown; the HP blue already raises the copies' own max
+HP. A raised value is drawn in the summary font's blue (colour 10) instead of its dark grey, with 4 digits past 999.
+Code: `EntralinkBuffs_GetBuffedStat` (ARM9 main, the packer's `ENTRALINK_BUFF_STAT_CARDS`), a hook in
+`PStaSkill_PrintStatRows` (overlay 207). Tested (`rebalance2/h/t6_summary.py`): with Offense x5, Bulwark x3, Speed
+x2, Pignite's Attack 195 showed **438** (x2.25), Defense 131 **209** (x1.6), Sp. Atk 160 **360**, Sp. Def 124
+**198**, Speed 161 **186** (x1.16); screenshot `rebalance2/shots/s_sum.png`.
+
+### 15.9 Memory
+
+ARM9 main about +0.2 KB (the stat cards and the bucket caps, one function); overlay 12 about +1 KB (the team tags'
+tables, 0.6 KB, and the scan); overlay 167 +0.1 KB; overlay 207 +32 bytes; the catalogue's four fewer cards save a
+little in each table and 4 bytes of the run state. The DS main arena's start moved about 1.2 KB with this branch's
+base (28 KB left before 0x023e0000). No heap (the scan's work is on the stack), no VRAM.
+
+### 15.10 Calls made, for the user
+
+- "Good hit" in the targets is a super-effective hit without setup; a boss's good hits count all its foes.
+- The final room's HP bonus is x5 (it is one foe); rounds 1 and 2's are x2.2 and x2.3 as asked.
+- The bosses' Attack bonus is x1.1, the most decided, so a boss's hit is 20-22% a foe rather than 25-30%.
+- The gold Bulwark is renamed Bastion so the merged blue can be Bulwark.
+- The team is scanned as the cards are drawn (not once at the run's start) so the Reserve Box's swaps count.
+- The summary's buffed colour is the summary font's blue; easy to change (`BUFFED_STAT_COLOR` in `p_sta_skill.c`).
+- The typical band is 15-22 (the example build at 20 picks is x21.7).
+- The tests that asserted the user's own catalogue (card counts, the meter's numbers on the real data) now use
+  fixtures.
