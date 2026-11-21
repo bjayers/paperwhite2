@@ -2,6 +2,22 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-20: Entralink rebalance 2: stronger buffs, bosses on the room curve, broken bars, merged cards, team-aware offers (ROM session, on a branch)
+
+- **Verified first:** the user's debug build applies exactly as designed (x2-3 on a neutral STAB hit, x4 super
+  effective); the first draft's buffs (x23.6 at most) simply couldn't match bosses scaled x25-x224. No bug.
+- **Bosses** are the room curve at their round's last room times `boss_bonus` (run.json; HP x2.2 / x2.3 / x5 for the
+  single final room, Attack x1.1); round 1's Ho-Oh and Lugia now have about 2,200 HP each (was 6,000+).
+- **Buffs** roughly doubled (steps, gold ranks, bucket caps): a typical late build x15-20, an extreme one x77 (past the
+  clamp with a critical hit, which the meter now calls fine). `entralink_sim.py` refitted the curves (tables in
+  `entralink-buffs.md` 15.4: 5 rooms a round gives 1.5-4 hits a room, 6-8 good hits a boss, 17-22% a hit taken).
+- **Heals stop at a broken bar** (Recover, drain, berries, Leftovers...: `HPAdd` holds them to the bar's top).
+- **Merged cards:** Offense (Attack + Sp. Atk), Bulwark (Defense + Sp. Def; the gold Bulwark is now Bastion), Tough
+  Claws takes Iron Fist, Technique takes Swift Hand; 109 cards.
+- **Team-aware offers:** themes' `team_tags` (moves, abilities, own-type moves) in buffs.json; +75% a Pokémon, at most
+  x4 (Buffs tab: Team row, Themes' team tags). **Summary:** the run's Offense / Bulwark / Speed shown on the stats page.
+- Details, tests and calls: `entralink-buffs.md` section 15.
+
 ## 2026-11-20: Battle visuals from the playtest: damage numbers' place and depth, triples' HP lines, digit widths, HP drain (ROM session, on a branch)
 
 - **Damage numbers** are placed from the battle camera at rest (not the attack's moving camera) and kept 4 px inside

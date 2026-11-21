@@ -246,6 +246,18 @@
           "maximum": 1000,
           "description": "The weight of golds and related purples of a theme held, in percent"
         },
+        "team_theme_weight": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 500,
+          "description": "Team-aware offers: the percent a theme's golds and related purples weigh more for each Pokémon of the run's team that plays it (its themes' team_tags), as the cards are drawn; 0 turns it off"
+        },
+        "team_theme_max": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 2000,
+          "description": "The most a theme's team weighting gives, in percent of the card's weight"
+        },
         "rank_up_weight": {
           "type": "integer",
           "minimum": 100,
@@ -538,6 +550,13 @@
             }
           },
           "description": "A typical build, for the meter's second number"
+        },
+        "typical_factor": {
+          "type": "array",
+          "prefixItems": [ { "type": "integer", "minimum": 1, "maximum": 500 }, { "type": "integer", "minimum": 1, "maximum": 500 } ],
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "The band a typical late build's factor should land in (the example's), lowest and highest; the meter marks the example outside it"
         }
       }
     },
@@ -679,6 +698,29 @@
           "type": "string",
           "pattern": "^.{1,80}$",
           "description": "One line"
+        },
+        "team_tags": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "What shows that a Pokémon of the run's team plays the theme (any of them): each one that does weighs the theme's golds and related purples up (settings' team_theme_weight)",
+          "properties": {
+            "moves": {
+              "type": "array",
+              "maxItems": 64,
+              "items": { "type": "string", "x-constant": "MOVE_" },
+              "description": "Moves that set the theme up or use it"
+            },
+            "abilities": {
+              "type": "array",
+              "maxItems": 32,
+              "items": { "type": "string", "x-constant": "ABILITY_" },
+              "description": "Abilities that set the theme up or use it"
+            },
+            "stab_moves": {
+              "type": "boolean",
+              "description": "A damaging move of one of the Pokémon's own types counts too (type mastery: the team's STAB)"
+            }
+          }
         }
       }
     },

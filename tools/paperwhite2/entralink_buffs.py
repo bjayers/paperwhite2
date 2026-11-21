@@ -82,6 +82,8 @@ ICON_COLORS = 16
 BUCKET_KINDS = {"damage_ratio", "stab_bonus", "crit_damage"}
 ATTACK_STATS = {"attack", "sp_attack", "attacking"}
 DEFENSE_STATS = {"defense", "sp_defense", "defending"}
+# The band a typical late build's factor should land in, when balance.typical_factor leaves it out (rebalance 2)
+DEFAULT_TYPICAL_FACTOR = (15, 20)
 
 
 def error(where: str, message: str):
@@ -161,6 +163,12 @@ def ceiling(data: dict, reference: int | None = None) -> dict:
     values = {e["id"]: strongest(e) for e in data["buffs"] if in_strongest_hit(e)}
     sums = bucket_sums(data, values)
     return {"sums": sums, **hit(data, sums, reference)}
+
+
+def typical_band(data: dict) -> tuple[int, int]:
+    """The band a typical late build's factor should land in (balance.typical_factor; rebalance 2's x15-20)."""
+    low, high = data.get("balance", {}).get("typical_factor", DEFAULT_TYPICAL_FACTOR)
+    return low, high
 
 
 def example_hit(data: dict, reference: int | None = None) -> dict:
@@ -547,7 +555,22 @@ def effect_lines(data: dict, directory: Path = SOURCE) -> list[str]:
               "// Each card's numbers (EntralinkBuffValue): step, soft limit and cap, or the ranks; whether a gold; its",
               "// effect's kind",
               "#define ENTRALINK_BUFF_VALUES { \\", *[row + " \\" for row in values_table(data)], "}"]
+    cards = stat_cards(data)
+    lines += ["// Rebalance 2: the cards that raise a stat whatever the hit (stat_ratio with no condition or scale), which",
+              "// the summary shows on the run's copies: card, ENTRALINK_BUFF_STAT_*, bucket (ENTRALINK_BUFF_NONE for none)",
+              f"#define ENTRALINK_BUFF_STAT_CARD_COUNT {max(1, len(cards))}",
+              "#define ENTRALINK_BUFF_STAT_CARDS { " + (", ".join(
+                  f"{{ ENTRALINK_BUFF_{macro(e['id'])}, ENTRALINK_BUFF_STAT_{macro(e['effect']['stat'])}, "
+                  + (f"ENTRALINK_BUFF_BUCKET_{macro(e['bucket'])}" if e.get("bucket") else "ENTRALINK_BUFF_NONE")
+                  + " }" for e in cards) or "{ ENTRALINK_BUFF_NONE, 0, ENTRALINK_BUFF_NONE }") + " }"]
     return lines
+
+
+def stat_cards(data: dict) -> list[dict]:
+    """The cards that raise a stat on every hit: stat_ratio effects with no condition and no scale (the blues Offense,
+    Bulwark and Speed today)."""
+    return [e for e in data["buffs"] if e["effect"]["kind"] == "stat_ratio" and not e["effect"].get("condition")
+            and not e["effect"].get("scale")]
 
 
 # ---- The checks -----------------------------------------------------------------------------------------------------
@@ -659,11 +682,59 @@ def problems(data: dict, directory: Path = SOURCE) -> list[str]:
     thresholds = [tier["from"] for tier in damage_numbers(settings)["tiers"]]
     if thresholds[0] != 0 or thresholds != sorted(set(thresholds)):
         error("settings.damage_numbers.tiers", "the tiers' thresholds must start at 0 and rise")
-    top = ceiling(data)
-    if top["critical_hit"] > settings["damage_cap"]:
-        warnings.append(f"balance: the strongest critical hit on the reference ({top['critical_hit']:,.0f}) passes "
-                        f"the damage cap ({settings['damage_cap']:,})")
+    # Rebalance 2: an extreme build past the clamp is fine (decision 3); a typical one there, or outside its band, isn't
+    typical = example_hit(data)
+    if data.get("balance", {}).get("example") and typical["hit"] > settings["damage_cap"]:
+        warnings.append(f"balance: the example build's hit on the reference ({typical['hit']:,.0f}) passes the damage "
+                        f"cap ({settings['damage_cap']:,}): a typical build shouldn't reach it")
+    low, high = typical_band(data)
+    if data.get("balance", {}).get("example") and not low <= typical["factor"] <= high:
+        warnings.append(f"balance: the example build's factor x{typical['factor']:.1f} is outside the typical band "
+                        f"x{low}-{high}")
     return warnings
+
+
+# ---- The team's themes (rebalance 2, decision 6) ---------------------------------------------------------------------
+
+def team_tags(data: dict) -> dict[str, list[int]]:
+    """The themes' team tags as the game reads them: every theme's moves and abilities (numbers) in one list each,
+    with each theme's start in it (and the end), and a bit for each theme whose own-type damaging moves count."""
+    constants = datajson.constants()
+    out = {"moves": [], "move_starts": [], "abilities": [], "ability_starts": [], "stab": 0}
+    for i, theme in enumerate(data["themes"]):
+        tags = theme.get("team_tags", {})
+        out["move_starts"].append(len(out["moves"]))
+        out["ability_starts"].append(len(out["abilities"]))
+        out["moves"].extend(constants[m] for m in tags.get("moves", []))
+        out["abilities"].extend(constants[a] for a in tags.get("abilities", []))
+        if tags.get("stab_moves"):
+            out["stab"] |= 1 << i
+    out["move_starts"].append(len(out["moves"]))
+    out["ability_starts"].append(len(out["abilities"]))
+    return out
+
+
+def team_tag_lines(data: dict) -> list[str]:
+    settings = data["settings"]
+    tags = team_tags(data)
+
+    def array(values: list[int]) -> str:
+        return "{ " + (", ".join(str(v) for v in values) or "0") + " }"
+
+    return [
+        "// Team-aware offers (rebalance 2): the percent a theme's golds and related purples weigh more for each",
+        "// Pokémon of the team that plays it, at most the max; the themes' tags, each theme's moves (abilities) from its",
+        "// start to the next theme's, and the themes whose own-type damaging moves count",
+        f"#define ENTRALINK_BUFF_TEAM_THEME_WEIGHT {settings.get('team_theme_weight', 0)}",
+        f"#define ENTRALINK_BUFF_TEAM_THEME_MAX {settings.get('team_theme_max', 100)}",
+        f"#define ENTRALINK_BUFF_TEAM_MOVE_COUNT {max(1, len(tags['moves']))}",
+        f"#define ENTRALINK_BUFF_TEAM_ABILITY_COUNT {max(1, len(tags['abilities']))}",
+        f"#define ENTRALINK_BUFF_TEAM_MOVES {array(tags['moves'])}",
+        f"#define ENTRALINK_BUFF_TEAM_MOVE_STARTS {array(tags['move_starts'])}",
+        f"#define ENTRALINK_BUFF_TEAM_ABILITIES {array(tags['abilities'])}",
+        f"#define ENTRALINK_BUFF_TEAM_ABILITY_STARTS {array(tags['ability_starts'])}",
+        f"#define ENTRALINK_BUFF_TEAM_STAB_THEMES 0x{tags['stab']:x}",
+    ]
 
 
 # ---- The header -----------------------------------------------------------------------------------------------------
@@ -729,6 +800,7 @@ def header(data: dict, kinds: list[str], directory: Path = SOURCE) -> str:
         f"#define ENTRALINK_BUFF_BOSS_FIXED_DAMAGE {settings.get('boss_fixed_damage', 50)}",
         f"#define ENTRALINK_BUFF_SKIP_DUST {settings.get('skip_dust', 0)}",
         f"#define ENTRALINK_BUFF_TYPE_CARD_TEAM_WEIGHT {settings.get('type_card_team_weight', 100)}",
+        *team_tag_lines(data),
         *[f"#define ENTRALINK_BUFF_PRICE_{macro(t)} {settings['prices'][t]}" for t in TIERS], "",
         "// The offers' sources, rows of ENTRALINK_BUFF_ODDS (blue, purple, gold percents)",
         *[f"#define ENTRALINK_BUFF_SOURCE_{macro(s)} {i}" for i, s in enumerate(SOURCES)],
@@ -768,11 +840,13 @@ def meter_lines(data: dict) -> list[str]:
     top, typical = ceiling(data), example_hit(data)
     reference = data.get("balance", {}).get("reference_hit", 600)
     cap = data["settings"]["damage_cap"]
+    low, high = typical_band(data)
     sums = ", ".join(f"{b['name']} {top['sums'][b['id']]:g}/{b['cap']}" for b in data["buckets"] if b["side"] == "attack")
+    past = " (past the clamp: fine for an extreme build)" if top["critical_hit"] > cap else ""
     return [f"buckets at most: {sums}",
             f"strongest hit on {reference}: x{top['factor']:.2f} = {top['hit']:,.0f}; critical x{top['critical_factor']:.2f}"
-            f" = {top['critical_hit']:,.0f} (cap {cap:,})",
-            f"example build: x{typical['factor']:.2f} = {typical['hit']:,.0f}"]
+            f" = {top['critical_hit']:,.0f} (cap {cap:,}){past}",
+            f"example build: x{typical['factor']:.2f} = {typical['hit']:,.0f} (typical band x{low}-{high})"]
 
 
 def main():

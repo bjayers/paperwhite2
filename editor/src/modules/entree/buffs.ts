@@ -70,7 +70,13 @@ export interface Settings {
   offers: number; tierOdds: Record<Source, Record<Tier, number>>; bossGuaranteedGold: boolean; goldSlots: number; maxRank: number;
   damageCap: number; prices: Record<Tier, number>;
 }
-export interface Catalogue { settings: Settings; buckets: Bucket[]; categories: Category[]; themes: Theme[]; buffs: Buff[]; referenceHit: number; example: BuildPick[] }
+export interface Catalogue {
+  settings: Settings; buckets: Bucket[]; categories: Category[]; themes: Theme[]; buffs: Buff[]; referenceHit: number; example: BuildPick[];
+  /** The band a typical late build's factor should land in (balance.typical_factor, rebalance 2). */
+  typicalFactor: [number, number];
+}
+/** The typical band when balance.typical_factor leaves it out (the packer's DEFAULT_TYPICAL_FACTOR). */
+export const DEFAULT_TYPICAL_FACTOR: [number, number] = [15, 20];
 
 export const isTier = (v: unknown): v is Tier => TIERS.includes(v as Tier);
 
@@ -123,6 +129,10 @@ export function readCatalogue(data: JsonValue | null | undefined): Catalogue {
     buffs: asList(d.get("buffs")).map(readBuff),
     referenceHit: num(balance.get("reference_hit")) ?? 600,
     example: asList(balance.get("example")).map((v) => ({ buff: str(asMap(v).get("buff")) ?? "", count: num(asMap(v).get("count")) ?? 1 })),
+    typicalFactor: (() => {
+      const band = asList(balance.get("typical_factor")).map((v) => num(v) ?? 0);
+      return band.length === 2 ? [band[0], band[1]] as [number, number] : DEFAULT_TYPICAL_FACTOR;
+    })(),
   };
 }
 
@@ -378,8 +388,12 @@ export function checkBuffs(cat: Catalogue): BuffProblem[] {
     if (!b) err(`The example build names ${p.buff}, which isn't a buff.`);
     else if (b.tier === "gold" && p.count > b.ranks.length) err(`The example build has ${b.name} at rank ${p.count}, of ${b.ranks.length}.`);
   }
-  const top = ceilingHit(cat);
-  if (top.criticalHit > cat.settings.damageCap)
-    out.push({ severity: "warning", message: `The strongest critical hit on the reference (${Math.round(top.criticalHit).toLocaleString("en")}) passes the damage cap (${cat.settings.damageCap.toLocaleString("en")}).` });
+  // Rebalance 2: an extreme build past the clamp is fine; a typical one there, or outside its band, isn't
+  const typical = exampleHit(cat);
+  if (cat.example.length && typical.hit > cat.settings.damageCap)
+    out.push({ severity: "warning", message: `The example build's hit on the reference (${Math.round(typical.hit).toLocaleString("en")}) passes the damage cap (${cat.settings.damageCap.toLocaleString("en")}): a typical build shouldn't reach it.` });
+  const [low, high] = cat.typicalFactor;
+  if (cat.example.length && (typical.factor < low || typical.factor > high))
+    out.push({ severity: "warning", message: `The example build's factor ×${typical.factor.toFixed(1)} is outside the typical band ×${low}-${high}.` });
   return out;
 }

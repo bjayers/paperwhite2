@@ -1,5 +1,6 @@
 """The run simulator (entralink_sim.py): its multipliers from fixture curves, and on the real data only what any data
 gives."""
+import json
 import sys
 from pathlib import Path
 
@@ -10,13 +11,14 @@ from tools.paperwhite2 import entralink_run, entralink_sim  # noqa: E402
 
 def test_multipliers_follow_the_curves():
     run = {"rounds": [{"rooms": 3, "boss": True}, {"rooms": 2}],
-           "enemy_scaling": {"hp": {"start": 100, "end": 500, "curve": 200, "boss": [700, 900]}}}
+           "enemy_scaling": {"hp": {"start": 100, "end": 500, "curve": 200, "boss_bonus": [300, 200]}}}
     curves = entralink_run.enemy_scaling(run)
     where = {p["label"]: p for p in entralink_sim.places(run)}
     assert entralink_sim.multiplier(curves, "hp", where["R1 room 1"]) == 100
     assert entralink_sim.multiplier(curves, "hp", where["R2 room 1"]) == 325
-    assert entralink_sim.multiplier(curves, "hp", where["R1 boss"]) == 700
-    assert entralink_sim.multiplier(curves, "hp", where["R2 final"]) == 900
+    # Rebalance 2: a boss is the curve at its round's last room times its bonus; the final room at the run's last
+    assert entralink_sim.multiplier(curves, "hp", where["R1 boss"]) == 200 * 3
+    assert entralink_sim.multiplier(curves, "hp", where["R2 final"]) == 500 * 2
 
 
 def test_room_curve_is_keyed_by_depth_across_the_run():
@@ -44,4 +46,22 @@ def test_fit_keeps_defences_at_most_130():
     run, buffs = entralink_sim.load()
     curves = entralink_sim.fit(run, buffs)
     for stat in ("defense", "sp_defense"):
-        assert max(curves[stat]["boss"] + [curves[stat]["end"]]) <= 130
+        assert curves[stat]["end"] <= 130 and curves[stat]["boss_bonus"] == [100, 100, 100]
+    low, high = entralink_sim.BOSS_STAT_BONUS
+    assert all(low <= b <= high for b in curves["attack"]["boss_bonus"])
+    low, high = entralink_sim.BOSS_HP_BONUS
+    assert all(low <= b <= high for b in curves["hp"]["boss_bonus"])
+
+
+def test_bosses_count_their_foes(tmp_path):
+    """A boss place's good hits are for all its foes: the average foe count of the rooms that can be its boss (a raid
+    one foe)."""
+    rooms = tmp_path / "rooms"
+    rooms.mkdir()
+    battle = {"enemies": [{"species": "SPECIES_DIALGA"}] * 2, "format": "double"}
+    (rooms / "a.json").write_text(json.dumps({"role": "boss", "rounds": [1], "battles": [battle]}))
+    (rooms / "b.json").write_text(json.dumps({"role": "boss", "battles": [{**battle, "format": "raid"}]}))
+    (rooms / "c.json").write_text(json.dumps({"role": "final", "battles": [{**battle, "enemies": battle["enemies"] * 2,
+                                                                            "format": "triple"}]}))
+    run = {"rounds": [{"rooms": 1, "boss": True}, {"rooms": 1, "boss": True}, {"rooms": 1}]}
+    assert entralink_sim.boss_foes(run, tmp_path) == [2.0, 1.0, 4.0]

@@ -157,7 +157,7 @@ faintly behind the grid, switchable, and checks each NPC against all nine: on an
 tile blocked in any is a warning, as is standing where the player arrives (x 15 z 23).
 
 **Levels are base values:** since phase 5 of the buffs (`entralink-buffs.md` section 12) the run scales the enemies' stats
-with its depth across the run (run.json's `enemy_scaling`, each enemy's `scale`; raids take the room curve with their HP times `raid_hp_factor`); their levels stay as given.
+with its depth across the run (run.json's `enemy_scaling`, each enemy's `scale`; raids take their place's multipliers with their HP times `raid_hp_factor`; bosses and the final room the curve at their round's last room times `boss_bonus`, entralink-buffs.md 15.2); their levels stay as given.
 
 The editor's other checks: a battle NPC naming no battle or a missing one, a battle no NPC starts, more enemies than the
 format takes, a battle NPC showing an enemy its battle doesn't have, an item NPC without an item, two NPCs on one tile,

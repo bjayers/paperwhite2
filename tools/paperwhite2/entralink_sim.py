@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Paper White 2's Entralink roguelike: a run simulated outside the game, for the enemies' scaling (entralink-buffs.md,
-section 12).
+"""Paper White 2's Entralink roguelike: a run simulated outside the game, for the enemies' scaling and the buffs'
+values together (entralink-buffs.md, sections 5 and 12).
 
     entralink_sim.py                  # the run with run.json's enemy_scaling: a table per archetype
-    entralink_sim.py --fit            # proposes enemy_scaling's curves from the decisions' targets
+    entralink_sim.py --fit            # proposes enemy_scaling's curves and boss bonuses from the targets below
     entralink_sim.py --markdown       # the doc's short table (the balanced and glass-cannon builds)
+    entralink_sim.py --rooms 5        # every round with 5 rooms instead of run.json's
 
 The model, stdlib only and deliberately plain:
 - **The run:** run.json's rounds (their rooms, then a boss for a round with one, the final room after the last), each
@@ -17,17 +18,20 @@ The model, stdlib only and deliberately plain:
   glass cannon only attacks, defensive only defends. A conditional card counts at the share of hits it holds for
   (CONDITIONAL below). The buckets' maths is buffs.json's (entralink_buffs.factor: sums held to the caps).
 - **The hits:** Gen 5's damage formula, the average roll (x0.925), a 90-power move with STAB and neutral
-  effectiveness ("typical"); "strong" adds a super-effective hit and one +2 setup (x4). The player's Pokémon are
-  level 100, IVs 31, their attacking stat a dedicated attacker's (base 110, full EVs) and the others base 90 with no
-  EVs; the enemies the rooms' level 70 with base 95 stats and IVs 15.
-  Physical and special hits count half each, so a stat bucket counts at the average of its two stats.
+  effectiveness ("typical"); a "good" hit is super effective (x2, with the cards that hold only then). The player's
+  Pokémon are level 100, IVs 31, their attacking stat a dedicated attacker's (base 110, full EVs) and the others base
+  90 with no EVs; the enemies the rooms' level 70 with base 95 stats and IVs 15.
 - **The enemies' multipliers** (enemy_scaling, percent; entralink_run.enemy_scaling works them out): a room's is the
   stat's curve at the room's depth across the whole run, start + (end - start) x depth^(curve / 100); a boss's and
-  the final room's is boss[round]. A raid in a room takes the room's, with its HP times raid_hp_factor (not modelled
-  here: the table is a lone enemy room). Keyed by depth across the run, so --rooms N keeps the arc.
+  the final room's the curve at its round's last room times its boss_bonus. A raid in a room takes the room's, with
+  its HP times raid_hp_factor (not modelled here: the table is a lone enemy room). Keyed by depth across the run, so
+  --rooms N keeps the arc.
+- **Bosses fight as a team:** a boss place has the average foe count of the boss rooms that can come up there (a
+  raid's one foe counts once, as three players share it), and its "good hits" are the good hits to faint them all.
 
-Output per place: the enemy's HP and multipliers; for each build its typical hit, the hits a lone attacker needs
-(typical and strong), the enemy's typical hit as a share of the build's HP, and who moves first.
+Output per place: the enemy's HP and multipliers; for each build its attack factor (the buckets on a good hit), its
+typical hit and the hits a lone attacker needs on one foe, the good hits to faint all the place's foes, the enemy's
+typical hit as a share of the build's HP, and who moves first.
 """
 import argparse
 import json
@@ -56,39 +60,66 @@ ENEMY_IV = 15
 MOVE_POWER = 90
 STAB = 1.5
 AVERAGE_ROLL = 0.925
-STRONG = 4.0
+SUPER_EFFECTIVE = 2.0
+# The most a foe's max HP can be in battle
+MAX_HP = 65535
 
 # The builds' preferences by tier, in order; a gold's ranks come from the data. The attack side is section 5.3's
 # themed build (the user's paralysis set: its golds' conditions hold, as the player plays for them)
-ATTACK = {"blue": ["sp_attack", "power"], "purple": ["type_affinity", "opportunist", "expert_edge", "kinship"],
+ATTACK = {"blue": ["attack", "power"], "purple": ["type_affinity", "opportunist", "expert_edge", "kinship"],
           "gold": ["galvanic", "overcharge", "adaptability", "slipstream", "expert"]}
-DEFENCE = {"blue": ["defense", "sp_defense", "guard", "hp"], "purple": ["type_ward", "focus_band", "vampiric"],
+DEFENCE = {"blue": ["defense", "guard", "hp"], "purple": ["type_ward", "focus_band", "vampiric"],
            "gold": ["bulwark", "prism", "regrowth", "second_wind"]}
 # The share of hits a conditional card holds for: a type card's type (the moves of the type it rolled), Slipstream's
-# speed gap, Prism on the super-effective hits taken; defense and sp_defense each guard one of the two halves of the
-# hits taken (physical, special)
-CONDITIONAL = {"type_affinity": 0.75, "type_ward": 0.33, "slipstream": 0.5, "prism": 0.3, "defense": 0.5,
-               "sp_defense": 0.5}
-# Cards that hold only on a super-effective hit (the strong hit's), or on a boss
+# speed gap, Prism on the super-effective hits taken, the gold Bulwark (Bastion) by missing HP (about half on average)
+CONDITIONAL = {"type_affinity": 0.75, "type_ward": 0.33, "slipstream": 0.5, "prism": 0.3, "bulwark": 0.5}
+# Cards that hold only on a super-effective hit (the good hit's), or on a boss
 SUPER_EFFECTIVE_ONLY = {"expert_edge", "expert"}
 BOSS_ONLY = {"giant_slayer"}
 ARCHETYPES = ["balanced", "glass_cannon", "defensive"]
-# The fit's targets (fit()): a round's boss in strong hits of a balanced build (rounds 1 and 2), the final room's HP
-# (decision 3's "toward 50,000 by the end"), and a boss's hit as a share of a balanced build's HP, in times a room
-# enemy's
-BOSS_STRONG_HITS = [6, 9, 9]
-FINAL_HP = 50000
-BOSS_SHARE = 3.0
-# The room enemies' target in typical hits of a balanced build: the first room's (a little more than the one hit that an
-# unscaled enemy takes) growing to the last room's, along the room curve's depth
+# The fit's targets (rebalance 2, decided with the user): a room enemy in typical hits of a balanced build, from the
+# first room's to the last room's along the depth; a boss's foes together in good hits of a balanced build, a round
+# each (round 3's: the final room); the enemy's typical hit as a share of a balanced build's HP in rooms and a boss's
 FIRST_HITS = 1.5
 LAST_HITS = 4.0
+BOSS_GOOD_HITS = [6, 8, 9]
+ROOM_SHARE = 0.20
+BOSS_SHARE = 0.25
+# The boss bonus the fit may propose: HP's, and the other stats' (decided: x1.0 to x1.1)
+BOSS_HP_BONUS = (150, 500)
+BOSS_STAT_BONUS = (100, 110)
 
 
 def load(directory: Path = SOURCE) -> tuple[dict, dict]:
     run = json.loads((directory / "run.json").read_text(encoding="utf-8"))
     buffs = json.loads((directory / "buffs.json").read_text(encoding="utf-8"))
     return run, buffs
+
+
+def boss_foes(run: dict, directory: Path = SOURCE) -> list[float]:
+    """The average foe count of the boss rooms each round can end with (rounds 1 and 2: the boss pool; round 3: the
+    final rooms), 1 where none is found; a raid counts as one foe."""
+    try:
+        rooms = {path.stem: json.loads(path.read_text(encoding="utf-8"))
+                 for path in sorted((directory / "rooms").glob("*.json"))}
+    except OSError:
+        rooms = {}
+
+    def foes(room: dict) -> float:
+        battles = room.get("battles", [])
+        if not battles:
+            return 1.0
+        counts = [1 if b.get("format") == "raid" else len(b.get("enemies", [])) or 1 for b in battles]
+        return sum(counts) / len(counts)
+
+    out = []
+    for number in (1, 2, 3):
+        if number < 3:
+            pool = [rooms[n] for n in entralink_run.boss_pool(rooms, number)] if rooms else []
+        else:
+            pool = [r for r in rooms.values() if r.get("role") == "final"]
+        out.append(sum(foes(r) for r in pool) / len(pool) if pool else 1.0)
+    return out
 
 
 def multiplier(curves: dict, stat: str, place: dict) -> int:
@@ -99,18 +130,19 @@ def multiplier(curves: dict, stat: str, place: dict) -> int:
     return curve["rooms"][place["index"]]
 
 
-def places(run: dict) -> list[dict]:
+def places(run: dict, foes: list[float] | None = None) -> list[dict]:
+    foes = foes or [1.0, 1.0, 1.0]
     out = []
     index = 0
     for r, round_ in enumerate(run["rounds"]):
         for n in range(round_["rooms"]):
             index += 1
-            out.append({"label": f"R{r + 1} room {n + 1}", "round": r, "room": n, "index": index - 1,
+            out.append({"label": f"R{r + 1} room {n + 1}", "round": r, "room": n, "index": index - 1, "foes": 1.0,
                         "weights": {**DEFAULT_TYPE_WEIGHTS, **round_.get("type_weights", {})}})
         last = r == len(run["rounds"]) - 1
         if round_.get("boss") or last:
             out.append({"label": f"R{r + 1} {'final' if last else 'boss'}", "round": r, "room": None,
-                        "final": last})
+                        "final": last, "foes": foes[2 if last else r]})
     return out
 
 
@@ -195,9 +227,9 @@ class Build:
                         return
 
     def value(self, card: str) -> float:
-        e = self.entries[card]
+        e = self.entries.get(card)
         level = self.levels.get(card, 0)
-        if level == 0:
+        if e is None or level == 0:
             return 0
         if e["tier"] == "gold":
             return e["ranks"][min(level, len(e["ranks"])) - 1]
@@ -253,7 +285,8 @@ def damage(level: int, attack: float, defense: float, power: int = MOVE_POWER) -
     return base * STAB * AVERAGE_ROLL
 
 
-def simulate(run: dict, buffs: dict, curves: dict | None = None) -> dict[str, list[dict]]:
+def simulate(run: dict, buffs: dict, curves: dict | None = None, foes: list[float] | None = None) \
+        -> dict[str, list[dict]]:
     curves = curves or entralink_run.enemy_scaling(run)
     player = player_stats()
     enemy = enemy_stats()
@@ -264,24 +297,26 @@ def simulate(run: dict, buffs: dict, curves: dict | None = None) -> dict[str, li
         totals = {"blue": 0.0, "purple": 0.0, "gold": 0.0}
         taken = {"blue": 0, "purple": 0, "gold": 0}
         rows = []
-        for place in places(run):
+        for place in places(run, foes):
             boss = place["room"] is None
             m = {s: multiplier(curves, s, place) / 100 for s in STATS}
             e = {s: enemy[s] * m[s] for s in STATS}
-            e["hp"] = min(e["hp"], 65535)
+            e["hp"] = min(e["hp"], MAX_HP)
             f = build.factors(buffs, boss)
+            good_f = build.factors(buffs, boss, True)
             # The battle: the build's buffs from the picks before it
-            hit = damage(PLAYER_LEVEL, player["attack"], e["defense"]) * f["attack"]
-            strong = damage(PLAYER_LEVEL, player["attack"], e["defense"]) * STRONG * \
-                build.factors(buffs, boss, True)["attack"]
+            base = damage(PLAYER_LEVEL, player["attack"], e["defense"])
+            hit = base * f["attack"]
+            good = base * SUPER_EFFECTIVE * good_f["attack"]
             taken_hit = damage(ENEMY_LEVEL, e["attack"], player["defense"]) * f["defence"]
             player_hp = min(player["hp"] * f["hp"], 999)
             rows.append({
                 "place": place["label"], "picks": sum(taken.values()), "golds": taken["gold"],
-                "enemy_hp": round(e["hp"]), "mult": {s: round(m[s] * 100) for s in STATS},
-                "hit": round(hit), "hits": e["hp"] / hit, "strong": round(strong), "strong_hits": e["hp"] / strong,
+                "enemy_hp": round(e["hp"]), "foes": place["foes"], "mult": {s: round(m[s] * 100) for s in STATS},
+                "hit": round(hit), "hits": e["hp"] / hit, "good": round(good),
+                "good_hits": e["hp"] * place["foes"] / good,
                 "share": taken_hit / player_hp, "first": "you" if player["speed"] * f["speed"] >= e["speed"] else "foe",
-                "attack": f["attack"], "defence": f["defence"],
+                "attack": f["attack"], "good_attack": good_f["attack"], "defence": f["defence"],
             })
             for tier, n in expected_picks(place, settings).items():
                 totals[tier] += n
@@ -292,48 +327,56 @@ def simulate(run: dict, buffs: dict, curves: dict | None = None) -> dict[str, li
     return results
 
 
-def fit(run: dict, buffs: dict) -> dict:
-    """enemy_scaling's curves from the decisions (section 6, and the rebalance of section 12): Defense and Sp. Def to
-    x1.3 by the last room; Speed so the last room's enemy matches the unbuffed player; HP so a balanced build's typical
-    hit takes FIRST_HITS hits in the first room growing to LAST_HITS by the last; Attack and Sp. Atk so the enemy's
-    hit costs a balanced build the share it costs in the first room. A stat's start and end are the wanted values in
-    the first and last room, its curve exponent the best (least squared error in the log) for the rooms between;
-    the bosses' values are the old fit's (a boss BOSS_STRONG_HITS of its strong hits, the final room FINAL_HP, a boss's
-    hit BOSS_SHARE times a room enemy's)."""
-    all_places = places(run)
-    count = len(all_places)
+def fit(run: dict, buffs: dict, foes: list[float] | None = None) -> dict:
+    """enemy_scaling's curves and boss bonuses from the targets (rebalance 2): Defense and Sp. Def to x1.3 by the last
+    room; Speed so the last room's enemy matches the unbuffed player; HP so a balanced build's typical hit takes
+    FIRST_HITS hits in the first room growing to LAST_HITS by the last; Attack and Sp. Atk so a room enemy's hit costs
+    a balanced build ROOM_SHARE of its HP. A stat's start and end are the wanted values in the first and last room,
+    its curve exponent the best (least squared error in the log) for the rooms between. A boss's HP bonus makes its
+    foes together BOSS_GOOD_HITS good hits of the balanced build, its Attack's and Sp. Atk's a boss's hit BOSS_SHARE
+    (both held to the decided ranges), the others none."""
+    foes = foes or [1.0, 1.0, 1.0]
     room_count = entralink_run.run_room_count(run)
     flat = entralink_run.enemy_scaling({"rounds": run["rounds"]})
     player = player_stats()
     enemy = enemy_stats()
-    balanced = simulate(run, buffs, flat)["balanced"]
-    base_share = balanced[0]["share"]
+    all_places = places(run, foes)
+    balanced = simulate(run, buffs, flat, foes)["balanced"]
     wanted = {s: [] for s in STATS}
-    boss_wanted = {s: [] for s in STATS}
-    for i, (place, row) in enumerate(zip(all_places, balanced)):
-        depth = i / (count - 1)
-        boss = place["room"] is None
-        defense = 1 + 0.3 * depth
-        speed = 1 + (player["speed"] / enemy["speed"] - 1) * depth
-        attack = base_share * (BOSS_SHARE if boss else 1) / row["share"]
-        hit = row["hit"] / defense
-        if boss:
-            target = FINAL_HP if place.get("final") else BOSS_STRONG_HITS[place["round"]] * row["strong"] / defense
-        else:
-            room_depth = place["index"] / max(1, room_count - 1)
-            target = (FIRST_HITS + (LAST_HITS - FIRST_HITS) * room_depth) * hit
-        hp = target / enemy["hp"]
-        for s, v in (("hp", hp), ("attack", attack), ("sp_attack", attack), ("defense", defense),
-                     ("sp_defense", defense), ("speed", speed)):
-            (boss_wanted if boss else wanted)[s].append(v)
+    for place, row in zip(all_places, balanced):
+        if place["room"] is not None:
+            depth = place["index"] / max(1, room_count - 1)
+            defense = 1 + 0.3 * depth
+            speed = 1 + (player["speed"] / enemy["speed"] - 1) * depth
+            attack = ROOM_SHARE / row["share"]
+            hp = (FIRST_HITS + (LAST_HITS - FIRST_HITS) * depth) * row["hit"] / defense / enemy["hp"]
+            for s, v in (("hp", hp), ("attack", attack), ("sp_attack", attack), ("defense", defense),
+                         ("sp_defense", defense), ("speed", speed)):
+                wanted[s].append(v)
     out = {}
     for s in STATS:
         values = wanted[s]
         start = nice(values[0] * 100)
         end = nice(values[-1] * 100)
-        out[s] = {"start": start, "end": end, "curve": best_curve(values, start, end),
-                  "boss": [nice(v * 100) for v in boss_wanted[s]]}
+        out[s] = {"start": start, "end": end, "curve": best_curve(values, start, end), "boss_bonus": [100, 100, 100]}
+    # The bosses, against the fitted rooms
+    curves = entralink_run.enemy_scaling({"rounds": run["rounds"], "enemy_scaling": out})
+    for place, row in zip(all_places, balanced):
+        if place["room"] is not None:
+            continue
+        r = 2 if place.get("final") else place["round"]
+        room = {s: curves[s]["boss"][r] / 100 for s in STATS}
+        good = row["good"] / room["defense"]
+        hp = BOSS_GOOD_HITS[r] * good / place["foes"] / (enemy["hp"] * room["hp"])
+        out["hp"]["boss_bonus"][r] = clamp(nice(hp * 100), *BOSS_HP_BONUS)
+        attack = BOSS_SHARE / (row["share"] * room["attack"])
+        for s in ("attack", "sp_attack"):
+            out[s]["boss_bonus"][r] = clamp(nice(attack * 100), *BOSS_STAT_BONUS)
     return out
+
+
+def clamp(value: int, low: int, high: int) -> int:
+    return max(low, min(high, value))
 
 
 def best_curve(values: list[float], start: int, end: int) -> int:
@@ -360,32 +403,35 @@ def nice(value: float) -> int:
 def print_table(results: dict[str, list[dict]]):
     for archetype, rows in results.items():
         print(f"\n{archetype}")
-        print(f"{'place':12s} {'picks':>5s} {'HP':>6s} {'hp%':>6s} {'atk%':>5s} {'def%':>5s} {'spe%':>5s} "
-              f"{'hit':>5s} {'hits':>5s} {'strong':>6s} {'hits':>5s} {'taken':>6s} {'first':>5s} {'xatk':>5s} "
-              f"{'xdef':>5s}")
+        print(f"{'place':12s} {'picks':>5s} {'HP':>6s} {'foes':>4s} {'hp%':>6s} {'atk%':>5s} {'def%':>5s} {'spe%':>5s} "
+              f"{'hit':>6s} {'hits':>5s} {'good':>6s} {'goods':>5s} {'taken':>6s} {'first':>5s} {'xatk':>5s} "
+              f"{'xgood':>5s} {'xdef':>5s}")
         for r in rows:
             m = r["mult"]
-            print(f"{r['place']:12s} {r['picks']:5d} {r['enemy_hp']:6d} {m['hp']:6d} {m['attack']:5d} "
-                  f"{m['defense']:5d} {m['speed']:5d} {r['hit']:5d} {r['hits']:5.1f} {r['strong']:6d} "
-                  f"{r['strong_hits']:5.1f} "
-                  f"{r['share'] * 100:5.0f}% {r['first']:>5s} {r['attack']:5.2f} {r['defence']:5.2f}")
+            print(f"{r['place']:12s} {r['picks']:5d} {r['enemy_hp']:6d} {r['foes']:4.1f} {m['hp']:6d} {m['attack']:5d} "
+                  f"{m['defense']:5d} {m['speed']:5d} {r['hit']:6d} {r['hits']:5.1f} {r['good']:6d} "
+                  f"{r['good_hits']:5.1f} {r['share'] * 100:5.0f}% {r['first']:>5s} {r['attack']:5.2f} "
+                  f"{r['good_attack']:5.1f} {r['defence']:5.2f}")
 
 
 def markdown(results: dict[str, list[dict]]) -> str:
-    lines = ["| Place | Picks | Enemy HP | HP, Atk, Def, Spe % | Balanced: hit, hits (strong) | Balanced: hit taken | "
-             "Glass cannon: hits (strong) | Glass cannon: hit taken | Defensive: hit taken |",
-             "| --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
+    lines = ["| Place | Picks | Enemy HP (foes) | HP, Atk, Def, Spe % | Balanced: factor on a good hit | "
+             "Balanced: typical hit, hits | Balanced: good hit, good hits for all foes | Balanced: hit taken | "
+             "Glass cannon: hits (good hits) | Glass cannon: hit taken | Defensive: hit taken |",
+             "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
     for b, g, d in zip(results["balanced"], results["glass_cannon"], results["defensive"]):
         m = b["mult"]
-        lines.append(f"| {b['place']} | {b['picks']} | {b['enemy_hp']:,} | {m['hp']}, {m['attack']}, {m['defense']}, "
-                     f"{m['speed']} | {b['hit']:,}, {b['hits']:.1f} ({b['strong_hits']:.1f}) | {b['share']:.0%} | "
-                     f"{g['hits']:.1f} ({g['strong_hits']:.1f}) | {g['share']:.0%} | {d['share']:.0%} |")
+        foes = f" (x{b['foes']:g})" if b["foes"] != 1 else ""
+        lines.append(f"| {b['place']} | {b['picks']} | {b['enemy_hp']:,}{foes} | {m['hp']}, {m['attack']}, "
+                     f"{m['defense']}, {m['speed']} | x{b['good_attack']:.1f} | {b['hit']:,}, {b['hits']:.1f} | "
+                     f"{b['good']:,}, {b['good_hits']:.1f} | {b['share']:.0%} | "
+                     f"{g['hits']:.1f} ({g['good_hits']:.1f}) | {g['share']:.0%} | {d['share']:.0%} |")
     return "\n".join(lines)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("--fit", action="store_true", help="propose enemy_scaling's curves")
+    parser.add_argument("--fit", action="store_true", help="propose enemy_scaling's curves and boss bonuses")
     parser.add_argument("--markdown", action="store_true", help="the doc's table")
     parser.add_argument("--rooms", type=int, help="every round's rooms instead of run.json's (a longer run)")
     args = parser.parse_args()
@@ -393,13 +439,14 @@ def main():
     if args.rooms is not None:
         for round_ in run["rounds"]:
             round_["rooms"] = args.rooms
+    foes = boss_foes(run)
     if args.fit:
-        curves = fit(run, buffs)
+        curves = fit(run, buffs, foes)
         print(json.dumps(curves, indent=4))
         applied = {**run, "enemy_scaling": curves}
-        print_table(simulate(applied, buffs))
+        print_table(simulate(applied, buffs, foes=foes))
         return
-    results = simulate(run, buffs)
+    results = simulate(run, buffs, foes=foes)
     if args.markdown:
         print(markdown(results))
     else:

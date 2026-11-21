@@ -47,8 +47,7 @@ def test_real_data_packs():
     assert f"#define ENTRALINK_BUFF_COUNT {len(data['buffs'])}" in text
     assert "#define ENTRALINK_BUFF_DAMAGE_CAP 60000" in text
     assert "#define ENTRALINK_BUFF_GOLD_SLOTS 5" in text
-    tiers = [e["tier"] for e in data["buffs"]]
-    assert (tiers.count("blue"), tiers.count("purple"), tiers.count("gold")) == (10, 35, 68)
+    assert {e["tier"] for e in data["buffs"]} <= set(entralink_buffs.TIERS)
 
 
 def test_picked_value_halves_past_the_soft_limit():
@@ -59,19 +58,22 @@ def test_picked_value_halves_past_the_soft_limit():
     assert entralink_buffs.picked_value(-1, None, -2, 5) == -2
 
 
-def test_meter_gives_the_docs_numbers():
-    data = entralink_buffs.load()
-    data["balance"]["reference_hit"] = 600
+def test_meter_multiplies_the_buckets_held_to_their_caps():
+    """The meter on a fixture: each card at its most (Attack's cap 80, Type Affinity's 60, Galvanic's top rank 100)
+    held to the fixture's buckets' caps, multiplied; a critical hit doubles (no CRIT entry); the example build's picks
+    at their values."""
+    data = fixture_catalogue()
+    data["balance"].update(reference_hit=600, example=[{"buff": "attack", "count": 3}, {"buff": "galvanic", "count": 2}])
     top = entralink_buffs.ceiling(data)
-    # 5.2: every attack bucket at its cap, 2.0 x 2.0 x 1.5 x 1.4 x 2.25 x 1.25 = 23.6, and x2 x1.25 on a critical hit
-    assert round(top["factor"], 3) == 23.625
-    assert round(top["critical_factor"], 2) == 59.06
-    assert round(top["hit"]) == 14175 and round(top["critical_hit"]) == 35438
-    assert round(entralink_buffs.ceiling(data, 800)["critical_hit"]) == 47250
-    # 5.3: the paralysis set, ATK 1.3 x POW 2.0 x STAB 1.33 x MATCH 1.08 x COND 2.02 = 7.6, 4,500 on 600
+    # ATK 1.8 x POW 1.6 x COND 2.0
+    assert round(top["factor"], 3) == 5.76 and round(top["critical_factor"], 2) == 11.52
+    assert round(top["hit"]) == 3456 and round(entralink_buffs.ceiling(data, 800)["critical_hit"]) == 9216
+    # Attack's 60 is held to an ATK cap of 50
+    next(b for b in data["buckets"] if b["id"] == "atk")["cap"] = 50
+    assert round(entralink_buffs.ceiling(data)["factor"], 3) == 4.8
+    # ATK 1.3 x COND 1.8
     typical = entralink_buffs.example_hit(data)
-    assert round(typical["factor"], 2) == 7.56
-    assert round(typical["hit"]) == 4538
+    assert round(typical["factor"], 2) == 2.34 and round(typical["hit"]) == 1404
 
 
 def test_resisted_and_non_stab_bonuses_are_left_out_of_the_strongest_hit():
@@ -84,11 +86,24 @@ def test_resisted_and_non_stab_bonuses_are_left_out_of_the_strongest_hit():
     assert not entralink_buffs.in_strongest_hit(entry(data, "coverage"))
 
 
-def test_passing_the_cap_warns(tmp_path):
+def test_the_meter_warns_for_a_typical_build_not_an_extreme_one(tmp_path):
+    """Rebalance 2: the strongest hit past the clamp is fine (an extreme build); the example build past it, or
+    outside the typical band, warns."""
     directory = copy_data(tmp_path)
-    edit(directory, lambda d: d["balance"].update(reference_hit=2000))
-    warnings = entralink_buffs.problems(entralink_buffs.load(directory), directory)
-    assert any("passes the damage cap" in w for w in warnings)
+
+    def warnings():
+        return entralink_buffs.problems(entralink_buffs.load(directory), directory)
+
+    edit(directory, lambda d: (d["balance"].update(reference_hit=9999, example=[], typical_factor=[1, 500]),
+                               d["settings"].update(damage_cap=1000)))
+    assert entralink_buffs.ceiling(entralink_buffs.load(directory))["critical_hit"] > 1000
+    assert not any("damage cap" in w or "typical band" in w for w in warnings())
+    edit(directory, lambda d: d["balance"].update(example=[{"buff": "attack", "count": 1}]))
+    assert any("passes the damage cap" in w for w in warnings())
+    edit(directory, lambda d: (d["balance"].update(reference_hit=10, typical_factor=[50, 60]),
+                               d["settings"].update(damage_cap=60000)))
+    assert any("outside the typical band x50-60" in w for w in warnings())
+    assert any("typical band" in line for line in entralink_buffs.meter_lines(entralink_buffs.load(directory)))
 
 
 def test_broken_catalogues_are_refused(tmp_path):
@@ -100,7 +115,7 @@ def test_broken_catalogues_are_refused(tmp_path):
         (lambda d: entry(d, "speed").update(bucket="atk"), "isn't damage"),
         (lambda d: entry(d, "defense").update(bucket="atk"), "defense side"),
         (lambda d: entry(d, "galvanic").update(description=["one line"]), "a line per rank"),
-        (lambda d: entry(d, "attack").update(step=90), "within the cap"),
+        (lambda d: entry(d, "attack").update(step=entry(d, "attack")["cap"] + 10), "within the cap"),
         (lambda d: entry(d, "attack").update(category="sword"), "isn't one of categories'"),
         (lambda d: d["categories"].append({"id": "sword", "name": "Sword", "description": "A sword"}), "doesn't exist"),
         (lambda d: d["settings"]["tier_odds"]["boss"].update(gold=60), "add up to 100"),
@@ -141,12 +156,23 @@ def fixture_catalogue() -> dict:
     """A small catalogue of the real one's shape: a blue with a soft limit, a type card, a gold of 3 ranks."""
     data = entralink_buffs.load()
     keep = [dict(entry(data, "attack")), dict(entry(data, "type_affinity")), dict(entry(data, "galvanic"))]
-    keep[0].update(description="Attack +10%", step=10, soft_limit=6, cap=80, pools=["after_battle", "shop"])
+    keep[0].update(name="Attack", description="Attack +10%", step=10, soft_limit=6, cap=80, pools=["after_battle", "shop"],
+                   bucket="atk", effect={"kind": "stat_ratio", "stat": "attack"})
     keep[1].update(description="Moves of the card's type +15% power", step=15, cap=60, related=["paralysis"])
     keep[1].pop("soft_limit", None)
     keep[2].update(description=["+60% damage to paralyzed foes", "+80% damage to paralyzed foes",
                                 "+100% damage to paralyzed foes"], ranks=[60, 80, 100], price=500)
+    keep[1]["effect"] = {"kind": "damage_ratio", "condition": {"card_type": True}}
+    keep[1]["bucket"] = "pow"
+    keep[2]["effect"] = {"kind": "damage_ratio", "condition": {"defender_status": ["paralysis"]}}
+    keep[2]["bucket"] = "cond"
     data["buffs"] = keep
+    caps = {"atk": 100, "pow": 100, "stab": 75, "match": 40, "cond": 125, "crit": 50, "final": 25, "def": 100,
+            "guard": 50}
+    data["buckets"] = [{**b, "cap": caps[b["id"]]} for b in data["buckets"] if b["id"] in caps]
+    data["balance"] = {"reference_hit": 600, "example": []}
+    for theme in data["themes"]:
+        theme.pop("team_tags", None)
     return data
 
 
@@ -267,3 +293,36 @@ def test_bar_colors(tmp_path):
     edit(directory, lambda data: data["settings"].update(bar_colors=["red"]))
     with pytest.raises(datajson.DataError, match="bar_colors"):
         entralink_buffs.load(directory)
+
+
+def test_team_tags_and_stat_cards():
+    """Rebalance 2: the themes' team tags packed as one list of moves and one of abilities with each theme's start, and
+    the own-type flag as a theme's bit; the cards that raise a stat on every hit (no condition, no scale)."""
+    data = fixture_catalogue()
+    constants = datajson.constants()
+    data["themes"][0]["team_tags"] = {"moves": ["MOVE_THUNDER_WAVE", "MOVE_SPORE"], "abilities": ["ABILITY_STATIC"]}
+    data["themes"][2]["team_tags"] = {"moves": ["MOVE_TOXIC"], "stab_moves": True}
+    data["settings"].update(team_theme_weight=50, team_theme_max=300)
+    tags = entralink_buffs.team_tags(data)
+    count = len(data["themes"])
+    assert tags["moves"] == [constants["MOVE_THUNDER_WAVE"], constants["MOVE_SPORE"], constants["MOVE_TOXIC"]]
+    assert tags["move_starts"] == [0, 2, 2] + [3] * (count - 2)
+    assert tags["abilities"] == [constants["ABILITY_STATIC"]] and tags["ability_starts"] == [0] + [1] * count
+    assert tags["stab"] == 1 << 2
+    lines = entralink_buffs.header(data, entralink_buffs.effect_kinds()).splitlines()
+    assert "#define ENTRALINK_BUFF_TEAM_THEME_WEIGHT 50" in lines and "#define ENTRALINK_BUFF_TEAM_THEME_MAX 300" in lines
+    assert "#define ENTRALINK_BUFF_TEAM_STAB_THEMES 0x4" in lines
+    # Attack (no condition) is a stat card; with a condition it isn't
+    assert [e["id"] for e in entralink_buffs.stat_cards(data)] == ["attack"]
+    assert "#define ENTRALINK_BUFF_STAT_CARDS { { ENTRALINK_BUFF_ATTACK, ENTRALINK_BUFF_STAT_ATTACK, " \
+           "ENTRALINK_BUFF_BUCKET_ATK } }" in lines
+    entry(data, "attack")["effect"]["condition"] = {"attacker_status": ["burn"]}
+    assert entralink_buffs.stat_cards(data) == []
+
+
+def test_real_team_tags_are_known_constants():
+    """Every move and ability of the real themes' team tags resolves (whatever the user lists)."""
+    data = entralink_buffs.load()
+    tags = entralink_buffs.team_tags(data)
+    assert len(tags["move_starts"]) == len(tags["ability_starts"]) == len(data["themes"]) + 1
+    assert tags["move_starts"] == sorted(tags["move_starts"])

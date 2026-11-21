@@ -4456,6 +4456,12 @@ void ServerControl_SimpleRecover(BtlServerFlow *flow, u16 move, BattleMon *mon, 
         } else if (IsMonFullHP(target)) {
             BtlServerCmdQueue_PutMsg(flow->queue, SC_MSG_SET, 0x37d, targetId, SC_MSG_ARG_END);
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: an Entralink run's foe at the top of a broken health bar: "But it failed!"
+        else if (CanPokemonBattle(target)) {
+            ServerDisplay_MoveFailed(flow, mon, move);
+        }
+#endif
     }
 }
 
@@ -4474,6 +4480,13 @@ BOOL ServerControl_RecoverHPCheckFail(BtlServerFlow *flow, BattleMon *mon) {
     if (IsMonFullHP(mon)) {
         return TRUE;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink run's foe at the top of a broken health bar can't heal
+    // (paperwhite2_entralink_battle.c)
+    if (GetBattleMonStat(mon, BATTLEMON_HP) >= EntralinkBattle_GetHealLimit(mon)) {
+        return TRUE;
+    }
+#endif
     return FALSE;
 }
 

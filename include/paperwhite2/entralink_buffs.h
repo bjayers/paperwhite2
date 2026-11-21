@@ -57,6 +57,14 @@ typedef struct {
     u8 typeCard;
 } EntralinkBuff;
 
+// A card that raises a stat on every hit (ENTRALINK_BUFF_STAT_CARDS, ARM9 main, rebalance 2): the card, its stat
+// (ENTRALINK_BUFF_STAT_*) and its bucket (ENTRALINK_BUFF_BUCKET_*, or ENTRALINK_BUFF_NONE)
+typedef struct {
+    u8 buff;
+    u8 stat;
+    u8 bucket;
+} EntralinkBuffStatCard;
+
 // A card's numbers (ENTRALINK_BUFF_VALUES, ARM9 main): a blue's or purple's step, soft limit (0 for none) and cap; a
 // gold's value at each rank (its last repeated); whether it is a gold, and its effect's kind (ENTRALINK_BUFF_KIND_*)
 typedef struct {
@@ -133,6 +141,11 @@ u32 EntralinkBuffs_GetKind(u32 buff);
 u32 EntralinkBuffs_GetForecastWeather(void);
 // Whether a card that chooses the weather (ENTRALINK_BUFF_WEATHER_CHOICE, Forecast) is held with no weather chosen
 BOOL EntralinkBuffs_NeedsWeather(void);
+// Rebalance 2: a stat of the run's copies as its battles raise it on every hit (the summary shows it): stat, one of
+// ENTRALINK_BUFF_STAT_ATTACK to _SPEED, times the cards of ENTRALINK_BUFF_STAT_CARDS held (Offense, Bulwark, Speed),
+// the ones in a bucket added and held to its cap as the battle does, the others each multiplying; the stat as it is
+// outside a run
+u32 EntralinkBuffs_GetBuffedStat(u32 stat, u32 value);
 
 // ---- Overlay 12: the offers -----------------------------------------------------------------------------------------
 

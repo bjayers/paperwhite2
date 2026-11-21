@@ -533,7 +533,8 @@ export const DUST_NOTES: Record<DustKind, string> = {
 export const DEFAULT_DUST: Record<DustKind, number> = { enemy: 40, enemy_choice: 50, challenge: 80, boss: 150, final: 0 };
 export const DEFAULT_DUST_ROUND_PERCENT = [100, 150, 200];
 /** run.json's enemy_scaling (phase 5 and its rebalance): the stats; each one's room curve (start, end, curve exponent in
- * hundredths, by depth across the run) and its boss value a round; their defaults. */
+ * hundredths, by depth across the run) and its boss bonus a round over the curve at the round's last room (rebalance 2);
+ * their defaults. */
 export const SCALED_STATS = ["hp", "attack", "defense", "sp_attack", "sp_defense", "speed"] as const;
 export type ScaledStat = (typeof SCALED_STATS)[number];
 export const CURVE_KEYS = ["start", "end", "curve"] as const;
@@ -545,11 +546,11 @@ export const CURVE_KEY_TITLES: Record<CurveKey, string> = {
   curve: "The exponent in hundredths of the depth the rooms rise along: 100 is a straight line, 200 stays near the first room's value longer and then climbs, 300 more so",
 };
 export const BOSS_DEFAULT = 100;
-export type StatScaling = Record<CurveKey, number> & { boss: number[] };
+export type StatScaling = Record<CurveKey, number> & { bossBonus: number[] };
 export const SCALED_STAT_NAMES: Record<ScaledStat, string> = {
   hp: "HP", attack: "Attack", defense: "Defense", sp_attack: "Sp. Atk", sp_defense: "Sp. Def", speed: "Speed",
 };
-/** A raid in a room has its HP times this on top of the curve's (three attackers against one foe). */
+/** A raid has its HP times this on top of its place's (three attackers against one foe). */
 export const DEFAULT_RAID_HP_FACTOR = 3;
 /** A room enemy's own scale (room data), percent. */
 export const DEFAULT_ENEMY_SCALE = 100;
@@ -623,11 +624,11 @@ export function readRun(data: JsonValue | null | undefined): RunLayout {
     raidHpFactor: num(m.get("raid_hp_factor")) ?? DEFAULT_RAID_HP_FACTOR,
     enemyScaling: Object.fromEntries(SCALED_STATS.map((stat) => {
       const entry = asMap(asMap(m.get("enemy_scaling")).get(stat));
-      const given = asList(entry.get("boss")).map((v) => num(v) ?? BOSS_DEFAULT);
+      const given = asList(entry.get("boss_bonus")).map((v) => num(v) ?? BOSS_DEFAULT);
       const list = given.length ? given : [BOSS_DEFAULT];
       return [stat, {
         ...Object.fromEntries(CURVE_KEYS.map((key) => [key, num(entry.get(key)) ?? CURVE_DEFAULTS[key]])),
-        boss: ROUNDS.map((_, i) => list[Math.min(i, list.length - 1)]),
+        bossBonus: ROUNDS.map((_, i) => list[Math.min(i, list.length - 1)]),
       }];
     })) as Record<ScaledStat, StatScaling>,
     markerSpots: Object.fromEntries(DOORS.map((d) => {
