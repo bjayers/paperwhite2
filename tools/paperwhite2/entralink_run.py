@@ -82,6 +82,9 @@ SCALED_STATS = ["hp", "attack", "defense", "sp_attack", "sp_defense", "speed"]
 SCALING_DEFAULTS = {"start": 100, "end": 100, "curve": 100}
 DEFAULT_SCALE = 100
 DEFAULT_RAID_HP_FACTOR = 3.0
+# A boss battle's foes' HP bonus factor with two foes and with three (fixes 9; a raid is one foe)
+DEFAULT_BOSS_DOUBLE_FACTOR = 0.85
+DEFAULT_BOSS_TRIPLE_FACTOR = 0.7
 # Rebalance 2: a boss is the room curve at its round's last room times its bonus (percent); the game's percents are u16
 DEFAULT_BOSS_BONUS = 100
 MAX_PERCENT = 0xffff
@@ -771,6 +774,7 @@ def tables(directory: Path) -> dict:
         "dust_round_percent": round_percents(run.get("dust_round_percent", DEFAULT_DUST_ROUND_PERCENT)),
         "enemy_scaling": enemy_scaling(run),
         "raid_hp_percent": raid_hp_percent(run),
+        "boss_multi_percent": boss_multi_percents(run),
         "shop_items": run.get("shop_items", DEFAULT_SHOP_ITEMS),
         "swap_dust": run.get("swap_dust", DEFAULT_SWAP_DUST),
         "reserve_slots": run.get("reserve_slots", DEFAULT_RESERVE_SLOTS),
@@ -828,6 +832,13 @@ def enemy_scaling(run: dict) -> dict[str, dict]:
 def raid_hp_percent(run: dict) -> int:
     """The raid's extra HP factor in percent (run.json's raid_hp_factor)."""
     return round(run.get("raid_hp_factor", DEFAULT_RAID_HP_FACTOR) * 100)
+
+
+def boss_multi_percents(run: dict) -> tuple[int, int]:
+    """A boss battle's foes' HP bonus factor in percent with two foes and with three (run.json's boss_double_factor
+    and boss_triple_factor): each foe's boss_bonus for HP is multiplied by it, as its foes share the boss's HP."""
+    return (round(run.get("boss_double_factor", DEFAULT_BOSS_DOUBLE_FACTOR) * 100),
+            round(run.get("boss_triple_factor", DEFAULT_BOSS_TRIPLE_FACTOR) * 100))
 
 
 def round_percents(percents: list[int]) -> list[int]:
@@ -903,6 +914,10 @@ def header(directory: Path) -> str:
             "{ { " + ", ".join(map(str, data["enemy_scaling"][stat]["rooms"])) + " }, { "
             + ", ".join(map(str, data["enemy_scaling"][stat]["boss"])) + " } }" for stat in SCALED_STATS) + " }",
         f"#define ENTRALINK_RUN_RAID_HP_PERCENT {data['raid_hp_percent']}",
+        "// A boss battle's (and the final room's) foes' HP bonus over the room curve, times this percent with two foes",
+        "// and with three (a raid is one foe)",
+        f"#define ENTRALINK_RUN_BOSS_DOUBLE_HP_PERCENT {data['boss_multi_percent'][0]}",
+        f"#define ENTRALINK_RUN_BOSS_TRIPLE_HP_PERCENT {data['boss_multi_percent'][1]}",
         "// Each room type's template (ENTRALINK_TYPE_* order), or ENTRALINK_RUN_ROOM_NONE",
         f"#define ENTRALINK_RUN_TYPE_TEMPLATES {{ {', '.join(f'0x{t:02x}' for t in data['type_templates'])} }}",
         "// The ground markers' spots, the top-left tiles of 2 by 2, in ENTRALINK_DOOR_* order (north, east, west)",

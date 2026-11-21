@@ -27,6 +27,7 @@
 #include "constants/items.h"
 #include "constants/types.h"
 #include "paperwhite2/battle_handlers.h"
+#include "paperwhite2/entralink_battle.h"
 #include "paperwhite2/moves.h"
 #endif
 
@@ -6339,6 +6340,13 @@ static void HandlerTeleportCheckFail(BattleEventItem *item, BtlServerFlow *flow,
     if (BtlServerFlow_GetBattleType(flow) != 0 || BtlServerFlow_GetBattleStyle(flow) != 0) {
         BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_FAIL_CAUSE, 0x1a);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: no one flees an Entralink run's battle by Teleport, as from a trainer's (its forfeit is the
+    // player's Run)
+    if (EntralinkBattle_IsRun()) {
+        BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_FAIL_CAUSE, 0x1a);
+    }
+#endif
     mon = GetBattleMon(flow, monId);
     if (CheckCondition(mon, CONDITION_BIND) && CheckCondition(mon, CONDITION_MEAN_LOOK)) {
         BattleEventVar_RewriteValue(BATTLE_EVENT_VAR_FAIL_CAUSE, 0x1a);

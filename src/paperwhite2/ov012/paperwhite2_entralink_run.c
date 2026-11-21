@@ -1159,6 +1159,11 @@ static void EntralinkRun_MakeChoice(GameSystem *gsys) {
             EntralinkRun_RemoveNpc(gsys, i);
         }
     }
+    // A buff ball goes once its card is taken, as an item room's ball does with its item
+    if (sNpcs[room->firstNpc + state->talkedNpc].type == ENTRALINK_NPC_BUFF_CHOICE &&
+        !(state->npcsGone & (1 << state->talkedNpc))) {
+        EntralinkRun_RemoveNpc(gsys, state->talkedNpc);
+    }
     state->cleared = TRUE;
 }
 
@@ -1288,7 +1293,8 @@ static void EntralinkRun_AddEnemy(GameData *gameData, PokeParty *party, const En
 // The battle's enemies' stat multipliers (phase 5 and the rebalance), which the battle applies at its start: a room's
 // (a raid in a room too) by its depth across the run, a boss's and the final room's by the round's boss values (the
 // curve at its round's last room times its bonus, rebalance 2), times each enemy's own scale, at most 0xffff. A
-// raid's HP also takes the raid factor, wherever it is, as three players hit it
+// raid's HP also takes the raid factor, wherever it is, as three players hit it; a boss's foes in a double or triple
+// share its HP bonus by run.json's boss_double_factor and boss_triple_factor (a raid is one foe)
 static void EntralinkRun_SetEnemyScale(EntralinkRunState *state, const EntralinkRoom *room,
                                        const EntralinkBattle *battle) {
     static const EntralinkScaling SCALING[ENTRALINK_STAT_COUNT] = ENTRALINK_RUN_ENEMY_SCALING;
@@ -1312,6 +1318,10 @@ static void EntralinkRun_SetEnemyScale(EntralinkRunState *state, const Entralink
         }
         if (raid && stat == ENTRALINK_STAT_HP) {
             percent = percent * ENTRALINK_RUN_RAID_HP_PERCENT / 100;
+        } else if (boss && stat == ENTRALINK_STAT_HP && battle->enemyCount == 2) {
+            percent = percent * ENTRALINK_RUN_BOSS_DOUBLE_HP_PERCENT / 100;
+        } else if (boss && stat == ENTRALINK_STAT_HP && battle->enemyCount >= 3) {
+            percent = percent * ENTRALINK_RUN_BOSS_TRIPLE_HP_PERCENT / 100;
         }
         for (i = 0; i < ENTRALINK_RUN_ENEMIES_MAX; i++) {
             // A raid's three are its one enemy

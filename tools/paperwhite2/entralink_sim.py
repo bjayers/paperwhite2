@@ -27,7 +27,9 @@ The model, stdlib only and deliberately plain:
   its HP times raid_hp_factor (not modelled here: the table is a lone enemy room). Keyed by depth across the run, so
   --rooms N keeps the arc.
 - **Bosses fight as a team:** a boss place has the average foe count of the boss rooms that can come up there (a
-  raid's one foe counts once, as three players share it), and its "good hits" are the good hits to faint them all.
+  raid's one foe counts once, as three players share it), and its "good hits" are the good hits to faint them all;
+  each foe's HP bonus takes run.json's boss_double_factor or boss_triple_factor by its battle's foes (the average
+  over the pool).
 
 Output per place: the enemy's HP and multipliers; for each build its attack factor (the buckets on a good hit), its
 typical hit and the hits a lone attacker needs on one foe, the good hits to faint all the place's foes, the enemy's
@@ -96,29 +98,50 @@ def load(directory: Path = SOURCE) -> tuple[dict, dict]:
     return run, buffs
 
 
-def boss_foes(run: dict, directory: Path = SOURCE) -> list[float]:
-    """The average foe count of the boss rooms each round can end with (rounds 1 and 2: the boss pool; round 3: the
-    final rooms), 1 where none is found; a raid counts as one foe."""
+def boss_pools(run: dict, directory: Path = SOURCE) -> list[list[dict]]:
+    """The boss rooms each round can end with (rounds 1 and 2: the boss pool; round 3: the final rooms)."""
     try:
         rooms = {path.stem: json.loads(path.read_text(encoding="utf-8"))
                  for path in sorted((directory / "rooms").glob("*.json"))}
     except OSError:
         rooms = {}
-
-    def foes(room: dict) -> float:
-        battles = room.get("battles", [])
-        if not battles:
-            return 1.0
-        counts = [1 if b.get("format") == "raid" else len(b.get("enemies", [])) or 1 for b in battles]
-        return sum(counts) / len(counts)
-
     out = []
     for number in (1, 2, 3):
         if number < 3:
-            pool = [rooms[n] for n in entralink_run.boss_pool(rooms, number)] if rooms else []
+            out.append([rooms[n] for n in entralink_run.boss_pool(rooms, number)] if rooms else [])
         else:
-            pool = [r for r in rooms.values() if r.get("role") == "final"]
-        out.append(sum(foes(r) for r in pool) / len(pool) if pool else 1.0)
+            out.append([r for r in rooms.values() if r.get("role") == "final"])
+    return out
+
+
+def battle_foes(room: dict) -> list[tuple[int, bool]]:
+    """Each battle of a room: its foe count and whether it is a raid (one foe)."""
+    battles = room.get("battles", [])
+    return [(1, True) if b.get("format") == "raid" else (len(b.get("enemies", [])) or 1, False)
+            for b in battles] or [(1, False)]
+
+
+def boss_foes(run: dict, directory: Path = SOURCE) -> list[float]:
+    """The average foe count of the boss rooms each round can end with, 1 where none is found; a raid counts as one
+    foe."""
+    out = []
+    for pool in boss_pools(run, directory):
+        counts = [sum(n for n, _ in battle_foes(r)) / len(battle_foes(r)) for r in pool]
+        out.append(sum(counts) / len(counts) if counts else 1.0)
+    return out
+
+
+def boss_hp_factors(run: dict, directory: Path = SOURCE) -> list[float]:
+    """The average factor on each round's boss's HP bonus by its foes (fixes 9: run.json's boss_double_factor with
+    two, boss_triple_factor with three; a raid none), 1 where no boss room is found."""
+    double, triple = (p / 100 for p in entralink_run.boss_multi_percents(run))
+    out = []
+    for pool in boss_pools(run, directory):
+        factors = []
+        for room in pool:
+            each = [1.0 if raid or n < 2 else (double if n == 2 else triple) for n, raid in battle_foes(room)]
+            factors.append(sum(each) / len(each))
+        out.append(sum(factors) / len(factors) if factors else 1.0)
     return out
 
 
@@ -285,9 +308,10 @@ def damage(level: int, attack: float, defense: float, power: int = MOVE_POWER) -
     return base * STAB * AVERAGE_ROLL
 
 
-def simulate(run: dict, buffs: dict, curves: dict | None = None, foes: list[float] | None = None) \
-        -> dict[str, list[dict]]:
+def simulate(run: dict, buffs: dict, curves: dict | None = None, foes: list[float] | None = None,
+             hp_factors: list[float] | None = None) -> dict[str, list[dict]]:
     curves = curves or entralink_run.enemy_scaling(run)
+    hp_factors = hp_factors or [1.0, 1.0, 1.0]
     player = player_stats()
     enemy = enemy_stats()
     settings = buffs["settings"]
@@ -301,6 +325,8 @@ def simulate(run: dict, buffs: dict, curves: dict | None = None, foes: list[floa
             boss = place["room"] is None
             m = {s: multiplier(curves, s, place) / 100 for s in STATS}
             e = {s: enemy[s] * m[s] for s in STATS}
+            if boss:
+                e["hp"] *= hp_factors[2 if place.get("final") else place["round"]]
             e["hp"] = min(e["hp"], MAX_HP)
             f = build.factors(buffs, boss)
             good_f = build.factors(buffs, boss, True)
@@ -327,7 +353,7 @@ def simulate(run: dict, buffs: dict, curves: dict | None = None, foes: list[floa
     return results
 
 
-def fit(run: dict, buffs: dict, foes: list[float] | None = None) -> dict:
+def fit(run: dict, buffs: dict, foes: list[float] | None = None, hp_factors: list[float] | None = None) -> dict:
     """enemy_scaling's curves and boss bonuses from the targets (rebalance 2): Defense and Sp. Def to x1.3 by the last
     room; Speed so the last room's enemy matches the unbuffed player; HP so a balanced build's typical hit takes
     FIRST_HITS hits in the first room growing to LAST_HITS by the last; Attack and Sp. Atk so a room enemy's hit costs
@@ -336,6 +362,7 @@ def fit(run: dict, buffs: dict, foes: list[float] | None = None) -> dict:
     foes together BOSS_GOOD_HITS good hits of the balanced build, its Attack's and Sp. Atk's a boss's hit BOSS_SHARE
     (both held to the decided ranges), the others none."""
     foes = foes or [1.0, 1.0, 1.0]
+    hp_factors = hp_factors or [1.0, 1.0, 1.0]
     room_count = entralink_run.run_room_count(run)
     flat = entralink_run.enemy_scaling({"rounds": run["rounds"]})
     player = player_stats()
@@ -367,7 +394,7 @@ def fit(run: dict, buffs: dict, foes: list[float] | None = None) -> dict:
         r = 2 if place.get("final") else place["round"]
         room = {s: curves[s]["boss"][r] / 100 for s in STATS}
         good = row["good"] / room["defense"]
-        hp = BOSS_GOOD_HITS[r] * good / place["foes"] / (enemy["hp"] * room["hp"])
+        hp = BOSS_GOOD_HITS[r] * good / place["foes"] / (enemy["hp"] * room["hp"] * hp_factors[r])
         out["hp"]["boss_bonus"][r] = clamp(nice(hp * 100), *BOSS_HP_BONUS)
         attack = BOSS_SHARE / (row["share"] * room["attack"])
         for s in ("attack", "sp_attack"):
@@ -440,13 +467,14 @@ def main():
         for round_ in run["rounds"]:
             round_["rooms"] = args.rooms
     foes = boss_foes(run)
+    hp_factors = boss_hp_factors(run)
     if args.fit:
-        curves = fit(run, buffs, foes)
+        curves = fit(run, buffs, foes, hp_factors)
         print(json.dumps(curves, indent=4))
         applied = {**run, "enemy_scaling": curves}
-        print_table(simulate(applied, buffs, foes=foes))
+        print_table(simulate(applied, buffs, foes=foes, hp_factors=hp_factors))
         return
-    results = simulate(run, buffs, foes=foes)
+    results = simulate(run, buffs, foes=foes, hp_factors=hp_factors)
     if args.markdown:
         print(markdown(results))
     else:

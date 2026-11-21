@@ -1242,9 +1242,10 @@
           "enum": [
             "missing_hp",
             "speed_gap",
-            "attack_stage"
+            "attack_stage",
+            "burned_foes"
           ],
-          "description": "Scales the value: missing_hp, the full value at 1 HP and none at full HP (linear in the HP missing); speed_gap, the full value at twice the target's Speed (linear from equal Speed); attack_stage, the value per positive stage of the attacking stat"
+          "description": "Scales the value: missing_hp, the full value at 1 HP and none at full HP (linear in the HP missing); speed_gap, the full value at twice the target's Speed (linear from equal Speed); attack_stage, the value per positive stage of the attacking stat; burned_foes, the value per burned foe on the field (none with no foe burned)"
         },
         "exempt_from_bucket_cap": {
           "type": "boolean",
@@ -1316,9 +1317,10 @@
           "enum": [
             "missing_hp",
             "speed_gap",
-            "attack_stage"
+            "attack_stage",
+            "burned_foes"
           ],
-          "description": "Scales the value: missing_hp, the full value at 1 HP and none at full HP (linear in the HP missing); speed_gap, the full value at twice the target's Speed (linear from equal Speed); attack_stage, the value per positive stage of the attacking stat"
+          "description": "Scales the value: missing_hp, the full value at 1 HP and none at full HP (linear in the HP missing); speed_gap, the full value at twice the target's Speed (linear from equal Speed); attack_stage, the value per positive stage of the attacking stat; burned_foes, the value per burned foe on the field (none with no foe burned)"
         },
         "ignore_burn_drop": {
           "type": "boolean",
@@ -1677,6 +1679,10 @@
         "replaces_freeze": {
           "type": "boolean",
           "description": "The moves' own freeze chance gives this status instead"
+        },
+        "at_least_move_chance": {
+          "type": "boolean",
+          "description": "The chance replaces the move's own chance of the same status when it is higher, rather than adding a roll of its own: a move with a higher chance keeps its own, one with a lower or none has this one (Wildfire)"
         },
         "ignores_immunity_at_rank": {
           "type": "integer",

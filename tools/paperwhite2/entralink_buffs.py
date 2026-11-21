@@ -61,16 +61,24 @@ RANK_NUMERALS = ["I", "II", "III"]
 WORD_TYPE = 20
 WORD_TITLE = 21
 WORD_NUMBER = 22
+# The viewer's multipliers (fixes 9): the words of the buckets' values, from this one (the word set's 23 to 27)
+WORD_VALUE = 23
 # A type card's text names its type where the catalogue says "the card's type"
 CARD_TYPE = "the card's type"
 TYPE_WORD = "{0100:%d}" % WORD_TYPE
 # The description window (the system window under the list) shows two lines; a line of this many characters fits
 DESCRIPTION_WIDTH = 32
 # The fixed messages at the start of the text bank entralink_buffs, before the cards' titles and descriptions: an empty
-# one, so that no card's is 0; a title alone; a title and a price; a title and a count; an item card's description
+# one, so that no card's is 0; a title alone; a title and a price; a title and a count; an item card's description;
+# the viewer's two lines of multipliers (fixes 9), each a title and its buckets' values (words from WORD_VALUE)
+_V = ["{0100:%d}" % (WORD_VALUE + i) for i in range(5)]
 FIXED_MESSAGES = ["", "{0100:%d}" % WORD_TITLE, "{0100:%d} ({0100:%d})" % (WORD_TITLE, WORD_NUMBER),
-                  "{0100:%d} x{0100:%d}" % (WORD_TITLE, WORD_NUMBER), "An item for the run's bag."]
-FIXED_NAMES = ["NONE", "TITLE", "PRICE", "COUNT", "ITEM"]
+                  "{0100:%d} x{0100:%d}" % (WORD_TITLE, WORD_NUMBER), "An item for the run's bag.",
+                  "{ff00:2}Damage multipliers{ff00:0}",
+                  f"ATK ×{_V[0]} POW ×{_V[1]} STAB ×{_V[2]}\\nMATCH ×{_V[3]} FINAL ×{_V[4]}",
+                  "{ff00:2}Other multipliers{ff00:0}",
+                  f"COND ×{_V[0]} CRIT ×{_V[1]}\\nDEF ×{_V[2]} GUARD -{_V[3]}% (+ varies)"]
+FIXED_NAMES = ["NONE", "TITLE", "PRICE", "COUNT", "ITEM", "DAMAGE_TITLE", "DAMAGE", "OTHER_TITLE", "OTHER"]
 # The types a type card rolls, TYPE_NORMAL to TYPE_DARK (decision 9: any of the 17)
 CARD_TYPES = 17
 # A stack's count is a byte
@@ -292,7 +300,7 @@ CONDITION_VALUES = {"defender_status", "attacker_status", "move_type", "category
                     "power_at_most", "weather"}
 # The effects' flags, bits of EntralinkBuffEffect's flags
 EFFECT_FLAGS = ["exempt_from_bucket_cap", "ignore_burn_drop", "team_immune", "non_stab", "overrides_immunity",
-                "replaces_freeze"]
+                "replaces_freeze", "at_least_move_chance"]
 # The effects' "from this rank on" parameter, EntralinkBuffEffect's rankParam
 RANK_PARAMS = ["halves_recoil_at_rank", "ignores_immunity_at_rank", "spreads_at_rank"]
 
@@ -563,7 +571,30 @@ def effect_lines(data: dict, directory: Path = SOURCE) -> list[str]:
                   f"{{ ENTRALINK_BUFF_{macro(e['id'])}, ENTRALINK_BUFF_STAT_{macro(e['effect']['stat'])}, "
                   + (f"ENTRALINK_BUFF_BUCKET_{macro(e['bucket'])}" if e.get("bucket") else "ENTRALINK_BUFF_NONE")
                   + " }" for e in cards) or "{ ENTRALINK_BUFF_NONE, 0, ENTRALINK_BUFF_NONE }") + " }"]
+    held = bucket_cards(data)
+    lines += ["// Fixes 9: the cards that add to a damage bucket, for the viewer's multipliers: card, bucket, whether its",
+              "// value holds on every hit of the bucket (no condition or scale)",
+              f"#define ENTRALINK_BUFF_BUCKET_CARD_COUNT {max(1, len(held))}",
+              "#define ENTRALINK_BUFF_BUCKET_CARDS { " + (", ".join(
+                  f"{{ ENTRALINK_BUFF_{macro(e['id'])}, ENTRALINK_BUFF_BUCKET_{macro(e['bucket'])}, "
+                  f"{int(is_plain(e))} }}" for e in held) or "{ ENTRALINK_BUFF_NONE, 0, 0 }") + " }"]
     return lines
+
+
+def is_plain(entry: dict) -> bool:
+    """Whether a bucket card's value holds on every hit of its bucket (the viewer's plain part, fixes 9): no condition,
+    no scale, not Coverage's non-STAB bonus nor a cap-exempt one, and a stat card's stat both attacking or defending
+    stats."""
+    effect = entry["effect"]
+    if effect.get("condition") or effect.get("scale") or effect.get("non_stab") or effect.get("exempt_from_bucket_cap"):
+        return False
+    return effect["kind"] != "stat_ratio" or effect["stat"] in ("attacking", "defending")
+
+
+def bucket_cards(data: dict) -> list[dict]:
+    """The cards that add to a damage bucket (the viewer's multipliers)."""
+    buckets = [b["id"] for b in data["buckets"]]
+    return [e for e in data["buffs"] if e.get("bucket") in buckets]
 
 
 def stat_cards(data: dict) -> list[dict]:
@@ -819,7 +850,8 @@ def header(data: dict, kinds: list[str], directory: Path = SOURCE) -> str:
         *[f"#define ENTRALINK_BUFF_MSG_{n} {i}" for i, n in enumerate(FIXED_NAMES)],
         f"#define ENTRALINK_BUFF_WORD_TYPE {WORD_TYPE}",
         f"#define ENTRALINK_BUFF_WORD_TITLE {WORD_TITLE}",
-        f"#define ENTRALINK_BUFF_WORD_NUMBER {WORD_NUMBER}", "",
+        f"#define ENTRALINK_BUFF_WORD_NUMBER {WORD_NUMBER}",
+        f"#define ENTRALINK_BUFF_WORD_VALUE {WORD_VALUE}", "",
         "// The cards (EntralinkBuff, paperwhite2/entralink_buffs.h): title, description, price, related themes, tier,",
         "// theme, highest level, pools, rounds, weight, type card",
         "#define ENTRALINK_BUFF_TABLE { \\",

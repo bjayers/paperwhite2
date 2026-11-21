@@ -178,8 +178,8 @@ stages (Simple), as in the user's example; Adaptability is in Type mastery.
 | **Searing** (core) | burn damage ×1.5 / ×2 / ×2.5 | residual | Easy: `CONDITION_DAMAGE`; vanilla Heatproof (reverse) | |
 | Kindling | +30% / +50% / +75% damage to burned foes | COND | Easy | |
 | Smoulder | burned foes' special moves also deal −15% / −25% / −35% (vanilla halves physical only) | GUARD | Easy: `DAMAGE_RATIO` on the burned attacker | The theme's defence |
-| Wildfire | your Fire moves burn +10% / +20% / +30% / and can burn Fire types at r3 | not damage | Easy for moves that already burn (vanilla Serene Grace); Medium for the rest and the Fire-type immunity | |
-| Fire Within | your burned Pokémon ignore burn's Attack drop and get +20% / +35% / +50% Attack | ATK | Easy: vanilla Guts | Pairs with Flame Orb in the run bag, and with Last stand |
+| Wildfire | your Fire moves burn 10% / 20% / 30% (or the move's own chance if higher) / and can burn Fire types at r3 (reworked in section 16) | not damage | Easy for moves that already burn (vanilla Serene Grace); Medium for the rest and the Fire-type immunity | |
+| Fire Within | each burned foe on the field gives +15% / +25% / +35% Attack and Sp. Atk (reworked in section 16; was: burned, no Attack drop and +Attack) | ATK | Easy | Pairs with the burn theme's spreaders |
 
 ### 4.5 Frost (frostbite)
 
@@ -444,7 +444,8 @@ every field given holding: `defender_status` and `attacker_status` (lists, `any_
 `move_type`, `card_type` (the type the card rolled), `category`, `stab`, `super_effective`, `resisted`, `critical`,
 `attacker_hp_below`, `contact`, `punch`, `recoil_move`, `drain_move`, `priority`, `power_at_most`, `weather` (a list,
 `any`), `weather_boosted`, `first_turn`, `boss`, and `any` (one of several conditions). A `scale` is `missing_hp` (the
-full value at 1 HP), `speed_gap` (at twice the target's Speed) or `attack_stage` (per positive stage).
+full value at 1 HP), `speed_gap` (at twice the target's Speed), `attack_stage` (per positive stage) or `burned_foes` (per
+burned foe on the field, section 16).
 
 | Kind | Unit | Parameters | Cards |
 | --- | --- | --- | --- |
@@ -466,7 +467,7 @@ full value at 1 HP), `speed_gap` (at twice the target's Speed) or `attack_stage`
 | `flinch_chance` | percentage points | | Flinch Edge |
 | `multi_hit` | hits | | Second Hit |
 | `pp_save_chance` | percent | | Thrifty |
-| `status_chance_on_hit` | percent | status, condition, replaces_freeze, ignores_immunity_at_rank | Static Field, Wildfire, Frostbite, Daze |
+| `status_chance_on_hit` | percent | status, condition, replaces_freeze, at_least_move_chance, ignores_immunity_at_rank | Static Field, Wildfire, Frostbite, Daze |
 | `status_duration` | turns | statuses (sleep, confusion), target (foes, own) | Quick Recovery, Deep Sleep, Vertigo |
 | `status_resist` | percent less | | Hardy |
 | `status_cure_chance` | percent a turn | | Shed Skin |
@@ -1586,3 +1587,113 @@ base (28 KB left before 0x023e0000). No heap (the scan's work is on the stack), 
 - The typical band is 15-22 (the example build at 20 picks is x21.7).
 - The tests that asserted the user's own catalogue (card counts, the meter's numbers on the real data) now use
   fixtures.
+
+## 16. Fixes from the third playtest (2026-11-20)
+
+Six fixes the user asked for after the third playtest. Scripts in the session's scratchpad `fixes9/h/`, screenshots in
+`fixes9/shots/`.
+
+### 16.1 Boss HP: lower round 1, and shared by a boss's foes
+
+- `enemy_scaling.hp.boss_bonus` is now **x1.6 / x2.3 / x5** (round 1 was x2.2; other stats unchanged).
+- **New settings** (run.json, schema, the editor's Run section under Raid HP: "Boss HP bonus, 2 foes x" and "3 foes
+  x"): `boss_double_factor` **0.85** and `boss_triple_factor` **0.7**. A boss battle's (or the final room's) foes'
+  HP bonus is multiplied by the one for its foe count (2 or 3 enemies; a raid is one foe and takes none), so each foe's
+  HP percent is curve x bonus x factor. The packer writes them as `ENTRALINK_RUN_BOSS_DOUBLE_HP_PERCENT` and
+  `..._TRIPLE_...` (85, 70); `EntralinkRun_SetEnemyScale` applies them by `battle->enemyCount`.
+- **The simulator** (`entralink_sim.py`) applies the factors to its boss places (the average over each round's boss
+  pool, `boss_hp_factors`), and `--fit` divides them out of the proposed bonus. Its new boss lines (5 rooms a round,
+  balanced build): **R1 boss 1,314 HP a foe (x2), 3.9 good hits for both** (was 2,125 and 6.2); **R2 boss 3,963 a foe
+  (x3), 5.5 good hits for all three** (was 5,662 and 7.9); the final room unchanged (22,300, 8.3 good hits). The
+  glass cannon: 3.2 and 3.6 good hits; the hit taken unchanged (20% / 22% balanced).
+- **In the game:** the round 1 boss (Ho-Oh and Lugia, place 7): scale **589%** each (433 x 1.6 x 0.85), **1,466** and
+  **1,401** HP (was 2,182-2,315). The round 2 boss (Dialga, Palkia, Giratina, place 14): **1,777%** (1,104 x 2.3 x 0.7),
+  **4,282 / 3,660 / 5,313** HP.
+
+### 16.2 A foe's HP line in doubles: not reproduced
+
+The user saw no foe HP numbers in a double. In py-desmume, the round 1 double boss (Ho-Oh and Lugia) showed both foes'
+lines (`1 466`, `1 407`) in every frame checked: entering the battle, the intro messages, the command menu, target
+selection, a turn of attacks with the gauges hidden and shown again around the animations, damage draining the line
+(`1 466` to `1 395`), a 4-hit move, the player's Pokémon fainting and the next sent in, a foe fainting (its line `0`),
+over several turns (sheets `s_dbl.png`, `s_dbf.png`, `s_dbr.png`). The OAM read back in the double (`t_oam.py`) has
+both lines' two 32x8 OBJs where they belong (Ho-Oh's at y 33, Lugia's at 57), and at most 352 OBJ pixels on a line,
+far under the hardware's per-line limit; the line's character data (member 456) is 8 tiles, as many as the line
+writes. Singles and triples (and the raid) showed theirs too (16.3's and 16.5's shots). So the cause isn't found and
+nothing was changed. **For the user:** which double was it (the Ho-Oh and Lugia boss, or another room), and was it in
+RetroArch with the melonDS or the DeSmuME core? A screenshot would point to it.
+
+### 16.3 Battle-ending moves fail in a run, as in a trainer battle
+
+- `ServerControl_GetForceSwitchMode` returns the trainer battles' mode in a run battle (it is a wild battle, battle
+  type 0, whose singles vanilla ends by a forced switch): **Roar, Whirlwind, Dragon Tail, Circle Throw and Red Card**
+  send the target out for a random Pokémon of its side's bench, and with none (a run's foes never have one: every
+  enemy is on the field) do nothing: Roar and Whirlwind say "But it failed!", Dragon Tail and Circle Throw just deal
+  their damage. Wild doubles and triples already used that mode in vanilla.
+- **Teleport** fails in a run (`HandlerTeleportCheckFail`), as in a trainer battle.
+- The other ways a wild battle ends early: the player's Run (Run Away, Smoke Ball) is already the run's forfeit
+  (`GetRunMode`); an escape item from the bag (Poke Doll, Fluffy Tail, Poke Toy) would end it, but none is in the run's
+  item pools (items.json); nothing else in the code ends a wild battle (no Emergency Exit in Gen 5).
+- **The foe's Roar on the player** now drags the player's next Pokémon out, as a trainer's does (before: a wild
+  battle's Roar on the player ended it).
+- **Tested** (Spooktober's Gengar, place 2): the lead's **Roar**: "But it failed!", the battle goes on (`s_roar1.png`);
+  **Teleport**: "But it failed!" (`s_tel.png`); **Dragon Tail**: 80 damage, no switch, the battle goes on (`s_dt.png`);
+  the foe's **Roar**: "Zekrom was dragged out!" (`s_roarfoe.png`). In the triple boss the code path is the same mode as
+  vanilla's wild triples (the foes have no bench, so Roar fails); the harness's triple inputs didn't land, so that one
+  is by the code, not a screenshot.
+
+### 16.4 A buff room's box goes once a card is taken
+
+`EntralinkRun_MakeChoice` takes the talked-to NPC away too when it is a buff box (`ENTRALINK_NPC_BUFF_CHOICE`), as an
+item room's ball goes when its item is taken; an empty box (no card fitted) goes as well once its message is read.
+Tested: a buff room entered from the first room, the box talked to, Rock Skin taken: the NPC's gone bit set, its
+marker and the box gone, the doors' markers up (`s_box.png`).
+
+### 16.5 Fire Within and Wildfire reworked
+
+- **Fire Within** (gold, Burn): `stat_ratio`, stat `attacking`, ATK bucket, the new scale **`burned_foes`**: +15% /
+  +25% / +35% Attack and Sp. Atk **for each burned foe on the field** (the foes facing the attacker that haven't
+  fainted, `CountBurnedFoes`), added in the ATK bucket and held to its cap. The old version's burned-attacker condition
+  and `ignore_burn_drop` are gone. Tested in the double boss with Fire Within III, the lead's Flame Charge on Ho-Oh
+  (same state and roll): **53** damage with no foe burned, **70** with one (x1.32; +35% on the stat), **90** with both
+  (x1.70; +70%).
+- **Wildfire** (gold, Burn): its burn chance is the card's **or the move's own if higher**, not an extra roll on top:
+  the new effect flag **`at_least_move_chance`** (schema, packer `EFFECT_FLAGS` bit 6). After a hit,
+  `GetHitStatusChance` rolls what the move's own chance of that status leaves to reach the card's value, (card - own)
+  / (100 - own), so the two rolls together burn exactly at the higher chance: Flame Charge (no burn) 20% at rank II,
+  Flamethrower (10%) 20%, Fire Blast (30%) 30% at rank II. Rank III still burns Fire types. Descriptions: "Your Fire
+  moves burn 20% (or their own chance)".
+- **Tested** (`t_wf.py`, Spooktober's Gengar, the same state with the battle RNG seeded differently each try; the
+  hit's roll read back each try and matched): Flame Charge with Wildfire II burned **24 of 112** (21%), Flamethrower
+  with Wildfire II **22 of 112** (20%; the old extra roll would give 28%), Flame Charge without Wildfire 0 of 60.
+
+### 16.6 The multipliers in the SELECT viewer
+
+SELECT in a run now opens on two lines before the buffs held, each with its values in the window under the list:
+- **Damage multipliers:** `ATK x1.75+ POW x1.00+ STAB x2.40` / `MATCH x1.00 FINAL x1.10`;
+- **Other multipliers:** `COND x1.00 CRIT x2.60` / `DEF x1.20 GUARD -10% (+ varies)`.
+
+Each is what the cards held give **every hit** of that bucket: its vanilla factor plus the sum of the cards with no
+condition and no scale, held to the bucket's cap (STAB and CRIT the whole factor over vanilla's x1.5 and x2; GUARD the
+damage taken cut). A **+** after a value means a card held adds more on some hits (a condition, a scale, Coverage's
+non-STAB bonus, a cap-exempt one). The packer writes the bucket cards (`ENTRALINK_BUFF_BUCKET_CARDS`: card, bucket,
+plain) and the two messages and their titles into the `entralink_buffs` bank (fixed messages 5-8, words 23-27).
+Tested (`s_view.png`): Offense x3, Power, Guard x2, Bulwark, Technique, Kinship, Heavy Crit, Adaptability I, Fire
+Within I, Sniper I: ATK x1.75+ (Offense 75, Fire Within conditional), POW x1.00+ (Technique), STAB x2.40 (150 + 15 +
+75), FINAL x1.10, CRIT x2.60, DEF x1.20, GUARD -10%.
+
+### 16.7 Memory
+
+Overlay 12 about +0.7 KB (the viewer's code 0x210 bytes, the bucket cards 132 bytes and the caps and vanillas 36, the
+choice and scaling lines); overlay 167 about +0.25 KB (`CountBurnedFoes`, `GetHitStatusChance`, the two hooks); the
+text bank +4 short messages. ARM9 main, heaps and VRAM unchanged.
+
+### 16.8 Calls made, for the user
+
+- The boss factors multiply the whole boss HP percent (curve x bonus), which is the bonus times the factor; a boss of
+  one foe (the final room) takes neither.
+- Fire Within counts the burned foes on the field facing the attacker; a fainted one doesn't count.
+- `at_least_move_chance` is a flag, so only Wildfire changed; Static Field, Frostbite and Daze still roll on top.
+- The viewer shows STAB and CRIT as their whole factor (x2.40, as the cards say "x2.25"), the others over 1.
+- The double's HP line: nothing changed without a cause found (16.2).
+

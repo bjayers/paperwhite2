@@ -4717,6 +4717,14 @@ BOOL ServerControl_ForceSwitchCore(BtlServerFlow *flow, BattleMon *attacker, Bat
 u32 ServerControl_GetForceSwitchMode(BtlServerFlow *flow) {
     u32 style = BtlSetup_GetBattleStyle(flow->mainModule);
     u32 type = BtlSetup_GetBattleType(flow->mainModule);
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink run's battles are wild but never end by a forced switch: Roar, Whirlwind, Dragon
+    // Tail, Circle Throw and Red Card send the target out for another of its side's as in a trainer battle, and fail
+    // with none to send (paperwhite2/entralink_battle.h)
+    if (EntralinkBattle_IsRun()) {
+        return 1;
+    }
+#endif
     if (style == 0) {
         switch (type) {
         case 0:

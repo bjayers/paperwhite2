@@ -337,9 +337,26 @@ static BOOL ConditionHolds(BtlServerFlow *flow, const EntralinkBattleBuff *buff,
     return any;
 }
 
+// How many of the foes facing a team Pokémon on the field are burned
+static s32 CountBurnedFoes(BtlServerFlow *flow, BattleMon *mon) {
+    u8 ids[BATTLE_POSITIONS];
+    u32 count = BtlServerFlow_GetOpposingMonIDs(flow, GetMonID(mon), ids);
+    BattleMon *foe;
+    s32 burned = 0;
+    u32 i;
+
+    for (i = 0; i < count; i++) {
+        foe = GetBattleMon(flow, ids[i]);
+        if (!IsFainted(foe) && (GetStatusBits(foe) & (1 << ENTRALINK_BUFF_STATUS_BURN))) {
+            burned++;
+        }
+    }
+    return burned;
+}
+
 // A value scaled as its effect says, for the team's Pokémon it is about (the attacker, or the defender for a defending
-// stat): by its HP missing (the full value at 1 HP), its Speed over the target's (the full value at twice it) or its
-// attacking stat's positive stages (the value a stage)
+// stat): by its HP missing (the full value at 1 HP), its Speed over the target's (the full value at twice it), its
+// attacking stat's positive stages (the value a stage) or the burned foes on the field (the value each, Fire Within)
 static s32 ScaleValue(BtlServerFlow *flow, const EntralinkBuffEffect *effect, s32 value, BattleMon *mon,
                       const EntralinkHit *hit) {
     u32 maxHP;
@@ -372,6 +389,8 @@ static s32 ScaleValue(BtlServerFlow *flow, const EntralinkBuffEffect *effect, s3
                                                                                   : BATTLEMON_ATTACK_STAGE) -
                 BATTLEMON_STAT_STAGE_NEUTRAL;
         return stage > 0 ? value * stage : 0;
+    case ENTRALINK_BUFF_SCALE_BURNED_FOES:
+        return value * CountBurnedFoes(flow, mon);
     }
     return value;
 }
@@ -1297,6 +1316,26 @@ static void PushAddCondition(BtlServerFlow *flow, u32 monId, BattleMon *target, 
     BattleHandler_PopWork(flow, param);
 }
 
+// A status_chance_on_hit card's own roll's chance in percent: its value, or with at_least_move_chance (Wildfire) what
+// the move's own chance of the same status leaves to reach the card's value (none if the move's is as high), so the
+// two rolls together give the higher of the two
+static u32 GetHitStatusChance(const EntralinkBuffEffect *effect, s32 value, u32 move, u32 condition) {
+    u32 own;
+
+    if (value <= 0) {
+        return 0;
+    }
+    if (!(effect->flags & ENTRALINK_BUFF_FLAG_AT_LEAST_MOVE_CHANCE) ||
+        PML_MoveGetParam(move, MOVE_PARAM_CONDITION) != condition) {
+        return value;
+    }
+    own = PML_MoveGetParam(move, MOVE_PARAM_CONDITION_CHANCE);
+    if (own >= (u32)value || own >= 100) {
+        return 0;
+    }
+    return ((u32)value - own) * 100 / (100 - own);
+}
+
 // The statuses the team's hit gives a foe by chance (status_chance_on_hit, Sandman's sleep from rank 2)
 static void GiveHitStatuses(BtlServerFlow *flow, u32 attacker, BattleMon *target, const EntralinkHit *hit) {
     u32 i;
@@ -1311,7 +1350,7 @@ static void GiveHitStatuses(BtlServerFlow *flow, u32 attacker, BattleMon *target
         }
         condition = sStatusConditions[effect->param];
         if (condition != CONDITION_NONE && ConditionHolds(flow, &sBattle.buffs[i], hit) &&
-            BattleRandom(100) < sBattle.buffs[i].value) {
+            BattleRandom(100) < GetHitStatusChance(effect, sBattle.buffs[i].value, hit->move, condition)) {
             PushAddCondition(flow, attacker, target, condition);
         }
     }

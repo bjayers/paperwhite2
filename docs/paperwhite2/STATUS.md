@@ -2,6 +2,22 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-20: Entralink fixes from the third playtest (ROM session, on a branch)
+
+- **Boss HP:** round 1's bonus x1.6 (round 2 x2.3, final x5), and new `boss_double_factor` 0.85 / `boss_triple_factor`
+  0.7 (run.json, editor Run section): a boss's foes share its HP bonus. Ho-Oh and Lugia ~1,400-1,470 HP each; round 2's
+  three ~3,700-5,300. Simulator: 3.9 good hits for round 1's pair, 5.5 for round 2's trio.
+- **Doubles' foe HP numbers:** not reproduced in py-desmume (both lines shown in every frame and flow tried, OAM and
+  tiles checked); nothing changed. Needs the user's battle and emulator core.
+- **Roar, Whirlwind, Dragon Tail, Circle Throw, Red Card** force a switch in run battles as in a trainer's, else fail
+  (never end the battle); **Teleport** fails. The foe's Roar drags the player's next Pokemon out.
+- **Buff room's box** goes once a card is taken.
+- **Fire Within:** +15/25/35% Attack and Sp. Atk per burned foe on the field. **Wildfire:** burns 10/20/30% or the
+  move's own chance if higher (new effect flag `at_least_move_chance`).
+- **SELECT viewer:** Damage and Other multipliers lines (ATK, POW, STAB, MATCH, FINAL; COND, CRIT, DEF, GUARD; "+"
+  where a held card adds more on some hits).
+- Details, tests and calls: `entralink-buffs.md` section 16.
+
 ## 2026-11-20: Entralink rebalance 2: stronger buffs, bosses on the room curve, broken bars, merged cards, team-aware offers (ROM session, on a branch)
 
 - **Verified first:** the user's debug build applies exactly as designed (x2-3 on a neutral STAB hit, x4 super
