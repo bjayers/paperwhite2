@@ -23,6 +23,7 @@
                     "species": "SPECIES_GIRATINA",
                     "form": 1,
                     "level": 70,
+                    "scale": 80,
                     "moves": [ "MOVE_SHADOW_FORCE", "MOVE_DRAGON_CLAW", "MOVE_DRAGON_DANCE", "MOVE_ANCIENT_POWER" ],
                     "catch": {
                         "after": [],

@@ -8,7 +8,7 @@
         {
             "type": "heal",
             "sprite": "OBJ_CODE_NURSE",
-            "x": 11,
+            "x": 12,
             "z": 14,
             "facing": "DIR_DOWN",
             "marker": "heal",
@@ -19,7 +19,7 @@
         {
             "type": "revive",
             "sprite": "OBJ_CODE_78",
-            "x": 14,
+            "x": 15,
             "z": 14,
             "facing": "DIR_DOWN",
             "marker": "revive",
@@ -30,7 +30,7 @@
         {
             "type": "gift",
             "sprite": "OBJ_CODE_76",
-            "x": 17,
+            "x": 18,
             "z": 14,
             "facing": "DIR_DOWN",
             "marker": "item",
@@ -41,14 +41,14 @@
         {
             "type": "shop",
             "sprite": "OBJ_CODE_82",
-            "x": 20,
+            "x": 21,
             "z": 14,
             "facing": "DIR_DOWN",
             "marker": "shop"
         },
         {
             "type": "swap",
-            "x": 8,
+            "x": 9,
             "z": 14,
             "facing": "DIR_DOWN",
             "marker": "swap",
