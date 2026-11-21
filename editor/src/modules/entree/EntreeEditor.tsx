@@ -1232,6 +1232,13 @@ function EnemyCard({ at, index, over, constants, get, set, setField, remove, bat
   const caught = e.get("catch");
   const terms = caught instanceof Map ? caught : null;
   const after = asList(terms?.get("after")).map(String);
+  // (its own battle first: won once, in an earlier run, it makes the enemy catchable; and this room's other battles,
+  // for a choice room's "beat them all")
+  const roomPrefix = ownKey.slice(0, ownKey.lastIndexOf("/") + 1);
+  const roomKeys = battleOptions.filter((o) => o.value.startsWith(roomPrefix)).map((o) => o.value);
+  const own = battleOptions.find((o) => o.value === ownKey);
+  const afterOptions: Option[] = [...(own ? [{ ...own, label: `This battle (${own.label})` }] : []),
+    ...battleOptions.filter((o) => o.value !== ownKey)];
   const once = terms?.get("once") !== false;
   /** The catch's terms, written with both keys, as the format's example has them. */
   const setCatch = (next: { after: string[]; once: boolean } | null) =>
@@ -1284,9 +1291,17 @@ function EnemyCard({ at, index, over, constants, get, set, setField, remove, bat
           {terms && <ProgressId id={typeof e.get("progress_id") === "number" ? Number(e.get("progress_id")) : undefined} kind="catch" />}
         </Row>
         {terms && <>
-          <Row label="Only after" hint={after.length ? "Catchable once all of these have been won, in any run or earlier in this one" : "Catchable from the first encounter"}>
-            <KeysPicker value={after} options={battleOptions.filter((o) => o.value !== ownKey)} empty="Winning… (any battle)"
+          <Row label="Only after" hint={!after.length ? "Catchable from the first encounter"
+            : after.length === 1 && after[0] === ownKey ? "Catchable once this battle has been won (so from a later run on)"
+            : "Catchable once all of these have been won, in any run or earlier in this one"}>
+            <KeysPicker value={after} options={afterOptions} empty="Winning… (this or any battle)"
                         onChange={(v) => setCatch({ after: v, once })} />
+            {roomKeys.length > 1 && roomKeys.some((k) => !after.includes(k)) && (
+              <button title="Catchable once every battle of this room has been won (a 'beat them all' challenge for a choice room)"
+                      onClick={() => setCatch({ after: [...after, ...roomKeys.filter((k) => !after.includes(k))], once })}>
+                + All of this room's battles
+              </button>
+            )}
           </Row>
           <Row label="" hint={once ? "Once caught, it can never be caught again" : "It can be caught again in later runs"}>
             <label className="ow-check"><input type="checkbox" checked={once} onChange={(ev) => setCatch({ after, once: ev.target.checked })} /> Only once</label>
