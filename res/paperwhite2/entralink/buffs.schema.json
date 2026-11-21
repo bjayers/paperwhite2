@@ -393,14 +393,14 @@
             "overlap": {
               "type": "integer",
               "minimum": 0,
-              "maximum": 6,
-              "description": "Pixels the digits overlap (each digit's cell has a blank column at each side)"
+              "maximum": 8,
+              "description": "Pixels each digit's glyph overlaps the one before (the digits are spaced by their glyphs' widths, measured in the sheet's first row)"
             },
             "group_space": {
               "type": "integer",
               "minimum": 0,
               "maximum": 8,
-              "description": "Pixels between the thousands and the rest (12 345), instead of a comma"
+              "description": "Pixels more between the thousands and the rest (12 345), instead of a comma"
             },
             "start_scale": {
               "type": "integer",

@@ -35,7 +35,7 @@ def test_placeholder_packs(tmp_path):
     assert rows == 1 + damage_digits.PLACEHOLDER_SHINE_FRAMES
     member = damage_digits.member(sheet, NUMBERS)
     assert member[:4] == bytes([rows, 16, 32, 2])
-    assert len(member) == 4 + 2 * 32 + rows * 10 * 256
+    assert len(member) == damage_digits.HEADER_SIZE + 2 * 32 + rows * 10 * 256
     # Every digit uses the outline and the tier colours, its shine rows the shine, and keeps its side columns blank
     for row in range(rows):
         for digit in range(10):
@@ -54,7 +54,8 @@ def test_cell_is_a_16_colour_texture(tmp_path):
     sheet = tmp_path / "s.png"
     write_sheet(sheet, 1, bytes(pixels))
     member = damage_digits.member(sheet, NUMBERS)
-    cell = member[4 + 2 * 32 + 256:4 + 2 * 32 + 512]
+    start = damage_digits.HEADER_SIZE + 2 * 32
+    cell = member[start + 256:start + 512]
     assert cell[0] == 0x30 and cell[1] == 0x05
     assert cell[255] == 0x07
 
@@ -64,14 +65,40 @@ def test_tier_palettes(tmp_path):
     sheet = tmp_path / "s.png"
     write_sheet(sheet, 2)
     member = damage_digits.member(sheet, NUMBERS)
-    first = struct.unpack_from("<16H", member, 4)
-    second = struct.unpack_from("<16H", member, 4 + 32)
+    first = struct.unpack_from("<16H", member, damage_digits.HEADER_SIZE)
+    second = struct.unpack_from("<16H", member, damage_digits.HEADER_SIZE + 32)
     assert first[1] == second[1] == 1
     assert first[2:6] == (2, 4, 6, 8)
     assert second[2:6] == (1 << 5, 2 << 5, 3 << 5, 4 << 5)
     # The rest is the sheet's: colour 15 of the fixture is (240, 240, 240), 29 a channel in 5 bits
     assert first[6:] == second[6:]
     assert first[15] == 29 | 29 << 5 | 29 << 10
+
+
+def test_glyphs_and_layout(tmp_path):
+    """Each digit's glyph is its opaque columns in row 1 (the shine rows don't count), packed after the header's first
+    four bytes; the layout places each glyph overlap pixels into the one before, group_space more before the
+    thousands."""
+    pixels = bytearray(damage_digits.WIDTH * 32 * 2)
+    # Digit 1: columns 5-9 in row 1; digit 2: columns 1-14; row 2's digit 1 draws wider, which doesn't count
+    for x in range(5, 10):
+        pixels[10 * 160 + 16 + x] = 4
+    for x in range(1, 15):
+        pixels[3 * 160 + 32 + x] = 4
+    pixels[(32 + 5) * 160 + 16 + 1] = 5
+    sheet = tmp_path / "s.png"
+    write_sheet(sheet, 2, bytes(pixels))
+    _, read, _ = damage_digits.read_sheet(sheet)
+    glyphs = damage_digits.glyphs(read)
+    assert glyphs[1] == (5, 5) and glyphs[2] == (1, 14)
+    # An empty cell: the cell less its blank columns
+    assert glyphs[0] == (1, 14)
+    member = damage_digits.member(sheet, NUMBERS)
+    assert member[4:damage_digits.HEADER_SIZE] == bytes(v for g in glyphs for v in g)
+    numbers = {**NUMBERS, "overlap": 2, "group_space": 4}
+    # "1212": 1 at pen 0 (its cell 5 left), 2 at 5 - 2 + 4 (the thousands' gap) = 7, 1 at 7 + 14 - 2 = 19, 2 at 22
+    lefts, width = damage_digits.layout("1212", glyphs, numbers)
+    assert lefts == [-5, 6, 14, 21] and width == 22 + 14
 
 
 @pytest.mark.parametrize("width,rows,message", [(144, 1, "160 wide"), (160, 9, "1 to 8 rows")])
@@ -131,6 +158,7 @@ def test_check_and_list(tmp_path):
     # The pixels, a hex digit each, for the editor's preview
     rows, pixels, _ = damage_digits.read_sheet(damage_digits.SHEET)
     assert info["pixels"] == "".join("%x" % p for p in pixels) and len(info["pixels"]) == 160 * 32 * rows
+    assert info["glyphs"] == [list(g) for g in damage_digits.glyphs(pixels)]
     width, height, _, colors = read_indexed_png(output)
     assert width == 160 and height % 32 == 0
     listed = json.loads(subprocess.run([sys.executable, str(ROOT / damage_digits.TOOL), "list"], capture_output=True,

@@ -11,7 +11,10 @@
 // quads over the scene (translucent, scaled freely, no OBJ or affine slots), from the digits' sheet
 // (res/paperwhite2/battle/damage_digits.png, tools/paperwhite2/damage_digits.py) loaded into texture VRAM once a
 // battle. The number appears large and see-through, shrinks into place, holds, then fades as it rises; its digits
-// may play their shine frames left to right once it lands. Nothing waits for it
+// may play their shine frames left to right once it lands. Nothing waits for it. It is placed over the foe as the
+// battle camera shows it at rest (not the attack's camera), kept inside the screen at every size, drawn in front of
+// everything in the scene (a W-buffer depth under the scene's), and its digits are spaced by their glyphs' widths in
+// the sheet (settings' overlap and group_space)
 
 // The battle view's archive's members that tools/paperwhite2/damage_digits.py adds after its own: the digits' sheet
 // and the cell of a foe's HP line (two 32 by 8 pieces)

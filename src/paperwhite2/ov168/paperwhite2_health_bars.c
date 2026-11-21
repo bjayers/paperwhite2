@@ -4,6 +4,7 @@
 #include "types.h"
 #include "battle/btlv_effect.h"
 #include "battle/btlv_gauge.h"
+#include "constants/battle.h"
 #include "gfl/clact.h"
 #include "nitro/gx.h"
 #include "nitro/hw.h"
@@ -46,10 +47,14 @@
 #define THOUSANDS_GAP 2
 #define BARS_GAP 3
 #define HP_DIGITS_MAX 5
+// Where the line goes from the name box's place: under the bar, right-aligned to its end; or, where the foes' boxes
+// stack too close for a line under (triples, rotations and raids), beside the bar's strip on its row, left-aligned
+#define LINE_UNDER_X 8
+#define LINE_UNDER_Y 13
+#define LINE_BESIDE_X 96
+#define LINE_BESIDE_Y 8
 // The most HP vanilla's three digits show
 #define NUMBERS_MAX_HP 999
-// The frames a bar takes to drain
-#define DRAIN_FRAMES 32
 
 static const u16 sBarColors[][2] = ENTRALINK_BUFF_BAR_COLORS;
 
@@ -198,6 +203,12 @@ static BOOL HealthBars_ShowsLine(const BtlvGaugeEntry *entry) {
            (PaperWhite2_DamageNumbersFoeHP() || entry->mon.maxHp > NUMBERS_MAX_HP);
 }
 
+// Whether a foe's HP line goes beside its bar: the foes' boxes of a triple or rotation battle are 19 pixels apart,
+// too close for a line under each
+static BOOL HealthBars_LineBeside(const BtlvGaugeEntry *entry) {
+    return entry->mon.type == BTL_STYLE_TRIPLE || entry->mon.type == BTL_STYLE_ROTATION;
+}
+
 // Draws a glyph's tile into the line's pixels at x, over what is there: its pixels of colour 0 are clear
 static void HealthBars_DrawGlyph(u8 *line, const u8 *glyph, s32 x) {
     u32 row;
@@ -260,8 +271,8 @@ BOOL PaperWhite2_HealthBarsDrawNumbers(BtlvGauge *gauge, BtlvGaugeEntry *entry, 
                                     &size);
     }
     MI_CpuFill8(line, 0, sizeof(line));
-    // Right-aligned in the line, which ends under the bar's right end
-    x = LINE_WIDTH - HealthBars_LineWidth(count, bars);
+    // Right-aligned in the line under the bar, which ends under the bar's right end; left-aligned beside it
+    x = HealthBars_LineBeside(entry) ? 0 : LINE_WIDTH - HealthBars_LineWidth(count, bars);
     for (i = count; i-- > 0;) {
         HealthBars_DrawGlyph(line, gauge->chars + TILE_DIGITS + digits[i] * TILE_SIZE, x);
         x += GLYPH_ADVANCE;
@@ -292,19 +303,32 @@ void PaperWhite2_HealthBarsSetPos(BtlvGaugeEntry *entry, int x, int y) {
         return;
     }
     // Vanilla leaves a foe's HP numbers where the actor was made, at 0, 0
-    if (HealthBars_ShowsLine(entry)) {
-        pos.x = x + 8;
-        pos.y = y + 13;
+    if (HealthBars_ShowsLine(entry) && HealthBars_LineBeside(entry)) {
+        pos.x = x + LINE_BESIDE_X;
+        pos.y = y + LINE_BESIDE_Y;
+    } else if (HealthBars_ShowsLine(entry)) {
+        pos.x = x + LINE_UNDER_X;
+        pos.y = y + LINE_UNDER_Y;
     }
     ClActor_SetSurfacePos(entry->hpNumActor, &pos, CLACT_SURFACE_MAIN);
 }
 
 u32 PaperWhite2_HealthBarsSpeed(const BtlvGaugeEntry *entry) {
+    u32 change = MATH_ABS(entry->mon.hpDelta);
+    u32 bar = PaperWhite2_HealthBarsActive(entry) ? EntralinkBars_GetBarHP(entry->mon.maxHp) : entry->mon.maxHp;
+    u32 frames;
     u32 speed;
 
-    if (entry->mon.maxHp <= NUMBERS_MAX_HP) {
+    if (bar == 0) {
         return 1;
     }
-    speed = EntralinkBars_GetBarHP(entry->mon.maxHp) / DRAIN_FRAMES;
+    // A share of the bar takes its share of the time between the least and the most; past one bar (a gauge with
+    // several), each bar more takes the most
+    if (change < bar) {
+        frames = HP_DRAIN_FRAMES_MIN + (HP_DRAIN_FRAMES_MAX - HP_DRAIN_FRAMES_MIN) * change / bar;
+    } else {
+        frames = HP_DRAIN_FRAMES_MAX * change / bar;
+    }
+    speed = (change + frames - 1) / frames;
     return speed != 0 ? speed : 1;
 }

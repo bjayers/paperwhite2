@@ -3,13 +3,16 @@
 // names holds them ({ outline, tiers: [{ from, colors }] } at `at`, with the digits' overlap and group_space). Each
 // colour is picked and rounded to the DS's 5 bits an axis; each tier previews the sheet's sample number in its colours,
 // drawn from the sheet's pixels as the game places the digits (each over the one before), its shine rows playing on
-// request. Save writes the file through the editor's save, which runs the build's validator.
+// request. The Layout part sets the digits' overlap and thousands' gap and shows each digit's glyph width, measured
+// in the sheet's first row, which the game spaces them by (digitLayout.ts). Save writes the file through the
+// editor's save, which runs the build's validator.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../api.ts";
 import { fileText, fromPlain, getIn, parseJson, setIn, toPlain, type JsonValue } from "../../../shared/json.ts";
 import type { SpriteSheet } from "../../../shared/api.ts";
 import { fromHex, snap, toHex } from "./pal.ts";
+import { CELL_HEIGHT, CELL_WIDTH, glyphMetrics, layoutDigits, type Glyph } from "./digitLayout.ts";
 
 interface Tier {
   from: number;
@@ -27,9 +30,9 @@ interface Settings {
 
 // The names the colours of a tier take, in the order of its entries
 const ROLES = ["Dark shadow", "Light shadow", "Main", "Shine"];
-const CELL_WIDTH = 16;
-const CELL_HEIGHT = 32;
 const ZOOM = 2;
+// The sample's margin at each side, in pixels
+const MARGIN = 4;
 
 /** A picked colour as the DS shows it, as "#rrggbb". */
 const snapped = (hex: string) => toHex(snap(fromHex(hex) ?? [0, 0, 0]));
@@ -46,19 +49,15 @@ function readSettings(doc: JsonValue, at: string[]): Settings {
   };
 }
 
-/** The sample's width in pixels at the settings' layout. */
-function sampleWidth(text: string, s: Settings): number {
-  const advance = CELL_WIDTH - 2 - s.overlap;
-  const groups = Math.floor((text.length - 1) / 3);
-  return 4 + advance * (text.length - 1) + CELL_WIDTH + groups * s.groupSpace + 4;
-}
-
-/** One tier's sample: the digits as the game places them, each in the sheet's row for its frame of the shine. */
-function TierSample({ pixels, rows, colors, text, settings, frame }: {
-  pixels: string; rows: number; colors: string[]; text: string; settings: Settings; frame: number | null;
+/** One tier's sample: the digits as the game places them (by their glyphs' widths), each in the sheet's row for its
+ * frame of the shine. */
+function TierSample({ pixels, rows, colors, text, settings, glyphs, frame }: {
+  pixels: string; rows: number; colors: string[]; text: string; settings: Settings; glyphs: Glyph[]; frame: number | null;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
-  const width = sampleWidth(text, settings);
+  const layout = useMemo(() => layoutDigits(text, glyphs, settings.overlap, settings.groupSpace),
+    [text, glyphs, settings.overlap, settings.groupSpace]);
+  const width = MARGIN + layout.width + MARGIN;
   useEffect(() => {
     const canvas = ref.current;
     const ctx = canvas?.getContext("2d");
@@ -66,10 +65,8 @@ function TierSample({ pixels, rows, colors, text, settings, frame }: {
     const image = ctx.createImageData(width, CELL_HEIGHT);
     const rgb = colors.map((c) => fromHex(c) ?? [0, 0, 0]);
     const sheetWidth = CELL_WIDTH * 10;
-    const advance = CELL_WIDTH - 2 - settings.overlap;
-    let x0 = 4;
     [...text].forEach((ch, i) => {
-      if (i && (text.length - i) % 3 === 0) x0 += settings.groupSpace;
+      const x0 = MARGIN + layout.lefts[i];
       const digit = Number(ch);
       // The game's shine: once landed, digit i shows row 1 + (time - i * delay) / frame time while that is a shine row
       let row = 0;
@@ -81,16 +78,15 @@ function TierSample({ pixels, rows, colors, text, settings, frame }: {
         for (let x = 0; x < CELL_WIDTH; x++) {
           const index = parseInt(pixels[(row * CELL_HEIGHT + y) * sheetWidth + digit * CELL_WIDTH + x] ?? "0", 16);
           const tx = x0 + x;
-          if (!index || tx >= width) continue;
+          if (!index || tx < 0 || tx >= width) continue;
           const at = (y * width + tx) * 4;
           const [r, g, b] = rgb[index] ?? [0, 0, 0];
           image.data.set([r, g, b, 255], at);
         }
       }
-      x0 += advance;
     });
     ctx.putImageData(image, 0, 0);
-  }, [pixels, rows, colors, text, settings, frame, width]);
+  }, [pixels, rows, colors, text, settings, frame, width, layout]);
   return <canvas ref={ref} className="tier-sample" width={width} height={CELL_HEIGHT} style={{ width: width * ZOOM, height: CELL_HEIGHT * ZOOM }} />;
 }
 
@@ -113,6 +109,7 @@ export function TierColorsPanel({ sheet, pixels, colors }: { sheet: SpriteSheet;
 
   const settings = edited ?? saved;
   const rows = pixels ? Math.floor(pixels.length / (CELL_WIDTH * 10 * CELL_HEIGHT)) : 0;
+  const glyphs = useMemo(() => (pixels ? glyphMetrics(pixels) : null), [pixels]);
 
   // The shine plays over and over while asked for: the last digit's sweep, then a pause
   useEffect(() => {
@@ -134,6 +131,8 @@ export function TierColorsPanel({ sheet, pixels, colors }: { sheet: SpriteSheet;
 
   const change = (next: Settings) => { setEdited(next); setMessage(null); };
   const setOutline = (hex: string) => change({ ...settings, outline: snapped(hex) });
+  const setLayout = (key: "overlap" | "groupSpace", value: number) =>
+    change({ ...settings, [key]: Math.max(0, Math.min(8, Math.round(value) || 0)) });
   const setColor = (t: number, i: number, hex: string) =>
     change({ ...settings, tiers: settings.tiers.map((tier, k) => (k === t ? { ...tier, colors: tier.colors.map((c, j) => (j === i ? snapped(hex) : c)) } : tier)) });
 
@@ -142,10 +141,12 @@ export function TierColorsPanel({ sheet, pixels, colors }: { sheet: SpriteSheet;
     const file = await api.file(spec.file);
     let doc = parseJson(file.text);
     doc = setIn(doc, [...spec.at, "outline"], edited.outline);
+    doc = setIn(doc, [...spec.at, "overlap"], edited.overlap);
+    doc = setIn(doc, [...spec.at, "group_space"], edited.groupSpace);
     edited.tiers.forEach((tier, t) => { doc = setIn(doc, [...spec.at, "tiers", t, "colors"], fromPlain(tier.colors)); });
     const result = await api.save({ path: spec.file, text: fileText(doc), baseVersion: file.version });
     if (!result.ok) return setMessage(result.reason === "conflict" ? `${spec.file} changed on disk; reload the page.` : result.message);
-    setMessage(`Saved the tier colours to ${spec.file}. Build (Ctrl+B) to see them in the game.`);
+    setMessage(`Saved the tier colours and layout to ${spec.file}. Build (Ctrl+B) to see them in the game.`);
     load();
   };
 
@@ -159,7 +160,7 @@ export function TierColorsPanel({ sheet, pixels, colors }: { sheet: SpriteSheet;
         <label className="ow-check small" title="Play the sheet's shine rows across the sample, as a critical hit does">
           <input type="checkbox" checked={shine} onChange={(e) => { setShine(e.target.checked); setFrame(0); }} /> Play the shine
         </label>
-        <button className="primary" disabled={!edited} onClick={save}>Save tier colours</button>
+        <button className="primary" disabled={!edited} onClick={save}>Save colours and layout</button>
         {edited && <button onClick={() => { setEdited(null); setMessage(null); }}>Discard</button>}
       </div>
       <p className="muted pal-hint">
@@ -186,9 +187,32 @@ export function TierColorsPanel({ sheet, pixels, colors }: { sheet: SpriteSheet;
           <TierRow key={t} tier={tier} t={t} first={first} outline={settings.outline} setColor={setColor}
                    preview={pixels && palettes ? (
                      <TierSample pixels={pixels} rows={rows} colors={palettes[t]} text={spec.sample} settings={settings}
-                                 frame={shine ? frame : null} />
+                                 glyphs={glyphs ?? []} frame={shine ? frame : null} />
                    ) : <span className="muted small">…</span>} />
         ))}
+      </div>
+      <h4 className="tier-layout-head">Layout</h4>
+      <p className="muted pal-hint">
+        The game spaces the digits by their glyphs' widths, measured in the sheet's first row (the shine rows take the
+        same), each glyph overlapping the one before by the overlap, with the gap more before the thousands. The samples
+        above use them.
+      </p>
+      <div className="tier-layout">
+        <label className="small" htmlFor="digits-overlap">Overlap</label>
+        <span><input id="digits-overlap" type="number" min={0} max={8} value={settings.overlap}
+                     onChange={(e) => setLayout("overlap", Number(e.target.value))} /> <span className="muted small">px between glyphs</span></span>
+        <label className="small" htmlFor="digits-gap">Thousands gap</label>
+        <span><input id="digits-gap" type="number" min={0} max={8} value={settings.groupSpace}
+                     onChange={(e) => setLayout("groupSpace", Number(e.target.value))} /> <span className="muted small">px more before the thousands (12 345)</span></span>
+        <span className="small">Glyph widths</span>
+        <span className="tier-glyphs">
+          {glyphs ? glyphs.map((g, d) => (
+            <span key={d} className="small" title={`${d}: columns ${g.left}-${g.left + g.width - 1} of its cell`}>
+              <b>{d}</b> {g.width}
+            </span>
+          )) : <span className="muted small">…</span>}
+          <span className="muted small">px, read from the sheet</span>
+        </span>
       </div>
     </section>
   );

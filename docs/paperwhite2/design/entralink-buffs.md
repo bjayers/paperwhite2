@@ -1052,8 +1052,8 @@ Buffs, **Damage numbers** section).
 - **Which hits:** the attacker on the player's side (the lead or a partner), the target a foe; direct hits only (not a
   substitute's, not recoil, poison or confusion). The number is the hit's **full computed damage** (overkill
   included), at most the damage cap in a run (60,000: a capped hit shows 60 000, red).
-- **Where:** the foe's position on screen (`BtlvMcss_GetDefaultPos`, projected), `height` pixels over its feet, kept on
-  screen at its normal size; fixed once it pops (the camera's moves during an attack don't carry it).
+- **Where:** the foe's position on screen as the battle camera shows it at rest (13.9), `height` pixels over its feet,
+  kept 4 pixels inside the screen at every size; fixed once it pops (the camera's moves during an attack don't carry it).
 
 ### 13.2 The animation (all settings, `settings.damage_numbers`)
 
@@ -1065,7 +1065,7 @@ Buffs, **Damage numbers** section).
 | `hold_frames` | 30 | holds |
 | `fade_frames`, `rise` | 12, 10 | fades out over 12 frames, rising 10 pixels |
 | `height` | 48 | pixels over the Pokémon's feet |
-| `overlap`, `group_space` | 3, 4 | pixels the digits overlap; the space before the thousands (`12 345`) |
+| `overlap`, `group_space` | 2, 4 | pixels each digit's glyph overlaps the one before (the digits spaced by their glyphs' widths, 13.9); the gap before the thousands (`12 345`) |
 | `shine` | `critical` | the shine rows play: `off`, `critical` (critical hits and hits at the cap), `always` |
 | `shine_frame_time`, `shine_delay` | 2, 2 | frames a shine row shows; the delay from one digit to the next (a sweep left to right) |
 | `hp_numbers` | true | a foe's gauge shows its HP in the run's battles |
@@ -1091,8 +1091,9 @@ frames, indices 0-5 only):
   light shadow, 4 the main colour, 5 the shine (the "reflection" the shine rows animate). Each tier replaces 1-5 with
   the settings' outline and its four colours, so the sheet's own 1-5 are only a preview (the user's sheet has the white
   tier's). Entries 6-15 show as the sheet has them in every tier.
-- **Layout in game:** digit cells are placed `16 - 2 - overlap` pixels apart (11 now), plus `group_space` (4) before
-  the thousands; no comma, no "MAX". Each digit is drawn over the one before.
+- **Layout in game** (13.9): each digit's glyph is its opaque columns in row 1 (measured by the packer); each glyph is
+  placed `overlap` (2) pixels into the one before, plus `group_space` (4) before the thousands; no comma, no "MAX". Each
+  digit is drawn over the one before. A narrower 1 or 7 simply takes less room.
 - `tools/paperwhite2/damage_digits.py placeholder` writes a placeholder (bold digits in the main colour above and
   the light shadow from two-thirds down, a band of the shine colour sweeping across them in the shine rows).
 
@@ -1177,6 +1178,84 @@ a highlight down each digit) replaced the placeholder, with a new palette scheme
   three hits), 6,822 purple, 11,576 gold, and a critical 59,708 red with the shine sweeping left to right, each digit
   top to bottom (`digits2/shots/tiers_closeup.png`, `tiers_screens.png`, `red_shine.png`); the textures and the five
   palettes load (0x3500, 0x1c0). Editor panel: `digits2/editor_tiers.png`.
+
+### 13.9 Playtest fixes: placement, depth, triples' HP lines, digit widths, HP drain (2026-11-20)
+
+From the user's playtest. Code: `paperwhite2_damage_numbers.c`, `paperwhite2_health_bars.c` (overlay 168), the hook
+comment in `btlv_gauge.c`, `damage_digits.py`, the editor's `TierColorsPanel.tsx` and `digitLayout.ts`.
+
+- **A number stays on its foe and on screen.** It was placed by the camera of the moment, which during an attack is
+  zoomed in and then moves back, so a hit on a triple's right-edge foe landed partly off screen. Now
+  `DamageNumbers_RestingScreenPos` projects the foe's place (`BtlvMcss_GetDefaultPos`) with the battle camera at rest
+  (`BtlvCamera_GetDefaultPosTarget`, the camera's 13-degree half field of view and 1.35 aspect from
+  `BtlvCamera_Create`), in screen space, fixed once it pops; and each frame the number is kept 4 pixels inside the
+  screen **at the size it has then** (the 300% start too), horizontally and vertically.
+- **In front of everything.** The battle's 3D is W-buffered: a pixel's depth is its w. The numbers' orthographic
+  projection had w = 1, the same as MCSS's flat (orthographic) sprites and the particles' orthographic projections and
+  the camera's near plane, so a tie could let a big foe's sprite cover a number. Each digit now loads its own
+  projection with a scaleW of 1/8 minus 1/256 for each digit drawn before it (`DIGIT_W_FIRST`, `DIGIT_W_STEP`): every
+  digit is in front of the whole scene, and a later digit in front of an earlier one's overlap (the old z steps did
+  nothing under W-buffering). In py-desmume the Primal Dialga raid showed the number over the sprite before and after
+  (DeSmuME didn't reproduce the cover in the frames checked, translucent or opaque); the fix removes the tie by
+  design. **For the user:** check a raid in RetroArch, where it was seen.
+- **Triples' HP lines** (`HealthBars_LineBeside`): a triple's or rotation's foe boxes are 19 pixels apart, so the line
+  under one bar covered the next box's name. There the line now sits **beside the bar's strip, on its row**,
+  left-aligned (from the name box's x + 64 to x + 128); raids are triples, so they take it too. Singles and doubles
+  keep it under the bar, right-aligned to its end.
+- **Digits spaced by their real widths.** The packer measures each digit's glyph, its opaque columns in row 1, and
+  writes (left column, width) for 0-9 into the digits' member's header (now 24 bytes: rows, cell width, height, tiers,
+  then the ten glyphs). The game places each glyph `overlap` pixels into the one before, `group_space` more before the
+  thousands (`DamageNumbers_Layout`); the shine rows use the same places. `overlap` is now **2** (was 3, in the old
+  sense of the cells' spacing). The user's current sheet measures 14 for every digit (the italic face fills the cell);
+  a narrower 1 or 7 will close up by itself.
+- **Editor:** the Damage numbers' digits page's panel has a **Layout** part under the tiers: Overlap and Thousands gap
+  (0-8, saved with the colours to `settings.damage_numbers` by the panel's Save, now "Save colours and layout"), and
+  each digit's measured width (read-only, from the sheet's pixels: `digitLayout.ts`, the packer's rule; a test checks
+  they agree on the real sheet). The `12 345` previews use the real advances.
+- **HP drain by share, in every battle** (`PaperWhite2_HealthBarsSpeed`, `health_bars.h`): vanilla drains 1 HP a
+  frame (a Blissey's or a boss's big hit took seconds). Now a change takes `HP_DRAIN_FRAMES_MIN` (12) frames plus its
+  share of the bar of the rest up to `HP_DRAIN_FRAMES_MAX` (36); on a gauge with several bars the share is of one bar,
+  and each whole bar past one takes 36 (per bar, as phase 5 had at 32). Never slower than vanilla (a few HP still
+  drain 1 a frame); under 48 max HP vanilla's pixel a frame stays (at most 48 frames). The numbers, the player's box
+  included, follow the bar as before (they are drawn from the same value each frame); heals use it too.
+
+**Tested** (py-desmume, the user's save copy; harness in the session's scratchpad `visuals/h/`, `t6.py` with drain
+timing from the gauge's `hpMoving` and speed; screenshots in `visuals/shots/`):
+- **Triple, right-edge foe:** Keldeo's hit on Dialga, the foe at the screen's right edge: `59` centred over it, fully on
+  screen with its margin (`tri_right_sheet.png`).
+- **Raid over a big foe:** the Primal Dialga raid, `55` over Dialga in every frame, translucent and opaque
+  (`raid_dialga_sheet.png`, before and after: `raid_before_after.png`, `raid_ba2.png`, `raid_ba3.png`); the Nightmare
+  Rayquaza raid, `66`.
+- **HP lines** (`hp_lines_formats.png`): doubles (Ho-Oh and Lugia, `6 572 ×2` under each bar, clear of the next box),
+  single (Darkrai `42 336 ×9` under its bar), raid (`1 330` beside the bar), triple (`15 246 ×4`, `19 866 ×4`,
+  `13 728 ×3`, each beside its own bar; close-up `tri_line_zoom.png`).
+- **Digits:** the textures load with the new header (the glyphs read back as 14 wide each); the editor's Layout part
+  (`visuals/editor_layout.png`, and with overlap 5, `editor_layout_overlap5.png`).
+- **Drain** (game frames = ceil(change / speed), the HP shown changing for that many updates):
+
+  | Hit | Max HP (bar) | Change | Speed | Game frames | Vanilla / before |
+  | --- | --- | --- | --- | --- | --- |
+  | Lead on the raid's Dialga (small) | 1,330 | 55 | 5 | 11 | 2 (phase 5's 1/32 of max past 999) |
+  | Lead on the raid's Dialga (big) | 1,330 | 594 | 27 | 22 | 15 |
+  | Dialga on the player's Oinkums (a run battle's player box: vanilla's path) | 293 | 271 | 8 | 34 | 271 |
+  | A small hit on the player | 293 | 36 | 3 | 12 | 36 |
+  | Keldeo on the triple's Dialga (4 bars of 3,812) | 15,246 | 6,517 | 107 | 61 | 55 |
+
+  **Finding:** py-desmume's frames per drain were about the game frames in a single, 1.2 times in the raid and 2 times
+  in the triple (the battle drops to about 30 updates a second there, so a triple's drain takes twice the real time).
+  A drain by real time (VBlank count) would be a follow-up if the user wants it.
+- Not tested: a non-run battle (the drain code has no battle-type check; the player's box above is that same path),
+  a rotation battle's HP lines.
+
+Memory: overlay 168 +0.5 KB code (3,176 to 3,660 bytes for the two files), +12 bytes read-only, +20 bytes BSS (the
+glyphs); the digits' member +20 bytes (in the battle heap for three frames). No VRAM, OBJ or heap change.
+
+Calls I made:
+- The settings keep their keys: `overlap` (now glyph to glyph, 2) and `group_space` (the gap, 4); the editor calls them
+  Overlap and Thousands gap.
+- Raids take the beside-the-bar HP line like triples (they are triple battles); rotations too.
+- Drain 12 + 24 × share frames, 36 a bar; constants in `health_bars.h`, not settings (it is every battle's).
+- An empty digit cell counts as 14 wide.
 
 ## 14. Phase 7: the Reserve Box and the rest stops' swaps (2026-11-20)
 
