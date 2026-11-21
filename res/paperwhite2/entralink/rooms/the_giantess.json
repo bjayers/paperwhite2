@@ -1,0 +1,33 @@
+{
+    "$schema": "../room.schema.json",
+    "name": "The Giantess",
+    "role": "room",
+    "battles": [
+        {
+            "id": "battle",
+            "progress_id": 17,
+            "format": "single",
+            "enemies": [
+                {
+                    "species": "SPECIES_POKESTAR_GIANT_F",
+                    "level": 70,
+                    "moves": [ "MOVE_STOMP", "MOVE_TRIPLE_KICK", "MOVE_DOUBLE_KICK", "MOVE_HEAD_SMASH" ],
+                    "gender": "female"
+                }
+            ]
+        }
+    ],
+    "npcs": [
+        {
+            "type": "battle",
+            "battle": "battle",
+            "sprite": "OBJ_CODE_CLERK_F",
+            "x": 15,
+            "z": 14,
+            "facing": "DIR_DOWN",
+            "dialogue": {
+                "before": "WHO ARE YOU?!\nWHY ARE YOU IN MY FOREST?!"
+            }
+        }
+    ]
+}
