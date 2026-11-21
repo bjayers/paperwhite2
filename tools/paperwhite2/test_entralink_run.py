@@ -370,14 +370,15 @@ def test_clearings_pack(tmp_path):
 
 
 def test_draw_problems_with_templates(tmp_path):
-    directory = copy_data(tmp_path)
+    # (the tests' own rooms: enemy and enemy_choice rooms, no challenge or event room)
+    directory = fixture_data(tmp_path)
     run, rooms = entralink_run.load_run(directory), entralink_run.load_rooms(directory)
     templates = entralink_run.load_templates(directory)
     problems = entralink_run.draw_problems(run, rooms, templates)
-    assert ("warning", "round 1: no challenge or event or enemy_choice room can come up, so those types are skipped") in problems
+    assert ("warning", "round 1: no challenge or event room can come up, so those types are skipped") in problems
     assert not [p for p in problems if p[0] == "error"]
     # No premade room in round 1: its doors still draw the templates' types
-    for name in ("dialga", "prince_or_princess", "rayquaza_raid", "the_illusionist"):
+    for name in ("alpha", "beta", "gamma", "choose"):
         edit(room(directory, name), lambda data: data.update(rounds=[2, 3]))
     rooms = entralink_run.load_rooms(directory)
     assert not [p for p in entralink_run.draw_problems(run, rooms, templates) if p[0] == "error"]
