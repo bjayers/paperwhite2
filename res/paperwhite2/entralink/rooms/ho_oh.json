@@ -19,7 +19,7 @@
                 {
                     "species": "SPECIES_LUGIA",
                     "level": 70,
-                    "moves": [ "MOVE_WEATHER_BALL", "MOVE_AEROBLAST", "MOVE_RAIN_DANCE", "MOVE_RECOVER" ],
+                    "moves": [ "MOVE_WEATHER_BALL", "MOVE_AEROBLAST", "MOVE_RAIN_DANCE", "MOVE_SAFEGUARD" ],
                     "ability": "ABILITY_MULTISCALE"
                 }
             ]

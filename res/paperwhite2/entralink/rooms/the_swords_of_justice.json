@@ -2,6 +2,7 @@
     "$schema": "../room.schema.json",
     "name": "The Swords of Justice",
     "role": "room",
+    "type": "enemy_choice",
     "marker": "enemy_choice",
     "battles": [
         {

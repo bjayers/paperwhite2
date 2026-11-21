@@ -25,8 +25,8 @@
             "type": "battle",
             "battle": "battle",
             "sprite": "OBJ_CODE_8",
-            "x": 10,
-            "z": 9,
+            "x": 8,
+            "z": 10,
             "facing": "DIR_UP",
             "dialogue": {
                 "before": "..."

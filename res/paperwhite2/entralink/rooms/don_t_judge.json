@@ -2,7 +2,7 @@
     "$schema": "../room.schema.json",
     "name": "Don't Judge",
     "role": "room",
-    "marker": "challenge",
+    "type": "enemy_choice",
     "battles": [
         {
             "id": "battle",

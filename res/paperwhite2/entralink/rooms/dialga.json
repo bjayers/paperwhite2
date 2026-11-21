@@ -2,6 +2,8 @@
     "$schema": "../room.schema.json",
     "name": "Nightmare Dialga",
     "role": "room",
+    "type": "challenge",
+    "marker": "challenge",
     "battles": [
         {
             "id": "dialga",
@@ -13,7 +15,7 @@
                     "form": 1,
                     "level": 70,
                     "scale": 120,
-                    "moves": [ "MOVE_ROAR_OF_TIME", "MOVE_DRAGON_PULSE", "MOVE_FLASH_CANNON", "MOVE_EARTHQUAKE" ],
+                    "moves": [ "MOVE_ROAR_OF_TIME", "MOVE_DRAGON_PULSE", "MOVE_FLASH_CANNON", "MOVE_ICE_BEAM" ],
                     "item": "ITEM_ADAMANT_ORB"
                 }
             ]

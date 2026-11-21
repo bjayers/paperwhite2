@@ -2,8 +2,8 @@
     "$schema": "../room.schema.json",
     "name": "Prince or Princess",
     "role": "room",
+    "type": "enemy_choice",
     "weather": "BTL_WEATHER_NONE",
-    "marker": "enemy_choice",
     "battles": [
         {
             "id": "gardevoir_battle",

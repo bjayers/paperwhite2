@@ -1,7 +1,9 @@
 {
     "$schema": "../room.schema.json",
     "name": "Shadow Lugia",
+    "rounds": [ 2, 3 ],
     "role": "room",
+    "type": "challenge",
     "marker": "challenge",
     "battles": [
         {
@@ -13,7 +15,7 @@
                     "species": "SPECIES_LUGIA",
                     "form": 1,
                     "level": 70,
-                    "scale": 120,
+                    "scale": 110,
                     "moves": [ "MOVE_HYDRO_PUMP", "MOVE_FEATHER_DANCE", "MOVE_PSYCHO_BOOST", "MOVE_EARTHQUAKE" ]
                 }
             ]
