@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Entralink records",
+  "description": "The Entralink roguelike's records (docs/paperwhite2/design/entralink-roguelike-prototype.md, \"Records\"; tools/paperwhite2/entralink_records.py). The Nightmare codex records every species with \"pokedex\": false (the forest's Nightmares, in every form) and the special forms listed here, which the records also show in a list of their own.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [ "special_forms" ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "special_forms": {
+      "type": "array", "uniqueItems": true,
+      "description": "The forest-only forms counted as Special: a species and one of its forms, each met, beaten and caught counted alone",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [ "species", "form" ],
+        "properties": {
+          "species": { "type": "string", "x-constant": "SPECIES_", "description": "The species" },
+          "form": { "type": "integer", "minimum": 0, "maximum": 31, "description": "Its form, below the species' form count" }
+        }
+      }
+    }
+  }
+}

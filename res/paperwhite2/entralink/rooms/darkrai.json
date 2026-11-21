@@ -1,6 +1,7 @@
 {
     "$schema": "../room.schema.json",
     "name": "Darkrai",
+    "progress_id": 1,
     "role": "final",
     "battles": [
         {

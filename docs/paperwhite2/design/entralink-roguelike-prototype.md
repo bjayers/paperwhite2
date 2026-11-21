@@ -349,7 +349,8 @@ The Symbol block (`SAVE_BLOCK_SYMBOL`, 0x850 bytes at 0x22a00 and its copy at 0x
 | 0x144 | 4 | the hub shop's Dream Shards, at most 99,999 (`entralink-buffs.md` section 19) |
 | 0x148 | 4 | the Dream Shards spent in the hub shop, which its Reset gives back |
 | 0x14c | 0x80 | the hub shop's bought picks: 32 entries of a card's key (u16, a hash of its ID; 0 free) and its count (u8) |
-| 0x1cc | 0x684 | free, zero (for a mid-run save or unlocks later) |
+| 0x1cc | 0x454 | the records (`EntralinkRecords`, "Records" below) |
+| 0x620 | 0x230 | free, zero (560 bytes, for unlocks later; a mid-run save no longer fits here) |
 
 - No encryption or checksum of its own: the save's CRC of the block covers it. `EntralinkProgress_Get` clears a block
   without the magic or with another version to an empty progress, so an old save's forest data is dropped the first
@@ -1106,6 +1107,104 @@ an extra move, 1 hidden ability. Layouts (shots `layout_r3_1` single, `layout_r1
 round 3, 3,465 HP on the curve), a double started from its second NPC (Voltorb, with Joltik), a triple (Unown, Beldum,
 Exeggcute), and the first of three doubles in a choice room: each won, the room cleared, every NPC gone (the other
 choices too), Dream Dust 40, 40, 80 and 100 (enemy and enemy choice times the round's percent), the doors' markers shown.
+
+## Records (2026-11-21)
+
+Step 1 of the records the user decided on (2026-11-21): the data and its saving, with a debug readout; nothing in the
+game shows them yet. Code: `include/paperwhite2/entralink_records.h`, `src/paperwhite2/ov012/paperwhite2_entralink_records.c`
+(overlay 12), the hooks in `paperwhite2_entralink_run.c`, the battle's in `paperwhite2_entralink_battle.c`
+(`RecordHit`, `EntralinkBattle_End`, called from `btl_main.c`'s result and `btl_server_flow.c`'s damage numbers), the
+codex's generator `tools/paperwhite2/entralink_records.py` and its data `res/paperwhite2/entralink/records.json`.
+
+### The layout (the progress block's 0x1cc, `EntralinkRecords`, 0x454 bytes)
+
+| Offset | Size | What |
+| --- | --- | --- |
+| 0x00 | 2 | runs started (wins are the block's `runsCompleted`, 0x06) |
+| 0x02 | 2 | the current win streak (a run that ends any other way ends it) |
+| 0x04 | 2 | the best win streak |
+| 0x06 | 2 | the fewest turns of a run won (0: no win yet); the hall of fame's run |
+| 0x08 | 2 | the deepest place reached (the run's room, from 1) and its round |
+| 0x0c | 4 | every Dream Shard runs gave (earned, whatever was spent; uncapped by the 99,999 held) |
+| 0x10 | 8 | the biggest hit: damage (as the damage numbers show it, capped at 60,000), species, move, form, critical |
+| 0x18 | 0x10 | a bit per room entered, by the room's record id (128 rooms) |
+| 0x28 | 0x10 | a bit per room done |
+| 0x38 | 0x40 | bosses and final rooms beaten: 16 entries of (record id + 1, flags, times beaten up to 255) |
+| 0x78 | 0x20 | each of those entries' fewest turns of its battle won |
+| 0x98 | 0x100 | the Nightmare codex: 64 entries of (key, flags met / caught, times beaten up to 255) |
+| 0x198 | 0x200 | the buff compendium: 128 entries of (card key, flags offered / taken, times taken up to 255) |
+| 0x398 | 0xa8 | the hall of fame: 6 Pokémon of (species, held item, form, shiny, nickname of 11 characters) |
+| 0x440 | 0x14 | the hall of fame's golds: 5 of (card key, rank) |
+
+- **Size:** 1,108 bytes of the block's 1,668 free; **560 bytes (0x230) left** at 0x620. An old block (the hub shop's,
+  zero there) reads as no records, as does an old forest block, which the first read clears. The block's version stays 1.
+- **Entries by key**, never by position: a room by its record id, a codex species by `species | form << 10`, a card by
+  its key (the hub shop's FNV-1a hash of its ID), so adding, removing or reordering rooms, species or cards keeps every
+  record with its owner. A full table records nothing more (the packer keeps the codex at 64; 94 cards fit in 128).
+- **The levels** aren't kept in the hall of fame (the team plays at 100); nicknames are.
+
+### Room record ids
+
+A room of `rooms/` has a top-level `progress_id`, its **record id** (0-127, `room.schema.json`), given by the editor on
+save from `progress_ids.json`'s new `next_room` like a battle's (never reused; a copied room gets a new one); the packer
+refuses a room without one, two rooms with one, one at or past `next_room`, and a template with one. It goes in
+`EntralinkRoom`'s `recordId` (its padding byte; templates and random rooms 0xff). The 13 rooms got 0-12 in name order.
+
+### The codex and the special forms
+
+`records.json`'s `special_forms` lists the forest-only forms (species and form) counted alone, today Primal Dialga
+(Dialga form 1) and Shadow Lugia (Lugia form 1), the hack-added forms the rooms use (Giratina's Origin form is the
+original game's; the Pokéstar Giantess is a species, not a form: neither is listed). Every added species with
+`"pokedex": false` that isn't retired is a Nightmare, counted in every form under form 0's key (none exist yet). The
+generated `ENTRALINK_RECORDS_CODEX` holds both; an enemy of neither isn't recorded. The editor doesn't edit the file yet.
+
+### When they are written
+
+| Moment | Records |
+| --- | --- |
+| A run starts (`EntralinkRun_Start`) | runs started |
+| A battle starts (`EntralinkRun_CreateBattle`) | each codex enemy met (a raid's three are one) |
+| A battle won (`EntralinkRun_FinishBattle`) | the run's turns += the battle's; a codex enemy caught, or else each beaten (+1); a boss or final room's times beaten and fewest turns |
+| A card list shown (`ENTRALINK_RUN_ACTION_ADD_CARDS`: the offer, a buff room, a gift NPC, a shop) | each card offered |
+| A card taken (`EntralinkRun_TakeCard`, a shop's bought too) | taken, times taken |
+| Each hit of the team's on a foe (the battle) | the run's biggest hit (in its state), whether or not the numbers show |
+| A battle's end (`btl_main.c`) | the battle's turns: the server's count + 1 (the turn it ended in) |
+| The run's end, every way (`EntralinkRun_End`) | rooms entered and done (those left behind, the current if done or the final won); deepest place; Shards earned; the biggest hit; a win's streak, fewest turns and hall of fame (the team's copies and golds, on fewer turns only: a tie keeps the first), or the streak's end |
+
+The run's own (turns, the battle's turns, the biggest hit, won) are 14 bytes of `EntralinkRunState`. All in RAM until
+the game is next saved, as the rest of the block. Catchable now isn't stored: it follows from the catch bits and the
+conditions.
+
+### The debug readout
+
+START > Player... > **Entralink records...**: **Show records** pages through the records, six lines a page (the run's,
+the rooms' counts and ids, each boss, the codex and each entry, the cards offered and taken and each card taken, the
+hall of fame and its golds; species and cards by number); **Reset records** clears the records (not the battles won,
+catches, runs completed, Reserve Box or Shards). Actions `DEBUG_ACTION_RECORDS_PAGE` and `_RESET` (60, 61), list id 6
+of Player....
+
+### Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `records/h/`)
+
+- **An old save:** its Symbol block held forest data; the run's first read cleared it, the records zero but runs started
+  1 (`records_start_0.png`, the readout).
+- **A loss** at place 3 (the Illusionist): streak 0, deepest place 3 of round 1, Shards earned 2, room 10 entered and
+  done (the places behind were poked to it).
+- **A second run:** runs started 2; Shadow Lugia's raid won with a catch poked into the run state: codex Lugia/1 met and
+  caught, not beaten; the offer's three cards offered, one taken (compendium flags 3, count 1); Dialga's raid won:
+  Dialga/1 met, beaten 1, its offer's card taken too; Darkrai (final) won in 1 turn: boss entry (record
+  id 1, 1 time, 1 turn), streak 1 / best 1, fewest turns 3 (three battles of one turn), deepest 21 of round 3, Shards
+  earned 33 (2 + 31), biggest hit 44 by Oinkums (species 499) with move 292, the hall of fame's six with nicknames;
+  with two golds poked held, the hall's golds (Galvanic rank 2, Overcharge 1).
+- **Saved** in game and **reloaded**: both copies of the block in the file and the block after a reboot hold the same
+  records. **Reset records**: all zero, the battles won and runs completed kept.
+- Not tested: a real Nightmare Ball catch (the catch path is the run's, unchanged: its PID marks the enemy), a boss of
+  role boss (the final room takes the same path).
+
+### Memory
+
+Overlay 12 **+2,976 bytes** (the records 0.9 KB, the run's hooks 0.3 KB, the debug readout about 1.8 KB, debug builds
+only); ARM9 main +14 bytes of BSS (no change to its end, alignment); overlay 167 +0.2 KB (battle only). The DS arena
+left falls from 0x5ec0 to **0x5320 (20.8 KB)**. Save: the progress block, as above.
 
 ## The re-entry question
 

@@ -1,6 +1,7 @@
 {
     "$schema": "../room.schema.json",
     "name": "Prince or Princess",
+    "progress_id": 5,
     "role": "room",
     "type": "enemy_choice",
     "weather": "BTL_WEATHER_NONE",

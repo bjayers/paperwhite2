@@ -1,13 +1,14 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Entralink progress ids",
-  "description": "The next progress ids the editor's Entree page gives (room.schema.json's progress_id): a new battle gets next_battle, a new catchable enemy next_catch, and the number goes up, so a deleted battle's or catch's number is never given again (a save keeps its bit). Written by the editor on save; never lower them.",
+  "description": "The next progress ids the editor's Entree page gives (room.schema.json's progress_id): a new battle gets next_battle, a new catchable enemy next_catch, a new room (rooms/ only) next_room, and the number goes up, so a deleted battle's or catch's number is never given again (a save keeps its bit). Written by the editor on save; never lower them.",
   "type": "object",
   "additionalProperties": false,
-  "required": [ "next_battle", "next_catch" ],
+  "required": [ "next_battle", "next_catch", "next_room" ],
   "properties": {
     "$schema": { "type": "string" },
     "next_battle": { "type": "integer", "minimum": 0, "maximum": 1024, "description": "The next battle's won-ever bit; at most 1024 battles" },
-    "next_catch": { "type": "integer", "minimum": 0, "maximum": 512, "description": "The next catchable enemy's caught-ever bit; at most 512 catches" }
+    "next_catch": { "type": "integer", "minimum": 0, "maximum": 512, "description": "The next catchable enemy's caught-ever bit; at most 512 catches" },
+    "next_room": { "type": "integer", "minimum": 0, "maximum": 128, "description": "The next room's record id (its discovered and beaten bits and its boss record); at most 128 rooms" }
   }
 }

@@ -738,10 +738,13 @@ L_DebugPlayer:
     ListMenuAdd Global10200_Text_DebugWalkThroughWalls, 65535, 2
     ListMenuAdd Global10200_Text_DebugMoney, 65535, 3
     ListMenuAdd Global10200_Text_DebugBuffs, 65535, 5
+    ListMenuAdd Global10200_Text_DebugRecords, 65535, 6
     ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
     ListMenuShow
     WorkCmpConst 0x8020, 5
     VMJumpIf CMP_EQ, L_DebugBuffs
+    WorkCmpConst 0x8020, 6
+    VMJumpIf CMP_EQ, L_DebugRecords
     WorkCmpConst 0x8020, 0
     VMJumpIf CMP_EQ, L_DebugWarpCenter
     WorkCmpConst 0x8020, 1
@@ -830,6 +833,39 @@ L_DebugBuffShow:
     ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
     ListMenuShow
     VMJump L_DebugBuffs
+
+L_DebugRecords:
+    // Entralink records...: the save's records (paperwhite2/entralink_records.h) a page at a time, 0x8026 the page,
+    // and their reset
+    SystemMsg Global10200_Text_DebugRecordsTitle, 2
+    ListMenuAnchorTopRight 31, 1, 0, 1, 0x8020
+    ListMenuAdd Global10200_Text_DebugRecordsShow, 65535, 0
+    ListMenuAdd Global10200_Text_DebugRecordsReset, 65535, 1
+    ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
+    ListMenuShow
+    WorkCmpConst 0x8020, 0
+    VMJumpIf CMP_EQ, L_DebugRecordsShowStart
+    WorkCmpConst 0x8020, 1
+    VMJumpIf CMP_EQ, L_DebugRecordsReset
+    VMJump L_DebugPlayer
+
+L_DebugRecordsShowStart:
+    WorkSetConst 0x8026, 0
+
+L_DebugRecordsShow:
+    Debug DEBUG_ACTION_RECORDS_PAGE, 0x8026, 0, 0x8025
+    WorkCmpConst 0x8025, 0
+    VMJumpIf CMP_EQ, L_DebugRecords
+    SystemMsg Global10200_Text_DebugRecordsPage, 2
+    LastKeyWait
+    WorkAdd 0x8026, 1
+    VMJump L_DebugRecordsShow
+
+L_DebugRecordsReset:
+    Debug DEBUG_ACTION_RECORDS_RESET, 0, 0, 0x8025
+    SystemMsg Global10200_Text_DebugRecordsResetDone, 2
+    LastKeyWait
+    VMJump L_DebugRecords
 
 L_DebugToggleWalls:
     Debug DEBUG_ACTION_FLAG_TOGGLE, EVENT_FLAG_DEBUG_WALK_THROUGH_WALLS, 0, 0x8025

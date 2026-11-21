@@ -1,6 +1,7 @@
 {
     "$schema": "../room.schema.json",
     "name": "The Giantess",
+    "progress_id": 9,
     "role": "room",
     "battles": [
         {

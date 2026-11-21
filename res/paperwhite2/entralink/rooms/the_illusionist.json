@@ -1,6 +1,7 @@
 {
     "$schema": "../room.schema.json",
     "name": "The Illusionist",
+    "progress_id": 10,
     "rounds": [ 1 ],
     "role": "room",
     "battles": [

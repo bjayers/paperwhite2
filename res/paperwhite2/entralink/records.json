@@ -1,0 +1,13 @@
+{
+    "$schema": "records.schema.json",
+    "special_forms": [
+        {
+            "species": "SPECIES_DIALGA",
+            "form": 1
+        },
+        {
+            "species": "SPECIES_LUGIA",
+            "form": 1
+        }
+    ]
+}

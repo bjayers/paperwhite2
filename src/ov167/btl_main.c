@@ -225,6 +225,8 @@ BOOL BtlMain_ProcMain(GameProc *proc, u32 *state, void *param, void *work) {
             // Paper White 2: the weather the battle ends with, for the field (paperwhite2_battle_weather.c). The
             // server's field holds it, and a machine without the server has none
             PaperWhite2_BattleWeather_SetBattleEnd(mainModule->server != NULL ? GetFieldWeather() : BTL_WEATHER_NONE);
+            // Paper White 2: an Entralink run battle's turns, for the run's records (paperwhite2/entralink_battle.h)
+            EntralinkBattle_End(mainModule);
 #endif
             BtlMain_StoreRecData(mainModule);
             BtlMain_StoreResultStats(mainModule);

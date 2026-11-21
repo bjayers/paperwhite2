@@ -29,6 +29,7 @@
 #include "paperwhite2/entralink_hub_shop.h"
 #include "paperwhite2/entralink_progress.h"
 #include "paperwhite2/entralink_random_rooms.h"
+#include "paperwhite2/entralink_records.h"
 #include "paperwhite2/entralink_reserve.h"
 #include "paperwhite2/entralink_run.h"
 #include "paperwhite2/entralink_run_actions.h"
@@ -918,6 +919,7 @@ void EntralinkRun_Start(GameData *gameData) {
     // The team, the party's copies at level 100 (paperwhite2/entralink_run_party.h), and the run's own bag, empty
     EntralinkRun_KeepParty(gameData);
     EntralinkRun_KeepBag(gameData);
+    EntralinkRecords_StartRun(gameData);
 }
 
 BOOL EntralinkRun_IsActive(GameData *gameData) {
@@ -930,7 +932,20 @@ static void EntralinkRun_End(GameData *gameData) {
     EntralinkRunState *state = EntralinkRun_GetState();
     BOOL active = state->room != 0;
     u32 shards = EntralinkHubShop_GetRunShards();
+    u32 round;
+    u32 i;
 
+    // The records (paperwhite2/entralink_records.h): the rooms entered, those left behind done (their exits opened
+    // only then) and the one the player is in if it is, or is the final room beaten; and the run's own, from its state
+    // and its team before they go
+    if (active) {
+        for (i = 0; i < state->room; i++) {
+            EntralinkRecords_SetRoom(gameData, sRooms[state->order[i]].recordId,
+                                     i + 1 < state->room || state->cleared || state->won);
+        }
+        EntralinkRun_GetPlace(state->room, &round);
+        EntralinkRecords_EndRun(gameData, round, shards);
+    }
     MI_CpuFill8(state, 0, sizeof(EntralinkRunState));
     EntralinkBuffs_Clear();
     EntralinkRun_RestoreParty(gameData);
@@ -1408,6 +1423,39 @@ static void EntralinkRun_SetEnemyScale(EntralinkRunState *state, const Entralink
     }
 }
 
+// The battle's enemies in the records' codex (paperwhite2/entralink_records.h): met as it starts; once won, the one
+// caught, or else every one beaten (a raid's three are its one enemy)
+static void EntralinkRun_RecordEnemies(GameData *gameData, const EntralinkRoom *room, const EntralinkBattle *battle,
+                                       BOOL won) {
+    EntralinkRunState *state = EntralinkRun_GetState();
+    u32 count = battle->format == ENTRALINK_FORMAT_RAID ? 1 : battle->enemyCount;
+    u32 caught = ENTRALINK_RUN_ENEMIES_MAX;
+    const EntralinkEnemy *enemy;
+    u32 what;
+    u32 i;
+
+    for (i = 0; i < ENTRALINK_RUN_ENEMIES_MAX; i++) {
+        if (won && state->caught && state->catchIds[i] != ENTRALINK_CATCH_NONE &&
+            state->catchPids[i] == state->caughtPid) {
+            caught = battle->format == ENTRALINK_FORMAT_RAID ? 0 : i;
+        }
+    }
+    for (i = 0; i < count; i++) {
+        enemy = EntralinkRun_GetEnemy(room, battle, i);
+        if (!won) {
+            what = ENTRALINK_RECORDS_MET;
+        } else if (caught < ENTRALINK_RUN_ENEMIES_MAX) {
+            if (i != caught) {
+                continue;
+            }
+            what = ENTRALINK_RECORDS_CAUGHT;
+        } else {
+            what = ENTRALINK_RECORDS_BEATEN;
+        }
+        EntralinkRecords_AddEnemy(gameData, enemy->species, enemy->form, what);
+    }
+}
+
 static GameEvent *EntralinkRun_CreateBattle(GameSystem *gsys, const EntralinkRoom *room,
                                             const EntralinkBattle *battle) {
     static const u8 FORMAT_STYLES[] = { BTL_STYLE_SINGLE, BTL_STYLE_DOUBLE, BTL_STYLE_TRIPLE, BTL_STYLE_TRIPLE };
@@ -1440,6 +1488,8 @@ static GameEvent *EntralinkRun_CreateBattle(GameSystem *gsys, const EntralinkRoo
             EntralinkRun_AddEnemy(gameData, party, EntralinkRun_GetEnemy(room, battle, i), i, FALSE);
         }
     }
+    EntralinkRun_RecordEnemies(gameData, room, battle, FALSE);
+    state->battleTurns = 0;
     SaveBtlFieldStatus(&status, gameData, field);
     if (room->weather != ENTRALINK_WEATHER_FIELD) {
         status.weather = room->weather;
@@ -1559,6 +1609,12 @@ static u16 EntralinkRun_FinishBattle(GameSystem *gsys, const EntralinkRoom *room
     // A capture counts as a win, which gives the room's Dream Dust
     EntralinkProgress_SetBattleWon(progress, battle->progressId);
     EntralinkRun_RecordCatch(gameData);
+    // The records: the battle's turns (which the battle set as it ended), its enemies, a boss's or the final room's
+    state->turns = MATH_MIN(state->turns + state->battleTurns, 0xffff);
+    EntralinkRun_RecordEnemies(gameData, room, battle, TRUE);
+    if (room->role == ENTRALINK_ROLE_BOSS || room->role == ENTRALINK_ROLE_FINAL) {
+        EntralinkRecords_BeatBoss(gameData, room->recordId, state->battleTurns);
+    }
     state->dustGained = EntralinkRun_AddDust(state, EntralinkRun_GetBattleDust(state, room));
     EntralinkRun_HealAfterBattle(gameData);
     for (i = 0; i < ENTRALINK_RUN_ENEMIES_MAX; i++) {
@@ -1572,6 +1628,7 @@ static u16 EntralinkRun_FinishBattle(GameSystem *gsys, const EntralinkRoom *room
     // The room is done once the script has shown the after message (ENTRALINK_RUN_ACTION_CLEAR_ROOM)
     if (EntralinkRun_IsFinalRoom(state)) {
         state->shardBonus += ENTRALINK_RUN_FINAL_SHARDS + ENTRALINK_RUN_ROOM_SHARDS;
+        state->won = TRUE;
         EntralinkProgress_AddRunCompleted(progress);
         return ENTRALINK_RUN_RESULT_RUN_WON;
     }
@@ -1868,6 +1925,7 @@ static BOOL EntralinkRun_TakeCard(FieldScriptEnv *env, u32 slot) {
         }
         state->dust -= price;
         EntralinkBuffs_Take(&card, slot);
+        EntralinkRecords_TakeCard(FieldScriptEnv_GetGameData(env), &card);
     }
     switch (state->pickedList) {
     case ENTRALINK_RUN_CARDS_OFFER:
@@ -1902,6 +1960,7 @@ static void EntralinkRun_BuffAction(FieldScriptEnv *env, const EntralinkRoom *ro
             break;
         }
         count = EntralinkRun_GetCards(state, arg, cards);
+        EntralinkRecords_SeeCards(FieldScriptEnv_GetGameData(env), cards, count);
         *result = EntralinkBuffs_AddCardOptions(env, cards, count, arg == ENTRALINK_RUN_CARDS_SHOP);
         break;
     case ENTRALINK_RUN_ACTION_PICK_CARD:

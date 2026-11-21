@@ -1,6 +1,7 @@
 {
     "$schema": "../room.schema.json",
     "name": "Nightmare Rayquaza raid",
+    "progress_id": 6,
     "role": "room",
     "type": "challenge",
     "marker": "challenge",

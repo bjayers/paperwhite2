@@ -19,7 +19,8 @@ import {
 const ROOT = resolve(import.meta.dirname, "../..");
 const constants = new Map(Object.entries(new Python(ROOT).constants()));
 const schema = JSON.parse(readFileSync(join(ROOT, ROOM_SCHEMA), "utf8")) as Schema;
-const orders = { battle: Object.keys(schema.$defs!.battle.properties!), enemy: Object.keys(schema.$defs!.enemy.properties!) };
+const orders = { battle: Object.keys(schema.$defs!.battle.properties!), enemy: Object.keys(schema.$defs!.enemy.properties!),
+  room: Object.keys(schema.properties!) };
 const errors = (d: JsonValue, s: Schema = schema) => validate(d, s, constants).map((e) => `${e.path.join(".")}: ${e.message}`);
 /** The build's own check of data against a schema, on a scratch file. */
 function buildCheck(data: JsonValue, schemaFile = ROOM_SCHEMA): { ok: boolean } {
@@ -82,23 +83,24 @@ test("catches and spawn conditions name battles of any room", () => {
 test("progress ids: new battles and catches get the next numbers, old ones never change", () => {
   // The converted rooms have theirs, and progress_ids.json is past them
   const counters = JSON.parse(readFileSync(join(ROOT, PROGRESS_IDS), "utf8"));
-  const none = assignProgressIds(real, { next_battle: counters.next_battle, next_catch: counters.next_catch }, orders);
+  const none = assignProgressIds(real, counters, orders);
   assert.equal(none.changed.size, 0);
-  assert.deepEqual(none.counters, { next_battle: counters.next_battle, next_catch: counters.next_catch });
+  assert.deepEqual(none.counters, { next_battle: counters.next_battle, next_catch: counters.next_catch, next_room: counters.next_room });
   assert.deepEqual(errors(parseJson(readFileSync(join(ROOT, PROGRESS_IDS), "utf8")), JSON.parse(readFileSync(join(ROOT, PROGRESS_IDS_SCHEMA), "utf8"))), []);
   assert.deepEqual(checkRooms(listed(real)).filter((m) => m.includes("progress id")), []);
 
   // A new room with a catchable enemy, after three deleted battles and catches past the real ones: numbers above them
-  const nextBattle = counters.next_battle + 3, nextCatch = counters.next_catch + 3;
+  const nextBattle = counters.next_battle + 3, nextCatch = counters.next_catch + 3, nextRoom = counters.next_room + 3;
   let fresh = newRoomData("New");
   fresh = setIn(fresh, ["battles", 0, "enemies", 0, "catch"], fromPlain({ after: [], once: true }));
   const rooms = [...real, { path: `${ROOMS_DIR}/zz_new.json`, data: fresh }];
-  const given = assignProgressIds(rooms, { next_battle: nextBattle, next_catch: nextCatch }, orders);
+  const given = assignProgressIds(rooms, { next_battle: nextBattle, next_catch: nextCatch, next_room: nextRoom }, orders);
   assert.deepEqual([...given.changed.keys()], [`${ROOMS_DIR}/zz_new.json`]);
   const out = given.changed.get(`${ROOMS_DIR}/zz_new.json`)!;
   assert.equal(getIn(out, ["battles", 0, "progress_id"]), nextBattle);
   assert.equal(getIn(out, ["battles", 0, "enemies", 0, "progress_id"]), nextCatch);
-  assert.deepEqual(given.counters, { next_battle: nextBattle + 1, next_catch: nextCatch + 1 });
+  assert.deepEqual(given.counters, { next_battle: nextBattle + 1, next_catch: nextCatch + 1, next_room: nextRoom + 1 });
+  assert.equal(getIn(out, ["progress_id"]), nextRoom);
   // In the schema's order: a battle's after its id, an enemy's after its catch
   assert.deepEqual([...(getIn(out, ["battles", 0]) as Map<string, JsonValue>).keys()], ["id", "progress_id", "format", "enemies"]);
   assert.deepEqual([...(getIn(out, ["battles", 0, "enemies", 0]) as Map<string, JsonValue>).keys()], ["species", "level", "catch", "progress_id"]);
@@ -110,24 +112,27 @@ test("progress ids: new battles and catches get the next numbers, old ones never
   assert.deepEqual(again.counters, given.counters);
 
   // Without progress_ids.json, or with one behind the rooms: above every number in use
-  assert.deepEqual(assignProgressIds(rooms, null, orders).counters, { next_battle: counters.next_battle + 1, next_catch: counters.next_catch + 1 });
-  assert.equal(getIn(assignProgressIds(rooms, { next_battle: 0, next_catch: 0 }, orders).changed.get(`${ROOMS_DIR}/zz_new.json`)!, ["battles", 0, "progress_id"]), counters.next_battle);
+  assert.deepEqual(assignProgressIds(rooms, null, orders).counters,
+    { next_battle: counters.next_battle + 1, next_catch: counters.next_catch + 1, next_room: counters.next_room + 1 });
+  assert.equal(getIn(assignProgressIds(rooms, { next_battle: 0, next_catch: 0, next_room: 0 }, orders).changed.get(`${ROOMS_DIR}/zz_new.json`)!, ["battles", 0, "progress_id"]), counters.next_battle);
 
   // A copy of a room gets new numbers; a copy with its old ones would share them
   const copy = { path: `${ROOMS_DIR}/zz_new_copy.json`, data: out };
   assert.deepEqual(checkRooms(listed([...real, { path: `${ROOMS_DIR}/zz_new.json`, data: out }, copy])).filter((m) => m.includes("progress id")), [
+    `zz_new_copy has the same room progress id (${nextRoom}) as zz_new: remove one's progress_id in the text view and save to give it a new one.`,
     `zz_new_copy/battle has the same battle progress id (${nextBattle}) as zz_new/battle: remove one's progress_id in the text view and save to give it a new one.`,
     `zz_new_copy/battle enemy 1 has the same catch progress id (${nextCatch}) as zz_new/battle enemy 1: remove one's progress_id in the text view and save to give it a new one.`,
   ]);
   const copied = assignProgressIds([{ path: `${ROOMS_DIR}/zz_new.json`, data: out }, { ...copy, data: withoutProgressIds(out) }], given.counters, orders);
   assert.equal(getIn(copied.changed.get(copy.path)!, ["battles", 0, "progress_id"]), nextBattle + 1);
   assert.equal(getIn(copied.changed.get(copy.path)!, ["battles", 0, "enemies", 0, "progress_id"]), nextCatch + 1);
+  assert.equal(getIn(copied.changed.get(copy.path)!, ["progress_id"]), nextRoom + 1);
   assert.equal(copied.changed.has(`${ROOMS_DIR}/zz_new.json`), false);
 
   // A catch turned off keeps its number, for when it's turned on again; the save's bits run out at their limits
   const off = setIn(out, ["battles", 0, "enemies", 0, "catch"], undefined);
   assert.equal(assignProgressIds([{ path: "x", data: off }], given.counters, orders).changed.size, 0);
-  assert.match(assignProgressIds([{ path: "x", data: newRoomData("x") }], { next_battle: 1024, next_catch: 0 }, orders).error ?? "", /1024 battles/);
+  assert.match(assignProgressIds([{ path: "x", data: newRoomData("x") }], { next_battle: 1024, next_catch: 0, next_room: 0 }, orders).error ?? "", /1024 battles/);
 });
 
 test("renaming a battle or a room renames what the rooms name of it", () => {
@@ -149,4 +154,17 @@ test("the run's field weather", () => {
   assert.deepEqual(errors(setIn(run, ["field_weather"], "WEATHER_RAIN"), runSchema), []);
   assert.deepEqual(buildCheck(setIn(run, ["field_weather"], "WEATHER_RAIN"), "res/paperwhite2/entralink/run.schema.json"), { ok: true });
   assert.equal(buildCheck(setIn(run, ["field_weather"], "BTL_WEATHER_RAIN"), "res/paperwhite2/entralink/run.schema.json").ok, false);
+});
+
+test("room record ids: rooms/ only, in the schema's order, above every one given, refused past the save's 128", () => {
+  const rooms = [{ path: `${ROOMS_DIR}/a.json`, data: newRoomData("A") }, { path: `${ROOMS_DIR}/b.json`, data: setIn(newRoomData("B"), ["progress_id"], 7) },
+    { path: "res/paperwhite2/entralink/templates/rest.json", data: newRoomData("Rest") }];
+  const given = assignProgressIds(rooms, { next_battle: 0, next_catch: 0, next_room: 2 }, orders);
+  const a = given.changed.get(`${ROOMS_DIR}/a.json`)!;
+  assert.equal(getIn(a, ["progress_id"]), 8);
+  assert.deepEqual([...(a as Map<string, JsonValue>).keys()].slice(1, 4), ["name", "progress_id", "role"]);
+  assert.equal(getIn(given.changed.get("res/paperwhite2/entralink/templates/rest.json")!, ["progress_id"]), undefined);
+  assert.equal(given.counters.next_room, 9);
+  assert.deepEqual(errors(a), []);
+  assert.match(assignProgressIds([rooms[0]], { next_battle: 0, next_catch: 0, next_room: 128 }, orders).error ?? "", /128 rooms/);
 });

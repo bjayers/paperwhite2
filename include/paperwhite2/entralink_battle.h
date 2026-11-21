@@ -24,9 +24,14 @@ BOOL EntralinkBattle_IsRun(void);
 // kept for its target's damage number
 u32 EntralinkBattle_ClampDamage(BattleMon *defender, u32 damage);
 // Phase 6: before the damage of a move's hit shows (ServerControl_DamageListCore), puts each foe's damage number
-// (SC_DAMAGE_NUMBER, paperwhite2/damage_numbers.h) when the attacker is the player's side's and the battle shows them
-void EntralinkBattle_PutDamageNumbers(BtlServerFlow *flow, BattleMon *attacker, u32 count, BattleMon **targets,
-                                      const u8 *critical);
+// (SC_DAMAGE_NUMBER, paperwhite2/damage_numbers.h) when the attacker is the player's side's and the battle shows them.
+// In a run battle each such hit is a candidate for the run's biggest hit as well (EntralinkRunState's bestHit, the
+// records of paperwhite2/entralink_records.h), whether or not the numbers show
+void EntralinkBattle_PutDamageNumbers(BtlServerFlow *flow, BattleMon *attacker, u32 move, u32 count,
+                                      BattleMon **targets, const u8 *critical);
+// As the battle ends (BtlMain's result): a run battle's turns, for the run's records (EntralinkRunState's
+// battleTurns), the turn being played when it ended counted
+void EntralinkBattle_End(BtlMainModule *mainModule);
 
 // Phase 5: the enemies' scaling (entralink-buffs.md, section 12). A BattleMon was created from its party's source
 // (PokeCon_CreateClientParty, for the server's and the client's copies): in a run battle, an enemy's place in its party

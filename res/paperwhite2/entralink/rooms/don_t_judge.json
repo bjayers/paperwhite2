@@ -1,6 +1,7 @@
 {
     "$schema": "../room.schema.json",
     "name": "Don't Judge",
+    "progress_id": 3,
     "role": "room",
     "type": "enemy_choice",
     "battles": [
