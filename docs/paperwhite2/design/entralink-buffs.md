@@ -1955,3 +1955,55 @@ the 15 KB line, so the random rooms' species table stays in overlay 12. At run t
 - **The list** has a status line on top (Shards and picks), since the description window replaces the message while
   the list shows.
 - The NPC's look and place are placeholders, (34, 42), like the Reserve Box NPC's.
+
+
+## 20. Follower sprites for room NPCs, and field memory (2026-11-21)
+
+### 20.1 Follower sprites as the fallback
+
+A battle NPC without a sprite of its own shows its enemy's walking Pokémon (`OBJ_CODE_POKEMON_*`, the Dipplin fix);
+many species have none, most of Unova's. Now, where there is none, it shows the species' **follower sprite**
+(`OBJ_CODE_FOLLOWER_<SPECIES>[_FORM_<n>][_FEMALE]`, the follower registry's rule: a form's, else the species'; the
+female's where the species has the row, the female's alone for an always-female species such as Lilligant; never
+`_SHINY`). The packer's `npc_sprite` (`tools/paperwhite2/entralink_run.py`: `walking_sprite`, else `follower_sprite`)
+and the editor's `pokemonSprite` (`editor/src/modules/entree/model.ts`, used by `npcSprite` and the enemy card's
+preview) agree; the error for a species with neither is now "has no walking or follower sprite". Every species has a
+follower, so the error is left for a species added without one.
+
+**As an actor:** a follower code is a row of the model table (from 0x3000, `GetIndexOfObjID`), a billboard sheet of
+the walking Pokémon's sizes (32 or 64 pixels, `billboard_size` 0 or 2) and animation controllers (13 and 14); 90 of the
+followers are 64-pixel sheets, all showing a walking Pokémon's art (`"sprite"`). Nothing in the room NPC code treats
+it differently; the per-actor palette code only keeps a follower sprite's colours as it loads (as for any follower), and
+NPCs draw the shared material.
+
+**Random rooms** now draw every non-legendary Pokédex species with either sprite and a damaging level-up move: **597**
+(from 523; 76 show their follower). Left out: Flapple and Appletun, whose followers are still copies of Budew's (a new
+species' followers are its template's until drawn), which would show as Budew (`stand_in`). The table's row gained the
+female's sprite's distance from the male's (a walking female is the next code, a follower female two on), in place of
+the old top bit.
+
+### 20.2 Memory
+
+The audit is `docs/paperwhite2/design/memory.md`. The random rooms' species table (5.2 KB, 7.2 KB with this change's
+species and byte) left overlay 12 for a member of a/0/4/7, read into the event heap's tail only while a random room is
+made. The DS main arena: **23.6 KB left** (from 18.5); overlay 12 −5,184 bytes. The event heap had 40.9 KB free at the
+draw with the table in it. Candidates left (with sizes and why not now) are in the audit: the debug tooling (about
+18 KB in a build without `PAPERWHITE2_DEBUG_MENU`), Wonder Trade's tables (2 KB), the run's RAM in main (7.3 KB).
+
+### 20.3 Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `memfree/h/`)
+
+A test build with a temporary room (Haxorus with no sprite, Wailord with `OBJ_CODE_FOLLOWER_WAILORD`, a 64-pixel
+follower, and an ambient Hydreigon follower), removed after:
+
+- **Hub and shop:** the hub, the shop's Buy list (`shots/shop_list.png`); a run started, the SELECT viewer.
+- **A random enemy choice room** with the loaded table cut to follower-only species (Haxorus, Hydreigon, Chandelure,
+  Volcarona, Excadrill, Serperior, Frillish) from the draw's hook: the table read from the member (597 rows); a double
+  (Frillish and Volcarona, male: 0x393c, 0x39dc) and a single (Hydreigon, female: 0x39d6, its code + 2); all three NPCs
+  drawn (`shots/rr_room.png`); the Hydreigon battle won, Dream Dust 50, the offer drawn (Serene Touch taken) and shown
+  in the SELECT viewer (`shots/viewer_after.png`).
+- **The custom room:** Haxorus's NPC packed with `OBJ_CODE_FOLLOWER_HAXORUS` (14726), Wailord's 64-pixel follower
+  drawn at its size (`shots/zz_follower_test_room.png`); the Haxorus battle won, Dust 40, the offer drawn.
+- The packers' tests (follower fallback, the table's member and archive, stand-ins), the editor's (typecheck, 269
+  tests), `verify_dsi_rom.py`, the plain build's module check.
+- **Not tested:** real hardware; a room's ambient with a follower sprite seen at a distance (the player came within its
+  fade distance in the shot).

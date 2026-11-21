@@ -93,6 +93,18 @@ test("a new room, edited, saves in the data tools' layout and passes the build's
   assert.equal(shows({ species: "SPECIES_SEXED" }), "OBJ_CODE_POKEMON_SEXED_MALE");
   assert.equal(shows({ species: "SPECIES_SEXED", gender: "female" }), "OBJ_CODE_POKEMON_SEXED_FEMALE");
   assert.equal(shows({ species: "SPECIES_NONE" }), null);
+  // As the packer's follower_sprite: a species without a walking sprite shows its follower, the female's where it has
+  // the row, a form's, and the female's alone for a species that is always female; the walking one comes first
+  const followers = new Map([...codes, ["OBJ_CODE_FOLLOWER_UNOVAN", 0x3100], ["OBJ_CODE_FOLLOWER_UNOVAN_FEMALE", 0x3102],
+    ["OBJ_CODE_FOLLOWER_UNOVAN_FORM_1", 0x3104], ["OBJ_CODE_FOLLOWER_LADYLIKE_FEMALE", 0x3110], ["OBJ_CODE_FOLLOWER_NEWMON", 0x3120]]);
+  const showsFollower = (enemy: Room["battles"][number]["enemies"][number]) =>
+    npcSprite(room.npcs[0], { ...room, battles: [{ ...room.battles[0], enemies: [enemy] }] }, followers);
+  assert.equal(showsFollower({ species: "SPECIES_UNOVAN" }), "OBJ_CODE_FOLLOWER_UNOVAN");
+  assert.equal(showsFollower({ species: "SPECIES_UNOVAN", gender: "female" }), "OBJ_CODE_FOLLOWER_UNOVAN_FEMALE");
+  assert.equal(showsFollower({ species: "SPECIES_UNOVAN", form: 1, gender: "female" }), "OBJ_CODE_FOLLOWER_UNOVAN_FORM_1");
+  assert.equal(showsFollower({ species: "SPECIES_UNOVAN", form: 2 }), "OBJ_CODE_FOLLOWER_UNOVAN");
+  assert.equal(showsFollower({ species: "SPECIES_LADYLIKE" }), "OBJ_CODE_FOLLOWER_LADYLIKE_FEMALE");
+  assert.equal(showsFollower({ species: "SPECIES_NEWMON" }), "OBJ_CODE_POKEMON_NEWMON");
   const dir = mkdtempSync(join(tmpdir(), "entree-"));
   try {
     const file = join(dir, "room.json");
@@ -144,10 +156,10 @@ test("the checks", () => {
   assert.deepEqual(messages({ ...base, npcs: [base.npcs[0], { type: "rest", x: 10, z: 10, facing: "DIR_DOWN", requires: [] }, { type: "item", x: 11, z: 10, facing: "DIR_DOWN", requires: [] }] }), [
     "error: NPC 3 (item) gives no item: choose one.",
   ]);
-  // A species with no walking sprite needs one of its own
+  // A species with no walking or follower sprite needs one of its own
   const npc = { ...base.npcs[0] };
   const unsprited = { ...base, battles: [{ id: "battle", format: "single" as const, enemies: [{ species: "SPECIES_NONE" }] }], npcs: [npc] };
-  assert.match(messages(unsprited)[0], /has no walking sprite/);
+  assert.match(messages(unsprited)[0], /has no walking or follower sprite/);
   assert.deepEqual(messages({ ...unsprited, npcs: [{ ...npc, sprite: "OBJ_CODE_LADY" }] }), []);
   // Over all rooms: the run's draw, as the build checks it
   const run = { rounds: [{ rooms: 2, boss: true }, { rooms: 1, boss: true }, { rooms: 1, boss: false }], roomMaps: [] };

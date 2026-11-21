@@ -974,7 +974,8 @@ py-desmume (scripts in the session's scratchpad `applin/`):
   object code 0, an actor with no sprite. **Now** the packer writes the code itself (`walking_sprite`): the names the
   table's rows have (checked: all 620 are `OBJ_CODE_POKEMON_<species>`, a form's `_FORM_<n>`, a sex's `_MALE`/`_FEMALE`),
   so the hack's own sprites come too, and a form without its own shows its species'. The editor's `walkingSprite`
-  picks the same; a species with none is an error in both (it was a warning in the editor).
+  picks the same; a species with none is an error in both (it was a warning in the editor). Since 2026-11-21 a
+  species without a walking sprite shows its follower sprite instead (entralink-buffs.md 20).
 - **The crash.** In a double or triple the foe's AI (`AIGetHighestDamagingMoveWithPartners`, `tr_ai.c`) loops over
   every place of its side (`GetClientBattlerCount`), and with fewer Pokémon than places `TrAI_GetPartyMon` gives NULL:
   `CanPokemonBattle` reads the null BattleMon's `core.src` (0) and `PokeParty_GetParam` decrypts and re-encrypts a
@@ -1057,12 +1058,13 @@ raids, bosses or the final room.
 | --- | --- |
 | `run.json` | `random_enemy_chance` (0-100, 50) and `random_rooms`: `format_weights` (single 40, double 35, triple 25), `bst` (a `{ min, max }` base stat total band for rounds 1-3, the last given for those left out; 300-480, 380-540, 450-600), `theme_chance` (70), `level` (70), `move_pool` (7), `tm_chance` (25), `hidden_ability_chance` (5), `anchors` (the battles' tiles for 1, 2 and 3 choices: `[15, 15]`; `[12, 15]`, `[19, 15]`; `[10, 15]`, `[15, 15]`, `[20, 15]`) |
 | `legendaries.json` | The legendary and mythical species (the species data has no such flag), never drawn; a new legendary species goes here |
-| `tools/paperwhite2/entralink_random.py` | Checks them and writes `paperwhite2/entralink_random_config.h`: the settings and the species table (`EntralinkRandomSpecies`: species, walking sprite with a bit for a female sprite next, evolution family as its line's first species, base stat total, types; 10 bytes each) |
+| `tools/paperwhite2/entralink_random.py` | Checks them and writes `paperwhite2/entralink_random_config.h` (the settings and the species table's member number); its `archive` command adds the species table to a/0/4/7 (`EntralinkRandomSpecies`: species, sprite, evolution family as its line's first species, base stat total, types, the female's sprite's distance from the sprite; 12 bytes each), which the game reads into the event heap only while it makes a room (memory.md) |
 | `tools/paperwhite2/entralink_run.py` | Two rows after the templates, `random/enemy` and `random/enemy_choice` (`EntralinkRoom`'s new `random`, `isTemplate` so never in a pool, their types' markers), `ENTRALINK_RUN_RANDOM_ENEMY_ROOM`, `_CHOICE_ROOM` and `_ENEMY_CHANCE`; a round's enemy and enemy_choice types are never "skipped" while the chance is above 0 (`type_problems`, the editor's `runProblems`) |
 
 **The species:** those of the Pokédex (`species_list.pokedex_species`, so never a `"pokedex": false` one), the hack's
-new ones included, but legendaries.json's, that have a walking sprite (the packer's `walking_sprite`: 523 today; many
-Unova species have none and so never come up) and know a damaging level-up move (power above 0) at the rooms' level.
+new ones included, but legendaries.json's, that have a walking or follower sprite (the packer's `npc_sprite`: 597
+today, 76 of them by their follower; Flapple and Appletun left out, their followers still Budew's; entralink-buffs.md
+20; 523 before the followers) and know a damaging level-up move (power above 0) at the rooms' level.
 
 **Making a room** (`EntralinkRun_MakeRandomRoom`, `src/paperwhite2/ov012/paperwhite2_entralink_random_rooms.c`, as the
 player enters it, before its NPCs come up): 1 battle (enemy) or 2-3 at even odds (enemy choice); each battle's format
@@ -1076,7 +1078,7 @@ and paid tutors' bits, `paperwhite2/move_tutors.h`) or egg move (a/1/2/4); then,
 hidden one at `hidden_ability_chance` (if it has one); no item; male or female by its gender ratio (set, so the NPC's
 sprite matches), genderless left to the PID; never shiny or catchable; scale 100 and progress id `ENTRALINK_NONE` (a
 win sets no bit). The NPCs: one per enemy, its walking sprite (`OBJ_CODE_POKEMON_*`, the female's where the sexes
-differ), facing down; a single on its anchor, a double on it and one to the right, a triple on it with the other two
+differ) or else its follower sprite (`OBJ_CODE_FOLLOWER_*`, the female's for a female), facing down; a single on its anchor, a double on it and one to the right, a triple on it with the other two
 one tile back on either side (as Time and Space stands them). Talking to any of a battle's NPCs starts that battle.
 
 **Kept in ARM9 main:** `EntralinkRandomRoom` (`include/paperwhite2/entralink_random_rooms.h`,

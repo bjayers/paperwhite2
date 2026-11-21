@@ -378,12 +378,33 @@ export function walkingSprite(species: string | undefined, constants: ReadonlyMa
   return null;
 }
 
-/** An enemy's walking sprite (walkingSprite of its species, form and gender). */
-export const enemySprite = (enemy: Enemy | undefined, constants: ReadonlyMap<string, number>) =>
-  walkingSprite(enemy?.species, constants, enemy?.form ?? 0, enemy?.gender);
+/** A species' Following Pokémon sprite, as the packer's follower_sprite (and the follower registry) picks it:
+ * OBJ_CODE_FOLLOWER_<SPECIES>, a form's with _FORM_<n> (a form without its own shows its species'), and _FEMALE after
+ * it for a female where the species has the row (the female's alone for a species that is always female); never
+ * _SHINY. */
+export function followerSprite(species: string | undefined, constants: ReadonlyMap<string, number>, form = 0,
+  gender?: "male" | "female"): string | null {
+  if (!species) return null;
+  const base = `OBJ_CODE_FOLLOWER_${species.replace(/^SPECIES_/, "")}`;
+  for (const name of [...(form ? [`${base}_FORM_${form}`] : []), base]) {
+    const female = `${name}_FEMALE`;
+    if (constants.has(name)) return gender === "female" && constants.has(female) ? female : name;
+    if (constants.has(female)) return female;
+  }
+  return null;
+}
 
-/** The sprite an NPC shows: its own, else its type's default (a battle NPC its enemy's walking Pokémon, the balls the
- * item ball, the others the Lady). Null when it has none. */
+/** A species' NPC sprite, as the packer's npc_sprite: its walking Pokémon's, else its follower's. */
+export const pokemonSprite = (species: string | undefined, constants: ReadonlyMap<string, number>, form = 0,
+  gender?: "male" | "female") =>
+  walkingSprite(species, constants, form, gender) ?? followerSprite(species, constants, form, gender);
+
+/** An enemy's sprite (pokemonSprite of its species, form and gender: its walking one, else its follower one). */
+export const enemySprite = (enemy: Enemy | undefined, constants: ReadonlyMap<string, number>) =>
+  pokemonSprite(enemy?.species, constants, enemy?.form ?? 0, enemy?.gender);
+
+/** The sprite an NPC shows: its own, else its type's default (a battle NPC its enemy's walking Pokémon, else its
+ * follower, the balls the item ball, the others the Lady). Null when it has none. */
 export function npcSprite(npc: Npc, room: Room, constants: ReadonlyMap<string, number>): string | null {
   if (npc.sprite) return npc.sprite;
   if (BALL_TYPES.includes(npc.type)) return ITEM_BALL_SPRITE;
@@ -464,7 +485,7 @@ export function checkRoom(room: Room, constants: ReadonlyMap<string, number>, cl
       else if (!battle) add("error", { npc: i }, `${name} starts battle "${n.battle}", which the room doesn't have.`);
       else if ((n.enemy ?? 0) >= battle.enemies.length) add("error", { npc: i }, `${name} shows enemy ${(n.enemy ?? 0) + 1}, but battle "${battle.id}" has ${battle.enemies.length}.`);
       else if (!n.sprite && !enemySprite(shownEnemy(n, room), constants))
-        add("error", { npc: i }, `${name}: ${shownEnemy(n, room)?.species} has no walking sprite; choose a sprite for it.`);
+        add("error", { npc: i }, `${name}: ${shownEnemy(n, room)?.species} has no walking or follower sprite; choose a sprite for it.`);
     } else {
       if (n.battle !== undefined || n.enemy !== undefined) add("warning", { npc: i }, `${name} names a battle, which only battle NPCs use.`);
     }

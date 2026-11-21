@@ -1,20 +1,29 @@
 #!/usr/bin/env python3
-"""Paper White 2's Entralink roguelike: the random rooms' settings and species, paperwhite2/entralink_random_config.h.
+"""Paper White 2's Entralink roguelike: the random rooms' settings, paperwhite2/entralink_random_config.h, and their
+species' table, a member of the model table's archive (a/0/4/7).
 
     entralink_random.py OUTPUT_HEADER        # writes the header
     entralink_random.py --check              # only checks the data
+    entralink_random.py archive IN OUT       # the build: a/0/4/7 with the species' table after the run's members
 
 A door to an enemy or enemy_choice room leads at run.json's random_enemy_chance to a random room, whose battles the
 game makes as the player enters it (src/paperwhite2/ov012/paperwhite2_entralink_random_rooms.c,
 docs/paperwhite2/design/entralink-roguelike-prototype.md, "Random enemy rooms"). Its settings are run.json's
 random_rooms (run.schema.json says each); its species are those of the Pokédex (tools/data/species_list.py's
-pokedex_species: never a "pokedex": false one) that legendaries.json doesn't list, that have a walking sprite (the
-NPC shows it) and that know a damaging level-up move at the rooms' level, each with its base stat total, types and
-evolution family (its line's first species), which the draw's bands and themes read. The game reads the moves,
-abilities and gender ratio from the species' own data as it makes an enemy.
+pokedex_species: never a "pokedex": false one) that legendaries.json doesn't list, that have a walking or a follower
+sprite (the NPC shows it: entralink_run.npc_sprite) and that know a damaging level-up move at the rooms' level, each
+with its base stat total, types and evolution family (its line's first species), which the draw's bands and themes
+read. The game reads the moves, abilities and gender ratio from the species' own data as it makes an enemy.
+
+The species' table is an archive member rather than data in overlay 12, where it took 5 KB of the DS's main arena for
+good (docs/paperwhite2/design/memory.md): the game reads it into a heap only while it makes a room. It follows the run's
+markers and icons in a/0/4/7 (SPECIES_MEMBER), as member ENTRALINK_RANDOM_SPECIES_FILE: ROW_SIZE bytes a species
+(EntralinkRandomSpecies): species, sprite, family, base stat total (u16 each), the two types, the female's sprite's
+distance from the sprite (0 when the same) and a byte of padding.
 """
 import argparse
 import json
+import struct
 import sys
 from pathlib import Path
 
@@ -22,10 +31,12 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from tools.data import datajson, species_list  # noqa: E402
+from tools.data.narc import read_narc, write_narc  # noqa: E402
 from tools.paperwhite2 import entralink_run  # noqa: E402
 
 SOURCE = ROOT / "res" / "paperwhite2" / "entralink"
 MOVES = ROOT / "res" / "moves"
+ACTORS = ROOT / "res" / "field" / "actors"
 GUARD = "POKEBW2_PAPERWHITE2_ENTRALINK_RANDOM_CONFIG_H"
 
 FORMATS = ["single", "double", "triple"]
@@ -40,8 +51,9 @@ FORMAT_TILES = {"single": [(0, 0)], "double": [(0, 0), (1, 0)], "triple": [(0, 0
 # doors' markers and where the player arrives
 EXITS = [(15, 9), (16, 9), (15, 24), (16, 24), *((x, z) for x in (5, 26) for z in (15, 16, 17))]
 ARRIVAL = (15, 23)
-# A sprite whose female walking sprite is the next object code (sprite's top bit)
-FEMALE_NEXT = 0x8000
+# A species' row of the table (EntralinkRandomSpecies)
+ROW = struct.Struct("<HHHHBBBx")
+ROW_SIZE = ROW.size
 
 
 def error(where: str, message: str):
@@ -126,9 +138,23 @@ def families(numbers: list[int]) -> dict[int, int]:
     return out
 
 
+def stand_in(code: str, species: str) -> bool:
+    """Whether a follower sprite is another species' art standing in for its own: a new species' followers are copies
+    of its template's until drawn (tools/paperwhite2/pokemon_species.py), so Flapple's shows Budew. Random rooms leave
+    such a species out rather than show it as another."""
+    if not code.startswith("OBJ_CODE_FOLLOWER_"):
+        return False
+    path = ACTORS / "followers" / code.removeprefix("OBJ_CODE_FOLLOWER_").lower() / "data.json"
+    shown = json.loads(path.read_text()).get("sprite", "") if path.is_file() else ""
+    own = species.removeprefix("SPECIES_")
+    return shown.startswith("OBJ_CODE_") and not (shown.startswith(f"OBJ_CODE_POKEMON_{own}") or
+                                                  shown.startswith(f"OBJ_CODE_FOLLOWER_{own}"))
+
+
 def species_rows(level: int, excluded: set[str]) -> list[dict]:
-    """The species random rooms draw, in ID order: species, sprite (FEMALE_NEXT set when the female's is the next
-    code), family, base stat total and types."""
+    """The species random rooms draw, in ID order: species, sprite (entralink_run.npc_sprite: the walking Pokémon's,
+    else the follower's), the female's sprite's distance from it (0 when the same), family, base stat total and
+    types."""
     constants = datajson.constants()
     names = species_list.constants()
     numbers = species_list.pokedex_species()
@@ -140,30 +166,57 @@ def species_rows(level: int, excluded: set[str]) -> list[dict]:
         if name in excluded:
             continue
         data = species_list.species_data(number)
-        male = entralink_run.walking_sprite({"species": name}, constants)
-        if male is None:
+        male = entralink_run.npc_sprite({"species": name}, constants)
+        if male is None or stand_in(male, name):
             continue
         if not any(lv <= level and is_damaging(move, damaging) for lv, move in data["learnset"]["by_level"]):
             continue
-        female = entralink_run.walking_sprite({"species": name, "gender": "female"}, constants)
+        female = entralink_run.npc_sprite({"species": name, "gender": "female"}, constants)
         sprite = constants[male]
-        if female != male:
-            if constants[female] != sprite + 1:
-                error(f"res/pokemon/{species_list.directory(name)}", f"{female} isn't the code after {male}")
-            sprite |= FEMALE_NEXT
+        offset = constants[female] - sprite
+        if not 0 <= offset <= 0xff:
+            error(f"res/pokemon/{species_list.directory(name)}", f"{female} is {offset} codes from {male}, not 0-255")
         types = data["types"]
-        rows.append({"name": name, "species": number, "sprite": sprite, "family": family[number],
+        rows.append({"name": name, "species": number, "sprite": sprite, "female": offset, "family": family[number],
                      "bst": sum(data["base_stats"].values()), "type1": constants[types[0]],
                      "type2": constants[types[-1]]})
     return rows
 
 
+def species_member(rows: list[dict]) -> bytes:
+    """The species' table as the game reads it (ROW, EntralinkRandomSpecies)."""
+    return b"".join(ROW.pack(r["species"], r["sprite"], r["family"], r["bst"], r["type1"], r["type2"], r["female"])
+                    for r in rows)
+
+
+def species_file(directory: Path) -> int:
+    """The species' table's member of a/0/4/7: after the run's markers and item icons (entralink_run's
+    marker_members), so its number moves with them."""
+    return (entralink_run.MARKER_FIRST_MEMBER + len(entralink_run.MARKER_TYPES)
+            + len(entralink_run.npc_marker_names(directory)) + len(entralink_run.icon_items(directory)))
+
+
+def legendary_species(directory: Path) -> set[str]:
+    legendaries = datajson.load(directory / "legendaries.json",
+                                datajson.load_schema(directory / "legendaries.schema.json"))
+    return set(legendaries["species"])
+
+
+def archive(source: Path, output: Path, directory: Path = SOURCE):
+    """a/0/4/7 as field_actor_data.py packed it (source), with the species' table after its members."""
+    files = read_narc(source.read_bytes())
+    expected = species_file(directory)
+    if len(files) != expected:
+        error(str(source), f"{len(files)} members, not the {expected} the run's markers and icons end at")
+    rows = species_rows(settings(entralink_run.load_run(directory))["level"], legendary_species(directory))
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_bytes(write_narc(files + [species_member(rows)]))
+
+
 def tables(directory: Path) -> dict:
     run = entralink_run.load_run(directory)
     given = settings(run)
-    legendaries = datajson.load(directory / "legendaries.json",
-                                datajson.load_schema(directory / "legendaries.schema.json"))
-    rows = species_rows(given["level"], set(legendaries["species"]))
+    rows = species_rows(given["level"], legendary_species(directory))
     for number, band in enumerate(given["bst"], 1):
         if not any(band["min"] <= row["bst"] <= band["max"] for row in rows):
             error("run.json", f"random_rooms.bst: no species has a base stat total of {band['min']}-{band['max']} "
@@ -180,8 +233,6 @@ def tables(directory: Path) -> dict:
 def header(directory: Path) -> str:
     data = tables(directory)
     anchors = [f"{{ {x}, {z} }}" for group in data["anchors"] for x, z in group]
-    species = [f"/* {r['name']} */ {{ {r['species']}, 0x{r['sprite']:04x}, {r['family']}, {r['bst']}, {r['type1']}, "
-               f"{r['type2']} }}" for r in data["species"]]
     weights = data["format_weights"]
     bands = [f"{{ {band['min']}, {band['max']} }}" for band in data["bst"]]
     return "\n".join([
@@ -198,15 +249,24 @@ def header(directory: Path) -> str:
         f"#define ENTRALINK_RANDOM_HIDDEN_ABILITY_CHANCE {data['hidden_ability_chance']}",
         "// The battles' anchors for 1, 2 and 3 choices in turn (n choices' from n * (n - 1) / 2), { x, z }",
         f"#define ENTRALINK_RANDOM_ANCHORS {{ {', '.join(anchors)} }}",
-        f"#define ENTRALINK_RANDOM_SPECIES_COUNT {len(species)}",
-        "// EntralinkRandomSpecies: species, sprite (0x8000: the female's is the next code), family, base stat total,",
-        "// types",
-        f"#define ENTRALINK_RANDOM_SPECIES {entralink_run.initializer(species)}",
+        "// The species' table's member of the model table's archive (a/0/4/7), EntralinkRandomSpecies rows",
+        f"#define ENTRALINK_RANDOM_SPECIES_FILE {species_file(directory)}",
         "", f"#endif // {GUARD}", "",
     ])
 
 
 def main():
+    if sys.argv[1:2] == ["archive"]:
+        parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+        parser.add_argument("command")
+        parser.add_argument("source", type=Path)
+        parser.add_argument("output", type=Path)
+        args = parser.parse_args()
+        try:
+            archive(args.source, args.output)
+        except datajson.DataError as error_:
+            sys.exit(f"error: {error_}")
+        return
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("output", type=Path, nargs="?")
     parser.add_argument("--check", action="store_true", help="only check the data")

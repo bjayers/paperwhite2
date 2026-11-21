@@ -36,7 +36,7 @@ import { NumberBox, Row, Section, Switch, cap } from "./parts.tsx";
 import {
   ARRIVAL, CLEARINGS_PREFIX, exitAt, ROUNDS, ROUND_NOTES, clearingName, inRound, DEFAULT_CHANCE, DEFAULT_COUNT, DEFAULT_LEVEL, EXIT_SCRIPTS, FACINGS, FORMAT_ENEMIES, FORMATS, ID_PATTERN,
   ITEM_BALL_SPRITE, ROLES, ROOMS_DIR, ROOM_SCHEMA, checkRoom, checkRooms, freeId, idFromName, newNpc,
-  newRoomData, npcSprite, readRoom, roomId, roomPath, shownEnemy, walkingSprite,
+  newRoomData, npcSprite, readRoom, roomId, roomPath, pokemonSprite, shownEnemy,
   DEFAULT_ONCE, PROGRESS_IDS, PROGRESS_IDS_SCHEMA, RUN_COMPLETED, assignProgressIds, battleKey, battleKeys, renameKeys, withoutProgressIds,
   MESSAGE_STYLES, MESSAGE_STYLE_NOTES, readRun, roundSummary, runProblems, type MessageStyle,
   DOORS, MARKER_NOTES, MARKER_TYPES, NPC_MARKERS_DIR, markerArt, npcMarkerArt, type Door,
@@ -1228,7 +1228,7 @@ function EnemyCard({ at, index, over, constants, get, set, setField, remove, bat
   };
   const abilities: Option[] = [{ value: "", label: "Either of its two", detail: "" }, { value: "hidden", label: "Its hidden ability", detail: "" },
     ...constantOptions(constants, "ABILITY_")];
-  const sprite = walkingSprite(species, constants);
+  const sprite = pokemonSprite(species, constants, Number(e.get("form") ?? 0), e.get("gender") === "female" ? "female" : undefined);
   const caught = e.get("catch");
   const terms = caught instanceof Map ? caught : null;
   const after = asList(terms?.get("after")).map(String);
@@ -1242,7 +1242,7 @@ function EnemyCard({ at, index, over, constants, get, set, setField, remove, bat
         <SpeciesIcon species={species} />
         <strong>Enemy {index + 1}</strong>
         <SearchSelect value={species} options={constantOptions(constants, "SPECIES_")} onChange={(v) => v && f("species", v)} />
-        {sprite ? <SpriteImage model={sprite} direction="DIR_DOWN" size={28} /> : <span className="muted small" title="No walking sprite: its NPCs need a sprite of their own">no sprite</span>}
+        {sprite ? <SpriteImage model={sprite} direction="DIR_DOWN" size={28} /> : <span className="muted small" title="No walking or follower sprite: its NPCs need a sprite of their own">no sprite</span>}
         <span className="spacer" />
         {remove && <button className="icon" title="Remove the enemy" onClick={remove}>×</button>}
       </div>

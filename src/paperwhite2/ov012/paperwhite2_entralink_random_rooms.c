@@ -1,4 +1,5 @@
 #include "types.h"
+#include "constants/arc.h"
 #include "constants/directions.h"
 #include "constants/items.h"
 #include "constants/moves.h"
@@ -34,9 +35,12 @@
 #define DRAW_APART 2
 #define DRAW_DISTINCT 4
 
-// Which species a draw takes: the round's band, the battle's first (the theme's, or NULL), the types (a bit each) and
-// families of the room's other battles, and the species already in the battle
+// Which species a draw takes, of the species' table (read for the room being made): the round's band, the battle's
+// first (the theme's, or NULL), the types (a bit each) and families of the room's other battles, and the species
+// already in the battle
 typedef struct {
+    const EntralinkRandomSpecies *table;
+    u32 tableCount;
     u16 min;
     u16 max;
     const EntralinkRandomSpecies *lead;
@@ -47,7 +51,6 @@ typedef struct {
     u32 speciesCount;
 } SpeciesFilter;
 
-static const EntralinkRandomSpecies sSpecies[ENTRALINK_RANDOM_SPECIES_COUNT] = ENTRALINK_RANDOM_SPECIES;
 // An enemy's tile from its battle's anchor, by its place and the format: a single's on it, a double's side by side, a
 // triple's first in front and the other two a tile back on either side
 static const s8 sFormatTiles[ENTRALINK_FORMAT_TRIPLE + 1][ENTRALINK_RUN_ENEMIES_MAX][2] = {
@@ -104,20 +107,20 @@ static const EntralinkRandomSpecies *EntralinkRandom_DrawSpecies(const SpeciesFi
 
     for (level = 0; level < NELEMS(STRICTNESS); level++) {
         count = 0;
-        for (i = 0; i < ENTRALINK_RANDOM_SPECIES_COUNT; i++) {
-            count += EntralinkRandom_Fits(&sSpecies[i], filter, STRICTNESS[level]);
+        for (i = 0; i < filter->tableCount; i++) {
+            count += EntralinkRandom_Fits(&filter->table[i], filter, STRICTNESS[level]);
         }
         if (count == 0) {
             continue;
         }
         pick = GFL_RandomLC(count);
-        for (i = 0; i < ENTRALINK_RANDOM_SPECIES_COUNT; i++) {
-            if (EntralinkRandom_Fits(&sSpecies[i], filter, STRICTNESS[level]) && pick-- == 0) {
-                return &sSpecies[i];
+        for (i = 0; i < filter->tableCount; i++) {
+            if (EntralinkRandom_Fits(&filter->table[i], filter, STRICTNESS[level]) && pick-- == 0) {
+                return &filter->table[i];
             }
         }
     }
-    return &sSpecies[0];
+    return &filter->table[0];
 }
 
 // The moves a species can know beside its level-up ones: its TMs and HMs, its tutors' and its egg moves, other than
@@ -287,9 +290,9 @@ static void EntralinkRandom_MakeEnemy(EntralinkEnemy *enemy, EntralinkNpc *npc, 
 
     MI_CpuFill8(npc, 0, sizeof(EntralinkNpc));
     npc->type = ENTRALINK_NPC_BATTLE;
-    npc->sprite = species->sprite & ~ENTRALINK_RANDOM_FEMALE_NEXT;
-    if ((species->sprite & ENTRALINK_RANDOM_FEMALE_NEXT) && enemy->gender == ENTRALINK_GENDER_FEMALE) {
-        npc->sprite++;
+    npc->sprite = species->sprite;
+    if (enemy->gender == ENTRALINK_GENDER_FEMALE) {
+        npc->sprite += species->femaleOffset;
     }
     npc->before = ENTRALINK_NONE;
     npc->after = ENTRALINK_NONE;
@@ -326,6 +329,7 @@ void EntralinkRun_MakeRandomRoom(const EntralinkRoom *row, u32 round) {
     u16 species[ENTRALINK_RUN_ENEMIES_MAX];
     const EntralinkRandomSpecies *battleSpecies[ENTRALINK_RUN_ENEMIES_MAX];
     const EntralinkRandomSpecies *drawn;
+    EntralinkRandomSpecies *table;
     EntralinkBattle *battle;
     SpeciesFilter filter;
     u32 choices = row->type == ENTRALINK_TYPE_ENEMY_CHOICE ? 2 + GFL_RandomLC(2) : 1;
@@ -335,6 +339,12 @@ void EntralinkRun_MakeRandomRoom(const EntralinkRoom *row, u32 round) {
     u32 c;
     u32 e;
 
+    // The species' table from the ROM for the room's making only (7 KB of the event heap, from its
+    // tail; it was data in this overlay, which kept it in the DS's main arena for good)
+    table = GFL_ArcSysReadHeapNew(ARCID_MMODEL_TBL, ENTRALINK_RANDOM_SPECIES_FILE, HEAPID_TAIL(HEAPID_GAMEEVENT));
+    filter.table = table;
+    filter.tableCount = GFL_ArcSysGetDataLength(ARCID_MMODEL_TBL, ENTRALINK_RANDOM_SPECIES_FILE) /
+                        sizeof(EntralinkRandomSpecies);
     MI_CpuFill8(random, 0, sizeof(EntralinkRandomRoom));
     random->room = *row;
     random->room.firstBattle = 0;
@@ -377,4 +387,5 @@ void EntralinkRun_MakeRandomRoom(const EntralinkRoom *row, u32 round) {
         }
     }
     random->room.npcCount = count;
+    GFL_HeapFree(table);
 }

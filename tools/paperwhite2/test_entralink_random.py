@@ -34,12 +34,28 @@ def test_real_data_is_valid():
     data = entralink_random.tables(entralink_random.SOURCE)
     assert data["species"]
     text = entralink_random.header(entralink_random.SOURCE)
-    assert f"#define ENTRALINK_RANDOM_SPECIES_COUNT {len(data['species'])}" in text
+    assert f"#define ENTRALINK_RANDOM_SPECIES_FILE {entralink_random.species_file(entralink_random.SOURCE)}" in text
+    member = entralink_random.species_member(data["species"])
+    assert len(member) == entralink_random.ROW_SIZE * len(data["species"]) == 12 * len(data["species"])
+
+
+def test_archive(tmp_path):
+    """The species' table goes after the run's markers and icons, and only there."""
+    from tools.data.narc import read_narc, write_narc
+    count = entralink_random.species_file(entralink_random.SOURCE)
+    source = tmp_path / "in.narc"
+    source.write_bytes(write_narc([bytes([i]) for i in range(count)]))
+    entralink_random.archive(source, tmp_path / "out.narc")
+    files = read_narc((tmp_path / "out.narc").read_bytes())
+    assert len(files) == count + 1 and files[count][:2] != b"" and len(files[count]) % entralink_random.ROW_SIZE == 0
+    source.write_bytes(write_narc([b"x"] * (count - 1)))
+    with pytest.raises(datajson.DataError, match="members"):
+        entralink_random.archive(source, tmp_path / "out.narc")
 
 
 def test_species_rules():
-    """No species listed as legendary, none outside the Pokédex, each with a walking sprite and a damaging move it
-    knows at the level, its family its line's first species."""
+    """No species listed as legendary, none outside the Pokédex, each with a walking or follower sprite and a damaging
+    move it knows at the level, its family its line's first species."""
     names = species_list.constants()
     excluded = {names[1], names[4]}
     rows = entralink_random.species_rows(70, excluded)
@@ -53,14 +69,35 @@ def test_species_rules():
         assert row["bst"] == sum(data["base_stats"].values())
         assert any(level <= 70 and entralink_random.is_damaging(move, damaging)
                    for level, move in data["learnset"]["by_level"])
-        sprite = entralink_run.walking_sprite({"species": names[row["species"]]}, constants)
-        assert row["sprite"] & ~entralink_random.FEMALE_NEXT == constants[sprite]
+        sprite = entralink_run.npc_sprite({"species": names[row["species"]]}, constants)
+        assert row["sprite"] == constants[sprite]
+        female = entralink_run.npc_sprite({"species": names[row["species"]], "gender": "female"}, constants)
+        assert row["sprite"] + row["female"] == constants[female]
         assert species_list.species_data(row["family"]) is not None
     by_number = {row["species"]: row for row in rows}
     # (an evolution's family is its line's first: Ivysaur's and Venusaur's are the same, never itself when it evolves
     # from another)
     if 2 in by_number and 3 in by_number:
         assert by_number[2]["family"] == by_number[3]["family"] == 1
+
+
+def test_stand_in(tmp_path):
+    """A follower showing another species' art (a new species' copy of its template's) is a stand-in; its own walking
+    sprite's, a sprite of its own and a walking sprite aren't."""
+    saved = entralink_random.ACTORS
+    entralink_random.ACTORS = tmp_path
+    try:
+        for name, shown in (("newmon", "OBJ_CODE_POKEMON_BUDEW"), ("pikachu", "OBJ_CODE_POKEMON_PIKACHU_MALE"),
+                            ("haxorus_female", "OBJ_CODE_FOLLOWER_HAXORUS"), ("haxorus", None)):
+            (tmp_path / "followers" / name).mkdir(parents=True)
+            (tmp_path / "followers" / name / "data.json").write_text(json.dumps({"sprite": shown} if shown else {}))
+        assert entralink_random.stand_in("OBJ_CODE_FOLLOWER_NEWMON", "SPECIES_NEWMON")
+        assert not entralink_random.stand_in("OBJ_CODE_FOLLOWER_PIKACHU", "SPECIES_PIKACHU")
+        assert not entralink_random.stand_in("OBJ_CODE_FOLLOWER_HAXORUS_FEMALE", "SPECIES_HAXORUS")
+        assert not entralink_random.stand_in("OBJ_CODE_FOLLOWER_HAXORUS", "SPECIES_HAXORUS")
+        assert not entralink_random.stand_in("OBJ_CODE_POKEMON_BUDEW", "SPECIES_BUDEW")
+    finally:
+        entralink_random.ACTORS = saved
 
 
 def test_defaults_and_bands(tmp_path):

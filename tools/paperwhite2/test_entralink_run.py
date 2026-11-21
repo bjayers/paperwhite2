@@ -121,13 +121,31 @@ def test_battle_npc_default_sprite():
     assert sprite({"species": "SPECIES_NONE"}, constants) is None
 
 
+def test_battle_npc_follower_sprite():
+    """Without a walking sprite, a battle NPC shows its enemy's follower: the female's where the species has the row,
+    a form's (a form without its own its species'), the female's alone for a species that is always female; the
+    walking sprite first where there is one."""
+    constants = {"OBJ_CODE_POKEMON_NEWMON": 0x4015, "OBJ_CODE_FOLLOWER_NEWMON": 0x3000,
+                 "OBJ_CODE_FOLLOWER_UNOVAN": 0x3100, "OBJ_CODE_FOLLOWER_UNOVAN_FEMALE": 0x3102,
+                 "OBJ_CODE_FOLLOWER_UNOVAN_FORM_1": 0x3104, "OBJ_CODE_FOLLOWER_LADYLIKE_FEMALE": 0x3110}
+    sprite = entralink_run.npc_sprite
+    assert sprite({"species": "SPECIES_NEWMON"}, constants) == "OBJ_CODE_POKEMON_NEWMON"
+    assert sprite({"species": "SPECIES_UNOVAN"}, constants) == "OBJ_CODE_FOLLOWER_UNOVAN"
+    assert sprite({"species": "SPECIES_UNOVAN", "gender": "female"}, constants) == "OBJ_CODE_FOLLOWER_UNOVAN_FEMALE"
+    assert sprite({"species": "SPECIES_UNOVAN", "form": 1, "gender": "female"}, constants) == \
+        "OBJ_CODE_FOLLOWER_UNOVAN_FORM_1"
+    assert sprite({"species": "SPECIES_UNOVAN", "form": 2}, constants) == "OBJ_CODE_FOLLOWER_UNOVAN"
+    assert sprite({"species": "SPECIES_LADYLIKE"}, constants) == "OBJ_CODE_FOLLOWER_LADYLIKE_FEMALE"
+    assert sprite({"species": "SPECIES_NONE"}, constants) is None
+
+
 def test_battle_npc_without_walking_sprite(tmp_path):
     directory = copy_data(tmp_path)
     data = {"name": "No sprite", "role": "room",
             "battles": [{"id": "battle", "progress_id": 1000, "format": "single",
                          "enemies": [{"species": "SPECIES_NONE"}]}],
             "npcs": [{"type": "battle", "battle": "battle", "x": 15, "z": 14, "facing": "DIR_DOWN"}]}
-    with pytest.raises(datajson.DataError, match="no walking sprite"):
+    with pytest.raises(datajson.DataError, match="no walking or follower sprite"):
         entralink_run.check_room(directory, "rooms/no_sprite.json", data)
     data["npcs"][0]["sprite"] = "OBJ_CODE_LADY"
     entralink_run.check_room(directory, "rooms/no_sprite.json", data)

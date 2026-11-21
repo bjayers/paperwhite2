@@ -169,6 +169,31 @@ def walking_sprite(enemy: dict, constants: dict[str, int]) -> str | None:
     return None
 
 
+def follower_sprite(enemy: dict, constants: dict[str, int]) -> str | None:
+    """An enemy's Following Pokémon sprite, as the follower registry picks a follower's row (FindFollowerRow): its
+    species' OBJ_CODE_FOLLOWER_<SPECIES>, a form's with _FORM_<n> (a form without its own shows its species'), and
+    _FEMALE after it for a female where the species has the row (the female's alone for a species that is always
+    female); never _SHINY (normal colours). Every species of the game has one. A follower's sprite is a sheet as the
+    walking Pokémon's are (the same sizes, 32 or 64 pixels, and animations), so an NPC shows it as any other. None
+    when the species has none."""
+    base = "OBJ_CODE_FOLLOWER_" + enemy["species"].removeprefix("SPECIES_")
+    form = enemy.get("form", 0)
+    for name in ([f"{base}_FORM_{form}"] if form else []) + [base]:
+        female = name + "_FEMALE"
+        if name in constants:
+            return female if enemy.get("gender") == "female" and female in constants else name
+        # (a species that is always female has only the female's rows: Lilligant)
+        if female in constants:
+            return female
+    return None
+
+
+def npc_sprite(enemy: dict, constants: dict[str, int]) -> str | None:
+    """A battle NPC's sprite when it has none of its own: its enemy's walking Pokémon (walking_sprite), else its
+    follower sprite (follower_sprite), which most Unova species have alone. None when the species has neither."""
+    return walking_sprite(enemy, constants) or follower_sprite(enemy, constants)
+
+
 def error(where: str, message: str):
     raise datajson.DataError(f"{where}: {message}")
 
@@ -259,8 +284,9 @@ def check_room(directory: Path, where: str, room: dict):
             if npc.get("enemy", 0) >= len(battles[npc["battle"]]["enemies"]):
                 error(where, f"{at} shows enemy {npc['enemy']}, which its battle doesn't have")
             enemy = battles[npc["battle"]]["enemies"][npc.get("enemy", 0)]
-            if "sprite" not in npc and walking_sprite(enemy, constants) is None:
-                error(where, f"{at}: {enemy['species']} has no walking sprite, so the NPC needs a sprite of its own")
+            if "sprite" not in npc and npc_sprite(enemy, constants) is None:
+                error(where, f"{at}: {enemy['species']} has no walking or follower sprite, so the NPC needs a "
+                      "sprite of its own")
         elif npc["type"] == "item" and "item" not in npc:
             error(where, f"{at} is an item NPC without an item")
         if npc["type"] == "ambient":
@@ -654,7 +680,7 @@ def room_row(name: str, room: dict, template: bool, rooms: dict[str, dict], tabl
         sprite = npc.get("sprite", DEFAULT_SPRITES.get(npc["type"]))
         if sprite is None and npc["type"] == "battle":
             battle = room["battles"][battle_index[npc["battle"]]]
-            sprite = walking_sprite(battle["enemies"][npc.get("enemy", 0)], constants)
+            sprite = npc_sprite(battle["enemies"][npc.get("enemy", 0)], constants)
         npcs.append({
             "name": f"{label}: {npc['type']}",
             "type": NPC_TYPES[npc["type"]],

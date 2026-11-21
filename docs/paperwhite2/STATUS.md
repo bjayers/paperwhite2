@@ -2,6 +2,20 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-21: Follower sprites for room NPCs, and field memory freed (ROM session, on a branch)
+
+- **Follower fallback:** a room's battle NPC without a sprite shows its enemy's walking Pokémon, else now its follower
+  sprite (`OBJ_CODE_FOLLOWER_<SPECIES>[_FORM_n][_FEMALE]`, the registry's rule, normal colours); packer `npc_sprite`,
+  editor `pokemonSprite` (preview and the error, now "no walking or follower sprite"). Random rooms draw 597 species
+  (from 523); Flapple and Appletun stay out, their followers still Budew's art.
+- **Memory:** an audit of the hack's objects in ARM9 main, overlay 12 and 36 (`docs/paperwhite2/design/memory.md`);
+  the random rooms' species table moved from overlay 12 to a member of a/0/4/7, read into the event heap only while a
+  room is made. DS arena **23.6 KB left** (from 18.5). Next candidates: the debug tooling (about 18 KB in a build
+  without the debug menu), Wonder Trade's tables (2 KB), the run's RAM in main (7.3 KB, risky).
+- **Tested** in py-desmume: a random room forced to follower-only species (sprites shown, a battle won, the offer and
+  the viewer), a custom room with Haxorus's follower and Wailord's 64-pixel follower (battle won), the hub shop's list.
+  entralink-buffs.md section 20.
+
 ## 2026-11-21: Entralink hub shop and Dream Shards (ROM session, on a branch)
 
 - **Dream Shards** (permanent, in the progress block at 0x144): every run's end gives 1 a room done, +3 a boss beaten,

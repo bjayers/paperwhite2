@@ -27,19 +27,21 @@ typedef struct {
     EntralinkNpc npcs[ENTRALINK_RANDOM_ENEMIES_MAX];
 } EntralinkRandomRoom;
 
-// A species random rooms draw (the config's table): its sprite, its evolution family (its line's first species), its
+// A species random rooms draw, a row of their table (member ENTRALINK_RANDOM_SPECIES_FILE of the model table's
+// archive, read into a heap while a room is made): its sprite, its evolution family (its line's first species), its
 // base stat total and types
 typedef struct {
     u16 species;
-    // Its walking sprite's object code, ENTRALINK_RANDOM_FEMALE_NEXT set when the female's is the next code
+    // Its walking sprite's object code, or its follower sprite's where it has no walking one
     u16 sprite;
     u16 family;
     u16 bst;
     u8 type1;
     u8 type2;
+    // How many codes after sprite the female's is (0: the same)
+    u8 femaleOffset;
+    u8 padding;
 } EntralinkRandomSpecies;
-
-#define ENTRALINK_RANDOM_FEMALE_NEXT 0x8000
 
 // The random room made last, in ARM9 main
 EntralinkRandomRoom *EntralinkRun_GetRandomRoom(void);

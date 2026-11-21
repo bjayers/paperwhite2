@@ -367,6 +367,9 @@ HACK_ARCHIVE_MEMBERS = {"a/0/9/6": ("tools/paperwhite2/conditions.py", "res/pape
                         # The zones' camera area files, read from the files' zones (paperwhite2_camera_areas.c)
                         "a/1/5/6": ("tools/data/camera_data.py", "res/field/cameras"),
                         "a/1/2/7": ("tools/paperwhite2/encounters.py", "res/paperwhite2/encounters"),
+                        # The model table's: the Entralink run's random rooms' species table after the run's markers
+                        # and icons (tools/paperwhite2/entralink_random.py, docs/paperwhite2/design/memory.md)
+                        "a/0/4/7": ("tools/paperwhite2/entralink_random.py", "res/paperwhite2/entralink"),
                         # The C-Gear's background pictures (CGearSw_ShowPicture)
                         "a/2/8/7": ("tools/paperwhite2/cgear_pictures.py", "res/paperwhite2/cgear_pictures"),
                         # The Pokédex Info page's data: Evo's family roots and the tree's balls, how high each battle
@@ -378,6 +381,9 @@ HACK_ARCHIVE_MEMBERS = {"a/0/9/6": ("tools/paperwhite2/conditions.py", "res/pape
                         # (tools/paperwhite2/damage_digits.py, paperwhite2_damage_numbers.c)
                         "a/0/1/1": ("tools/paperwhite2/damage_digits.py", "res/paperwhite2/battle")}
 HACK_MEMBER_EXTRA_SOURCES = {"a/1/2/7": ["res/paperwhite2/conditions", "res/pokemon/*/data.json"],
+                             "a/0/4/7": ["res/pokemon/*/data.json", "res/moves/*/data.json",
+                                         "res/field/actors/followers/*/data.json",
+                                         "tools/paperwhite2/entralink_run.py", "tools/data/species_list.py"],
                              "a/1/5/7": ["res/pokemon/*/data.json", "res/pokemon/**/front*", "res/pokemon/**/back*",
                                          "res/paperwhite2/encounters", "res/paperwhite2/conditions",
                                          "res/paperwhite2/level_scaling.json", "res/town_map", "res/field/zones/*.json",
@@ -1309,14 +1315,17 @@ def main():
                           "generated/items.txt", "generated/abilities.txt", "generated/zones.txt",
                           "generated/obj_codes.txt", "include/constants/battle.h", "include/constants/directions.h"])
         constant_headers.append(output)
-        # Paper White 2: the Entralink roguelike's random enemy rooms' settings and species, from run.json, the
-        # legendaries' list and the species' data
+        # Paper White 2: the Entralink roguelike's random enemy rooms' settings, checked with their species, from
+        # run.json, the legendaries' list and the species' data; the species' table's member number follows the run's
+        # markers and item icons (the table itself is a member of a/0/4/7, HACK_ARCHIVE_MEMBERS)
         n.rule("entralink_random", "$python tools/paperwhite2/entralink_random.py $out", "Generating $out",
                restat="1")
         output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "entralink_random_config.h"
         n.build([output], "entralink_random",
                 ["res/paperwhite2/entralink/run.json", "res/paperwhite2/entralink/run.schema.json",
                  "res/paperwhite2/entralink/legendaries.json", "res/paperwhite2/entralink/legendaries.schema.json",
+                 "res/paperwhite2/entralink/items.json",
+                 *sorted(str(path) for path in Path("res/paperwhite2/entralink/npc_markers").glob("*.png")),
                  *sorted(str(path) for path in Path("res/pokemon").glob("*/data.json")),
                  *sorted(str(path) for path in Path("res/moves").glob("*/data.json")),
                  *sorted(str(path) for path in Path("res/field/maps/models").glob("entree_forest*/terrain_0.csv"))],
