@@ -808,6 +808,15 @@ function RunSection({ rooms, templates }: { rooms: { id: string; room: Room }[];
           </span>
         </div>
         <span className="muted small">A raid (three attackers against one foe) has its HP multiplied by this on top of its place's (a room's curve, or a boss's), the other stats as its place's (3.0 if left out)</span>
+        <div className="en-run">
+          <span className="muted small">Boss HP bonus, 2 foes ×</span>
+          <span className="en-run-controls">
+            <NumberBox value={run.bossDoubleFactor} min={0.1} max={2} step={0.05} onChange={(n) => setKey("boss_double_factor", n)} />
+            <span className="muted small">3 foes ×</span>
+            <NumberBox value={run.bossTripleFactor} min={0.1} max={2} step={0.05} onChange={(n) => setKey("boss_triple_factor", n)} />
+          </span>
+        </div>
+        <span className="muted small">A boss (or the final room) of two or three foes has each foe's HP bonus multiplied by these, as its foes share the boss's HP; a raid is one foe and takes neither (0.85 and 0.7 if left out)</span>
 
         <h6 className="en-sub en-run-head">Rounds <span className="muted">then the final room</span></h6>
         <div className="en-list-actions">

@@ -552,6 +552,9 @@ export const SCALED_STAT_NAMES: Record<ScaledStat, string> = {
 };
 /** A raid has its HP times this on top of its place's (three attackers against one foe). */
 export const DEFAULT_RAID_HP_FACTOR = 3;
+/** A boss battle's foes' HP bonus times these with two foes and with three (a raid is one foe). */
+export const DEFAULT_BOSS_DOUBLE_FACTOR = 0.85;
+export const DEFAULT_BOSS_TRIPLE_FACTOR = 0.7;
 /** A room enemy's own scale (room data), percent. */
 export const DEFAULT_ENEMY_SCALE = 100;
 export const DEFAULT_SHOP_ITEMS = 5;
@@ -593,6 +596,8 @@ export interface RunLayout {
   /** Each stat's multipliers in percent by depth, three values a row (the last given for rounds left out). */
   enemyScaling: Record<ScaledStat, StatScaling>;
   raidHpFactor: number;
+  bossDoubleFactor: number;
+  bossTripleFactor: number;
 }
 
 /** run.json's data as plain records. */
@@ -622,6 +627,8 @@ export function readRun(data: JsonValue | null | undefined): RunLayout {
     swapDust: num(m.get("swap_dust")) ?? DEFAULT_SWAP_DUST,
     reserveSlots: num(m.get("reserve_slots")) ?? DEFAULT_RESERVE_SLOTS,
     raidHpFactor: num(m.get("raid_hp_factor")) ?? DEFAULT_RAID_HP_FACTOR,
+    bossDoubleFactor: num(m.get("boss_double_factor")) ?? DEFAULT_BOSS_DOUBLE_FACTOR,
+    bossTripleFactor: num(m.get("boss_triple_factor")) ?? DEFAULT_BOSS_TRIPLE_FACTOR,
     enemyScaling: Object.fromEntries(SCALED_STATS.map((stat) => {
       const entry = asMap(asMap(m.get("enemy_scaling")).get(stat));
       const given = asList(entry.get("boss_bonus")).map((v) => num(v) ?? BOSS_DEFAULT);

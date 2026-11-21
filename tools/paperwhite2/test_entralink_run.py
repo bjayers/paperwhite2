@@ -486,6 +486,18 @@ def test_enemy_scaling_and_scale(tmp_path):
         entralink_run.tables(directory)
 
 
+def test_boss_multi_foe_factors(tmp_path):
+    """Fixes 9: run.json's boss_double_factor and boss_triple_factor in percent in the header (0.85 and 0.7 if left
+    out)."""
+    directory = copy_data(tmp_path)
+    edit(directory / "run.json", lambda data: [data.pop(k, None) for k in ("boss_double_factor", "boss_triple_factor")])
+    assert entralink_run.tables(directory)["boss_multi_percent"] == (85, 70)
+    edit(directory / "run.json", lambda data: data.update(boss_double_factor=0.9, boss_triple_factor=0.55))
+    text = entralink_run.header(directory)
+    assert "#define ENTRALINK_RUN_BOSS_DOUBLE_HP_PERCENT 90" in text
+    assert "#define ENTRALINK_RUN_BOSS_TRIPLE_HP_PERCENT 55" in text
+
+
 def test_ambients(tmp_path):
     """Room ambients: their reactions packed with the defaults (near 3, no return, distance 4), a returning one's far,
     no dialogue packed, the Lady by default, and the rules: only a fading one returns, farther than it fades, and the

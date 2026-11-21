@@ -179,15 +179,16 @@ def fixture_catalogue() -> dict:
 def test_cards_text_titles_colored_by_tier_with_numerals_and_types():
     data = fixture_catalogue()
     lines, titles, descriptions = entralink_buffs.messages(data)
-    assert lines[:len(entralink_buffs.FIXED_MESSAGES)] == entralink_buffs.FIXED_MESSAGES
-    assert titles == [5, 6, 7] and descriptions == [10, 11, 12]
-    assert lines[5] == "{ff00:2}Attack{ff00:0}"
-    assert lines[6] == "{ff00:478}Type Affinity ({0100:20}){ff00:0}"
-    assert lines[7:10] == ["{ff00:444}Galvanic I{ff00:0}", "{ff00:444}Galvanic II{ff00:0}",
-                           "{ff00:444}Galvanic III{ff00:0}"]
+    n = len(entralink_buffs.FIXED_MESSAGES)
+    assert lines[:n] == entralink_buffs.FIXED_MESSAGES
+    assert titles == [n, n + 1, n + 2] and descriptions == [n + 5, n + 6, n + 7]
+    assert lines[n] == "{ff00:2}Attack{ff00:0}"
+    assert lines[n + 1] == "{ff00:478}Type Affinity ({0100:20}){ff00:0}"
+    assert lines[n + 2:n + 5] == ["{ff00:444}Galvanic I{ff00:0}", "{ff00:444}Galvanic II{ff00:0}",
+                                  "{ff00:444}Galvanic III{ff00:0}"]
     # A type card's description names its type; descriptions wrap for the window's two lines
-    assert lines[11] == "Moves of the {0100:20} type +15%\\npower"
-    assert lines[12] == "+60% damage to paralyzed foes"
+    assert lines[n + 6] == "Moves of the {0100:20} type +15%\\npower"
+    assert lines[n + 7] == "+60% damage to paralyzed foes"
     assert entralink_buffs.wrap("+100% damage to paralyzed foes and burned foes") == \
         "+100% damage to paralyzed foes\\nand burned foes"
 
@@ -195,14 +196,17 @@ def test_cards_text_titles_colored_by_tier_with_numerals_and_types():
 def test_cards_table_levels_pools_and_prices():
     data = fixture_catalogue()
     rows = entralink_buffs.table(data)
+    n = len(entralink_buffs.FIXED_MESSAGES)
     # attack: 6 picks of 10 and then 5 a pick reach 80 at the 10th; its tier's price; pools after_battle and shop
-    assert rows[0].startswith("    { 5, 10, 60, 0x0, ENTRALINK_BUFF_TIER_BLUE, ENTRALINK_BUFF_THEME_NONE, 10, 0x9, 0x0,")
+    assert rows[0].startswith(f"    {{ {n}, {n + 5}, 60, 0x0, ENTRALINK_BUFF_TIER_BLUE, ENTRALINK_BUFF_THEME_NONE, 10, "
+                              "0x9, 0x0,")
     assert rows[0].rstrip().endswith("ENTRALINK_BUFF_TYPE_CARD_NONE }, /* attack */")
     # type_affinity: 4 picks to 60, related to paralysis (theme 0), type card 0
     assert ", 4, " in rows[1] and "0x1, ENTRALINK_BUFF_TIER_PURPLE" in rows[1] and rows[1].rstrip().endswith(
         "0 }, /* type_affinity */")
     # galvanic: its own price, 3 ranks
-    assert rows[2].startswith("    { 7, 12, 500, 0x0, ENTRALINK_BUFF_TIER_GOLD, ENTRALINK_BUFF_THEME_PARALYSIS, 3,")
+    assert rows[2].startswith(f"    {{ {n + 2}, {n + 7}, 500, 0x0, ENTRALINK_BUFF_TIER_GOLD, "
+                              "ENTRALINK_BUFF_THEME_PARALYSIS, 3,")
     assert entralink_buffs.max_level(entry(data, "attack")) == 10
     text = entralink_buffs.header(data, entralink_buffs.effect_kinds())
     assert "#define ENTRALINK_BUFF_TYPE_CARDS { ENTRALINK_BUFF_TYPE_AFFINITY }" in text
@@ -318,6 +322,34 @@ def test_team_tags_and_stat_cards():
            "ENTRALINK_BUFF_BUCKET_ATK } }" in lines
     entry(data, "attack")["effect"]["condition"] = {"attacker_status": ["burn"]}
     assert entralink_buffs.stat_cards(data) == []
+
+
+def test_bucket_cards_and_viewer_messages():
+    """Fixes 9: the viewer's multipliers: every card of a damage bucket, plain when its value holds on every hit of the
+    bucket (no condition or scale), and the fixed messages' words from WORD_VALUE."""
+    data = fixture_catalogue()
+    entry(data, "attack")["effect"]["stat"] = "attacking"
+    lines = entralink_buffs.header(data, entralink_buffs.effect_kinds()).splitlines()
+    cards = entralink_buffs.bucket_cards(data)
+    assert [e["id"] for e in cards] == [e["id"] for e in data["buffs"] if e.get("bucket")]
+    assert entralink_buffs.is_plain(entry(data, "attack"))
+    entry(data, "attack")["effect"]["scale"] = "burned_foes"
+    assert not entralink_buffs.is_plain(entry(data, "attack"))
+    assert any(line.startswith("#define ENTRALINK_BUFF_BUCKET_CARDS { { ENTRALINK_BUFF_ATTACK, "
+                               "ENTRALINK_BUFF_BUCKET_ATK, 1 }") for line in lines)
+    assert f"#define ENTRALINK_BUFF_WORD_VALUE {entralink_buffs.WORD_VALUE}" in lines
+    damage = entralink_buffs.FIXED_MESSAGES[entralink_buffs.FIXED_NAMES.index("DAMAGE")]
+    assert "{0100:%d}" % entralink_buffs.WORD_VALUE in damage and damage.count("\\n") == 1
+
+
+def test_at_least_move_chance_flag():
+    """Fixes 9: Wildfire's at_least_move_chance is a flag bit of its effect."""
+    data = fixture_catalogue()
+    bit = entralink_buffs.EFFECT_FLAGS.index("at_least_move_chance")
+    galvanic = entry(data, "galvanic")
+    galvanic["effect"] = {"kind": "status_chance_on_hit", "status": "burn", "at_least_move_chance": True}
+    row = [r for r in entralink_buffs.effects_table(data) if r.rstrip().endswith("/* galvanic */")][0]
+    assert f", {1 << bit:#x}, " in row
 
 
 def test_real_team_tags_are_known_constants():

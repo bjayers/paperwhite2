@@ -36,6 +36,10 @@ static const u16 sTeamMoves[ENTRALINK_BUFF_TEAM_MOVE_COUNT] = ENTRALINK_BUFF_TEA
 static const u16 sTeamMoveStarts[ENTRALINK_BUFF_THEME_COUNT + 1] = ENTRALINK_BUFF_TEAM_MOVE_STARTS;
 static const u16 sTeamAbilities[ENTRALINK_BUFF_TEAM_ABILITY_COUNT] = ENTRALINK_BUFF_TEAM_ABILITIES;
 static const u16 sTeamAbilityStarts[ENTRALINK_BUFF_THEME_COUNT + 1] = ENTRALINK_BUFF_TEAM_ABILITY_STARTS;
+// Fixes 9: the cards of the damage buckets, and the buckets' caps and vanilla factors, for the viewer's multipliers
+static const EntralinkBuffBucketCard sBucketCards[ENTRALINK_BUFF_BUCKET_CARD_COUNT] = ENTRALINK_BUFF_BUCKET_CARDS;
+static const u16 sBucketCaps[ENTRALINK_BUFF_BUCKET_COUNT] = ENTRALINK_BUFF_BUCKET_CAPS;
+static const u16 sBucketVanillas[ENTRALINK_BUFF_BUCKET_COUNT] = ENTRALINK_BUFF_BUCKET_VANILLAS;
 
 // What weighs the cards of a draw: the themes of the golds held, a bit each, and each theme's weight by the team, in
 // percent
@@ -710,6 +714,90 @@ static u32 EntralinkBuffs_AddStackOptions(BuffText *text, FieldScriptEnv *env, u
     return added;
 }
 
+// Appends a number's digits to a string
+static void BuffText_AppendNumber(StrBuf *dest, u32 number) {
+    u32 digit = 1;
+
+    while (digit * 10 <= number) {
+        digit *= 10;
+    }
+    for (; digit != 0; digit /= 10) {
+        GFL_StrBufAppend(dest, '0' + number / digit % 10);
+    }
+}
+
+// Sets a word to a bucket's factor: its vanilla factor plus the plain cards' sum (held to its cap), as "1.40" (STAB
+// and CRIT the whole factor, "2.25" over vanilla's 1.50), or GUARD's cut in percent, "10"; with "+" after it if a card
+// held adds more on some hits
+static void BuffText_SetBucketWord(BuffText *text, u32 word, u32 bucket, const s32 *sums, const BOOL *more) {
+    u32 sum = sums[bucket] < sBucketCaps[bucket] ? sums[bucket] : sBucketCaps[bucket];
+    u32 hundredths = sBucketVanillas[bucket] + sum;
+
+    GFL_StrBufClear(text->temp);
+    if (bucket == ENTRALINK_BUFF_BUCKET_GUARD) {
+        BuffText_AppendNumber(text->temp, sum);
+    } else {
+        BuffText_AppendNumber(text->temp, hundredths / 100);
+        GFL_StrBufAppend(text->temp, '.');
+        GFL_StrBufAppend(text->temp, '0' + hundredths / 10 % 10);
+        GFL_StrBufAppend(text->temp, '0' + hundredths % 10);
+    }
+    if (more[bucket]) {
+        GFL_StrBufAppend(text->temp, '+');
+    }
+    GFL_WordSetSetStrbuf(text->wordSet, word, text->temp, 0, TRUE, 0);
+}
+
+// The viewer's multipliers (fixes 9), two lines before the buffs held: what the cards held give every hit of each
+// damage bucket (ATK, POW, STAB, MATCH, FINAL; COND, CRIT, DEF, GUARD), marked "+" where a card held adds more on
+// some hits (a condition or a scale)
+static u32 EntralinkBuffs_AddMultiplierOptions(BuffText *text, FieldScriptEnv *env) {
+    static const u8 DAMAGE[] = { ENTRALINK_BUFF_BUCKET_ATK, ENTRALINK_BUFF_BUCKET_POW, ENTRALINK_BUFF_BUCKET_STAB,
+                                 ENTRALINK_BUFF_BUCKET_MATCH, ENTRALINK_BUFF_BUCKET_FINAL };
+    static const u8 OTHER[] = { ENTRALINK_BUFF_BUCKET_COND, ENTRALINK_BUFF_BUCKET_CRIT, ENTRALINK_BUFF_BUCKET_DEF };
+    s32 sums[ENTRALINK_BUFF_BUCKET_COUNT];
+    BOOL more[ENTRALINK_BUFF_BUCKET_COUNT];
+    const EntralinkBuffBucketCard *card;
+    u32 level;
+    u32 added = 0;
+    u32 i;
+
+    for (i = 0; i < ENTRALINK_BUFF_BUCKET_COUNT; i++) {
+        sums[i] = 0;
+        more[i] = FALSE;
+    }
+    for (i = 0; i < NELEMS(sBucketCards); i++) {
+        card = &sBucketCards[i];
+        level = EntralinkBuffs_GetLevel(card->buff);
+        if (card->buff >= ENTRALINK_BUFF_COUNT || level == 0) {
+            continue;
+        }
+        if (card->plain) {
+            sums[card->bucket] += EntralinkBuffs_GetValue(card->buff, level);
+        } else {
+            more[card->bucket] = TRUE;
+        }
+    }
+    for (i = 0; i < NELEMS(DAMAGE); i++) {
+        BuffText_SetBucketWord(text, ENTRALINK_BUFF_WORD_VALUE + i, DAMAGE[i], sums, more);
+    }
+    BuffText_Format(text, ENTRALINK_BUFF_MSG_DAMAGE_TITLE, text->title);
+    BuffText_Format(text, ENTRALINK_BUFF_MSG_DAMAGE, text->text);
+    if (BuffText_AddOption(text, env, text->title, text->text, added)) {
+        added++;
+    }
+    for (i = 0; i < NELEMS(OTHER); i++) {
+        BuffText_SetBucketWord(text, ENTRALINK_BUFF_WORD_VALUE + i, OTHER[i], sums, more);
+    }
+    BuffText_SetBucketWord(text, ENTRALINK_BUFF_WORD_VALUE + NELEMS(OTHER), ENTRALINK_BUFF_BUCKET_GUARD, sums, more);
+    BuffText_Format(text, ENTRALINK_BUFF_MSG_OTHER_TITLE, text->title);
+    BuffText_Format(text, ENTRALINK_BUFF_MSG_OTHER, text->text);
+    if (BuffText_AddOption(text, env, text->title, text->text, added)) {
+        added++;
+    }
+    return added;
+}
+
 u32 EntralinkBuffs_AddHeldOptions(FieldScriptEnv *env, BOOL golds) {
     BuffText text;
     EntralinkCard card;
@@ -718,6 +806,10 @@ u32 EntralinkBuffs_AddHeldOptions(FieldScriptEnv *env, BOOL golds) {
     u32 buff;
 
     BuffText_Init(&text, env);
+    // The viewer opens on its multipliers
+    if (!golds) {
+        added += EntralinkBuffs_AddMultiplierOptions(&text, env);
+    }
     card.kind = ENTRALINK_CARD_BUFF;
     card.type = 0;
     for (slot = 0; slot < ENTRALINK_BUFF_GOLD_SLOTS; slot++) {

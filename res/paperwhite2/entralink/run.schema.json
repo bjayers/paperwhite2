@@ -85,6 +85,14 @@
       "type": "number", "minimum": 0.1, "maximum": 20,
       "description": "A raid (three attackers against one foe) has its HP multiplied by this on top of its place's (a room's curve, a boss's or the final room's value), the other stats as its place's; 3.0 if left out"
     },
+    "boss_double_factor": {
+      "type": "number", "minimum": 0.1, "maximum": 2,
+      "description": "In a boss battle (or the final room) of two foes, each foe's HP bonus over the room curve (enemy_scaling.hp.boss_bonus) is multiplied by this, as two foes share the bosses' HP; a raid is one foe and takes none; 0.85 if left out"
+    },
+    "boss_triple_factor": {
+      "type": "number", "minimum": 0.1, "maximum": 2,
+      "description": "In a boss battle (or the final room) of three foes, each foe's HP bonus over the room curve (enemy_scaling.hp.boss_bonus) is multiplied by this; a raid is one foe and takes none; 0.7 if left out"
+    },
     "enemy_scaling": {
       "type": "object",
       "additionalProperties": false,

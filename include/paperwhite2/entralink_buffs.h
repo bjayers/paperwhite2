@@ -65,6 +65,14 @@ typedef struct {
     u8 bucket;
 } EntralinkBuffStatCard;
 
+// A card that adds to a damage bucket (ENTRALINK_BUFF_BUCKET_CARDS, overlay 12, fixes 9), for the viewer's
+// multipliers: the card, its bucket (ENTRALINK_BUFF_BUCKET_*) and whether its value holds on every hit of the bucket
+typedef struct {
+    u8 buff;
+    u8 bucket;
+    u8 plain;
+} EntralinkBuffBucketCard;
+
 // A card's numbers (ENTRALINK_BUFF_VALUES, ARM9 main): a blue's or purple's step, soft limit (0 for none) and cap; a
 // gold's value at each rank (its last repeated); whether it is a gold, and its effect's kind (ENTRALINK_BUFF_KIND_*)
 typedef struct {

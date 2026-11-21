@@ -26,12 +26,14 @@
         "west": [ 9, 16 ]
     },
     "raid_hp_factor": 3.0,
+    "boss_double_factor": 0.85,
+    "boss_triple_factor": 0.7,
     "enemy_scaling": {
         "hp": {
             "start": 150,
             "end": 2000,
             "curve": 150,
-            "boss_bonus": [ 220, 230, 500 ]
+            "boss_bonus": [ 160, 230, 500 ]
         },
         "attack": {
             "start": 120,

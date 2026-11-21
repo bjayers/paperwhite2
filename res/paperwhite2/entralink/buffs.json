@@ -1675,7 +1675,11 @@
             "id": "wildfire",
             "name": "Wildfire",
             "tier": "gold",
-            "description": [ "Your Fire moves burn +10%", "Your Fire moves burn +20%", "Fire moves burn +30%, even Fire types" ],
+            "description": [
+                "Your Fire moves burn 10% (or their own chance)",
+                "Your Fire moves burn 20% (or their own chance)",
+                "Fire moves burn 30% (or their own), even Fire types"
+            ],
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
@@ -1687,6 +1691,7 @@
                 "condition": {
                     "move_type": "TYPE_FIRE"
                 },
+                "at_least_move_chance": true,
                 "ignores_immunity_at_rank": 3
             }
         },
@@ -1695,23 +1700,20 @@
             "name": "Fire Within",
             "tier": "gold",
             "description": [
-                "Burned: no Attack drop, Attack +40%",
-                "Burned: no Attack drop, Attack +70%",
-                "Burned: no Attack drop, Attack +100%"
+                "+15% Attack and Sp. Atk for each burned foe",
+                "+25% Attack and Sp. Atk for each burned foe",
+                "+35% Attack and Sp. Atk for each burned foe"
             ],
             "category": "attack",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "theme": "burn",
-            "ranks": [ 40, 70, 100 ],
+            "ranks": [ 15, 25, 35 ],
             "bucket": "atk",
             "effect": {
                 "kind": "stat_ratio",
-                "stat": "attack",
-                "condition": {
-                    "attacker_status": [ "burn" ]
-                },
-                "ignore_burn_drop": true
+                "stat": "attacking",
+                "scale": "burned_foes"
             }
         },
         {
