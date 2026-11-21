@@ -61,7 +61,10 @@ export interface Buff {
   // gold
   theme?: string; core: boolean; ranks: number[];
   effect: JsonMap; kind: string;
+  /** Further effects (more_effects, the condense's merged cards), each with its own step, soft limit, cap and bucket. */
+  more: MoreEffect[];
 }
+export interface MoreEffect { effect: JsonMap; kind: string; step: number; softLimit?: number; cap: number; bucket?: string }
 export interface Theme { id: string; name: string; description: string }
 export interface Category { id: string; name: string; description: string }
 export interface Bucket { id: string; name: string; description?: string; side: "attack" | "defense"; vanilla: number; cap: number; criticalOnly: boolean; reduces: boolean; event?: string }
@@ -95,7 +98,19 @@ export function readBuff(v: JsonValue): Buff {
     related: asList(m.get("related")).map((r) => str(r) ?? ""), typeCard: m.get("type_card") === true,
     theme: str(m.get("theme")), core: m.get("core") === true, ranks: asList(m.get("ranks")).map((r) => num(r) ?? 0),
     effect, kind: str(effect.get("kind")) ?? "",
+    more: asList(m.get("more_effects")).map((v) => {
+      const x = asMap(v);
+      const e = asMap(x.get("effect"));
+      return { effect: e, kind: str(e.get("kind")) ?? "", step: num(x.get("step")) ?? 0, softLimit: num(x.get("soft_limit")),
+               cap: num(x.get("cap")) ?? 0, bucket: str(x.get("bucket")) };
+    }),
   };
+}
+
+/** Every effect as a card-like entry: the cards, then each card's further effects as "<id>.<n>" (the packer's
+ * effect_entries()). */
+export function effectEntries(buffs: Buff[]): Buff[] {
+  return [...buffs, ...buffs.flatMap((b) => b.more.map((m, k) => ({ ...b, ...m, id: `${b.id}.${k + 2}`, more: [] })))];
 }
 
 export function readCatalogue(data: JsonValue | null | undefined): Catalogue {
@@ -286,7 +301,7 @@ export interface Hit { lines: BucketLine[]; factor: number; criticalFactor: numb
 
 function hitOf(cat: Catalogue, values: Map<string, number>, reference: number): Hit {
   const lines: BucketLine[] = cat.buckets.map((bucket) => {
-    const entries = cat.buffs.filter((b) => b.bucket === bucket.id && values.has(b.id)).map((b) => ({ id: b.id, value: values.get(b.id)! }));
+    const entries = effectEntries(cat.buffs).filter((b) => b.bucket === bucket.id && values.has(b.id)).map((b) => ({ id: b.id, value: values.get(b.id)! }));
     const sum = entries.reduce((n, e) => n + e.value, 0);
     return { bucket, sum, factor: bucketFactor(bucket, sum), capped: sum > bucket.cap, entries };
   });
@@ -299,7 +314,7 @@ function hitOf(cat: Catalogue, values: Map<string, number>, reference: number): 
 
 /** The strongest possible single hit: every card at its most, each bucket's sum held to its cap. */
 export function ceilingHit(cat: Catalogue, reference = cat.referenceHit): Hit {
-  return hitOf(cat, new Map(cat.buffs.filter(inStrongestHit).map((b) => [b.id, strongest(b)])), reference);
+  return hitOf(cat, new Map(effectEntries(cat.buffs).filter(inStrongestHit).map((b) => [b.id, strongest(b)])), reference);
 }
 
 /** An example build's hit: each pick's value (a gold at its rank), each bucket's sum held to its cap. */
@@ -307,8 +322,12 @@ export function exampleHit(cat: Catalogue, picks: BuildPick[] = cat.example, ref
   const values = new Map<string, number>();
   for (const p of picks) {
     const b = cat.buffs.find((x) => x.id === p.buff);
-    if (!b || !inStrongestHit(b)) continue;
-    values.set(b.id, b.tier === "gold" ? b.ranks[Math.min(p.count, b.ranks.length) - 1] ?? 0 : pickedValue(b.step, b.softLimit, b.cap, p.count));
+    if (!b) continue;
+    if (inStrongestHit(b))
+      values.set(b.id, b.tier === "gold" ? b.ranks[Math.min(p.count, b.ranks.length) - 1] ?? 0 : pickedValue(b.step, b.softLimit, b.cap, p.count));
+    b.more.forEach((m, k) => {
+      if (inStrongestHit({ ...b, ...m })) values.set(`${b.id}.${k + 2}`, pickedValue(m.step, m.softLimit, m.cap, p.count));
+    });
   }
   return hitOf(cat, values, reference);
 }
@@ -368,14 +387,22 @@ export function checkBuffs(cat: Catalogue): BuffProblem[] {
       for (const r of b.related) if (!themes.has(r)) err(`${at}: the related theme "${r}" isn't one of the themes.`, i);
       if (b.tier === "blue" && (b.related.length || b.typeCard)) err(`${at}: related and type card are for purples.`, i);
     }
-    const needs = needsBucket(b.effect);
-    if (b.bucket !== undefined && !buckets.has(b.bucket)) err(`${at}: its bucket "${b.bucket}" isn't one of the buckets.`, i);
-    else if (needs && b.bucket === undefined) err(`${at}: a ${b.kind} effect adds to a bucket: pick one.`, i);
-    else if (!needs && b.bucket !== undefined) err(`${at}: a ${b.kind} effect isn't damage: it has no bucket.`, i);
-    else if (b.kind === "stat_ratio" && b.bucket !== undefined) {
-      const side = ATTACK_STATS.includes(str(b.effect.get("stat")) ?? "") ? "attack" : "defense";
-      if (buckets.get(b.bucket)!.side !== side) err(`${at}: the ${str(b.effect.get("stat"))} stat goes in a bucket of the ${side} side.`, i);
-    }
+    const checkBucket = (where: string, e: { effect: JsonMap; kind: string; bucket?: string }) => {
+      const needs = needsBucket(e.effect);
+      if (e.bucket !== undefined && !buckets.has(e.bucket)) err(`${where}: its bucket "${e.bucket}" isn't one of the buckets.`, i);
+      else if (needs && e.bucket === undefined) err(`${where}: a ${e.kind} effect adds to a bucket: pick one.`, i);
+      else if (!needs && e.bucket !== undefined) err(`${where}: a ${e.kind} effect isn't damage: it has no bucket.`, i);
+      else if (e.kind === "stat_ratio" && e.bucket !== undefined) {
+        const side = ATTACK_STATS.includes(str(e.effect.get("stat")) ?? "") ? "attack" : "defense";
+        if (buckets.get(e.bucket)!.side !== side) err(`${where}: the ${str(e.effect.get("stat"))} stat goes in a bucket of the ${side} side.`, i);
+      }
+    };
+    checkBucket(at, b);
+    if (b.more.length && b.tier === "gold") err(`${at}: further effects are for blues and purples.`, i);
+    b.more.forEach((m, k) => {
+      if ((m.step < 0) !== (m.cap < 0) || Math.abs(m.step) > Math.abs(m.cap)) err(`${at}, effect ${k + 2}: the step must be within the cap, of the same sign.`, i);
+      checkBucket(`${at}, effect ${k + 2}`, m);
+    });
     if (b.kind === "stat_stage_on_entry" && b.tier === "gold" && asList(b.effect.get("stats_by_rank")).length !== b.ranks.length)
       err(`${at}: stats by rank has a list per rank.`, i);
     for (const text of b.description)

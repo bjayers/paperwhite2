@@ -53,6 +53,7 @@
         "gift_buff_chance": 50,
         "shop_buffs": 2,
         "type_card_team_weight": 300,
+        "type_card_other_weight": 0,
         "prices": {
             "blue": 60,
             "purple": 150,
@@ -155,7 +156,7 @@
             "name": "FINAL",
             "description": "All damage",
             "side": "attack",
-            "cap": 40,
+            "cap": 60,
             "event": "BATTLE_EVENT_DAMAGE_RATIO"
         },
         {
@@ -216,7 +217,7 @@
                 "count": 3
             }
         ],
-        "typical_factor": [ 15, 22 ]
+        "typical_factor": [ 15, 23 ]
     },
     "categories": [
         {
@@ -685,13 +686,13 @@
             "id": "hp",
             "name": "HP",
             "tier": "blue",
-            "description": "Max HP +8% (999 at most)",
+            "description": "Max HP +15% (999 at most)",
             "category": "hp",
             "weight": 10,
             "pools": [ "after_battle", "buff_room", "shop" ],
-            "step": 8,
-            "soft_limit": 5,
-            "cap": 50,
+            "step": 15,
+            "soft_limit": 4,
+            "cap": 90,
             "effect": {
                 "kind": "max_hp",
                 "limit": 999
@@ -717,12 +718,12 @@
             "id": "guard",
             "name": "Guard",
             "tier": "blue",
-            "description": "5% less damage taken",
+            "description": "10% less damage taken",
             "category": "defense",
             "weight": 10,
             "pools": [ "after_battle", "buff_room", "shop" ],
-            "step": 5,
-            "soft_limit": 5,
+            "step": 10,
+            "soft_limit": 3,
             "cap": 40,
             "bucket": "guard",
             "effect": {
@@ -733,31 +734,31 @@
             "id": "power",
             "name": "Power",
             "tier": "blue",
-            "description": "All damage +10%",
+            "description": "All damage +20%",
             "category": "power",
             "weight": 10,
             "pools": [ "after_battle", "buff_room", "shop" ],
-            "step": 10,
-            "soft_limit": 3,
-            "cap": 40,
+            "step": 20,
+            "cap": 60,
             "bucket": "final",
             "effect": {
                 "kind": "damage_ratio"
             }
         },
         {
-            "id": "accuracy",
-            "name": "Accuracy",
+            "id": "evasion",
+            "name": "Evasion",
             "tier": "blue",
-            "description": "Accuracy +4%",
-            "category": "utility",
+            "description": "Foes' moves 8% less accurate",
+            "category": "defense",
             "weight": 10,
             "pools": [ "after_battle", "buff_room", "shop" ],
-            "step": 4,
+            "step": -8,
             "soft_limit": 3,
-            "cap": 20,
+            "cap": -32,
             "effect": {
-                "kind": "accuracy"
+                "kind": "accuracy",
+                "foes_moves": true
             }
         },
         {
@@ -779,12 +780,12 @@
             "id": "type_affinity",
             "name": "Type Affinity",
             "tier": "purple",
-            "description": "Moves of the card's type +40% power",
+            "description": "Moves of the card's type +50% power",
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 40,
-            "cap": 120,
+            "step": 50,
+            "cap": 150,
             "bucket": "pow",
             "related": [ "paralysis", "burn", "frost", "poison", "type_mastery" ],
             "type_card": true,
@@ -796,22 +797,21 @@
             }
         },
         {
-            "id": "type_ward",
-            "name": "Type Ward",
+            "id": "ward",
+            "name": "Ward",
             "tier": "purple",
-            "description": "15% less damage from the card's type",
-            "category": "type",
+            "description": "20% less damage from foes' STAB hits",
+            "category": "defense",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 15,
-            "cap": 45,
+            "step": 20,
+            "cap": 40,
             "bucket": "guard",
-            "related": [ "type_mastery" ],
-            "type_card": true,
+            "related": [ "stall" ],
             "effect": {
                 "kind": "damage_ratio",
                 "condition": {
-                    "card_type": true
+                    "stab": true
                 }
             }
         },
@@ -819,12 +819,12 @@
             "id": "expert_edge",
             "name": "Expert Edge",
             "tier": "purple",
-            "description": "Super-effective hits +20%",
+            "description": "Super-effective hits +25%, resisted hits +50%",
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 20,
-            "cap": 60,
+            "step": 25,
+            "cap": 75,
             "bucket": "match",
             "related": [ "type_mastery" ],
             "effect": {
@@ -832,38 +832,32 @@
                 "condition": {
                     "super_effective": true
                 }
-            }
-        },
-        {
-            "id": "glancing_blow",
-            "name": "Glancing Blow",
-            "tier": "purple",
-            "description": "Resisted hits +30%",
-            "category": "type",
-            "weight": 10,
-            "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 30,
-            "cap": 120,
-            "bucket": "match",
-            "related": [ "type_mastery" ],
-            "effect": {
-                "kind": "damage_ratio",
-                "condition": {
-                    "resisted": true
-                },
-                "exempt_from_bucket_cap": true
-            }
+            },
+            "more_effects": [
+                {
+                    "effect": {
+                        "kind": "damage_ratio",
+                        "condition": {
+                            "resisted": true
+                        },
+                        "exempt_from_bucket_cap": true
+                    },
+                    "step": 50,
+                    "cap": 150,
+                    "bucket": "match"
+                }
+            ]
         },
         {
             "id": "kinship",
             "name": "Kinship",
             "tier": "purple",
-            "description": "STAB +0.15",
+            "description": "STAB +0.35",
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 15,
-            "cap": 60,
+            "step": 35,
+            "cap": 105,
             "bucket": "stab",
             "related": [ "type_mastery" ],
             "effect": {
@@ -874,7 +868,7 @@
             "id": "keen_edge",
             "name": "Keen Edge",
             "tier": "purple",
-            "description": "Critical stage +1",
+            "description": "Critical stage +1, critical hits +0.25 damage",
             "category": "critical",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
@@ -883,83 +877,55 @@
             "related": [ "critical" ],
             "effect": {
                 "kind": "crit_stage"
-            }
-        },
-        {
-            "id": "heavy_crit",
-            "name": "Heavy Crit",
-            "tier": "purple",
-            "description": "Critical hits +0.2 damage",
-            "category": "critical",
-            "weight": 10,
-            "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 20,
-            "cap": 60,
-            "bucket": "crit",
-            "related": [ "critical" ],
-            "effect": {
-                "kind": "crit_damage"
-            }
-        },
-        {
-            "id": "lingering_ailment",
-            "name": "Lingering Ailment",
-            "tier": "purple",
-            "description": "Your residual damage on foes +15%",
-            "category": "status",
-            "weight": 10,
-            "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 15,
-            "cap": 60,
-            "related": [ "poison", "burn", "sleep", "weather", "stall" ],
-            "effect": {
-                "kind": "residual_ratio",
-                "source": "any"
-            }
+            },
+            "more_effects": [
+                {
+                    "effect": {
+                        "kind": "crit_damage"
+                    },
+                    "step": 25,
+                    "cap": 50,
+                    "bucket": "crit"
+                }
+            ]
         },
         {
             "id": "serene_touch",
             "name": "Serene Touch",
             "tier": "purple",
-            "description": "Added-effect chances x1.2",
+            "description": "Added effects and flinches x1.5, status moves +10% accuracy",
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 20,
+            "step": 50,
             "cap": 100,
             "related": [ "paralysis", "sleep", "poison", "burn", "frost", "confusion" ],
             "effect": {
                 "kind": "added_effect_chance"
-            }
-        },
-        {
-            "id": "sure_hand",
-            "name": "Sure Hand",
-            "tier": "purple",
-            "description": "Status moves +10% accuracy",
-            "category": "status",
-            "weight": 10,
-            "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 10,
-            "cap": 100,
-            "related": [ "paralysis", "sleep", "poison", "confusion" ],
-            "effect": {
-                "kind": "accuracy",
-                "condition": {
-                    "category": "status"
+            },
+            "more_effects": [
+                {
+                    "effect": {
+                        "kind": "accuracy",
+                        "condition": {
+                            "category": "status"
+                        }
+                    },
+                    "step": 10,
+                    "cap": 20
                 }
-            }
+            ]
         },
         {
             "id": "opportunist",
             "name": "Opportunist",
             "tier": "purple",
-            "description": "+30% damage to foes with a major status",
+            "description": "+45% damage to statused foes, your residual damage +30%",
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 30,
-            "cap": 90,
+            "step": 45,
+            "cap": 135,
             "bucket": "cond",
             "related": [ "paralysis", "sleep", "poison", "burn", "frost", "confusion" ],
             "effect": {
@@ -967,66 +933,61 @@
                 "condition": {
                     "defender_status": [ "any_major" ]
                 }
-            }
+            },
+            "more_effects": [
+                {
+                    "effect": {
+                        "kind": "residual_ratio",
+                        "source": "any"
+                    },
+                    "step": 30,
+                    "cap": 90
+                }
+            ]
         },
         {
             "id": "hardy",
             "name": "Hardy",
             "tier": "purple",
-            "description": "15% less chance to be given a status",
+            "description": "Statuses 25% less likely, shorter sleep, 10% cure a turn",
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 15,
-            "cap": 60,
+            "step": 25,
+            "cap": 75,
             "related": [ "stall" ],
             "effect": {
                 "kind": "status_resist"
-            }
-        },
-        {
-            "id": "quick_recovery",
-            "name": "Quick Recovery",
-            "tier": "purple",
-            "description": "Your sleep and confusion last 1 turn less",
-            "category": "status",
-            "weight": 10,
-            "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 1,
-            "cap": 2,
-            "related": [ "sleep", "confusion" ],
-            "effect": {
-                "kind": "status_duration",
-                "statuses": [ "sleep", "confusion" ],
-                "target": "own"
-            }
-        },
-        {
-            "id": "damp_rock",
-            "name": "Damp Rock",
-            "tier": "purple",
-            "description": "Weather you set lasts 2 more turns",
-            "category": "weather",
-            "weight": 10,
-            "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 2,
-            "cap": 6,
-            "related": [ "weather" ],
-            "effect": {
-                "kind": "weather_turns",
-                "mode": "add"
-            }
+            },
+            "more_effects": [
+                {
+                    "effect": {
+                        "kind": "status_duration",
+                        "statuses": [ "sleep", "confusion" ],
+                        "target": "own"
+                    },
+                    "step": 1,
+                    "cap": 2
+                },
+                {
+                    "effect": {
+                        "kind": "status_cure_chance"
+                    },
+                    "step": 10,
+                    "cap": 30
+                }
+            ]
         },
         {
             "id": "climate",
             "name": "Climate",
             "tier": "purple",
-            "description": "Moves your weather boosts +20%",
+            "description": "Weather-boosted moves +35%, weather +2 turns, no sand/hail",
             "category": "weather",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 20,
-            "cap": 80,
+            "step": 35,
+            "cap": 105,
             "bucket": "cond",
             "related": [ "weather" ],
             "effect": {
@@ -1034,34 +995,36 @@
                 "condition": {
                     "weather_boosted": true
                 }
-            }
-        },
-        {
-            "id": "overcoat",
-            "name": "Overcoat",
-            "tier": "purple",
-            "description": "No damage from sand and hail",
-            "category": "weather",
-            "weight": 10,
-            "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 1,
-            "cap": 1,
-            "related": [ "weather" ],
-            "effect": {
-                "kind": "ability_like",
-                "ability": "ABILITY_OVERCOAT"
-            }
+            },
+            "more_effects": [
+                {
+                    "effect": {
+                        "kind": "weather_turns",
+                        "mode": "add"
+                    },
+                    "step": 2,
+                    "cap": 6
+                },
+                {
+                    "effect": {
+                        "kind": "ability_like",
+                        "ability": "ABILITY_OVERCOAT"
+                    },
+                    "step": 1,
+                    "cap": 1
+                }
+            ]
         },
         {
             "id": "tough_claws",
             "name": "Tough Claws",
             "tier": "purple",
-            "description": "Contact moves (punches too) +20% power",
+            "description": "Contact moves (punches too) +35%, recoil 35% less",
             "category": "power",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 20,
-            "cap": 60,
+            "step": 35,
+            "cap": 105,
             "bucket": "pow",
             "related": [ "last_stand" ],
             "effect": {
@@ -1069,18 +1032,27 @@
                 "condition": {
                     "contact": true
                 }
-            }
+            },
+            "more_effects": [
+                {
+                    "effect": {
+                        "kind": "recoil_ratio"
+                    },
+                    "step": 35,
+                    "cap": 100
+                }
+            ]
         },
         {
             "id": "technique",
             "name": "Technique",
             "tier": "purple",
-            "description": "Moves of power 60 or less, and priority moves, +40%",
+            "description": "Power 75 or less, and priority, +50%; multi-hits +1 hit",
             "category": "power",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 40,
-            "cap": 120,
+            "step": 50,
+            "cap": 150,
             "bucket": "pow",
             "related": [ "speed" ],
             "effect": {
@@ -1088,51 +1060,29 @@
                 "condition": {
                     "any": [
                         {
-                            "power_at_most": 60
+                            "power_at_most": 75
                         },
                         {
                             "priority": true
                         }
                     ]
                 }
-            }
-        },
-        {
-            "id": "second_hit",
-            "name": "Second Hit",
-            "tier": "purple",
-            "description": "Multi-hit moves hit at least once more",
-            "category": "power",
-            "weight": 10,
-            "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 1,
-            "cap": 3,
-            "related": [ "critical" ],
-            "effect": {
-                "kind": "multi_hit"
-            }
-        },
-        {
-            "id": "big_root",
-            "name": "Big Root",
-            "tier": "purple",
-            "description": "Draining moves heal 25% more",
-            "category": "heal",
-            "weight": 10,
-            "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 25,
-            "cap": 75,
-            "related": [ "last_stand", "stall" ],
-            "effect": {
-                "kind": "heal_ratio",
-                "source": "drain"
-            }
+            },
+            "more_effects": [
+                {
+                    "effect": {
+                        "kind": "multi_hit"
+                    },
+                    "step": 1,
+                    "cap": 3
+                }
+            ]
         },
         {
             "id": "vampiric",
             "name": "Vampiric",
             "tier": "purple",
-            "description": "Heal 3% of the damage you deal",
+            "description": "Heal 3% of the damage you deal, drain moves +25%",
             "category": "heal",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
@@ -1141,48 +1091,28 @@
             "related": [ "last_stand", "stall" ],
             "effect": {
                 "kind": "heal_on_damage"
-            }
-        },
-        {
-            "id": "rock_skin",
-            "name": "Rock Skin",
-            "tier": "purple",
-            "description": "Recoil 20% less",
-            "category": "heal",
-            "weight": 10,
-            "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 20,
-            "cap": 100,
-            "related": [ "last_stand" ],
-            "effect": {
-                "kind": "recoil_ratio"
-            }
-        },
-        {
-            "id": "flinch_edge",
-            "name": "Flinch Edge",
-            "tier": "purple",
-            "description": "+5% flinch chance on moves that flinch",
-            "category": "speed",
-            "weight": 10,
-            "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 5,
-            "cap": 20,
-            "related": [ "speed" ],
-            "effect": {
-                "kind": "flinch_chance"
-            }
+            },
+            "more_effects": [
+                {
+                    "effect": {
+                        "kind": "heal_ratio",
+                        "source": "drain"
+                    },
+                    "step": 25,
+                    "cap": 75
+                }
+            ]
         },
         {
             "id": "pinch_power",
             "name": "Pinch Power",
             "tier": "purple",
-            "description": "+24% damage below half HP",
+            "description": "+40% damage below half HP, 10% chance to survive a KO",
             "category": "attack",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 24,
-            "cap": 72,
+            "step": 40,
+            "cap": 120,
             "bucket": "cond",
             "related": [ "last_stand" ],
             "effect": {
@@ -1190,48 +1120,27 @@
                 "condition": {
                     "attacker_hp_below": 50
                 }
-            }
-        },
-        {
-            "id": "focus_band",
-            "name": "Focus Band",
-            "tier": "purple",
-            "description": "8% chance to survive a KO with 1 HP",
-            "category": "defense",
-            "weight": 10,
-            "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 8,
-            "cap": 32,
-            "related": [ "last_stand", "stall" ],
-            "effect": {
-                "kind": "endure_chance"
-            }
-        },
-        {
-            "id": "light_clay",
-            "name": "Light Clay",
-            "tier": "purple",
-            "description": "Your screens last 2 more turns",
-            "category": "defense",
-            "weight": 10,
-            "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 2,
-            "cap": 4,
-            "related": [ "weather", "stall" ],
-            "effect": {
-                "kind": "screen_turns"
-            }
+            },
+            "more_effects": [
+                {
+                    "effect": {
+                        "kind": "endure_chance"
+                    },
+                    "step": 10,
+                    "cap": 30
+                }
+            ]
         },
         {
             "id": "clear_amulet",
             "name": "Clear Amulet",
             "tier": "purple",
-            "description": "Blocks the first stat drop each battle",
+            "description": "Blocks the first 2 stat drops each battle",
             "category": "stages",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 1,
-            "cap": 2,
+            "step": 2,
+            "cap": 4,
             "related": [ "stat_stages" ],
             "effect": {
                 "kind": "custom",
@@ -1239,48 +1148,61 @@
             }
         },
         {
-            "id": "tempo",
-            "name": "Tempo",
+            "id": "momentum_strike",
+            "name": "Momentum Strike",
             "tier": "purple",
-            "description": "15% chance a stat boost gives +1 more",
+            "description": "+15% damage per attack boost, 25% a boost gives +1 more",
             "category": "stages",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
             "step": 15,
-            "cap": 60,
-            "related": [ "stat_stages" ],
-            "effect": {
-                "kind": "custom",
-                "handler": "extra_stage_chance"
-            }
-        },
-        {
-            "id": "momentum_strike",
-            "name": "Momentum Strike",
-            "tier": "purple",
-            "description": "+10% damage per boost of the attacking stat",
-            "category": "stages",
-            "weight": 10,
-            "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 10,
-            "cap": 60,
+            "cap": 90,
             "bucket": "cond",
             "related": [ "stat_stages" ],
             "effect": {
                 "kind": "damage_ratio",
                 "scale": "attack_stage"
-            }
+            },
+            "more_effects": [
+                {
+                    "effect": {
+                        "kind": "custom",
+                        "handler": "extra_stage_chance"
+                    },
+                    "step": 25,
+                    "cap": 75
+                }
+            ]
         },
         {
             "id": "first_blood",
             "name": "First Blood",
             "tier": "purple",
-            "description": "+30% damage on each Pokémon's first turn out",
+            "description": "+35% damage on each Pokémon's first two moves",
             "category": "speed",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 30,
-            "cap": 90,
+            "step": 35,
+            "cap": 105,
+            "bucket": "cond",
+            "related": [ "speed" ],
+            "effect": {
+                "kind": "damage_ratio",
+                "condition": {
+                    "first_turns": 2
+                }
+            }
+        },
+        {
+            "id": "switch_hitter",
+            "name": "Switch Hitter",
+            "tier": "purple",
+            "description": "+40% damage on the first turn after each switch-in",
+            "category": "speed",
+            "weight": 10,
+            "pools": [ "after_battle", "gift", "buff_room", "shop" ],
+            "step": 40,
+            "cap": 120,
             "bucket": "cond",
             "related": [ "speed" ],
             "effect": {
@@ -1294,48 +1216,19 @@
             "id": "giant_slayer",
             "name": "Giant Slayer",
             "tier": "purple",
-            "description": "+20% damage to bosses and raid targets",
+            "description": "+35% damage to bosses and raid targets",
             "category": "power",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 20,
-            "cap": 40,
-            "bucket": "final",
+            "step": 35,
+            "cap": 70,
+            "bucket": "cond",
             "related": [ "last_stand" ],
             "effect": {
                 "kind": "damage_ratio",
                 "condition": {
                     "boss": true
                 }
-            }
-        },
-        {
-            "id": "thrifty",
-            "name": "Thrifty",
-            "tier": "purple",
-            "description": "15% chance a move uses no PP",
-            "category": "utility",
-            "weight": 10,
-            "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 15,
-            "cap": 45,
-            "effect": {
-                "kind": "pp_save_chance"
-            }
-        },
-        {
-            "id": "shed_skin",
-            "name": "Shed Skin",
-            "tier": "purple",
-            "description": "10% chance a turn to cure your own status",
-            "category": "status",
-            "weight": 10,
-            "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "step": 10,
-            "cap": 30,
-            "related": [ "sleep", "paralysis", "stall" ],
-            "effect": {
-                "kind": "status_cure_chance"
             }
         },
         {
@@ -1346,16 +1239,16 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "paralysis",
-            "core": true,
-            "ranks": [ 100, 140, 175 ],
             "bucket": "cond",
             "effect": {
                 "kind": "damage_ratio",
                 "condition": {
                     "defender_status": [ "paralysis" ]
                 }
-            }
+            },
+            "theme": "paralysis",
+            "core": true,
+            "ranks": [ 100, 140, 175 ]
         },
         {
             "id": "overcharge",
@@ -1365,15 +1258,15 @@
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "paralysis",
-            "ranks": [ 80, 120, 150 ],
             "bucket": "pow",
             "effect": {
                 "kind": "damage_ratio",
                 "condition": {
                     "move_type": "TYPE_ELECTRIC"
                 }
-            }
+            },
+            "theme": "paralysis",
+            "ranks": [ 80, 120, 150 ]
         },
         {
             "id": "magnetised",
@@ -1387,12 +1280,12 @@
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "paralysis",
-            "ranks": [ 1, 2, 3 ],
             "effect": {
                 "kind": "custom",
                 "handler": "magnetised"
-            }
+            },
+            "theme": "paralysis",
+            "ranks": [ 1, 2, 3 ]
         },
         {
             "id": "static_field",
@@ -1406,8 +1299,6 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "paralysis",
-            "ranks": [ 10, 20, 30 ],
             "effect": {
                 "kind": "status_chance_on_hit",
                 "status": "paralysis",
@@ -1421,7 +1312,9 @@
                         }
                     ]
                 }
-            }
+            },
+            "theme": "paralysis",
+            "ranks": [ 10, 20, 30 ]
         },
         {
             "id": "lockjaw",
@@ -1431,12 +1324,12 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "paralysis",
-            "ranks": [ 30, 35, 40 ],
             "effect": {
                 "kind": "status_roll",
                 "roll": "full_paralysis"
-            }
+            },
+            "theme": "paralysis",
+            "ranks": [ 30, 35, 40 ]
         },
         {
             "id": "nightmare_field",
@@ -1450,13 +1343,13 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "sleep",
-            "core": true,
-            "ranks": [ 16, 10, 8 ],
             "effect": {
                 "kind": "residual_fraction",
                 "source": "sleeping_foes"
-            }
+            },
+            "theme": "sleep",
+            "core": true,
+            "ranks": [ 16, 10, 8 ]
         },
         {
             "id": "deep_sleep",
@@ -1466,13 +1359,13 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "sleep",
-            "ranks": [ 1, 2, 3 ],
             "effect": {
                 "kind": "status_duration",
                 "statuses": [ "sleep" ],
                 "target": "foes"
-            }
+            },
+            "theme": "sleep",
+            "ranks": [ 1, 2, 3 ]
         },
         {
             "id": "dream_eater",
@@ -1482,15 +1375,15 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "sleep",
-            "ranks": [ 60, 100, 150 ],
             "bucket": "cond",
             "effect": {
                 "kind": "damage_ratio",
                 "condition": {
                     "defender_status": [ "sleep" ]
                 }
-            }
+            },
+            "theme": "sleep",
+            "ranks": [ 60, 100, 150 ]
         },
         {
             "id": "lullaby",
@@ -1500,15 +1393,15 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "sleep",
-            "ranks": [ 50, 80, 100 ],
             "bucket": "stab",
             "effect": {
                 "kind": "stab_bonus",
                 "condition": {
                     "defender_status": [ "sleep" ]
                 }
-            }
+            },
+            "theme": "sleep",
+            "ranks": [ 50, 80, 100 ]
         },
         {
             "id": "sandman",
@@ -1518,12 +1411,12 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "sleep",
-            "ranks": [ 0, 5, 10 ],
             "effect": {
                 "kind": "custom",
                 "handler": "sandman"
-            }
+            },
+            "theme": "sleep",
+            "ranks": [ 0, 5, 10 ]
         },
         {
             "id": "virulence",
@@ -1533,13 +1426,13 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "poison",
-            "core": true,
-            "ranks": [ 50, 100, 150 ],
             "effect": {
                 "kind": "residual_ratio",
                 "source": "poison"
-            }
+            },
+            "theme": "poison",
+            "core": true,
+            "ranks": [ 50, 100, 150 ]
         },
         {
             "id": "venom_strike",
@@ -1549,15 +1442,15 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "poison",
-            "ranks": [ 60, 100, 150 ],
             "bucket": "cond",
             "effect": {
                 "kind": "damage_ratio",
                 "condition": {
                     "defender_status": [ "poison" ]
                 }
-            }
+            },
+            "theme": "poison",
+            "ranks": [ 60, 100, 150 ]
         },
         {
             "id": "corrosion",
@@ -1571,12 +1464,12 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "poison",
-            "ranks": [ 1, 2, 3 ],
             "effect": {
                 "kind": "custom",
                 "handler": "corrosion"
-            }
+            },
+            "theme": "poison",
+            "ranks": [ 1, 2, 3 ]
         },
         {
             "id": "merciless",
@@ -1590,14 +1483,14 @@
             "category": "critical",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "poison",
-            "ranks": [ 2, 3, 5 ],
             "effect": {
                 "kind": "crit_stage",
                 "condition": {
                     "defender_status": [ "poison" ]
                 }
-            }
+            },
+            "theme": "poison",
+            "ranks": [ 2, 3, 5 ]
         },
         {
             "id": "contagion",
@@ -1611,12 +1504,12 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "poison",
-            "ranks": [ 0, 20, 30 ],
             "effect": {
                 "kind": "custom",
                 "handler": "contagion"
-            }
+            },
+            "theme": "poison",
+            "ranks": [ 0, 20, 30 ]
         },
         {
             "id": "searing",
@@ -1626,13 +1519,13 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "burn",
-            "core": true,
-            "ranks": [ 50, 100, 150 ],
             "effect": {
                 "kind": "residual_ratio",
                 "source": "burn"
-            }
+            },
+            "theme": "burn",
+            "core": true,
+            "ranks": [ 50, 100, 150 ]
         },
         {
             "id": "kindling",
@@ -1642,15 +1535,15 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "burn",
-            "ranks": [ 60, 100, 150 ],
             "bucket": "cond",
             "effect": {
                 "kind": "damage_ratio",
                 "condition": {
                     "defender_status": [ "burn" ]
                 }
-            }
+            },
+            "theme": "burn",
+            "ranks": [ 60, 100, 150 ]
         },
         {
             "id": "smoulder",
@@ -1660,8 +1553,6 @@
             "category": "defense",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "burn",
-            "ranks": [ 15, 25, 35 ],
             "bucket": "guard",
             "effect": {
                 "kind": "damage_ratio",
@@ -1669,7 +1560,9 @@
                     "attacker_status": [ "burn" ],
                     "category": "special"
                 }
-            }
+            },
+            "theme": "burn",
+            "ranks": [ 15, 25, 35 ]
         },
         {
             "id": "wildfire",
@@ -1683,8 +1576,6 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "burn",
-            "ranks": [ 10, 20, 30 ],
             "effect": {
                 "kind": "status_chance_on_hit",
                 "status": "burn",
@@ -1693,7 +1584,9 @@
                 },
                 "at_least_move_chance": true,
                 "ignores_immunity_at_rank": 3
-            }
+            },
+            "theme": "burn",
+            "ranks": [ 10, 20, 30 ]
         },
         {
             "id": "fire_within",
@@ -1707,14 +1600,14 @@
             "category": "attack",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "burn",
-            "ranks": [ 15, 25, 35 ],
             "bucket": "atk",
             "effect": {
                 "kind": "stat_ratio",
                 "stat": "attacking",
                 "scale": "burned_foes"
-            }
+            },
+            "theme": "burn",
+            "ranks": [ 15, 25, 35 ]
         },
         {
             "id": "frostbite",
@@ -1724,9 +1617,6 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "frost",
-            "core": true,
-            "ranks": [ 10, 20, 30 ],
             "effect": {
                 "kind": "status_chance_on_hit",
                 "status": "frostbite",
@@ -1734,7 +1624,10 @@
                     "move_type": "TYPE_ICE"
                 },
                 "replaces_freeze": true
-            }
+            },
+            "theme": "frost",
+            "core": true,
+            "ranks": [ 10, 20, 30 ]
         },
         {
             "id": "shatter",
@@ -1748,15 +1641,15 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "frost",
-            "ranks": [ 60, 100, 150 ],
             "bucket": "cond",
             "effect": {
                 "kind": "damage_ratio",
                 "condition": {
                     "defender_status": [ "frostbite", "freeze" ]
                 }
-            }
+            },
+            "theme": "frost",
+            "ranks": [ 60, 100, 150 ]
         },
         {
             "id": "cold_snap",
@@ -1766,15 +1659,15 @@
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "frost",
-            "ranks": [ 80, 120, 150 ],
             "bucket": "pow",
             "effect": {
                 "kind": "damage_ratio",
                 "condition": {
                     "move_type": "TYPE_ICE"
                 }
-            }
+            },
+            "theme": "frost",
+            "ranks": [ 80, 120, 150 ]
         },
         {
             "id": "permafrost",
@@ -1784,12 +1677,12 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "frost",
-            "ranks": [ 1, 2, 3 ],
             "effect": {
                 "kind": "custom",
                 "handler": "permafrost"
-            }
+            },
+            "theme": "frost",
+            "ranks": [ 1, 2, 3 ]
         },
         {
             "id": "thaw_proof",
@@ -1799,8 +1692,6 @@
             "category": "defense",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "frost",
-            "ranks": [ 0, 20, 30 ],
             "bucket": "guard",
             "effect": {
                 "kind": "damage_ratio",
@@ -1808,7 +1699,9 @@
                     "move_type": "TYPE_ICE"
                 },
                 "immune_to": [ "freeze", "frostbite" ]
-            }
+            },
+            "theme": "frost",
+            "ranks": [ 0, 20, 30 ]
         },
         {
             "id": "madness",
@@ -1822,13 +1715,13 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "confusion",
-            "core": true,
-            "ranks": [ 60, 65, 70 ],
             "effect": {
                 "kind": "status_roll",
                 "roll": "confusion_self_hit"
-            }
+            },
+            "theme": "confusion",
+            "core": true,
+            "ranks": [ 60, 65, 70 ]
         },
         {
             "id": "self_harm",
@@ -1838,12 +1731,12 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "confusion",
-            "ranks": [ 150, 200, 300 ],
             "effect": {
                 "kind": "custom",
                 "handler": "confusion_self_hit_power"
-            }
+            },
+            "theme": "confusion",
+            "ranks": [ 150, 200, 300 ]
         },
         {
             "id": "dizzy_strike",
@@ -1853,15 +1746,15 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "confusion",
-            "ranks": [ 50, 80, 120 ],
             "bucket": "cond",
             "effect": {
                 "kind": "damage_ratio",
                 "condition": {
                     "defender_status": [ "confusion" ]
                 }
-            }
+            },
+            "theme": "confusion",
+            "ranks": [ 50, 80, 120 ]
         },
         {
             "id": "vertigo",
@@ -1875,13 +1768,13 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "confusion",
-            "ranks": [ 1, 2, 3 ],
             "effect": {
                 "kind": "status_duration",
                 "statuses": [ "confusion" ],
                 "target": "foes"
-            }
+            },
+            "theme": "confusion",
+            "ranks": [ 1, 2, 3 ]
         },
         {
             "id": "daze",
@@ -1891,12 +1784,12 @@
             "category": "status",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "confusion",
-            "ranks": [ 5, 10, 15 ],
             "effect": {
                 "kind": "status_chance_on_hit",
                 "status": "confusion"
-            }
+            },
+            "theme": "confusion",
+            "ranks": [ 5, 10, 15 ]
         },
         {
             "id": "stormcaller",
@@ -1906,13 +1799,13 @@
             "category": "weather",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "weather",
-            "core": true,
-            "ranks": [ 8, 12, 255 ],
             "effect": {
                 "kind": "weather_turns",
                 "mode": "set"
-            }
+            },
+            "theme": "weather",
+            "core": true,
+            "ranks": [ 8, 12, 255 ]
         },
         {
             "id": "forecast",
@@ -1926,12 +1819,12 @@
             "category": "weather",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "weather",
-            "ranks": [ 3, 5, 8 ],
             "effect": {
                 "kind": "custom",
                 "handler": "forecast"
-            }
+            },
+            "theme": "weather",
+            "ranks": [ 3, 5, 8 ]
         },
         {
             "id": "heatwave",
@@ -1941,15 +1834,15 @@
             "category": "weather",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "weather",
-            "ranks": [ 50, 80, 120 ],
             "bucket": "cond",
             "effect": {
                 "kind": "damage_ratio",
                 "condition": {
                     "weather_boosted": true
                 }
-            }
+            },
+            "theme": "weather",
+            "ranks": [ 50, 80, 120 ]
         },
         {
             "id": "sandblast",
@@ -1963,13 +1856,13 @@
             "category": "weather",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "weather",
-            "ranks": [ 100, 200, 300 ],
             "effect": {
                 "kind": "residual_ratio",
                 "source": "weather",
                 "team_immune": true
-            }
+            },
+            "theme": "weather",
+            "ranks": [ 100, 200, 300 ]
         },
         {
             "id": "weather_ward",
@@ -1983,15 +1876,15 @@
             "category": "weather",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "weather",
-            "ranks": [ 10, 20, 30 ],
             "bucket": "guard",
             "effect": {
                 "kind": "damage_ratio",
                 "condition": {
                     "weather": [ "any" ]
                 }
-            }
+            },
+            "theme": "weather",
+            "ranks": [ 10, 20, 30 ]
         },
         {
             "id": "storm_speed",
@@ -2001,15 +1894,15 @@
             "category": "speed",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "weather",
-            "ranks": [ 25, 50, 100 ],
             "effect": {
                 "kind": "stat_ratio",
                 "stat": "speed",
                 "condition": {
                     "weather": [ "any" ]
                 }
-            }
+            },
+            "theme": "weather",
+            "ranks": [ 25, 50, 100 ]
         },
         {
             "id": "adaptability",
@@ -2019,13 +1912,13 @@
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "type_mastery",
-            "core": true,
-            "ranks": [ 75, 110, 150 ],
             "bucket": "stab",
             "effect": {
                 "kind": "stab_bonus"
-            }
+            },
+            "theme": "type_mastery",
+            "core": true,
+            "ranks": [ 75, 110, 150 ]
         },
         {
             "id": "spectral",
@@ -2039,13 +1932,13 @@
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "type_mastery",
-            "ranks": [ 20, 40, 60 ],
             "effect": {
                 "kind": "type_chart",
                 "mode": "super_effective_chance",
                 "overrides_immunity": true
-            }
+            },
+            "theme": "type_mastery",
+            "ranks": [ 20, 40, 60 ]
         },
         {
             "id": "expert",
@@ -2055,15 +1948,15 @@
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "type_mastery",
-            "ranks": [ 30, 45, 60 ],
             "bucket": "match",
             "effect": {
                 "kind": "damage_ratio",
                 "condition": {
                     "super_effective": true
                 }
-            }
+            },
+            "theme": "type_mastery",
+            "ranks": [ 30, 45, 60 ]
         },
         {
             "id": "tinted",
@@ -2073,8 +1966,6 @@
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "type_mastery",
-            "ranks": [ 50, 75, 100 ],
             "bucket": "match",
             "effect": {
                 "kind": "damage_ratio",
@@ -2082,7 +1973,9 @@
                     "resisted": true
                 },
                 "exempt_from_bucket_cap": true
-            }
+            },
+            "theme": "type_mastery",
+            "ranks": [ 50, 75, 100 ]
         },
         {
             "id": "coverage",
@@ -2092,13 +1985,13 @@
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "type_mastery",
-            "ranks": [ 140, 160, 180 ],
             "bucket": "stab",
             "effect": {
                 "kind": "stab_bonus",
                 "non_stab": true
-            }
+            },
+            "theme": "type_mastery",
+            "ranks": [ 140, 160, 180 ]
         },
         {
             "id": "prism",
@@ -2112,15 +2005,15 @@
             "category": "type",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "type_mastery",
-            "ranks": [ 15, 25, 35 ],
             "bucket": "guard",
             "effect": {
                 "kind": "damage_ratio",
                 "condition": {
                     "super_effective": true
                 }
-            }
+            },
+            "theme": "type_mastery",
+            "ranks": [ 15, 25, 35 ]
         },
         {
             "id": "last_stand",
@@ -2130,14 +2023,14 @@
             "category": "attack",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "last_stand",
-            "core": true,
-            "ranks": [ 100, 140, 175 ],
             "bucket": "cond",
             "effect": {
                 "kind": "damage_ratio",
                 "scale": "missing_hp"
-            }
+            },
+            "theme": "last_stand",
+            "core": true,
+            "ranks": [ 100, 140, 175 ]
         },
         {
             "id": "bulwark",
@@ -2151,14 +2044,14 @@
             "category": "defense",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "last_stand",
-            "ranks": [ 60, 100, 150 ],
             "bucket": "def",
             "effect": {
                 "kind": "stat_ratio",
                 "stat": "defending",
                 "scale": "missing_hp"
-            }
+            },
+            "theme": "last_stand",
+            "ranks": [ 60, 100, 150 ]
         },
         {
             "id": "second_wind",
@@ -2172,11 +2065,11 @@
             "category": "defense",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "last_stand",
-            "ranks": [ 100, 50, 0 ],
             "effect": {
                 "kind": "endure_once"
-            }
+            },
+            "theme": "last_stand",
+            "ranks": [ 100, 50, 0 ]
         },
         {
             "id": "blood_price",
@@ -2190,13 +2083,13 @@
             "category": "attack",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "last_stand",
-            "ranks": [ 25, 35, 40 ],
             "bucket": "final",
             "effect": {
                 "kind": "damage_ratio",
                 "hp_cost": 10
-            }
+            },
+            "theme": "last_stand",
+            "ranks": [ 25, 35, 40 ]
         },
         {
             "id": "reckless",
@@ -2206,8 +2099,6 @@
             "category": "attack",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "last_stand",
-            "ranks": [ 40, 70, 100 ],
             "bucket": "pow",
             "effect": {
                 "kind": "damage_ratio",
@@ -2215,7 +2106,9 @@
                     "recoil_move": true
                 },
                 "halves_recoil_at_rank": 3
-            }
+            },
+            "theme": "last_stand",
+            "ranks": [ 40, 70, 100 ]
         },
         {
             "id": "simple",
@@ -2225,13 +2118,13 @@
             "category": "stages",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "stat_stages",
-            "core": true,
-            "ranks": [ 1, 2, 3 ],
             "effect": {
                 "kind": "ability_like",
                 "ability": "ABILITY_SIMPLE"
-            }
+            },
+            "theme": "stat_stages",
+            "core": true,
+            "ranks": [ 1, 2, 3 ]
         },
         {
             "id": "opening_gambit",
@@ -2245,8 +2138,6 @@
             "category": "stages",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "stat_stages",
-            "ranks": [ 1, 1, 1 ],
             "effect": {
                 "kind": "stat_stage_on_entry",
                 "stats_by_rank": [
@@ -2254,7 +2145,9 @@
                     [ "attack", "sp_attack", "speed" ],
                     [ "attack", "sp_attack", "speed", "defense", "sp_defense" ]
                 ]
-            }
+            },
+            "theme": "stat_stages",
+            "ranks": [ 1, 1, 1 ]
         },
         {
             "id": "baton",
@@ -2268,12 +2161,12 @@
             "category": "stages",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "stat_stages",
-            "ranks": [ 50, 100, 100 ],
             "effect": {
                 "kind": "custom",
                 "handler": "baton"
-            }
+            },
+            "theme": "stat_stages",
+            "ranks": [ 50, 100, 100 ]
         },
         {
             "id": "unaware",
@@ -2283,12 +2176,12 @@
             "category": "stages",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "stat_stages",
-            "ranks": [ 1, 2, 3 ],
             "effect": {
                 "kind": "ability_like",
                 "ability": "ABILITY_UNAWARE"
-            }
+            },
+            "theme": "stat_stages",
+            "ranks": [ 1, 2, 3 ]
         },
         {
             "id": "defiance",
@@ -2302,12 +2195,12 @@
             "category": "stages",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "stat_stages",
-            "ranks": [ 1, 2, 3 ],
             "effect": {
                 "kind": "ability_like",
                 "ability": "ABILITY_DEFIANT"
-            }
+            },
+            "theme": "stat_stages",
+            "ranks": [ 1, 2, 3 ]
         },
         {
             "id": "slipstream",
@@ -2317,14 +2210,14 @@
             "category": "speed",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "speed",
-            "core": true,
-            "ranks": [ 20, 40, 60 ],
             "bucket": "cond",
             "effect": {
                 "kind": "damage_ratio",
                 "scale": "speed_gap"
-            }
+            },
+            "theme": "speed",
+            "core": true,
+            "ranks": [ 20, 40, 60 ]
         },
         {
             "id": "first_strike",
@@ -2334,12 +2227,12 @@
             "category": "speed",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "speed",
-            "ranks": [ 1, 2, 3 ],
             "effect": {
                 "kind": "custom",
                 "handler": "first_strike"
-            }
+            },
+            "theme": "speed",
+            "ranks": [ 1, 2, 3 ]
         },
         {
             "id": "speed_boost",
@@ -2349,12 +2242,12 @@
             "category": "speed",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "speed",
-            "ranks": [ 1, 2, 3 ],
             "effect": {
                 "kind": "ability_like",
                 "ability": "ABILITY_SPEED_BOOST"
-            }
+            },
+            "theme": "speed",
+            "ranks": [ 1, 2, 3 ]
         },
         {
             "id": "afterburner",
@@ -2364,12 +2257,12 @@
             "category": "speed",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "speed",
-            "ranks": [ 1, 2, 3 ],
             "effect": {
                 "kind": "ability_like",
                 "ability": "ABILITY_MOXIE"
-            }
+            },
+            "theme": "speed",
+            "ranks": [ 1, 2, 3 ]
         },
         {
             "id": "quick_draw",
@@ -2383,12 +2276,12 @@
             "category": "speed",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "speed",
-            "ranks": [ 10, 20, 30 ],
             "effect": {
                 "kind": "custom",
                 "handler": "quick_draw"
-            }
+            },
+            "theme": "speed",
+            "ranks": [ 10, 20, 30 ]
         },
         {
             "id": "sniper",
@@ -2398,13 +2291,13 @@
             "category": "critical",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "critical",
-            "core": true,
-            "ranks": [ 40, 60, 75 ],
             "bucket": "crit",
             "effect": {
                 "kind": "crit_damage"
-            }
+            },
+            "theme": "critical",
+            "core": true,
+            "ranks": [ 40, 60, 75 ]
         },
         {
             "id": "keen_eye",
@@ -2414,11 +2307,11 @@
             "category": "critical",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "critical",
-            "ranks": [ 1, 2, 3 ],
             "effect": {
                 "kind": "crit_stage"
-            }
+            },
+            "theme": "critical",
+            "ranks": [ 1, 2, 3 ]
         },
         {
             "id": "focus",
@@ -2428,12 +2321,12 @@
             "category": "critical",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "critical",
-            "ranks": [ 1, 2, 3 ],
             "effect": {
                 "kind": "custom",
                 "handler": "focus"
-            }
+            },
+            "theme": "critical",
+            "ranks": [ 1, 2, 3 ]
         },
         {
             "id": "follow_through",
@@ -2443,12 +2336,12 @@
             "category": "critical",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "critical",
-            "ranks": [ 1, 2, 3 ],
             "effect": {
                 "kind": "custom",
                 "handler": "follow_through"
-            }
+            },
+            "theme": "critical",
+            "ranks": [ 1, 2, 3 ]
         },
         {
             "id": "shattering_blow",
@@ -2462,12 +2355,12 @@
             "category": "critical",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "critical",
-            "ranks": [ 1, 2, 3 ],
             "effect": {
                 "kind": "custom",
                 "handler": "shattering_blow"
-            }
+            },
+            "theme": "critical",
+            "ranks": [ 1, 2, 3 ]
         },
         {
             "id": "overflow",
@@ -2481,13 +2374,13 @@
             "category": "heal",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "stall",
-            "core": true,
-            "ranks": [ 50, 75, 100 ],
             "effect": {
                 "kind": "custom",
                 "handler": "overheal_damage"
-            }
+            },
+            "theme": "stall",
+            "core": true,
+            "ranks": [ 50, 75, 100 ]
         },
         {
             "id": "parasite",
@@ -2497,13 +2390,13 @@
             "category": "heal",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "stall",
-            "ranks": [ 6, 5, 4 ],
             "effect": {
                 "kind": "residual_fraction",
                 "source": "leech_seed",
                 "spreads_at_rank": 3
-            }
+            },
+            "theme": "stall",
+            "ranks": [ 6, 5, 4 ]
         },
         {
             "id": "thorn_guard",
@@ -2517,12 +2410,12 @@
             "category": "heal",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "stall",
-            "ranks": [ 8, 6, 4 ],
             "effect": {
                 "kind": "custom",
                 "handler": "protect_thorns"
-            }
+            },
+            "theme": "stall",
+            "ranks": [ 8, 6, 4 ]
         },
         {
             "id": "mending",
@@ -2532,12 +2425,12 @@
             "category": "heal",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "stall",
-            "ranks": [ 25, 50, 100 ],
             "effect": {
                 "kind": "heal_ratio",
                 "source": "recovery_moves"
-            }
+            },
+            "theme": "stall",
+            "ranks": [ 25, 50, 100 ]
         },
         {
             "id": "regrowth",
@@ -2547,11 +2440,11 @@
             "category": "heal",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "stall",
-            "ranks": [ 16, 12, 8 ],
             "effect": {
                 "kind": "heal_per_turn"
-            }
+            },
+            "theme": "stall",
+            "ranks": [ 16, 12, 8 ]
         },
         {
             "id": "siphon",
@@ -2561,15 +2454,15 @@
             "category": "heal",
             "weight": 10,
             "pools": [ "after_battle", "gift", "buff_room", "shop" ],
-            "theme": "stall",
-            "ranks": [ 40, 70, 100 ],
             "bucket": "pow",
             "effect": {
                 "kind": "damage_ratio",
                 "condition": {
                     "drain_move": true
                 }
-            }
+            },
+            "theme": "stall",
+            "ranks": [ 40, 70, 100 ]
         }
     ]
 }

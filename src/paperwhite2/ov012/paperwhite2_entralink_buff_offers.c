@@ -218,12 +218,18 @@ static u32 EntralinkBuffs_GetTeamWeight(const EntralinkBuff *entry, const DrawWe
     return best;
 }
 
-// A type's weight for a type card: none once its count is at the card's highest, more for the team's types
+// A type's weight for a type card: none once its count is at the card's highest; the team's types
+// type_card_team_weight, the others type_card_other_weight (0 since the condense: the team's types only), or every
+// type the same when the team's types give none (teamTypes 0)
 static u32 EntralinkBuffs_GetTypeWeight(u32 buff, u32 type, u32 teamTypes) {
     if (EntralinkBuffs_GetTypeCount(buff, type) >= sBuffs[buff].maxLevel) {
         return 0;
     }
-    return (teamTypes & (1 << type)) ? ENTRALINK_BUFF_TYPE_CARD_TEAM_WEIGHT : WEIGHT_SCALE;
+    if (teamTypes == 0) {
+        return WEIGHT_SCALE;
+    }
+    return (teamTypes & (1 << type)) ? ENTRALINK_BUFF_TYPE_CARD_TEAM_WEIGHT
+                                     : WEIGHT_SCALE * ENTRALINK_BUFF_TYPE_CARD_OTHER_WEIGHT / 100;
 }
 
 // A type card's type, at random by the types' weights; ENTRALINK_BUFF_CARD_TYPES if every type is at its highest
@@ -235,6 +241,10 @@ static u32 EntralinkBuffs_DrawType(u32 buff, u32 teamTypes) {
 
     for (type = 0; type < ENTRALINK_BUFF_CARD_TYPES; type++) {
         total += EntralinkBuffs_GetTypeWeight(buff, type, teamTypes);
+    }
+    if (total == 0 && teamTypes != 0) {
+        // Every type of the team at its highest: any other type
+        return EntralinkBuffs_DrawType(buff, 0);
     }
     if (total == 0) {
         return ENTRALINK_BUFF_CARD_TYPES;

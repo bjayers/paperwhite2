@@ -1,5 +1,9 @@
 # Entralink roguelike: an audit of the blue and purple buffs
 
+**Status (2026-11-21): done.** The user agreed with the summary; the condensed purple list (merged, not cut, but Light
+Clay and Thrifty), Ward, the raised blues (Accuracy replaced by Evasion), a new Switch Hitter and capped recoil are
+built: `entralink-buffs.md` section 18, which also answers the open questions of 8.
+
 Written 2026-11-21 for the user's review, after the playtests' feedback: many buffs, mostly purples, barely matter;
 purple should feel stronger than blue; the type-specific defences (Type Ward) fall flat. Review only: nothing in the
 data or code is changed. The catalogue is `entralink-buffs.md` (sections 1-3, 5, 15); the values below are

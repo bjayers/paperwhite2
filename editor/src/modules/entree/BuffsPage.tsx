@@ -389,6 +389,20 @@ function BuffPanel({ index, buff: b, record, cat, schema, constants, kinds, erro
         </div>
       </Section>
 
+      {!gold && ctx && (
+        <Section title="More effects" summary={b.more.length ? b.more.map((m) => m.kind).join(", ") : "none"}
+                 actions={<button title="A further effect at the card's picks, with its own step and cap (a merged card's)"
+                                  onClick={() => change({ more_effects: fromPlain([...toPlain(record.get("more_effects") ?? []) as object[],
+                                    { effect: { kind: "damage_ratio" }, step: 10, cap: 30, bucket: cat.buckets[0]?.id }]) })}>+ Effect</button>}>
+          {b.more.length > 0 && (
+            <div className="ow-condition">
+              <BaseField schema={resolve(schema!.$defs!.stacking, schema!).properties!.more_effects} value={record.get("more_effects")!}
+                         path={["buffs", index, "more_effects"]} ctx={ctx} />
+            </div>
+          )}
+        </Section>
+      )}
+
       <Section title="Relations" summary={gold ? cat.themes.find((t) => t.id === b.theme)?.name ?? b.theme : b.related.length ? `${b.related.length} theme${b.related.length > 1 ? "s" : ""}` : "none"}>
         {gold ? (
           <div className="ow-condition">

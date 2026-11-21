@@ -187,8 +187,8 @@ test("filters and the icon a card shows", () => {
   const cat = readCatalogue(data());
   const golds = filterBuffs(cat.buffs, { tier: "gold" });
   assert.equal(golds.length, 68);
-  const stall = filterBuffs(cat.buffs, { theme: "stall" }).map((i) => cat.buffs[i].id);
-  assert.ok(stall.includes("overflow") && stall.includes("big_root"));
+  const stall = filterBuffs(cat.buffs, { theme: "stall" }).map((i) => cat.buffs[i]);
+  assert.ok(stall.length > 0 && stall.every((b) => b.theme === "stall" || b.related.includes("stall")));
   assert.deepEqual(filterBuffs(cat.buffs, { text: "leech seed" }).map((i) => cat.buffs[i].id), ["parasite"]);
   assert.ok(filterBuffs(cat.buffs, { pool: "gift" }).every((i) => cat.buffs[i].tier !== "blue"));
   assert.equal(cat.buffs.find((b) => b.id === "overflow")!.category, "heal");

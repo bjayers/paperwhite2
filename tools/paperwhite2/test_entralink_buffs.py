@@ -260,6 +260,34 @@ def test_battle_tables_carry_kinds_conditions_and_numbers():
     assert f"#define ENTRALINK_BUFF_BOSS_BAR_HP {data['settings']['boss_bar_hp']}" in text
 
 
+def test_more_effects_get_rows_past_the_cards_and_count_in_the_meter(tmp_path):
+    """The condense: a card's more_effects are effect rows after the cards' (with their card in EXTRA_CARDS and their
+    own numbers), the meter counts them in their bucket at the card's picks (a resisted-only one left out), and their
+    bucket is checked as a card's is."""
+    data = fixture_catalogue()
+    card = entry(data, "type_affinity")
+    card["more_effects"] = [
+        {"effect": {"kind": "crit_damage"}, "step": 20, "cap": 40, "bucket": "crit"},
+        {"effect": {"kind": "damage_ratio", "condition": {"resisted": True}}, "step": 50, "cap": 100, "bucket": "match"},
+        {"effect": {"kind": "damage_ratio", "condition": {"first_turns": 2}}, "step": 30, "cap": 60, "bucket": "cond"}]
+    rows = entralink_buffs.effects_table(data)
+    assert len(rows) == 6 and "/* type_affinity.2 */" in rows[3] and "/* type_affinity.4 */" in rows[5]
+    tests = entralink_buffs.condition_tests()
+    assert rows[5].startswith(f"    {{ {1 << tests.index('first_turns'):#x}, ")
+    assert rows[5].rstrip().endswith(", 0, 2 }, /* type_affinity.4 */")
+    values = entralink_buffs.values_table(data)
+    assert values[3].startswith("    { { 20, 0, 40 }, 0, ENTRALINK_BUFF_KIND_CRIT_DAMAGE }")
+    text = entralink_buffs.header(data, entralink_buffs.effect_kinds())
+    assert "#define ENTRALINK_BUFF_EFFECT_COUNT 6" in text and "#define ENTRALINK_BUFF_EXTRA_COUNT 3" in text
+    assert "#define ENTRALINK_BUFF_EXTRA_CARDS { 1, 1, 1 }" in text
+    data["balance"]["example"] = [{"buff": "type_affinity", "count": 2}]
+    sums = entralink_buffs.example_hit(data)["sums"]
+    assert sums["crit"] == 40 and sums["cond"] == 60 and sums["match"] == 0 and sums["pow"] == 30
+    card["more_effects"][0].pop("bucket")
+    with pytest.raises(datajson.DataError, match="adds to a bucket"):
+        entralink_buffs.problems(data)
+
+
 def test_game_handlers_keep_their_numbers_and_the_phase_4_settings():
     # The fixture has no custom card: the game's handlers are still numbered, in GAME_HANDLERS' order, and a
     # handler the game doesn't have comes after them

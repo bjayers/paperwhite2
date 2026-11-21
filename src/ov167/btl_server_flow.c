@@ -6724,6 +6724,11 @@ s32 ServerEvent_CalcRecoil(BtlServerFlow *flow, BattleMon *mon, u16 move, s32 da
             if (damage < 1) {
                 damage = 1;
             }
+#ifdef PAPERWHITE2
+            // Paper White 2: in an Entralink run, recoil is at most the move's share of the user's max HP, so a buffed
+            // hit on a scaled foe doesn't faint its user (paperwhite2_entralink_battle.c)
+            damage = EntralinkBattle_CapRecoil(mon, damage, ratio);
+#endif
         }
         *forced = force;
         return damage;
@@ -7137,10 +7142,8 @@ u32 ServerEvent_GetFlinchChance(BtlServerFlow *flow, u16 move, BattleMon *attack
         return 0;
     }
 #ifdef PAPERWHITE2
-    // Paper White 2: an Entralink run's Flinch Edge adds to the moves that flinch (paperwhite2_entralink_battle.c)
-    if (chance != 0) {
-        chance += EntralinkBattle_GetFlinchBonus(attacker);
-    }
+    // Paper White 2: an Entralink run's Serene Touch raises the moves that flinch (paperwhite2_entralink_battle.c)
+    chance = EntralinkBattle_GetFlinchChance(attacker, chance);
 #endif
     if (chance == 0) {
         chance += bonus;

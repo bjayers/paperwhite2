@@ -63,8 +63,12 @@ BattleCondition EntralinkBattle_GetConditionValue(BattleMon *target, BattleMon *
                                                   BattleCondition value);
 // Whether a critical-hit stage gives a sure critical hit: 5 or more, in a run battle (the crit_stage kind)
 BOOL EntralinkBattle_IsSureCritical(s32 stage);
-// The percentage points the team's moves that flinch add to their flinch chance (Flinch Edge)
-u32 EntralinkBattle_GetFlinchBonus(BattleMon *attacker);
+// A move's flinch chance (0 for a move that doesn't flinch) for the team's moves: plus the flinch_chance cards' points,
+// times the added_effect_chance cards' (Serene Touch), at most 100
+u32 EntralinkBattle_GetFlinchChance(BattleMon *attacker, u32 chance);
+// The condense: a recoil move's recoil (damage, at ratio percent of the damage dealt) in a run battle, at most ratio
+// percent of the user's max HP, so a buffed hit costs what the move costs at normal damage; outside a run, damage
+u32 EntralinkBattle_CapRecoil(BattleMon *mon, u32 damage, u32 ratio);
 // The HP a recovery move heals the team's Pokémon (Mending)
 u32 EntralinkBattle_GetMoveHealAmount(BattleMon *mon, u32 amount);
 // Whether a burned Pokémon of the team ignores burn's Attack drop (Fire Within)

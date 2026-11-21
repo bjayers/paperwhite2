@@ -141,9 +141,20 @@ def factor(bucket: dict, total: float) -> float:
     return (vanilla + total) / (100 if bucket.get("critical_only") else vanilla)
 
 
+def effect_entries(data: dict) -> list[dict]:
+    """Every effect of the catalogue as an entry: each card itself (its first effect), then each card's more_effects
+    (the condense: merged cards), each as {"id": "<card>.<n>", "card": the card's index, "tier", "effect", "bucket",
+    "step", "soft_limit", "cap"}, the game's effect rows past ENTRALINK_BUFF_COUNT."""
+    extras = []
+    for i, entry in enumerate(data["buffs"]):
+        for n, more in enumerate(entry.get("more_effects", []), 2):
+            extras.append({"id": f"{entry['id']}.{n}", "card": i, "tier": entry["tier"], **more})
+    return list(data["buffs"]) + extras
+
+
 def bucket_sums(data: dict, values: dict[str, float]) -> dict[str, float]:
     sums = {bucket["id"]: 0.0 for bucket in data["buckets"]}
-    for entry in data["buffs"]:
+    for entry in effect_entries(data):
         if entry["id"] in values and entry.get("bucket") in sums:
             sums[entry["bucket"]] += values[entry["id"]]
     return sums
@@ -168,7 +179,7 @@ def hit(data: dict, sums: dict[str, float], reference: int) -> dict:
 def ceiling(data: dict, reference: int | None = None) -> dict:
     """The strongest possible single hit from the data: every entry at its most, each bucket's sum at its cap."""
     reference = reference or data.get("balance", {}).get("reference_hit", 600)
-    values = {e["id"]: strongest(e) for e in data["buffs"] if in_strongest_hit(e)}
+    values = {e["id"]: strongest(e) for e in effect_entries(data) if in_strongest_hit(e)}
     sums = bucket_sums(data, values)
     return {"sums": sums, **hit(data, sums, reference)}
 
@@ -182,7 +193,7 @@ def typical_band(data: dict) -> tuple[int, int]:
 def example_hit(data: dict, reference: int | None = None) -> dict:
     """The balance section's typical build: each pick's value (a gold at its rank), each bucket's sum at its cap."""
     reference = reference or data.get("balance", {}).get("reference_hit", 600)
-    entries = {e["id"]: e for e in data["buffs"]}
+    entries = {e["id"]: e for e in effect_entries(data)}
     values = {}
     for pick in data.get("balance", {}).get("example", []):
         entry = entries[pick["buff"]]
@@ -190,6 +201,9 @@ def example_hit(data: dict, reference: int | None = None) -> dict:
             values[entry["id"]] = entry["ranks"][min(pick["count"], len(entry["ranks"])) - 1]
         else:
             values[entry["id"]] = picked_value(entry["step"], entry.get("soft_limit"), entry["cap"], pick["count"])
+            for n, more in enumerate(entry.get("more_effects", []), 2):
+                values[f"{entry['id']}.{n}"] = picked_value(more["step"], more.get("soft_limit"), more["cap"],
+                                                           pick["count"])
     values = {k: v for k, v in values.items() if in_strongest_hit(entries[k])}
     sums = bucket_sums(data, values)
     return {"sums": sums, **hit(data, sums, reference)}
@@ -297,10 +311,10 @@ EFFECT_ENUMS = [
 ]
 # The condition's fields that hold a value beside their test bit
 CONDITION_VALUES = {"defender_status", "attacker_status", "move_type", "category", "attacker_hp_below",
-                    "power_at_most", "weather"}
+                    "power_at_most", "weather", "first_turns"}
 # The effects' flags, bits of EntralinkBuffEffect's flags
 EFFECT_FLAGS = ["exempt_from_bucket_cap", "ignore_burn_drop", "team_immune", "non_stab", "overrides_immunity",
-                "replaces_freeze", "at_least_move_chance"]
+                "replaces_freeze", "at_least_move_chance", "foes_moves"]
 # The effects' "from this rank on" parameter, EntralinkBuffEffect's rankParam
 RANK_PARAMS = ["halves_recoil_at_rank", "ignores_immunity_at_rank", "spreads_at_rank"]
 
@@ -332,7 +346,7 @@ def custom_handlers(data: dict) -> list[str]:
     """The custom effects' handlers: the game's (GAME_HANDLERS), then any other the catalogue names, in the order it
     first names them (a handler the game doesn't have yet does nothing in battle)."""
     names = list(GAME_HANDLERS)
-    for entry in data["buffs"]:
+    for entry in effect_entries(data):
         handler = entry["effect"].get("handler")
         if handler is not None and handler not in names:
             names.append(handler)
@@ -346,19 +360,20 @@ def bits(names, enum: list[str]) -> int:
 def effects_table(data: dict, directory: Path = SOURCE) -> list[str]:
     """ENTRALINK_BUFF_EFFECTS, EntralinkBuffEffect's initializer (paperwhite2/entralink_buffs.h): each card's kind,
     bucket, condition (the tests that must all hold, the tests of which one must hold, and their values), scale,
-    parameter, flags, rank parameter, statuses, stats a rank and ability."""
+    parameter, flags, rank parameter, statuses, stats a rank, HP cost and first turns; the cards' rows, then their
+    more_effects' (effect_entries)."""
     enums = effect_enums(directory)
     tests = condition_tests(directory)
     handlers = custom_handlers(data)
     kinds = effect_kinds(directory)
     buckets = [b["id"] for b in data["buckets"]]
     rows = []
-    for entry in data["buffs"]:
+    for entry in effect_entries(data):
         where = f"buffs.{entry['id']}"
         effect = entry["effect"]
         kind = effect["kind"]
         values = {"move_type": "TYPE_NULL", "defender_status": 0, "attacker_status": 0, "category": 0,
-                  "attacker_hp_below": 0, "power_at_most": 0, "weather": 0}
+                  "attacker_hp_below": 0, "power_at_most": 0, "weather": 0, "first_turns": 0}
 
         def take(condition: dict, alternatives: bool) -> int:
             mask = 0
@@ -423,7 +438,7 @@ def effects_table(data: dict, directory: Path = SOURCE) -> list[str]:
                     f"{values['defender_status']:#x}, {values['attacker_status']:#x}, {values['move_type']}, "
                     f"{values['category']}, {values['attacker_hp_below']}, {values['power_at_most']}, "
                     f"{values['weather']:#x}, {scale}, {param}, {flags:#x}, {rank_param}, {statuses:#x}, "
-                    f"{{ {stats[0]:#x}, {stats[1]:#x}, {stats[2]:#x} }}, {effect.get('hp_cost', 0)} }}, "
+                    f"{{ {stats[0]:#x}, {stats[1]:#x}, {stats[2]:#x} }}, {effect.get('hp_cost', 0)}, {values['first_turns']} }}, "
                     f"/* {entry['id']} */")
         assert kinds.index(kind) >= 0
     return rows
@@ -432,9 +447,9 @@ def effects_table(data: dict, directory: Path = SOURCE) -> list[str]:
 def values_table(data: dict) -> list[str]:
     """ENTRALINK_BUFF_VALUES, EntralinkBuffValue's initializer: a blue's or purple's step, soft limit (0 for none) and
     cap, or a gold's value at each rank (its last repeated); whether it is a gold, and its effect's kind (for the run's
-    own effects outside the battle, Vigor's)."""
+    own effects outside the battle, Vigor's); the cards' rows, then their more_effects' (effect_entries)."""
     rows = []
-    for entry in data["buffs"]:
+    for entry in effect_entries(data):
         if entry["tier"] == "gold":
             ranks = entry["ranks"]
             numbers = (ranks + [ranks[-1]] * 3)[:3]
@@ -558,7 +573,8 @@ def effect_lines(data: dict, directory: Path = SOURCE) -> list[str]:
                                                 for i, h in enumerate(custom_handlers(data))]]
     lines += ["// Each card's effect (EntralinkBuffEffect, paperwhite2/entralink_buffs.h): condition, any condition,",
               "// ability, kind, bucket, defender's and attacker's statuses, move type, category, HP below, power at",
-              "// most, weathers, scale, parameter, flags, rank parameter, statuses, stats a rank, HP cost",
+              "// most, weathers, scale, parameter, flags, rank parameter, statuses, stats a rank, HP cost, first turns;",
+              "// the cards' rows, then the rows of their further effects (more_effects, from ENTRALINK_BUFF_COUNT)",
               "#define ENTRALINK_BUFF_EFFECTS { \\", *[row + " \\" for row in effects_table(data, directory)], "}",
               "// Each card's numbers (EntralinkBuffValue): step, soft limit and cap, or the ranks; whether a gold; its",
               "// effect's kind",
@@ -622,6 +638,24 @@ def tier_palette(directory: Path, tier: str) -> list[tuple[int, int, int]]:
     return (list(colors) + [(0, 0, 0)] * ICON_COLORS)[:ICON_COLORS]
 
 
+def check_bucket(where: str, effect: dict, bucket: str | None, buckets: dict, warnings: list[str]):
+    """An effect's bucket: named where its kind adds to one, of the stat's side."""
+    kind = effect["kind"]
+    needs = kind in BUCKET_KINDS or (kind == "stat_ratio" and effect["stat"] != "speed")
+    if bucket is not None and bucket not in buckets:
+        error(where, f"its bucket {bucket!r} isn't one of buckets'")
+    if needs and bucket is None:
+        error(where, f"a {kind} effect adds to a bucket: name it")
+    if not needs and bucket is not None:
+        error(where, f"a {kind} effect isn't damage: it names no bucket")
+    if kind == "stat_ratio" and bucket is not None:
+        side = "attack" if effect["stat"] in ATTACK_STATS else "defense"
+        if buckets[bucket]["side"] != side:
+            error(where, f"the {effect['stat']} stat goes in a bucket of the {side} side")
+    if kind == "stab_bonus" and bucket is not None and buckets[bucket].get("vanilla", 100) == 100:
+        warnings.append(f"{where}: a stab_bonus in {bucket}, a bucket with no vanilla factor")
+
+
 def problems(data: dict, directory: Path = SOURCE) -> list[str]:
     """Raises on the first error; returns the warnings."""
     warnings = []
@@ -680,20 +714,13 @@ def problems(data: dict, directory: Path = SOURCE) -> list[str]:
                     error(where, f"related theme {theme!r} isn't one of themes'")
             if entry["tier"] == "blue" and ("related" in entry or "type_card" in entry):
                 error(where, "related and type_card are for purples")
-        bucket = entry.get("bucket")
-        needs = kind in BUCKET_KINDS or (kind == "stat_ratio" and effect["stat"] != "speed")
-        if bucket is not None and bucket not in buckets:
-            error(where, f"its bucket {bucket!r} isn't one of buckets'")
-        if needs and bucket is None:
-            error(where, f"a {kind} effect adds to a bucket: name it")
-        if not needs and bucket is not None:
-            error(where, f"a {kind} effect isn't damage: it names no bucket")
-        if kind == "stat_ratio" and bucket is not None:
-            side = "attack" if effect["stat"] in ATTACK_STATS else "defense"
-            if buckets[bucket]["side"] != side:
-                error(where, f"the {effect['stat']} stat goes in a bucket of the {side} side")
-        if kind == "stab_bonus" and bucket is not None and buckets[bucket].get("vanilla", 100) == 100:
-            warnings.append(f"{where}: a stab_bonus in {bucket}, a bucket with no vanilla factor")
+        check_bucket(where, effect, entry.get("bucket"), buckets, warnings)
+        if entry.get("more_effects") and entry["tier"] == "gold":
+            error(where, "more_effects are for blues and purples")
+        for n, more in enumerate(entry.get("more_effects", []), 2):
+            if (more["step"] < 0) != (more["cap"] < 0) or abs(more["step"]) > abs(more["cap"]):
+                error(f"{where}.{n}", "the step must be within the cap, of the same sign")
+            check_bucket(f"{where}.{n}", more["effect"], more.get("bucket"), buckets, warnings)
         for text in entry["description"] if isinstance(entry["description"], list) else [entry["description"]]:
             if wrap(card_text(entry, text)).count("\\n") > 1:
                 error(where, f"{text!r} takes more than the description window's two lines of about "
@@ -783,7 +810,12 @@ def header(data: dict, kinds: list[str], directory: Path = SOURCE) -> str:
         f"#define ENTRALINK_BUFF_COUNT {len(data['buffs'])}",
         f"#define ENTRALINK_BUFF_THEME_COUNT {len(data['themes'])}",
         f"#define ENTRALINK_BUFF_KIND_COUNT {len(kinds)}",
-        f"#define ENTRALINK_BUFF_BUCKET_COUNT {len(data['buckets'])}", "",
+        f"#define ENTRALINK_BUFF_BUCKET_COUNT {len(data['buckets'])}",
+        "// The condense: every effect row (the cards', then their more_effects'), and each further effect's card",
+        f"#define ENTRALINK_BUFF_EFFECT_COUNT {len(effect_entries(data))}",
+        f"#define ENTRALINK_BUFF_EXTRA_COUNT {len(effect_entries(data)) - len(data['buffs'])}",
+        "#define ENTRALINK_BUFF_EXTRA_CARDS { " + (", ".join(
+            str(e["card"]) for e in effect_entries(data)[len(data["buffs"]):]) or "ENTRALINK_BUFF_NONE") + " }", "",
         "// Tiers",
         *[f"#define ENTRALINK_BUFF_TIER_{macro(t)} {i}" for i, t in enumerate(TIERS)], "",
         "// Effect kinds (buffs.schema.json's effect_* definitions)",
@@ -831,6 +863,7 @@ def header(data: dict, kinds: list[str], directory: Path = SOURCE) -> str:
         f"#define ENTRALINK_BUFF_BOSS_FIXED_DAMAGE {settings.get('boss_fixed_damage', 50)}",
         f"#define ENTRALINK_BUFF_SKIP_DUST {settings.get('skip_dust', 0)}",
         f"#define ENTRALINK_BUFF_TYPE_CARD_TEAM_WEIGHT {settings.get('type_card_team_weight', 100)}",
+        f"#define ENTRALINK_BUFF_TYPE_CARD_OTHER_WEIGHT {settings.get('type_card_other_weight', 100)}",
         *team_tag_lines(data),
         *[f"#define ENTRALINK_BUFF_PRICE_{macro(t)} {settings['prices'][t]}" for t in TIERS], "",
         "// The offers' sources, rows of ENTRALINK_BUFF_ODDS (blue, purple, gold percents)",

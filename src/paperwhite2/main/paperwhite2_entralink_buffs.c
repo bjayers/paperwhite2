@@ -8,7 +8,7 @@
 // include/paperwhite2/entralink_buffs.h
 
 static const u8 sTypeCards[] = ENTRALINK_BUFF_TYPE_CARDS;
-static const EntralinkBuffValue sValues[ENTRALINK_BUFF_COUNT] = ENTRALINK_BUFF_VALUES;
+static const EntralinkBuffValue sValues[ENTRALINK_BUFF_EFFECT_COUNT] = ENTRALINK_BUFF_VALUES;
 
 void EntralinkBuffs_Clear(void) {
     EntralinkRunState *state = EntralinkRun_GetState();
@@ -169,7 +169,7 @@ s32 EntralinkBuffs_GetValue(u32 buff, u32 level) {
     u32 full;
     s32 total;
 
-    if (buff >= ENTRALINK_BUFF_COUNT || level == 0) {
+    if (buff >= ENTRALINK_BUFF_EFFECT_COUNT || level == 0) {
         return 0;
     }
     value = &sValues[buff];

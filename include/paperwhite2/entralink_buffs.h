@@ -74,7 +74,8 @@ typedef struct {
 } EntralinkBuffBucketCard;
 
 // A card's numbers (ENTRALINK_BUFF_VALUES, ARM9 main): a blue's or purple's step, soft limit (0 for none) and cap; a
-// gold's value at each rank (its last repeated); whether it is a gold, and its effect's kind (ENTRALINK_BUFF_KIND_*)
+// gold's value at each rank (its last repeated); whether it is a gold, and its effect's kind (ENTRALINK_BUFF_KIND_*).
+// The rows past ENTRALINK_BUFF_COUNT are the cards' further effects (more_effects, ENTRALINK_BUFF_EXTRA_CARDS)
 typedef struct {
     s16 values[3];
     u8 gold;
@@ -118,6 +119,8 @@ typedef struct {
     u8 stats[3];
     // The percent of max HP an attack costs
     u8 hpCost;
+    // The condense: the first_turns test's count (the attacker's first this many moves in the battle)
+    u8 firstTurns;
 } EntralinkBuffEffect;
 
 // ---- ARM9 main: what the run holds ----------------------------------------------------------------------------------
@@ -141,7 +144,8 @@ u32 EntralinkBuffs_GetGoldSlot(u32 slot);
 // how many
 u32 EntralinkBuffs_ListHeld(u8 *buffs, u32 max);
 // What a buff gives at a level, in its kind's unit: a gold's rank's value, or a blue's or purple's picks (a full step
-// each up to the soft limit, half a step past it, at most the cap); 0 at level 0
+// each up to the soft limit, half a step past it, at most the cap); 0 at level 0. buff may be an effect row past
+// ENTRALINK_BUFF_COUNT (a card's further effect), at its card's level
 s32 EntralinkBuffs_GetValue(u32 buff, u32 level);
 // A buff's effect's kind, ENTRALINK_BUFF_KIND_*
 u32 EntralinkBuffs_GetKind(u32 buff);

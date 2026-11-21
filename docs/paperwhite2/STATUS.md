@@ -2,6 +2,23 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-21: Entralink buffs condensed per the audit (ROM session, on a branch)
+
+- **Purples 33 → 18:** the audit's list (entralink-buffs.md section 18): survivors carry the merged cards as further
+  effects (`more_effects`: Expert Edge + Glancing Blow, Keen Edge + Heavy Crit, Climate + Damp Rock + Overcoat, Hardy +
+  Quick Recovery + Shed Skin, ...), new values, Giant Slayer in COND; Type Ward → **Ward** (foes' STAB hits −20%);
+  Light Clay and Thrifty cut; new **Switch Hitter** (+40% on the first turn after each switch-in); First Blood counts
+  each Pokémon's first two moves. Type Affinity rolls only the team's types.
+- **Blues:** HP +15%, Guard 10%, Power +20% (FINAL cap 60); Accuracy replaced by **Evasion** (foes' moves −8%).
+- **Recoil** in run battles: at most the move's share of the user's max HP (25/33/50%); Vampiric at most 25% a hit.
+- **Code:** a card's further effects are effect rows after the cards' (packer, `AddCard` in overlay 167); the editor's
+  Buffs tab has a More effects section. Meter example x22.6 (band 15-23); the simulator's late hit taken is now 13-16%
+  (target 20%): enemy curves not refitted, waiting for a playtest.
+- **Tested** in py-desmume: each merged part, Ward, recoil (73 of 293 HP after a 2,271 hit), First Blood / Switch
+  Hitter on a Roar switch-in, Evasion's misses, the SELECT viewer. Memory: overlay 167 +0.7 KB, main and overlay 12
+  smaller; arena 19.8 KB left.
+- **Next:** a playtest; then `entralink_sim.py --fit` if the defence side is too easy.
+
 ## 2026-11-21: Entralink random enemy rooms (ROM session, on a branch)
 
 - **Random rooms:** an enemy or enemy choice door leads to a random room at run.json's `random_enemy_chance` (50; a

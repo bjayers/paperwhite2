@@ -292,7 +292,10 @@
           "type": "array",
           "minItems": 1,
           "maxItems": 9,
-          "items": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+          "items": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
           "description": "The health bars' colours from bar 2 up (bar 1, the last to empty, is the vanilla bar: green, yellow, red), each to contrast with the one before; the bar's dark rows are its colour at 55%. Their count + 1 is the most bars a foe shows"
         },
         "boss_sleep_turns": {
@@ -343,6 +346,12 @@
           "maximum": 1000,
           "description": "A type card's weight for the team's own types, in percent of the others'"
         },
+        "type_card_other_weight": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "A type card's weight for a type of no Pokémon of the team, in percent of a plain type's (0: only the team's types)"
+        },
         "damage_numbers": {
           "type": "object",
           "additionalProperties": false,
@@ -379,7 +388,10 @@
                     "type": "array",
                     "minItems": 4,
                     "maxItems": 4,
-                    "items": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+                    "items": {
+                      "type": "string",
+                      "pattern": "^#[0-9a-fA-F]{6}$"
+                    },
                     "description": "The digits' palette entries 2-5 in this tier: the dark shadow, the light shadow, the main colour and the shine (the colour the sheet's shine rows draw with)"
                   }
                 }
@@ -553,7 +565,18 @@
         },
         "typical_factor": {
           "type": "array",
-          "prefixItems": [ { "type": "integer", "minimum": 1, "maximum": 500 }, { "type": "integer", "minimum": 1, "maximum": 500 } ],
+          "prefixItems": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500
+            },
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500
+            }
+          ],
           "minItems": 2,
           "maxItems": 2,
           "description": "The band a typical late build's factor should land in (the example's), lowest and highest; the meter marks the example outside it"
@@ -707,13 +730,19 @@
             "moves": {
               "type": "array",
               "maxItems": 64,
-              "items": { "type": "string", "x-constant": "MOVE_" },
+              "items": {
+                "type": "string",
+                "x-constant": "MOVE_"
+              },
               "description": "Moves that set the theme up or use it"
             },
             "abilities": {
               "type": "array",
               "maxItems": 32,
-              "items": { "type": "string", "x-constant": "ABILITY_" },
+              "items": {
+                "type": "string",
+                "x-constant": "ABILITY_"
+              },
               "description": "Abilities that set the theme up or use it"
             },
             "stab_moves": {
@@ -857,6 +886,15 @@
         },
         "effect": {
           "$ref": "#/$defs/effect"
+        },
+        "more_effects": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/more_effect"
+          },
+          "description": "Further effects (merged cards), each with its own step and cap; the card's picks and pool follow its first effect"
         }
       }
     },
@@ -1105,11 +1143,17 @@
         },
         "first_turn": {
           "type": "boolean",
-          "description": "The attacker's first turn out"
+          "description": "The attacker's first turn after each entry (every switch-in)"
         },
         "boss": {
           "type": "boolean",
           "description": "The target is a boss or a raid target"
+        },
+        "first_turns": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "description": "The attacker's first this many moves in the battle (counted over its stints on the field)"
         },
         "any": {
           "type": "array",
@@ -1416,7 +1460,7 @@
       "required": [
         "kind"
       ],
-      "description": "Raises the moves' accuracy. Value: percent of the accuracy",
+      "description": "Raises the moves' accuracy (with foes_moves, a negative value lowers the foes' moves' on the team). Value: percent of the accuracy",
       "properties": {
         "kind": {
           "enum": [
@@ -1427,6 +1471,10 @@
         "condition": {
           "$ref": "#/$defs/condition",
           "description": "When it applies; left out, always. Every field given must hold"
+        },
+        "foes_moves": {
+          "type": "boolean",
+          "description": "It changes the foes' moves aimed at the team instead of the team's"
         }
       }
     },
@@ -1962,6 +2010,44 @@
           "type": "string",
           "pattern": "^[a-z0-9_]+$",
           "description": "The handler's name"
+        }
+      }
+    },
+    "more_effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "effect",
+        "step",
+        "cap"
+      ],
+      "description": "A further effect of the card: its own step, soft limit and cap, at the card's picks",
+      "properties": {
+        "effect": {
+          "$ref": "#/$defs/effect"
+        },
+        "step": {
+          "type": "integer",
+          "minimum": -100,
+          "maximum": 1000,
+          "description": "What one pick adds, in the effect kind's unit"
+        },
+        "soft_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "description": "Picks at the full step; later picks add half; left out, every pick is full"
+        },
+        "cap": {
+          "type": "integer",
+          "minimum": -100,
+          "maximum": 1000,
+          "description": "The most its picks add up to, in the effect kind's unit"
+        },
+        "bucket": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$",
+          "description": "The damage bucket it adds to (buckets' ids); left out, none (not damage)"
         }
       }
     }

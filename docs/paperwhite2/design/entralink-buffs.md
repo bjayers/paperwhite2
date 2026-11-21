@@ -484,6 +484,9 @@ burned foe on the field, section 16).
 A new kind is a new `effect_<kind>` definition in the schema (the editor's kind picker and parameter rows read it from
 there), a number in the header, and its handler in the game.
 
+Since the condense (section 18) a card may carry further effects (`more_effects`), and the table's card names are
+those of the time: section 18.1 has today's blues and purples, and which kinds the merged cards' parts use.
+
 ## 8. Decisions for the later phases (the user, 2026-11-19)
 
 Recorded now, built later; none of it is in phase 1.
@@ -1712,3 +1715,135 @@ tests are in `entralink-roguelike-prototype.md`, "Random enemy rooms".
 - **Memory:** overlay 12 +7.4 KB (the 523 species' table 5.2 KB, the code 2 KB, the rows and accessors 0.1 KB), so the
   main arena's start moves about 7.4 KB; ARM9 main +0.5 KB of BSS (the room made, 500 bytes). At a random room's entry a
   species' personal data (76 bytes) and egg moves, briefly, from the event heap. No VRAM.
+
+
+## 18. Condensed: the audit's purple list, stronger blues, Switch Hitter, capped recoil (2026-11-21)
+
+The user agreed with the buff audit (`entralink-buff-audit.md`) and asked for its condensed purple list (merges as
+second and third effects, cuts, new values), the weak blues raised to about a mid-run Offense or Bulwark, a purple
+that holds on every switch-in, and recoil as a share of max HP in run battles. Scripts in the session's scratchpad
+`condense/h/`, screenshots in `condense/shots/`.
+
+### 18.1 The cards (blues and purples; the golds are unchanged)
+
+| Card (id) | Tier | Line | Step (cap) | Bucket | Further effects |
+| --- | --- | --- | --- | --- | --- |
+| Offense (`attack`) | blue | Attack and Sp. Atk +25% | 25, soft 6 (150) | ATK | |
+| Bulwark (`defense`) | blue | Defense and Sp. Def +20% | 20, soft 6 (150) | DEF | |
+| HP (`hp`) | blue | Max HP +15% (999 at most) | **15**, soft 4 (**90**) | | |
+| Speed (`speed`) | blue | Speed +8% | 8, soft 6 (60) | | |
+| Guard (`guard`) | blue | 10% less damage taken | **10**, soft **3** (40) | GUARD | |
+| Power (`power`) | blue | All damage +20% | **20** (**60**; FINAL's cap 40 → **60**) | FINAL | |
+| **Evasion** (`evasion`, replaces Accuracy) | blue | Foes' moves 8% less accurate | −8, soft 3 (−32) | | |
+| Vigor (`vigor`) | blue | Heal 8% of max HP after each battle | 8, soft 3 (40) | | |
+| Type Affinity (`type_affinity`) | purple | Moves of the card's type +50% power | **50 (150)** | POW | |
+| **Ward** (`ward`, replaces Type Ward) | purple | 20% less damage from foes' STAB hits | 20 (40) | GUARD | |
+| Expert Edge (`expert_edge`) | purple | Super-effective hits +25%, resisted hits +50% | **25 (75)** | MATCH | resisted +50 (150, exempt from the cap): Glancing Blow |
+| Kinship (`kinship`) | purple | STAB +0.35 | **35 (105)** | STAB | |
+| Keen Edge (`keen_edge`) | purple | Critical stage +1, critical hits +0.25 damage | 1 (2) | | crit_damage +25 (50), CRIT: Heavy Crit |
+| Serene Touch (`serene_touch`) | purple | Added effects and flinches x1.5, status moves +10% accuracy | **50 (100)** | | status moves' accuracy +10 (20): Sure Hand; flinch inside the ×: Flinch Edge |
+| Opportunist (`opportunist`) | purple | +45% damage to statused foes, your residual damage +30% | **45 (135)** | COND | residual_ratio any +30 (90): Lingering Ailment |
+| Hardy (`hardy`) | purple | Statuses 25% less likely, shorter sleep, 10% cure a turn | **25 (75)** | | own sleep and confusion −1 turn (2): Quick Recovery; cure 10% a turn (30): Shed Skin |
+| Climate (`climate`) | purple | Weather-boosted moves +35%, weather +2 turns, no sand/hail | **35 (105)** | COND | weather_turns +2 (6): Damp Rock; Overcoat |
+| Tough Claws (`tough_claws`) | purple | Contact moves (punches too) +35%, recoil 35% less | **35 (105)** | POW | recoil_ratio 35 (100): Rock Skin |
+| Technique (`technique`) | purple | Power 75 or less, and priority, +50%; multi-hits +1 hit | **50 (150)**, power **75** | POW | multi_hit +1 (3): Second Hit |
+| Vampiric (`vampiric`) | purple | Heal 3% of the damage you deal, drain moves +25% | 3 (15), **at most 25% of max HP a hit** | | drain heals +25 (75): Big Root |
+| Pinch Power (`pinch_power`) | purple | +40% damage below half HP, 10% chance to survive a KO | **40 (120)** | COND | endure_chance 10 (30): Focus Band |
+| Clear Amulet (`clear_amulet`) | purple | Blocks the first 2 stat drops each battle | **2 (4)** | | |
+| Momentum Strike (`momentum_strike`) | purple | +15% damage per attack boost, 25% a boost gives +1 more | **15 (90)** | COND | extra_stage_chance 25 (75): Tempo |
+| First Blood (`first_blood`) | purple | +35% damage on each Pokémon's first two moves | **35 (105)** | COND | |
+| **Switch Hitter** (`switch_hitter`, new) | purple | +40% damage on the first turn after each switch-in | 40 (120) | COND | |
+| Giant Slayer (`giant_slayer`) | purple | +35% damage to bosses and raid targets | **35 (70)** | **COND** (was FINAL) | |
+
+Removed ids (merged or cut): `type_ward`, `glancing_blow`, `heavy_crit`, `lingering_ailment`, `sure_hand`,
+`quick_recovery`, `damp_rock`, `overcoat`, `rock_skin`, `second_hit`, `big_root`, `flinch_edge`, `focus_band`,
+`tempo`, `shed_skin` (merged), `light_clay`, `thrifty` (cut) and `accuracy` (replaced). 94 cards (from 110): 8 blues,
+18 purples, 68 golds. Their kinds (`screen_turns`, `pp_save_chance`, `flinch_chance`...) stay in the schema and the
+game for the editor.
+
+### 18.2 Cards with several effects
+
+- **Data:** a blue or purple may have `more_effects` (1-3), each `{effect, step, soft_limit?, cap, bucket?}`, at the
+  card's picks; the card's picks, pool and highest level follow its first effect. The schema's `more_effect`; the
+  packer checks each one's sign and bucket as a card's.
+- **Packer:** `effect_entries()` lists the cards then their further effects (`<card>.<n>`); `ENTRALINK_BUFF_EFFECTS`
+  and `ENTRALINK_BUFF_VALUES` carry their rows after the cards' (`ENTRALINK_BUFF_EFFECT_COUNT`), and
+  `ENTRALINK_BUFF_EXTRA_CARDS` names each one's card. The meter counts them in their buckets at the card's picks (a
+  resisted-only one left out of the strongest hit, as before).
+- **Battle (overlay 167):** `EntralinkBattle_Start` adds a held card's further effects as entries of their own
+  (`AddCard`; the table's limit 64 → 80), so every kind's code works on them unchanged. `EntralinkBuffs_GetValue`
+  (main) takes an effect row past the cards.
+- **Editor:** the Buffs tab's **More effects** section (blues and purples) edits them with the schema's form (kind,
+  parameters, step, soft limit, cap, bucket) and **+ Effect** adds one; the meter and the checks mirror the packer's.
+- **Other code:** `first_turns` (a condition test: the attacker's first N moves in the battle, counted by
+  `HandlerMoveStart`, the hit's own included; First Blood) and `foes_moves` (an `accuracy` flag: the foes' moves aimed
+  at the team, Evasion); Serene Touch's ×1.5 also multiplies the flinch chance (`EntralinkBattle_GetFlinchChance`, which
+  replaces `GetFlinchBonus`); Vampiric's heal is held to 25% of max HP a hit (`HEAL_ON_DAMAGE_MAX_PERCENT`).
+- **Type Affinity** rolls only the team's types: `type_card_other_weight` (new setting, 0) is a type of no team
+  Pokémon's weight in percent of a plain type's; with every team type at its highest, any other type.
+- **Switch Hitter** uses the existing `first_turn` test, the Pokémon's first turn after each entry (vanilla's Fake Out
+  flag, cleared on every switch-in): that is what First Blood did before, so First Blood now counts each Pokémon's
+  first two moves of the battle instead, and the new card takes the every-switch-in role.
+
+### 18.3 Recoil in run battles
+
+In a run battle (both sides) a recoil move's recoil is the vanilla share of the damage dealt, **at most the same share of
+the user's max HP**: a 1/4-recoil move (Take Down, Wild Charge) costs at most 25% of max HP, a 1/3 one (Brave Bird,
+Double-Edge, Flare Blitz) 33%, Head Smash 50%. So a big buffed hit costs what the move costs on an even fight (where
+the damage is about the target's whole HP). Tough Claws' recoil part and Reckless lower the share before the cap, so
+they lower both. Crash damage (Jump Kick) and HP-cost moves (Struggle's) are unchanged. A `#ifdef PAPERWHITE2` hook in
+`ServerEvent_CalcRecoil`'s recoil branch calls `EntralinkBattle_CapRecoil`.
+
+### 18.4 The meter and the simulator
+
+- **Meter:** the example build x21.7 → **x22.6** (Expert Edge 25, Type Affinity 50, Opportunist 45); the typical band
+  raised to **15-23**. The ceiling x77 → **x88** (FINAL's cap 60), critical x242: past the clamp, fine for an extreme
+  build.
+- **Simulator** (`entralink_sim.py`): Type Ward's 0.33 share is gone; the defensive purples are Ward (0.8 of the hits
+  taken: the foes' STAB share of their power, measured in the audit), Pinch Power and Vampiric. Balanced build, 5 rooms
+  a round: good-hit factor R1 boss / R2 boss / final room x1.72 / x6.12 / x8.50 (was x1.62 / x5.60 / x7.60), 7.4 good
+  hits for the final room (was 8.3); a late hit takes **13-16%** of its HP (was 17-21%), under the 20% target. The
+  enemy curves aren't refitted: that waits for a playtest (`entralink_sim.py --fit` would propose a higher Attack curve).
+
+### 18.5 Tested (py-desmume, the user's save copy, the Illusionist's Zoroark at place 1)
+
+- **The battle's table** (Expert Edge, Climate II, Hardy, Keen Edge, Ward, Evasion III, Guard III, Power II, HP set in
+  the run state): `EntralinkBattle_Start` built Expert Edge 25 + its resisted row 50, Keen Edge 1 + crit 25, Hardy 25 +
+  duration 1 + cure 10, Climate 70 + weather turns 4 + Overcoat, Evasion −24, Guard 30, Power 40, Ward 20.
+- **Expert Edge's resisted part:** Pignite's Bite on Zoroark (resisted), same state and roll: **99** without the part,
+  **149** with it (x1.5).
+- **Climate's Damp Rock part:** Sunny Day with Climate II: **4** turns left after the turn without the part, **8** with
+  it.
+- **Ward:** Zoroark's Bite (Dark, STAB) on Pignite with Guard III: **85** without Ward, **61** with it (GUARD 30 → 50);
+  its Headbutt (not STAB) **133** both times.
+- **Recoil:** Wild Charge with Pignite's Attack poked to 1,500 into a 60,000-HP foe: **2,271** damage, vanilla recoil
+  would be 568 (Pignite has 293 HP); it took **73** (25%) and survived. With Tough Claws: 3,053 damage (+35%, contact),
+  recoil **46** (16%).
+- **First Blood and Switch Hitter:** COND's sum on each Tackle: Pignite turn 1 **75** (both), turn 2 **35** (First
+  Blood), turn 3 **0**; the foe's Roar dragged in the 5th Pokémon: its turn 4 **75**, turn 5 **35**, turn 6 **0**.
+- **Evasion:** Zoroark's Dynamic Punch (50% accuracy) on Pignite from 30 seeds: **16** hits without Evasion, **10**
+  with it at its cap (−32%: 34% expected).
+- **The SELECT viewer** (`cd_view_0.png`, `cd_view_1.png`, `cd_view_5.png`, `cd_view_6.png`): Power II gives FINAL
+  x1.40, Guard III GUARD −30%; Evasion's and Expert Edge's lines.
+
+### 18.6 Memory
+
+ARM9 main −64 bytes (the smaller card tables, the extras' 13 value rows added); overlay 12 −256 bytes (fewer cards'
+rows); overlay 167 +736 bytes (13 effect rows, the new conditions, the cap and flinch code, 16 more table entries).
+The DS main arena: **19.8 KB left** (19.5 KB before). No heap or VRAM.
+
+### 18.7 Calls made, for the user
+
+- The audit's options: **merge** (not cut) everywhere it offered both, but Light Clay and Thrifty cut; **Ward** is "STAB
+  hits on you −20%" (the plannable one); Prism (gold) unchanged.
+- **Type Affinity**: only the team's types (`type_card_other_weight` 0, editable); the held golds' theme types aren't
+  added (a theme has no type in the data).
+- **Recoil:** capped at the move's own share of max HP (25 / 33 / 50%), both sides.
+- **Vampiric:** held to 25% of max HP a hit.
+- **First Blood** counts moves, not turn ends, so a Pokémon that enters mid-turn still gets its two.
+- **Blues:** HP +15% (soft 4, 90), Guard 10% (soft 3), Power +20% with FINAL's cap 60, each about a 3rd-pick Offense
+  or Bulwark (−10%, −12.5%, +14-20%). Accuracy can't get there (it only touches the ~25% of hits from moves under
+  100%, even sure-hit is about +5%), so it became **Evasion**: foes' moves −8% accuracy a pick (soft 3, at most −32%),
+  about −8 to −10% damage taken a pick, and it cuts the foes' sleep and paralysis moves too.
+- **Switch Hitter** is purple, Speed theme, `speed` icon, +40% (cap 120).
+- Ids kept for every survivor; a run saved mid-way on the old catalogue reads its cards by the old numbers.

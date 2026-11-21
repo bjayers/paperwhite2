@@ -70,11 +70,12 @@ MAX_HP = 65535
 # themed build (the user's paralysis set: its golds' conditions hold, as the player plays for them)
 ATTACK = {"blue": ["attack", "power"], "purple": ["type_affinity", "opportunist", "expert_edge", "kinship"],
           "gold": ["galvanic", "overcharge", "adaptability", "slipstream", "expert"]}
-DEFENCE = {"blue": ["defense", "guard", "hp"], "purple": ["type_ward", "focus_band", "vampiric"],
+DEFENCE = {"blue": ["defense", "guard", "hp"], "purple": ["ward", "pinch_power", "vampiric"],
            "gold": ["bulwark", "prism", "regrowth", "second_wind"]}
-# The share of hits a conditional card holds for: a type card's type (the moves of the type it rolled), Slipstream's
-# speed gap, Prism on the super-effective hits taken, the gold Bulwark (Bastion) by missing HP (about half on average)
-CONDITIONAL = {"type_affinity": 0.75, "type_ward": 0.33, "slipstream": 0.5, "prism": 0.3, "bulwark": 0.5}
+# The share of hits a conditional card holds for: a type card's type (the moves of the type it rolled), Ward on the
+# foes' STAB hits (measured: 80% of their moves' power, the buff audit), Slipstream's speed gap, Prism on the
+# super-effective hits taken, the gold Bulwark (Bastion) by missing HP (about half on average)
+CONDITIONAL = {"type_affinity": 0.75, "ward": 0.8, "slipstream": 0.5, "prism": 0.3, "bulwark": 0.5}
 # Cards that hold only on a super-effective hit (the good hit's), or on a boss
 SUPER_EFFECTIVE_ONLY = {"expert_edge", "expert"}
 BOSS_ONLY = {"giant_slayer"}

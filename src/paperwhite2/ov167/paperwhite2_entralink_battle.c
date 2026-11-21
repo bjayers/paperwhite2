@@ -31,8 +31,8 @@
 
 // The battle's Pokémon IDs, 6 for each of 4 clients
 #define BATTLE_MONS 24
-// The most buffs the battle keeps: a type card counts once for each type it holds
-#define BATTLE_BUFFS_MAX 64
+// The most buffs the battle keeps: a type card counts once for each type it holds, a card once for each effect
+#define BATTLE_BUFFS_MAX 80
 // The event items' sub IDs, beside the field effects' (FIELD_CONDITION_*); and their priority, the last
 #define EVENT_ITEM_SUB_ID 0xff
 #define REACTION_ITEM_SUB_ID 0xfe
@@ -68,9 +68,12 @@
 #define STAT_STAGES 7
 // No type of a type card
 #define BUFF_TYPE_ANY 0xff
+// The condense: Vampiric's heal on a hit, at most this percent of the attacker's max HP
+#define HEAL_ON_DAMAGE_MAX_PERCENT 25
 
-// A buff the run holds, as the battle keeps it: the card, the type of a type card's stack, its level (a count or a
-// gold's rank) and what that level gives in the kind's unit
+// A buff the run holds, as the battle keeps it: the effect (a card's, or past ENTRALINK_BUFF_COUNT one of a card's
+// further effects), the type of a type card's stack, the card's level (a count or a gold's rank) and what that level
+// gives in the kind's unit
 typedef struct {
     u8 buff;
     u8 type;
@@ -113,7 +116,9 @@ static struct {
     u8 batonStages[BATTLE_POSITIONS][STAT_STAGES];
 } sBattle;
 
-static const EntralinkBuffEffect sEffects[ENTRALINK_BUFF_COUNT] = ENTRALINK_BUFF_EFFECTS;
+static const EntralinkBuffEffect sEffects[ENTRALINK_BUFF_EFFECT_COUNT] = ENTRALINK_BUFF_EFFECTS;
+// The card of each further effect, the effects from ENTRALINK_BUFF_COUNT on
+static const u8 sExtraCards[] = ENTRALINK_BUFF_EXTRA_CARDS;
 static const u16 sBucketCaps[ENTRALINK_BUFF_BUCKET_COUNT] = ENTRALINK_BUFF_BUCKET_CAPS;
 static const u16 sBucketVanillas[ENTRALINK_BUFF_BUCKET_COUNT] = ENTRALINK_BUFF_BUCKET_VANILLAS;
 // The ENTRALINK_BUFF_STATUS_* of each major status (CONDITION_PARALYSIS to CONDITION_POISON)
@@ -207,6 +212,18 @@ static void AddBuff(u32 buff, u32 type, u32 level) {
     entry->type = type;
     entry->level = level;
     entry->value = EntralinkBuffs_GetValue(buff, level);
+}
+
+// A card held at a level: its effect, and its further effects (more_effects) at the same level
+static void AddCard(u32 buff, u32 type, u32 level) {
+    u32 i;
+
+    AddBuff(buff, type, level);
+    for (i = 0; i < ENTRALINK_BUFF_EXTRA_COUNT; i++) {
+        if (sExtraCards[i] == buff) {
+            AddBuff(ENTRALINK_BUFF_COUNT + i, type, level);
+        }
+    }
 }
 
 // ---- Conditions and values -----------------------------------------------------------------------------------------
@@ -308,6 +325,11 @@ static BOOL TestHolds(BtlServerFlow *flow, const EntralinkBuffEffect *effect, co
         return IsWeatherBoosted(ServerEvent_GetWeather(flow), hit->moveType);
     case ENTRALINK_BUFF_COND_FIRST_TURN:
         return attacker != NULL && !GetAdditionalConditionFlag(attacker, 0);
+    case ENTRALINK_BUFF_COND_FIRST_TURNS:
+        // The team's Pokémon's moves started in the battle, the hit's own included (HandlerMoveStart), so a Pokémon
+        // that enters mid-turn or by a switch still has its first moves
+        return attacker != NULL && IsTeamMon(GetMonID(attacker)) &&
+               sBattle.movesUsed[GetMonID(attacker)] <= effect->firstTurns;
     case ENTRALINK_BUFF_COND_BOSS:
         return hit->defender != NULL && IsBossMon(GetMonID(hit->defender));
     }
@@ -623,23 +645,28 @@ static void HandlerSpeed(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s
     }
 }
 
-// The team's accuracy; Sandman's sleep moves never miss
+// The team's accuracy, and the foes' on the team (foes_moves, Evasion); Sandman's sleep moves never miss
 static void HandlerAccuracy(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
     EntralinkHit hit;
     u32 i;
     const EntralinkBuffEffect *effect;
+    BOOL team = IsTeamMon(BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACKER));
+    BOOL foes;
 
-    if (!IsTeamMon(BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACKER))) {
+    GetEventHit(flow, &hit);
+    foes = !team && hit.defender != NULL && IsTeamMon(GetMonID(hit.defender));
+    if (!team && !foes) {
         return;
     }
-    GetEventHit(flow, &hit);
     for (i = 0; i < sBattle.count; i++) {
         effect = &sEffects[sBattle.buffs[i].buff];
-        if (effect->kind == ENTRALINK_BUFF_KIND_ACCURACY && ConditionHolds(flow, &sBattle.buffs[i], &hit)) {
+        if (effect->kind == ENTRALINK_BUFF_KIND_ACCURACY &&
+            ((effect->flags & ENTRALINK_BUFF_FLAG_FOES_MOVES) != 0) == foes &&
+            ConditionHolds(flow, &sBattle.buffs[i], &hit)) {
             BattleEventVar_MulValue(BATTLE_EVENT_VAR_RATIO, GetPercentFactor(sBattle.buffs[i].value));
         }
     }
-    if (GetHandlerLevel(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_SANDMAN) != 0 &&
+    if (team && GetHandlerLevel(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_SANDMAN) != 0 &&
         hit.category == MOVE_CATEGORY_STATUS && PML_MoveGetParam(hit.move, MOVE_PARAM_CONDITION) == CONDITION_SLEEP) {
         // The ratio's highest, past any evasion
         BattleEventVar_MulValue(BATTLE_EVENT_VAR_RATIO, FX32_CONST(32));
@@ -852,7 +879,7 @@ static void HandlerTurnCheck(BattleEventItem *item, BtlServerFlow *flow, u8 monI
 
 // ---- Heals, recoil, chances, turns ---------------------------------------------------------------------------------
 
-// Big Root: the team's draining heals more
+// heal_ratio drain (Vampiric): the team's draining heals more
 static void HandlerDrainAmount(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
     s32 more;
 
@@ -864,7 +891,7 @@ static void HandlerDrainAmount(BattleEventItem *item, BtlServerFlow *flow, u8 mo
     }
 }
 
-// Rock Skin lowers the team's recoil; Reckless halves it from its rank parameter on
+// Tough Claws' recoil_ratio lowers the team's recoil; Reckless halves it from its rank parameter on
 static void HandlerRecoil(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
     s32 ratio;
     s32 less;
@@ -926,7 +953,7 @@ static void HandlerMoveAddCondition(BattleEventItem *item, BtlServerFlow *flow, 
     }
 }
 
-// Second Hit: the team's multi-hit moves hit more times, up to their most
+// multi_hit (Technique): the team's multi-hit moves hit more times, up to their most
 static void HandlerMultiHit(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
     s32 more;
     s32 hits;
@@ -942,7 +969,7 @@ static void HandlerMultiHit(BattleEventItem *item, BtlServerFlow *flow, u8 monId
     }
 }
 
-// Thrifty: a chance that the team's move uses no PP
+// pp_save_chance: a chance that the team's move uses no PP
 static void HandlerPPDecrement(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
     s32 chance;
 
@@ -954,7 +981,8 @@ static void HandlerPPDecrement(BattleEventItem *item, BtlServerFlow *flow, u8 mo
     }
 }
 
-// Damp Rock adds to the turns of the weather the team sets; Stormcaller sets them (255 for the whole battle)
+// Climate's weather_turns add to the turns of the weather the team sets; Stormcaller sets them (255 for the whole
+// battle)
 static void HandlerWeatherTurns(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
     s32 turns;
     s32 set;
@@ -1364,8 +1392,9 @@ static void GiveHitStatuses(BtlServerFlow *flow, u32 attacker, BattleMon *target
     }
 }
 
-// After the team's hit: the hit's statuses on each foe hit, Afterburner for each KO, Vampiric's heal and Blood Price's
-// cost. After a foe's hit, Focus's rank 3 readies a sure critical hit on each of the team it hit
+// After the team's hit: the hit's statuses on each foe hit, Afterburner for each KO, Vampiric's heal (at most
+// HEAL_ON_DAMAGE_MAX_PERCENT of max HP) and Blood Price's cost. After a foe's hit, Focus's rank 3 readies a sure
+// critical hit on each of the team it hit
 static void HandlerHitEnd(BattleEventItem *item, BtlServerFlow *flow, u8 monId, s32 *work) {
     u32 attacker = BattleEventVar_GetValue(BATTLE_EVENT_VAR_ATTACKER);
     u32 count = BattleEventVar_GetValue(BATTLE_EVENT_VAR_TARGET_COUNT);
@@ -1376,6 +1405,7 @@ static void HandlerHitEnd(BattleEventItem *item, BtlServerFlow *flow, u8 monId, 
     u32 level;
     u32 kos;
     s32 percent;
+    u32 heal;
     BattleHandlerDamageParam *param;
 
     if (IsFoeMon(attacker) && GetHandlerLevel(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_FOCUS) >= 3) {
@@ -1425,7 +1455,12 @@ static void HandlerHitEnd(BattleEventItem *item, BtlServerFlow *flow, u8 monId, 
     percent = SumKind(ENTRALINK_BUFF_KIND_HEAL_ON_DAMAGE, 0xff);
     if (percent > 0 && !BattleEventVar_GetValue(BATTLE_EVENT_VAR_DELAYED_FLAG) && !IsMonFullHP(mon) &&
         BattleEventVar_GetValue(BATTLE_EVENT_VAR_DAMAGE) != 0) {
-        PushRecoverHP(flow, attacker, BattleEventVar_GetValue(BATTLE_EVENT_VAR_DAMAGE) * percent / 100);
+        heal = BattleEventVar_GetValue(BATTLE_EVENT_VAR_DAMAGE) * percent / 100;
+        // At most a share of max HP a hit, so the damage buffs don't make it a full heal late in a run
+        if (heal > GetBattleMonStat(mon, BATTLEMON_MAX_HP) * HEAL_ON_DAMAGE_MAX_PERCENT / 100) {
+            heal = GetBattleMonStat(mon, BATTLEMON_MAX_HP) * HEAL_ON_DAMAGE_MAX_PERCENT / 100;
+        }
+        PushRecoverHP(flow, attacker, heal);
     }
     for (i = 0; i < sBattle.count; i++) {
         percent = sEffects[sBattle.buffs[i].buff].hpCost;
@@ -1722,10 +1757,10 @@ void EntralinkBattle_Start(BtlServerFlow *flow) {
             continue;
         }
         if (EntralinkBuffs_GetTypeCard(buff) == ENTRALINK_BUFF_TYPE_CARD_NONE) {
-            AddBuff(buff, BUFF_TYPE_ANY, EntralinkBuffs_GetLevel(buff));
+            AddCard(buff, BUFF_TYPE_ANY, EntralinkBuffs_GetLevel(buff));
         } else {
             for (type = 0; type < ENTRALINK_BUFF_CARD_TYPES; type++) {
-                AddBuff(buff, type, EntralinkBuffs_GetTypeCount(buff, type));
+                AddCard(buff, type, EntralinkBuffs_GetTypeCount(buff, type));
             }
         }
     }
@@ -1979,8 +2014,31 @@ BOOL EntralinkBattle_IsSureCritical(s32 stage) {
     return sBattle.run && stage >= SURE_CRITICAL_STAGE;
 }
 
-u32 EntralinkBattle_GetFlinchBonus(BattleMon *attacker) {
-    return IsTeamMon(GetMonID(attacker)) ? SumKind(ENTRALINK_BUFF_KIND_FLINCH_CHANCE, 0xff) : 0;
+u32 EntralinkBattle_GetFlinchChance(BattleMon *attacker, u32 chance) {
+    s32 more;
+
+    if (chance == 0 || !IsTeamMon(GetMonID(attacker))) {
+        return chance;
+    }
+    chance += SumKind(ENTRALINK_BUFF_KIND_FLINCH_CHANCE, 0xff);
+    more = SumKind(ENTRALINK_BUFF_KIND_ADDED_EFFECT_CHANCE, 0xff);
+    if (more > 0) {
+        chance = chance * (100 + more) / 100;
+    }
+    return chance > 100 ? 100 : chance;
+}
+
+u32 EntralinkBattle_CapRecoil(BattleMon *mon, u32 damage, u32 ratio) {
+    u32 most;
+
+    if (!sBattle.run) {
+        return damage;
+    }
+    most = GetBattleMonStat(mon, BATTLEMON_MAX_HP) * ratio / 100;
+    if (most < 1) {
+        most = 1;
+    }
+    return damage > most ? most : damage;
 }
 
 u32 EntralinkBattle_GetMoveHealAmount(BattleMon *mon, u32 amount) {
