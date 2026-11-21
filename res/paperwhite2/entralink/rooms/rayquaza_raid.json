@@ -2,6 +2,7 @@
     "$schema": "../room.schema.json",
     "name": "Nightmare Rayquaza raid",
     "role": "room",
+    "type": "challenge",
     "marker": "challenge",
     "battles": [
         {
