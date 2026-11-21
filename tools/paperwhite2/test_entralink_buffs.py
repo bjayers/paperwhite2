@@ -198,15 +198,16 @@ def test_cards_table_levels_pools_and_prices():
     rows = entralink_buffs.table(data)
     n = len(entralink_buffs.FIXED_MESSAGES)
     # attack: 6 picks of 10 and then 5 a pick reach 80 at the 10th; its tier's price; pools after_battle and shop
-    assert rows[0].startswith(f"    {{ {n}, {n + 5}, 60, 0x0, ENTRALINK_BUFF_TIER_BLUE, ENTRALINK_BUFF_THEME_NONE, 10, "
-                              "0x9, 0x0,")
+    key = entralink_buffs.card_key("attack")
+    assert rows[0].startswith(f"    {{ {n}, {n + 5}, 60, {key:#06x}, 0x0, ENTRALINK_BUFF_TIER_BLUE, "
+                              "ENTRALINK_BUFF_THEME_NONE, 10, 0x9, 0x0,")
     assert rows[0].rstrip().endswith("ENTRALINK_BUFF_TYPE_CARD_NONE }, /* attack */")
     # type_affinity: 4 picks to 60, related to paralysis (theme 0), type card 0
     assert ", 4, " in rows[1] and "0x1, ENTRALINK_BUFF_TIER_PURPLE" in rows[1] and rows[1].rstrip().endswith(
         "0 }, /* type_affinity */")
     # galvanic: its own price, 3 ranks
-    assert rows[2].startswith(f"    {{ {n + 2}, {n + 7}, 500, 0x0, ENTRALINK_BUFF_TIER_GOLD, "
-                              "ENTRALINK_BUFF_THEME_PARALYSIS, 3,")
+    assert rows[2].startswith(f"    {{ {n + 2}, {n + 7}, 500, {entralink_buffs.card_key('galvanic'):#06x}, 0x0, "
+                              "ENTRALINK_BUFF_TIER_GOLD, ENTRALINK_BUFF_THEME_PARALYSIS, 3,")
     assert entralink_buffs.max_level(entry(data, "attack")) == 10
     text = entralink_buffs.header(data, entralink_buffs.effect_kinds())
     assert "#define ENTRALINK_BUFF_TYPE_CARDS { ENTRALINK_BUFF_TYPE_AFFINITY }" in text
@@ -386,3 +387,23 @@ def test_real_team_tags_are_known_constants():
     tags = entralink_buffs.team_tags(data)
     assert len(tags["move_starts"]) == len(tags["ability_starts"]) == len(data["themes"]) + 1
     assert tags["move_starts"] == sorted(tags["move_starts"])
+
+
+def test_card_keys_are_stable_hashes_and_a_clash_is_refused(tmp_path):
+    """The hub shop (section 19): a card's save key is its ID's FNV-1a hash folded to 16 bits (never 0), whatever its
+    place; two IDs with one key are refused; the shop's two list lines are fixed messages."""
+    assert entralink_buffs.card_key("attack") == entralink_buffs.card_key("attack") != entralink_buffs.card_key("defense")
+    assert all(0 < entralink_buffs.card_key(f"card_{i}") <= 0xFFFF for i in range(200))
+    # Two IDs of one key: found by search, then the catalogue refuses them
+    seen = {}
+    for i in range(100000):
+        key = entralink_buffs.card_key(f"x{i}")
+        if key in seen:
+            first, second = seen[key], f"x{i}"
+            break
+        seen[key] = f"x{i}"
+    directory = copy_data(tmp_path)
+    edit(directory, lambda data: [data["buffs"][0].update(id=first), data["buffs"][1].update(id=second)])
+    refused(directory, "save key")
+    names = entralink_buffs.FIXED_NAMES
+    assert "SHOP_BOUGHT" in names and "SHOP_MAX" in names and len(names) == len(entralink_buffs.FIXED_MESSAGES)

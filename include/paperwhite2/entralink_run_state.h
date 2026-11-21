@@ -100,6 +100,10 @@ typedef struct {
     // The run's Dream Dust (step 7), none at its start and lost at its end, and what the last battle won gave
     u16 dust;
     u16 dustGained;
+    // The hub shop's Dream Shards (paperwhite2/entralink_hub_shop.h): the run's bosses and final room beaten give
+    // these on top of its rooms done; and what the run's end gave, which the end leaves in a cleared state
+    u16 shardBonus;
+    u16 shardsGained;
     // The room's shop's goods and their prices in Dream Dust, drawn as the player entered it (run.json's shop_items
     // of the item table's shop pool), and how many. Its buffs are shopBuffs, below
     u16 shopItems[ENTRALINK_RUN_SHOP_MAX];

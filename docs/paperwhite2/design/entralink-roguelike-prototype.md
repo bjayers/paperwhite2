@@ -346,7 +346,10 @@ The Symbol block (`SAVE_BLOCK_SYMBOL`, 0x850 bytes at 0x22a00 and its copy at 0x
 | 0x88 | 0x40 | enemies caught at least once, a bit per catch `progress_id` (512) |
 | 0xc8 | 4 | the Reserve Box's slots in use, a bit each (`entralink-buffs.md`, phase 7, section 14) |
 | 0xcc | 0x78 | the Reserve Box's Pokémon, a PID per slot (30), searched for in the PC boxes whenever the box is used |
-| 0x144 | 0x70c | free, zero (for a mid-run save or unlocks later) |
+| 0x144 | 4 | the hub shop's Dream Shards, at most 99,999 (`entralink-buffs.md` section 19) |
+| 0x148 | 4 | the Dream Shards spent in the hub shop, which its Reset gives back |
+| 0x14c | 0x80 | the hub shop's bought picks: 32 entries of a card's key (u16, a hash of its ID; 0 free) and its count (u8) |
+| 0x1cc | 0x684 | free, zero (for a mid-run save or unlocks later) |
 
 - No encryption or checksum of its own: the save's CRC of the block covers it. `EntralinkProgress_Get` clears a block
   without the magic or with another version to an empty progress, so an old save's forest data is dropped the first

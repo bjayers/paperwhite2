@@ -130,6 +130,38 @@
       "type": "integer", "minimum": 1, "maximum": 30,
       "description": "How many Pokémon the Reserve Box holds: the PC Box Pokémon the player sets aside in the hub (its NPC) for rest stops' swaps, saved as links to them; 6 if left out"
     },
+    "hub_shop": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Dream Shards, the permanent currency saved in the progress block, and the hub's shop that sells blue and purple buffs a pick at a time for them; each bought pick is held from every run's start and counts toward the card's cap",
+      "properties": {
+        "room_shards": {
+          "type": "integer", "minimum": 0, "maximum": 99,
+          "description": "Dream Shards a run gives at its end (any end) for each room done, rests included; 1 if left out"
+        },
+        "boss_shards": {
+          "type": "integer", "minimum": 0, "maximum": 999,
+          "description": "Dream Shards more for each boss beaten; 3 if left out"
+        },
+        "final_shards": {
+          "type": "integer", "minimum": 0, "maximum": 999,
+          "description": "Dream Shards more for beating the final room; 10 if left out"
+        },
+        "prices": {
+          "type": "array", "minItems": 1, "maxItems": 8,
+          "items": { "type": "integer", "minimum": 0, "maximum": 9999 },
+          "description": "A card's price in Dream Shards for its 1st, 2nd, 3rd... bought pick; past the list, the last one plus price_step for each pick more. 5, 8, 12 if left out"
+        },
+        "price_step": {
+          "type": "integer", "minimum": 0, "maximum": 9999,
+          "description": "What each pick past the prices list adds to a card's price; 4 if left out"
+        },
+        "total_cap": {
+          "type": "integer", "minimum": 0, "maximum": 32,
+          "description": "How many picks the shop sells in all, across every card (0 closes it); 8 if left out"
+        }
+      }
+    },
     "field_weather": {
       "$ref": "#/$defs/field_weather",
       "description": "The forest's field weather (include/system/zone_weather.h) in the rounds with no field_weather of their own, the hack's tints (WEATHER_CUSTOM_TINT_*, res/paperwhite2/field_tints/tints.json) among them; the forest's own if left out"

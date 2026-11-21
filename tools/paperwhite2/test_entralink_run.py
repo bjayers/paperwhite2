@@ -453,6 +453,25 @@ def test_swap_and_reserve(tmp_path):
         edit(directory / "run.json", lambda data: data.pop(key))
 
 
+def test_hub_shop(tmp_path):
+    """The hub shop (entralink-buffs.md section 19): run.json's hub_shop, its defaults for what is left out, in the
+    header; out of range refused."""
+    directory = copy_data(tmp_path)
+    edit(directory / "run.json", lambda data: data.pop("hub_shop", None))
+    text = entralink_run.header(directory)
+    for line in ("ROOM_SHARDS 1", "BOSS_SHARDS 3", "FINAL_SHARDS 10", "SHOP_PRICES { 5, 8, 12 }", "SHOP_PRICE_COUNT 3",
+                 "SHOP_PRICE_STEP 4", "SHOP_TOTAL_CAP 8"):
+        assert f"#define ENTRALINK_RUN_{line}\n" in text, line
+    edit(directory / "run.json", lambda data: data.update(hub_shop={"prices": [7], "total_cap": 32}))
+    data = entralink_run.tables(directory)
+    assert data["hub_shop"]["prices"] == [7] and data["hub_shop"]["total_cap"] == 32
+    assert data["hub_shop"]["room_shards"] == 1
+    for key, value in (("total_cap", 33), ("prices", []), ("room_shards", 100), ("final_shards", -1)):
+        edit(directory / "run.json", lambda data: data.update(hub_shop={key: value}))
+        with pytest.raises(datajson.DataError, match=key):
+            entralink_run.tables(directory)
+
+
 def test_icon_shift():
     """Step 7: a bag icon's picture, in the top-left 24 by 24 of its 32 by 32, moves right 4 and down 8."""
     pixels = bytes([1] * 32 * 32)

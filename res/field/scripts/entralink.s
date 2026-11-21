@@ -20,6 +20,7 @@
     ScriptEntry Script_14
 #ifdef PAPERWHITE2
     ScriptEntry Script_15
+    ScriptEntry Script_16
 #endif
     ScriptEntriesEnd
     WorkSetConst 0x8020, 0
@@ -650,6 +651,104 @@ L_HubReserveSaid:
     LastKeyWait
     SystemMsgClose
     VMJump L_HubReserveMenu
+
+Script_16:
+    // Paper White 2: the hub's shop NPC (entralink-buffs.md section 19, res/field/events/entralink.json): blue and
+    // purple buffs for Dream Shards, a pick at a time, held from every run's start (paperwhite2/entralink_hub_shop.h),
+    // and a reset that gives every Shard spent back
+    ActorsPauseAll
+    SEPlay SEQ_SE_MESSAGE
+    ActorSetEyeToEye
+    SystemMsg Entralink_Text_ShopHello, 2
+
+L_HubShopTop:
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8010
+    ListMenuAdd Entralink_Text_ShopBuy, 65535, 0
+    ListMenuAdd Entralink_Text_ShopReset, 65535, 1
+    ListMenuAdd Entralink_Text_ShopCancel, 65535, 2
+    ListMenuShow
+    SystemMsgClose
+    WorkCmpConst 0x8010, 0
+    VMJumpIf CMP_EQ, L_HubShopList
+    WorkCmpConst 0x8010, 1
+    VMJumpIf CMP_EQ, L_HubShopReset
+
+L_HubShopEnd:
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+L_HubShopList:
+    EntralinkRun ENTRALINK_RUN_ACTION_SHARDS, 1, 1, 0x8011
+    EntralinkRun ENTRALINK_RUN_ACTION_SHARDS, 2, 2, 0x8011
+    EntralinkRun ENTRALINK_RUN_ACTION_SHARDS, 3, 3, 0x8011
+    SystemMsg Entralink_Text_ShopWhich, 2
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8010
+    // (its first line the Shards and picks, which shows the list again)
+    ListMenuAdd Entralink_Text_ShopStatus, Entralink_Text_ShopStatusInfo, ENTRALINK_RUN_CARD_OTHER
+    EntralinkRun ENTRALINK_RUN_ACTION_SHOP_ADD_CARDS, 0, 0, 0x8011
+    ListMenuAdd Entralink_Text_ShopClose, Entralink_Text_ShopCloseInfo, 101
+    ListMenuShow
+    SystemMsgClose
+    WorkCmpConst 0x8010, ENTRALINK_RUN_CARD_OTHER
+    VMJumpIf CMP_EQ, L_HubShopList
+    WorkCmpConst 0x8010, ENTRALINK_RUN_CARD_OTHER
+    VMJumpIf CMP_GT, L_HubShopEnd
+    WorkSet 0x8014, 0x8010
+    EntralinkRun ENTRALINK_RUN_ACTION_SHOP_PICK, 0x8014, 0, 0x8011
+    WorkCmpConst 0x8011, ENTRALINK_SHOP_NO_SHARDS
+    VMJumpIf CMP_EQ, L_HubShopNoShards
+    WorkCmpConst 0x8011, ENTRALINK_SHOP_SOLD_OUT
+    VMJumpIf CMP_EQ, L_HubShopSoldOut
+    WorkCmpConst 0x8011, ENTRALINK_SHOP_CARD_MAX
+    VMJumpIf CMP_EQ, L_HubShopCardMax
+    SystemMsg Entralink_Text_ShopAsk, 2
+    YesNoWin 0x8011
+    SystemMsgClose
+    WorkCmpConst 0x8011, 0
+    VMJumpIf CMP_NE, L_HubShopList
+    EntralinkRun ENTRALINK_RUN_ACTION_SHOP_BUY, 0x8014, 0, 0x8011
+    SEPlay SEQ_SE_SYS_22
+    SystemMsg Entralink_Text_ShopBought, 2
+    VMJump L_HubShopSaid
+
+L_HubShopNoShards:
+    SystemMsg Entralink_Text_ShopNoShards, 2
+    VMJump L_HubShopSaid
+
+L_HubShopSoldOut:
+    SystemMsg Entralink_Text_ShopSoldOut, 2
+    VMJump L_HubShopSaid
+
+L_HubShopCardMax:
+    SystemMsg Entralink_Text_ShopCardMax, 2
+
+L_HubShopSaid:
+    LastKeyWait
+    SystemMsgClose
+    VMJump L_HubShopList
+
+L_HubShopReset:
+    EntralinkRun ENTRALINK_RUN_ACTION_SHARDS, 4, 1, 0x8011
+    EntralinkRun ENTRALINK_RUN_ACTION_SHARDS, 2, 2, 0x8012
+    WorkCmpConst 0x8012, 0
+    VMJumpIf CMP_EQ, L_HubShopResetNone
+    SystemMsg Entralink_Text_ShopResetAsk, 2
+    YesNoWin 0x8012
+    SystemMsgClose
+    WorkCmpConst 0x8012, 0
+    VMJumpIf CMP_NE, L_HubShopEnd
+    EntralinkRun ENTRALINK_RUN_ACTION_SHOP_RESET, 0, 0, 0x8012
+    SystemMsg Entralink_Text_ShopResetDone, 2
+    LastKeyWait
+    SystemMsgClose
+    VMJump L_HubShopEnd
+
+L_HubShopResetNone:
+    SystemMsg Entralink_Text_ShopResetNone, 2
+    LastKeyWait
+    SystemMsgClose
+    VMJump L_HubShopEnd
 #endif
 
 Script_14:

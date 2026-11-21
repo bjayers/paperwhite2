@@ -21,6 +21,18 @@
 // The Reserve Box's slots in the block (phase 7); run.json's reserve_slots is how many the hub offers
 #define ENTRALINK_RESERVE_MAX 30
 
+// The hub shop's bought picks the block holds (section 19 of entralink-buffs.md: run.json's total_cap is at most this)
+#define ENTRALINK_SHOP_PICKS_MAX 32
+// The most Dream Shards saved
+#define ENTRALINK_SHARDS_MAX 99999
+
+// A card's picks bought in the hub shop: the card by its key (EntralinkBuff's key, 0 for a free entry) and how many
+typedef struct {
+    u16 key;
+    u8 count;
+    u8 unused;
+} EntralinkShopPick;
+
 #define ENTRALINK_PROGRESS_MAGIC 0x45325750 // "PW2E"
 #define ENTRALINK_PROGRESS_VERSION 1
 
@@ -39,8 +51,13 @@ typedef struct {
     // Pokémon, not copies. Zero in a block of before it, an empty box
     u32 reserveSlots;                       // 0xc8
     u32 reservePids[ENTRALINK_RESERVE_MAX]; // 0xcc
+    // The hub shop (paperwhite2/entralink_hub_shop.h): the Dream Shards held, those spent (which a reset gives back)
+    // and the picks bought. Zero in a block of before it: none
+    u32 shards;                                            // 0x144
+    u32 shardsSpent;                                       // 0x148
+    EntralinkShopPick shopPicks[ENTRALINK_SHOP_PICKS_MAX]; // 0x14c
     // Free for the roguelike's later saves (a mid-run save, unlocks), zero
-    u8 reserved[0x850 - 0x144]; // 0x144
+    u8 reserved[0x850 - 0x1cc]; // 0x1cc
 } EntralinkProgress;            // 0x850, the Symbol block's size
 
 // The save table's size and initial state of the block (save_table.c)

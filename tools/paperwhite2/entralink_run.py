@@ -78,6 +78,9 @@ DEFAULT_SHOP_ITEMS = 5
 # most the progress block's, ENTRALINK_RESERVE_MAX)
 DEFAULT_SWAP_DUST = 100
 DEFAULT_RESERVE_SLOTS = 6
+# The hub shop (entralink-buffs.md, section 19): the Dream Shards a run's end gives, and the shop's price curve and cap
+DEFAULT_HUB_SHOP = {"room_shards": 1, "boss_shards": 3, "final_shards": 10, "prices": [5, 8, 12], "price_step": 4,
+                    "total_cap": 8}
 # Phase 5 (entralink-buffs.md, section 12) and the rebalance (2026-11-20): the enemies' stat multipliers, in
 # EntralinkScaling's order (ENTRALINK_STAT_*): a room curve keyed by the room's depth across the run (start, end and a
 # curve exponent in hundredths) and a boss bonus per round over the curve (rebalance 2); an enemy's own scale; and a
@@ -793,6 +796,7 @@ def tables(directory: Path) -> dict:
         "shop_items": run.get("shop_items", DEFAULT_SHOP_ITEMS),
         "swap_dust": run.get("swap_dust", DEFAULT_SWAP_DUST),
         "reserve_slots": run.get("reserve_slots", DEFAULT_RESERVE_SLOTS),
+        "hub_shop": {**DEFAULT_HUB_SHOP, **run.get("hub_shop", {})},
         "type_templates": type_templates,
         "marker_spots": [tuple(spots[door]) for door in DOORS],
         "npc_markers": list(npc_markers),
@@ -925,6 +929,15 @@ def header(directory: Path) -> str:
         "// A rest stop's swap's price in Dream Dust, and the Reserve Box's slots (phase 7)",
         f"#define ENTRALINK_RUN_SWAP_DUST {data['swap_dust']}",
         f"#define ENTRALINK_RUN_RESERVE_SLOTS {data['reserve_slots']}",
+        "// The hub shop: the Dream Shards a run's end gives a room done, a boss beaten and the final room beaten; a",
+        "// card's price for its first bought picks, then the last plus the step a pick; the picks sold in all",
+        f"#define ENTRALINK_RUN_ROOM_SHARDS {data['hub_shop']['room_shards']}",
+        f"#define ENTRALINK_RUN_BOSS_SHARDS {data['hub_shop']['boss_shards']}",
+        f"#define ENTRALINK_RUN_FINAL_SHARDS {data['hub_shop']['final_shards']}",
+        f"#define ENTRALINK_RUN_SHOP_PRICES {{ {', '.join(map(str, data['hub_shop']['prices']))} }}",
+        f"#define ENTRALINK_RUN_SHOP_PRICE_COUNT {len(data['hub_shop']['prices'])}",
+        f"#define ENTRALINK_RUN_SHOP_PRICE_STEP {data['hub_shop']['price_step']}",
+        f"#define ENTRALINK_RUN_SHOP_TOTAL_CAP {data['hub_shop']['total_cap']}",
         "// EntralinkScaling (phase 5), a stat each (ENTRALINK_STAT_* order): the percent in each room of the run by its",
         "// depth across the run (run.json's start, end and curve worked out), then the percent of the three rounds'",
         "// bosses (the last: the final room; the curve at the round's last room times its boss_bonus). A raid has its",

@@ -242,6 +242,7 @@ L_RunBackDoor:
     SystemMsgClose
     WorkCmpConst 0x8000, 0
     VMJumpIf CMP_NE, L_RunBackDoorStay
+    VMCall L_RunShards
     EntralinkRun ENTRALINK_RUN_ACTION_WARP_HUB, 0, 0, 0x8000
     FinishAllEvents
     ActorsUnpauseAll
@@ -882,6 +883,7 @@ L_RunWon:
 L_RunToHub:
     LastKeyWait
     SystemMsgClose
+    VMCall L_RunShards
     EntralinkRun ENTRALINK_RUN_ACTION_WARP_HUB, 0, 0, 0x8000
     FinishAllEvents
     ActorsUnpauseAll
@@ -928,6 +930,20 @@ L_RunDust:
     SystemMsgClose
 
 L_RunDustNone:
+    VMReturn
+
+L_RunShards:
+    // Paper White 2: the run ends here (if a loss hasn't ended it already), and the Dream Shards its end gave, if
+    // any, and the save's now (the hub shop, paperwhite2/entralink_hub_shop.h)
+    EntralinkRun ENTRALINK_RUN_ACTION_SHARDS, 0, 1, 0x8005
+    WorkCmpConst 0x8005, 0
+    VMJumpIf CMP_EQ, L_RunShardsNone
+    EntralinkRun ENTRALINK_RUN_ACTION_SHARDS, 1, 2, 0x8005
+    SystemMsg Global10490_Text_RunGainedShards, 2
+    LastKeyWait
+    SystemMsgClose
+
+L_RunShardsNone:
     VMReturn
 
 Script_10:

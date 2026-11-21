@@ -616,6 +616,36 @@ export const DEFAULT_SWAP_DUST = 100;
 export const MAX_SWAP_DUST = 9999;
 export const DEFAULT_RESERVE_SLOTS = 6;
 export const MAX_RESERVE_SLOTS = 30;
+/** The hub shop (entralink-buffs.md section 19): Dream Shards a run's end gives, and the shop's price curve and cap. */
+export interface HubShop {
+  roomShards: number;
+  bossShards: number;
+  finalShards: number;
+  prices: number[];
+  priceStep: number;
+  totalCap: number;
+}
+export const DEFAULT_HUB_SHOP: HubShop = { roomShards: 1, bossShards: 3, finalShards: 10, prices: [5, 8, 12], priceStep: 4, totalCap: 8 };
+export const MAX_SHOP_PRICES = 8;
+export const MAX_SHOP_TOTAL_CAP = 32;
+/** A card's price for its pick n (from 0) after n bought: the prices list's, then its last plus the step a pick. */
+export function shopPrice(shop: HubShop, bought: number): number {
+  const last = shop.prices.length - 1;
+  return bought <= last ? shop.prices[bought] : shop.prices[last] + (bought - last) * shop.priceStep;
+}
+/** run.json's hub_shop as plain numbers, the defaults for what is left out. */
+export function readHubShop(data: JsonValue | undefined): HubShop {
+  const m = asMap(data);
+  const prices = asList(m.get("prices")).map((v) => num(v) ?? 0);
+  return {
+    roomShards: num(m.get("room_shards")) ?? DEFAULT_HUB_SHOP.roomShards,
+    bossShards: num(m.get("boss_shards")) ?? DEFAULT_HUB_SHOP.bossShards,
+    finalShards: num(m.get("final_shards")) ?? DEFAULT_HUB_SHOP.finalShards,
+    prices: prices.length ? prices : DEFAULT_HUB_SHOP.prices,
+    priceStep: num(m.get("price_step")) ?? DEFAULT_HUB_SHOP.priceStep,
+    totalCap: num(m.get("total_cap")) ?? DEFAULT_HUB_SHOP.totalCap,
+  };
+}
 /** Each type's chance in percent from its weights (0 for all when they add up to 0). */
 export function typeChances(weights: Record<RoomType, number>): Record<RoomType, number> {
   const sum = WEIGHT_ORDER.reduce((n, t) => n + weights[t], 0);
@@ -647,6 +677,8 @@ export interface RunLayout {
   /** A swap NPC's price in Dream Dust, and how many Pokémon the hub's Reserve Box holds. */
   swapDust: number;
   reserveSlots: number;
+  /** The hub shop's Dream Shards and prices. */
+  hubShop: HubShop;
   /** Each stat's multipliers in percent by depth, three values a row (the last given for rounds left out). */
   enemyScaling: Record<ScaledStat, StatScaling>;
   raidHpFactor: number;
@@ -682,6 +714,7 @@ export function readRun(data: JsonValue | null | undefined): RunLayout {
     shopItems: num(m.get("shop_items")) ?? DEFAULT_SHOP_ITEMS,
     swapDust: num(m.get("swap_dust")) ?? DEFAULT_SWAP_DUST,
     reserveSlots: num(m.get("reserve_slots")) ?? DEFAULT_RESERVE_SLOTS,
+    hubShop: readHubShop(m.get("hub_shop")),
     raidHpFactor: num(m.get("raid_hp_factor")) ?? DEFAULT_RAID_HP_FACTOR,
     bossDoubleFactor: num(m.get("boss_double_factor")) ?? DEFAULT_BOSS_DOUBLE_FACTOR,
     bossTripleFactor: num(m.get("boss_triple_factor")) ?? DEFAULT_BOSS_TRIPLE_FACTOR,

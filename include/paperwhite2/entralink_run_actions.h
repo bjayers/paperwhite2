@@ -121,6 +121,30 @@
 // Pokémon in the party slot, whose copy leaves the run; returns 1, or 0 if the swap can't be made
 #define ENTRALINK_RUN_ACTION_SWAP 38
 
+// The hub shop and Dream Shards (paperwhite2/entralink_hub_shop.h, entralink-buffs.md section 19). arg1 0: ends the
+// run if one is on, which gives its Dream Shards, and returns what the run's end gave (0 when no run ended); 1: the
+// Dream Shards saved; 2: the picks bought in all; 3: the picks the shop sells in all (run.json's total_cap); 4: the
+// Dream Shards spent, which a reset gives back. Puts the number in word arg2
+#define ENTRALINK_RUN_ACTION_SHARDS 39
+// Adds the shop's cards to the open list menu, the blues then the purples (not the type cards), each valued by its
+// card: its title, the picks bought and the next one's price, with its description as the cursor is on it. Returns
+// how many it added
+#define ENTRALINK_RUN_ACTION_SHOP_ADD_CARDS 40
+// arg1 a card: puts its title in word 1 and the next pick's price in word 2, and returns whether it can be bought,
+// ENTRALINK_SHOP_*
+#define ENTRALINK_RUN_ACTION_SHOP_PICK 41
+// arg1 a card: buys its next pick for its price; returns 1, or 0 if it can't be bought
+#define ENTRALINK_RUN_ACTION_SHOP_BUY 42
+// Gives back every Dream Shard spent and clears the picks bought
+#define ENTRALINK_RUN_ACTION_SHOP_RESET 43
+
+// What ENTRALINK_RUN_ACTION_SHOP_PICK returns: it can be bought; too few Dream Shards; the shop's picks are all
+// bought; the card is at its highest level (its picks reach its cap)
+#define ENTRALINK_SHOP_OK 0
+#define ENTRALINK_SHOP_NO_SHARDS 1
+#define ENTRALINK_SHOP_SOLD_OUT 2
+#define ENTRALINK_SHOP_CARD_MAX 3
+
 // What ENTRALINK_RUN_ACTION_RESERVE_ADD returns: reserved; already in the Reserve Box; the box full; no Pokémon there
 // (or an egg)
 #define ENTRALINK_RESERVE_ADDED 0

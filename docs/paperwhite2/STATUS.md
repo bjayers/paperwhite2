@@ -2,6 +2,20 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-21: Entralink hub shop and Dream Shards (ROM session, on a branch)
+
+- **Dream Shards** (permanent, in the progress block at 0x144): every run's end gives 1 a room done, +3 a boss beaten,
+  +10 the final room (run.json's `hub_shop`); "You gained N Dream Shards! (total M)" before the warp to the hub.
+- **The hub shop** (a new NPC at (34, 42), script 16 of `entralink.s`; look and place are placeholders): blue and
+  purple cards (not type cards) a pick at a time, prices 5 / 8 / 12 then +4 per pick of that card, 8 picks in all, a
+  card's in-run cap counting its bought picks; Reset gives every Shard back. Picks are saved by a hash key of the card's
+  ID, so catalogue edits keep them. Held from each run's start (offers, the SELECT viewer, max HP).
+- **Editor:** a Hub shop block in the Entree page's Run section. entralink-buffs.md section 19 has everything.
+- **Tested** in py-desmume: buys, prices, too few Shards, the cap of 8, a card's max, Reset, the picks at a run's start
+  and in a buff room's offer, the Shards of a back door, forfeit, loss, boss and final win, kept through an in-game
+  save and reboot. Memory: overlay 12 +1.3 KB; arena 18.5 KB left.
+- **Next:** the user places the NPC and writes its text; a playtest of the prices.
+
 ## 2026-11-21: Entralink buffs condensed per the audit (ROM session, on a branch)
 
 - **Purples 33 → 18:** the audit's list (entralink-buffs.md section 18): survivors carry the merged cards as further

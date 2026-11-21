@@ -39,6 +39,25 @@
                 "z": 43,
                 "y": 131072
             }
+        },
+        {
+            "id": 6,
+            "model": "OBJ_CODE_CLERK_M_67",
+            "movement": "MOVE_CODE_NONE",
+            "type": "ACTOR_EVENT_TYPE_NONE",
+            "flag": 0,
+            "script": 16,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 34,
+                "z": 42,
+                "y": 131072
+            }
         }
     ],
     "warps": [],

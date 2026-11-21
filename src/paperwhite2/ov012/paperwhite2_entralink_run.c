@@ -26,6 +26,7 @@
 #include "gfl/random.h"
 #include "nitro/math.h"
 #include "paperwhite2/entralink_buffs.h"
+#include "paperwhite2/entralink_hub_shop.h"
 #include "paperwhite2/entralink_progress.h"
 #include "paperwhite2/entralink_random_rooms.h"
 #include "paperwhite2/entralink_reserve.h"
@@ -909,6 +910,8 @@ void EntralinkRun_Start(GameData *gameData) {
     if (room == ENTRALINK_RUN_ROOM_NONE) {
         return;
     }
+    // The hub shop's picks bought are held from the start, before the room's offers are drawn
+    EntralinkHubShop_HoldBought(gameData);
     state->order[0] = room;
     state->room = 1;
     EntralinkRun_EnterRoom(gameData);
@@ -922,12 +925,25 @@ BOOL EntralinkRun_IsActive(GameData *gameData) {
 }
 
 // Ends the run, its buffs gone with the rest of its state, and puts the real party back with the prestige gained, and
-// the real bag
+// the real bag. A run that was on gives its Dream Shards (the hub shop), which the cleared state keeps in shardsGained
 static void EntralinkRun_End(GameData *gameData) {
-    MI_CpuFill8(EntralinkRun_GetState(), 0, sizeof(EntralinkRunState));
+    EntralinkRunState *state = EntralinkRun_GetState();
+    BOOL active = state->room != 0;
+    u32 shards = EntralinkHubShop_GetRunShards();
+
+    MI_CpuFill8(state, 0, sizeof(EntralinkRunState));
     EntralinkBuffs_Clear();
     EntralinkRun_RestoreParty(gameData);
     EntralinkRun_RestoreBag(gameData);
+    if (active) {
+        state->shardsGained = EntralinkHubShop_AddShards(gameData, shards);
+    }
+}
+
+void EntralinkRun_EndHere(GameData *gameData) {
+    if (EntralinkRun_IsActive(gameData)) {
+        EntralinkRun_End(gameData);
+    }
 }
 
 void EntralinkRun_OnFieldLoad(GameData *gameData, u16 zoneId) {
@@ -1549,8 +1565,13 @@ static u16 EntralinkRun_FinishBattle(GameSystem *gsys, const EntralinkRoom *room
         state->catchIds[i] = ENTRALINK_CATCH_NONE;
     }
     state->caught = FALSE;
+    // The hub shop's Dream Shards for a boss beaten, and the final room's (with its room's, as the run ends there)
+    if (room->role == ENTRALINK_ROLE_BOSS) {
+        state->shardBonus += ENTRALINK_RUN_BOSS_SHARDS;
+    }
     // The room is done once the script has shown the after message (ENTRALINK_RUN_ACTION_CLEAR_ROOM)
     if (EntralinkRun_IsFinalRoom(state)) {
+        state->shardBonus += ENTRALINK_RUN_FINAL_SHARDS + ENTRALINK_RUN_ROOM_SHARDS;
         EntralinkProgress_AddRunCompleted(progress);
         return ENTRALINK_RUN_RESULT_RUN_WON;
     }
@@ -2063,6 +2084,14 @@ BOOL Scrcmd_PaperWhite2_EntralinkRun(VM *vm, FieldScriptEnv *env) {
     case ENTRALINK_RUN_ACTION_SWAP:
         // Phase 7: the Reserve Box, in the hub too, and the swap NPC
         return EntralinkReserve_Action(env, action, arg, arg2, result);
+    case ENTRALINK_RUN_ACTION_SHARDS:
+    case ENTRALINK_RUN_ACTION_SHOP_ADD_CARDS:
+    case ENTRALINK_RUN_ACTION_SHOP_PICK:
+    case ENTRALINK_RUN_ACTION_SHOP_BUY:
+    case ENTRALINK_RUN_ACTION_SHOP_RESET:
+        // The hub shop and Dream Shards
+        EntralinkHubShop_Action(env, action, arg, arg2, result);
+        return FALSE;
     }
     return FALSE;
 }

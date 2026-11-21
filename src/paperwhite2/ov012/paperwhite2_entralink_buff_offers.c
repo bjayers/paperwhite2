@@ -693,6 +693,40 @@ u32 EntralinkBuffs_AddCardOptions(FieldScriptEnv *env, const EntralinkCard *card
     return added;
 }
 
+const EntralinkBuff *EntralinkBuffs_GetEntry(u32 buff) {
+    return &sBuffs[buff];
+}
+
+u32 EntralinkBuffs_AddShopLines(FieldScriptEnv *env, const EntralinkShopLine *lines, u32 count) {
+    BuffText text;
+    EntralinkCard card;
+    u32 added = 0;
+    u32 i;
+
+    BuffText_Init(&text, env);
+    card.kind = ENTRALINK_CARD_BUFF;
+    card.type = 0;
+    for (i = 0; i < count; i++) {
+        card.id = lines[i].buff;
+        BuffText_Title(&text, &card, 1);
+        BuffText_Description(&text, &card, 1);
+        // A card not bought yet shows its price alone, one at its highest its picks
+        if (lines[i].price == ENTRALINK_SHOP_LINE_MAX) {
+            BuffText_WithNumber(&text, ENTRALINK_BUFF_MSG_SHOP_MAX, lines[i].bought, text.title);
+        } else if (lines[i].bought == 0) {
+            BuffText_WithNumber(&text, ENTRALINK_BUFF_MSG_PRICE, lines[i].price, text.title);
+        } else {
+            WordSetNumber(text.wordSet, ENTRALINK_BUFF_WORD_VALUE, lines[i].price, NUMBER_DIGITS, NUM_PAD_NONE, TRUE);
+            BuffText_WithNumber(&text, ENTRALINK_BUFF_MSG_SHOP_BOUGHT, lines[i].bought, text.title);
+        }
+        if (BuffText_AddOption(&text, env, text.title, text.text, lines[i].buff)) {
+            added++;
+        }
+    }
+    BuffText_Free(&text);
+    return added;
+}
+
 // Adds a blue's or purple's stacks to the open list menu: its count, or a type card's one for each type it has
 static u32 EntralinkBuffs_AddStackOptions(BuffText *text, FieldScriptEnv *env, u32 buff, u32 value) {
     StrBuf *label = GFL_StrBufCreate(BUFF_TEXT_LENGTH, text->heapId);

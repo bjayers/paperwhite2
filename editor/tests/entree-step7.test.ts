@@ -12,7 +12,7 @@ import { fileText, fromPlain, parseJson, setIn, type JsonValue } from "../shared
 import { validate, type Schema } from "../shared/schema.ts";
 import { Python } from "../server/python.ts";
 import {
-  DEFAULT_DUST, DEFAULT_RESERVE_SLOTS, DEFAULT_SHOP_ITEMS, DEFAULT_SWAP_DUST, DUST_KINDS, MAX_RESERVE_SLOTS, MAX_SWAP_DUST, MARKER_TYPES, ROOM_SCHEMA, ROOM_TYPES, WEIGHT_ORDER, checkRoom, defaultMarker, newRoomData,
+  DEFAULT_DUST, DEFAULT_HUB_SHOP, DEFAULT_RESERVE_SLOTS, MAX_SHOP_TOTAL_CAP, shopPrice, DEFAULT_SHOP_ITEMS, DEFAULT_SWAP_DUST, DUST_KINDS, MAX_RESERVE_SLOTS, MAX_SWAP_DUST, MARKER_TYPES, ROOM_SCHEMA, ROOM_TYPES, WEIGHT_ORDER, checkRoom, defaultMarker, newRoomData,
   readRoom, readRun,
 } from "../src/modules/entree/model.ts";
 
@@ -84,3 +84,18 @@ test("the buffs' phase 7: a swap's Dust and the Reserve Box's slots, read with t
 });
 
 const asEntries = (v: JsonValue): [string, JsonValue][] => [...(v as Map<string, JsonValue>).entries()];
+
+test("the hub shop: hub_shop read with its defaults, the price curve, written valid, out of range caught", () => {
+  const real = parseJson(readFileSync(join(ROOT, "res/paperwhite2/entralink/run.json"), "utf8"));
+  const base = new Map(asEntries(real).filter(([k]) => k !== "hub_shop"));
+  assert.deepEqual(readRun(base).hubShop, DEFAULT_HUB_SHOP);
+  assert.deepEqual([0, 1, 2, 3, 4].map((n) => shopPrice(DEFAULT_HUB_SHOP, n)), [5, 8, 12, 16, 20]);
+  const shop = fromPlain({ room_shards: 2, boss_shards: 5, final_shards: 20, prices: [10], price_step: 0, total_cap: MAX_SHOP_TOTAL_CAP });
+  const data = setIn(base, ["hub_shop"], shop);
+  assert.deepEqual(errors(data, runSchema), []);
+  assert.deepEqual(buildCheck(data, RUN_SCHEMA), { ok: true });
+  const read = readRun(data).hubShop;
+  assert.deepEqual([read.roomShards, read.totalCap, shopPrice(read, 5)], [2, MAX_SHOP_TOTAL_CAP, 10]);
+  assert.equal(errors(setIn(data, ["hub_shop", "total_cap"], MAX_SHOP_TOTAL_CAP + 1), runSchema).length, 1);
+  assert.equal(errors(setIn(data, ["hub_shop", "prices"], []), runSchema).length, 1);
+});

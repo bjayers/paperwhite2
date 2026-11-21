@@ -1847,3 +1847,111 @@ The DS main arena: **19.8 KB left** (19.5 KB before). No heap or VRAM.
   about −8 to −10% damage taken a pick, and it cuts the foes' sleep and paralysis moves too.
 - **Switch Hitter** is purple, Speed theme, `speed` icon, +40% (cap 120).
 - Ids kept for every survivor; a run saved mid-way on the old catalogue reads its cards by the old numbers.
+
+## 19. The hub shop and Dream Shards (2026-11-21)
+
+Decided with the user on 2026-11-21: a permanent currency that every run's end gives, and a shop in the hub that sells
+blue and purple picks for it, held from every run's start. Code: `include/paperwhite2/entralink_hub_shop.h`,
+`src/paperwhite2/ov012/paperwhite2_entralink_hub_shop.c` (overlay 12), the run's end and start in
+`paperwhite2_entralink_run.c`, the shop's list lines in `paperwhite2_entralink_buff_offers.c`
+(`EntralinkBuffs_AddShopLines`), the actions `ENTRALINK_RUN_ACTION_SHARDS` to `_SHOP_RESET` (39-43), the hub's script 16
+in `entralink.s` and `L_RunShards` in `global_10490.s`. Scripts and screenshots in the session's scratchpad `hubshop/`.
+
+### 19.1 Dream Shards
+
+- **Given at every run's end** (`EntralinkRun_End`, so a win, a loss, the forfeit, the back door and a warp away
+  alike): run.json's `hub_shop.room_shards` (1) for each room done (the rooms left behind, whose exits opened only once
+  they were done, and the one the player is in if it is done; rests count), `boss_shards` (3) more for each boss beaten
+  and `final_shards` (10) more for the final room (with its room's 1, as the run ends there before the room is marked
+  done). The bonuses gather in the run state's `shardBonus` as the battles are won; the end leaves what it gave in the
+  cleared state's `shardsGained`.
+- **Saved** in the progress block (prototype doc, Step 3): `shards` at 0x144 (at most 99,999), `shardsSpent` at 0x148
+  (what a reset gives back) and 32 bought-pick entries at 0x14c-0x1cb, each the card's **key** (u16) and its count. A
+  block of before it has zeros there: none. In RAM until the game is next saved, like the rest of the block.
+- **Shown** before the warp to the hub (`L_RunShards`, after the loss, forfeit or win message, or the back door's Yes):
+  "You gained N Dream Shards! (total M)", only when N isn't 0. The back door and a win end the run there (action 39,
+  arg 0); a loss or forfeit already ended it after the battle.
+
+### 19.2 The shop
+
+- **The NPC** (`res/field/events/entralink.json` id 6, `OBJ_CODE_CLERK_M_67` at (34, 42) facing down, right of the
+  exit Lady; a placeholder look and place) says its hello, then **Buy buffs**, **Reset**, **Cancel**.
+- **Buy buffs** lists a status line ("25 Shards, 3/8 picks", which shows the list again) and every blue then every
+  purple card in the catalogue's order, **type cards left out** (a pick of Type Affinity would need its type), each
+  "Offense (5)" (none bought), "Offense x3 (16)" (bought, the next pick's price) or "Ward x2 (max)" (its picks reach its
+  cap), with the card's line in the description window; Close. A card picked asks "Buy a pick of Offense for 8 Dream
+  Shards?" and Yes buys it; refused: "costs N Dream Shards. You don't have enough.", "You've bought every pick I can
+  sell." (run.json's `total_cap`, 8, across every card) or "Ward can't rise any further." (the card's highest level in
+  a run: its picks to the cap, as the offers count it).
+- **Prices:** `prices` (5, 8, 12) for a card's 1st, 2nd, 3rd pick, then the last plus `price_step` (4) a pick (16,
+  20...). Each card's price follows its own picks.
+- **Reset:** "Give back every pick you bought? You'll get N Dream Shards back." Yes gives back every Shard spent and
+  clears every pick ("You haven't bought anything yet." with none).
+- **Keys:** a pick is saved by its card's key, the 32-bit FNV-1a hash of the card's ID folded to 16 bits (never 0),
+  which the packer puts in `EntralinkBuff`'s `key` (its padding before, so the table stays 20 bytes a card) and checks
+  unique (a clash is refused: rename one ID). So reordering, adding or removing cards keeps every pick with its card; a
+  removed card's picks are held by no run but still count toward the total until a reset gives their Shards back.
+- **Text:** 17 lines at the end of `res/text/script/entralink.txt` (`Entralink_Text_Shop*`), one in
+  `global_10490.txt` (`Global10490_Text_RunGainedShards`), two fixed messages in the `entralink_buffs` bank
+  (`SHOP_BOUGHT`, `SHOP_MAX`); placeholders.
+
+### 19.3 At a run's start
+
+`EntralinkRun_Start` holds the bought picks (`EntralinkHubShop_HoldBought`: each sold card's level set to its picks,
+held to its highest level) after clearing the buffs and before the first room is entered, so the first room's draws
+(a buff room's offer, a shop's buffs, the gift NPC's) already see them, the SELECT viewer lists them from the first
+room, the copies' max HP includes a bought HP, and every later pick of the card counts on top of them toward its cap
+(a card at its highest level isn't offered).
+
+### 19.4 Editor
+
+The Entree page's Run section has a **Hub shop** block: the three Shard awards, the prices (+ adds one, − drops the
+last), the step after them, a preview of the first six prices, and the picks in all. `run.json`'s `hub_shop` (schema in
+`run.schema.json`; the packer's defaults for what is left out, `tools/paperwhite2/entralink_run.py`'s
+`ENTRALINK_RUN_*_SHARDS`, `_SHOP_PRICES`, `_SHOP_PRICE_STEP`, `_SHOP_TOTAL_CAP`).
+
+### 19.5 Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `hubshop/h/`)
+
+- **Buying** (30 Shards poked): Offense for 5, 8, 12 (Shards 25, 17, 5; spent 25), the list "5 Shards, 3/8 picks /
+  Offense x3 (16) / Bulwark (5) ..." (`shots/list_after3.png`); Offense's 4th refused, "Offense costs 16 Dream Shards.
+  You don't have enough." and nothing changed (`noshards.png`); Bulwark for exactly 5 (0 left).
+- **The cap:** 8 picks poked (Offense 3, Bulwark 1, Guard 2, Power 2), 100 Shards: a 9th refused ("You've bought every
+  pick I can sell.", `soldout.png`), nothing changed. **A card's highest level:** Ward bought 2 (its 40 / 20), the list
+  "Ward x2 (max)" (`list_ward.png`), a 3rd refused ("Ward can't rise any further.", `ward_max.png`).
+- **Reset** (30 spent, 100 held): "You'll get 30 Dream Shards back." (`reset_ask.png`), Yes: 130, nothing spent, no
+  picks.
+- **The run's start** (Offense 3 and Ward 2 bought): the run's levels Offense 3, Ward 2 from room 1; the SELECT viewer
+  "Offense x3, Ward x2" with ATK ×1.75 (`viewer.png`). **The cap in the run:** every card's weight poked to 0 but Ward's
+  and Kinship's, a buff room's offer: **Kinship** only; the same with nothing bought: Kinship and Ward.
+- **The run's end** (100 Shards before each): the back door in room 1 not done: 100, no message; the place poked to 5,
+  done, the back door: **+5**, "You gained 5 Dream Shards! (total 105)" (`shards_backdoor5.png`); the Illusionist at
+  place 3: the forfeit **+2**, a loss (the team's battle HP poked) **+2** after "You woke from the nightmare..."; the
+  Illusionist at place 7 with its role poked to boss, won, then the back door: **+10** (6 + 1 + 3); Darkrai at place 21
+  (the final room) won: **+31** (20 + 1 + 10).
+- **Saved:** after the final room (131 Shards, Offense 3 and Ward 2), out of the Entralink and saved from the menu:
+  both copies of the Symbol block in the save file hold 131 and the two picks' keys and counts; the game booted from
+  that save read 131 Shards and the picks back.
+- The packers' tests (`test_hub_shop`, `test_card_keys_are_stable_hashes_and_a_clash_is_refused`), the editor's
+  (typecheck, 269 tests, one new), `verify_dsi_rom.py`, the plain build's module check; the editor's section
+  (`shots/editor_hub_shop.png`).
+- **Not tested:** a warp away mid-run (the same `EntralinkRun_End`); a boss of a real double (Ho-Oh's needs targets in
+  the harness; the bonus reads the room's role); real hardware.
+
+### 19.6 Memory
+
+Overlay 12 +1.3 KB (the shop's code and the list lines), ARM9 main +4 bytes of BSS (the run state's two counters); the
+buffs' table is unchanged in size (the key fills its padding). The DS main arena: **18.5 KB left** (from 19.8), above
+the 15 KB line, so the random rooms' species table stays in overlay 12. At run time the list's strings while it shows
+(heap, freed with it); no VRAM.
+
+### 19.7 Calls made, for the user
+
+- **Rooms done count rests** (every place passed), so a run's Shards follow its depth; the final room counts as a room
+  too (1 + 10).
+- **The message** shows only when the run gave any Shards (a loss in room 1 gives 0 and says nothing).
+- **Type cards aren't sold** (Type Affinity's pick needs a type; it could roll the team's types at the start later).
+- **Picks are saved by a key** of the card's ID, not its place, so editing the catalogue keeps them; a removed card's
+  picks wait for a reset.
+- **The list** has a status line on top (Shards and picks), since the description window replaces the message while
+  the list shows.
+- The NPC's look and place are placeholders, (34, 42), like the Reserve Box NPC's.

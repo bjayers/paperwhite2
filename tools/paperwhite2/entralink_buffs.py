@@ -77,8 +77,13 @@ FIXED_MESSAGES = ["", "{0100:%d}" % WORD_TITLE, "{0100:%d} ({0100:%d})" % (WORD_
                   "{ff00:2}Damage multipliers{ff00:0}",
                   f"ATK ×{_V[0]} POW ×{_V[1]} STAB ×{_V[2]}\\nMATCH ×{_V[3]} FINAL ×{_V[4]}",
                   "{ff00:2}Other multipliers{ff00:0}",
-                  f"COND ×{_V[0]} CRIT ×{_V[1]}\\nDEF ×{_V[2]} GUARD -{_V[3]}% (+ varies)"]
-FIXED_NAMES = ["NONE", "TITLE", "PRICE", "COUNT", "ITEM", "DAMAGE_TITLE", "DAMAGE", "OTHER_TITLE", "OTHER"]
+                  f"COND ×{_V[0]} CRIT ×{_V[1]}\\nDEF ×{_V[2]} GUARD -{_V[3]}% (+ varies)",
+                  "{0100:%d} x{0100:%d} ({0100:%d})" % (WORD_TITLE, WORD_NUMBER, WORD_VALUE),
+                  "{0100:%d} x{0100:%d} (max)" % (WORD_TITLE, WORD_NUMBER)]
+# ... and the hub shop's lines (section 19): a title with the picks bought and the next one's price, and a title at
+# its highest
+FIXED_NAMES = ["NONE", "TITLE", "PRICE", "COUNT", "ITEM", "DAMAGE_TITLE", "DAMAGE", "OTHER_TITLE", "OTHER",
+               "SHOP_BOUGHT", "SHOP_MAX"]
 # The types a type card rolls, TYPE_NORMAL to TYPE_DARK (decision 9: any of the 17)
 CARD_TYPES = 17
 # A stack's count is a byte
@@ -272,6 +277,15 @@ def text_lines(directory: Path = SOURCE) -> list[str]:
     return messages(load(directory))[0]
 
 
+def card_key(card_id: str) -> int:
+    """A card's key in the save (the hub shop's bought picks, section 19): its ID's 32-bit FNV-1a hash folded to 16
+    bits, never 0, so that bought picks stay with their card whatever the catalogue's order."""
+    value = 0x811C9DC5
+    for byte in card_id.encode():
+        value = ((value ^ byte) * 0x01000193) & 0xFFFFFFFF
+    return ((value >> 16) ^ (value & 0xFFFF)) or 1
+
+
 def table(data: dict) -> list[str]:
     """ENTRALINK_BUFF_TABLE, EntralinkBuff's initializer (include/paperwhite2/entralink_buffs.h)."""
     _, titles, descriptions = messages(data)
@@ -286,7 +300,8 @@ def table(data: dict) -> list[str]:
         rounds = sum(1 << (r - 1) for r in entry.get("rounds", []))
         theme = f"ENTRALINK_BUFF_THEME_{macro(entry['theme'])}" if tier == "gold" else "ENTRALINK_BUFF_THEME_NONE"
         type_card = type_cards.index(entry["id"]) if entry["id"] in type_cards else "ENTRALINK_BUFF_TYPE_CARD_NONE"
-        rows.append(f"    {{ {titles[i]}, {descriptions[i]}, {price}, {related:#x}, ENTRALINK_BUFF_TIER_{macro(tier)}, "
+        rows.append(f"    {{ {titles[i]}, {descriptions[i]}, {price}, {card_key(entry['id']):#06x}, {related:#x}, "
+                    f"ENTRALINK_BUFF_TIER_{macro(tier)}, "
                     f"{theme}, {max_level(entry)}, {pools:#x}, {rounds:#x}, {entry['weight']}, {type_card} }}, "
                     f"/* {entry['id']} */")
     return rows
@@ -664,6 +679,12 @@ def problems(data: dict, directory: Path = SOURCE) -> list[str]:
         odds = settings["tier_odds"][source]
         if sum(odds[t] for t in TIERS) != 100:
             error(f"settings.tier_odds.{source}", "the tiers' percents don't add up to 100")
+    keys = {}
+    for entry in data["buffs"]:
+        key = card_key(entry["id"])
+        if key in keys and keys[key] != entry["id"]:
+            error(f"buffs.{entry['id']}", f"its save key ({key:#06x}) is {keys[key]}'s too: rename one of the IDs")
+        keys[key] = entry["id"]
     buckets = {}
     for bucket in data["buckets"]:
         if bucket["id"] in buckets:
@@ -885,7 +906,7 @@ def header(data: dict, kinds: list[str], directory: Path = SOURCE) -> str:
         f"#define ENTRALINK_BUFF_WORD_TITLE {WORD_TITLE}",
         f"#define ENTRALINK_BUFF_WORD_NUMBER {WORD_NUMBER}",
         f"#define ENTRALINK_BUFF_WORD_VALUE {WORD_VALUE}", "",
-        "// The cards (EntralinkBuff, paperwhite2/entralink_buffs.h): title, description, price, related themes, tier,",
+        "// The cards (EntralinkBuff, paperwhite2/entralink_buffs.h): title, description, price, key, related themes, tier,",
         "// theme, highest level, pools, rounds, weight, type card",
         "#define ENTRALINK_BUFF_TABLE { \\",
         *[row + " \\" for row in table(data)],

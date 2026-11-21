@@ -73,4 +73,5 @@ Global10490_Text_RunSwapNone = There's no one in your Reserve Box\nwho can join 
 Global10490_Text_RunSwapNoDust = Calling on a Pokémon costs {0205:2} Dream Dust.\nYou have {0205:3}.
 Global10490_Text_RunSwapAllFainted = Every Pokémon on your team has fainted.\nNo one can make way.
 Global10490_Text_RunSwapFailed = The swap couldn't be made.
+Global10490_Text_RunGainedShards = You gained {0205:1} Dream Shards!\n(total {0205:2})
 \pad{d6}

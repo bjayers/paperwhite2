@@ -40,7 +40,7 @@ import {
   DEFAULT_ONCE, PROGRESS_IDS, PROGRESS_IDS_SCHEMA, RUN_COMPLETED, assignProgressIds, battleKey, battleKeys, renameKeys, withoutProgressIds,
   MESSAGE_STYLES, MESSAGE_STYLE_NOTES, readRun, roundSummary, runProblems, type MessageStyle,
   DOORS, MARKER_NOTES, MARKER_TYPES, NPC_MARKERS_DIR, markerArt, npcMarkerArt, type Door,
-  BALL_TYPES, DEFAULT_ROOM_TYPE, DEFAULT_TYPE_WEIGHTS, DUST_KINDS, DUST_NOTES, MAX_SHOP_ITEMS, MAX_SWAP_DUST, MAX_RESERVE_SLOTS, DEFAULT_ENEMY_SCALE, SCALED_STATS, SCALED_STAT_NAMES, CURVE_KEYS, CURVE_KEY_NAMES, CURVE_KEY_TITLES, type StatScaling, FLOWER_TILES, FLOWER_TILES_SCHEMA, ITEMS, LADY_SPRITE, NPC_DEFAULT_MARKERS, NPC_TYPE_NOTES,
+  BALL_TYPES, DEFAULT_ROOM_TYPE, DEFAULT_TYPE_WEIGHTS, DUST_KINDS, DUST_NOTES, MAX_SHOP_ITEMS, MAX_SWAP_DUST, MAX_RESERVE_SLOTS, MAX_SHOP_PRICES, MAX_SHOP_TOTAL_CAP, shopPrice, DEFAULT_ENEMY_SCALE, SCALED_STATS, SCALED_STAT_NAMES, CURVE_KEYS, CURVE_KEY_NAMES, CURVE_KEY_TITLES, type StatScaling, FLOWER_TILES, FLOWER_TILES_SCHEMA, ITEMS, LADY_SPRITE, NPC_DEFAULT_MARKERS, NPC_TYPE_NOTES,
   ROOM_TYPES, ROOM_TYPE_NOTES, TEMPLATES, TEMPLATES_DIR, TEMPLATE_NOTES, TEMPLATE_TYPES, WEIGHT_ORDER, checkTemplates, defaultMarker,
   isTemplateFile, newTemplateData, percent, readFlowerTiles, setFlowerTiles, templatePath, typeChances, type RoomType,
   type Round, type Exit, type MapInfo, type NpcType, type Problem, type ProgressCounters, type Role, type Room,
@@ -709,6 +709,9 @@ function RunSection({ rooms, templates }: { rooms: { id: string; room: Room }[];
     try { localStorage.setItem(RUN_OPEN_KEY, open ? "0" : "1"); } catch { /* a viewer without storage keeps it open */ }
   };
   const setKey = (key: string, v: JsonValue | undefined) => documents.replace(RUN, put(data, key, v, order));
+  /** A key of run.json's hub_shop, in its schema's order. */
+  const shopOrder = Object.keys(schema?.properties?.hub_shop?.properties ?? {});
+  const setShop = (key: string, v: JsonValue) => setKey("hub_shop", put(asMap(data.get("hub_shop")), key, v, shopOrder));
   const rounds = asList(data.get("rounds"));
   const setRound = (i: number, key: "rooms" | "boss" | "field_weather" | "type_weights", v: JsonValue | undefined) =>
     setKey("rounds", rounds.map((r, k) => (k === i ? put(asMap(r), key, v, roundOrder) : r)));
@@ -822,6 +825,52 @@ function RunSection({ rooms, templates }: { rooms: { id: string; room: Room }[];
           </span>
         </div>
         <span className="muted small">How many box Pokémon the Entralink's Reserve Box NPC lets the player set aside for swaps (saved as links: each is used as it is in its box when called)</span>
+
+        <h6 className="en-sub en-run-head">Hub shop <span className="muted">Dream Shards, kept between runs</span></h6>
+        {([["roomShards", "room_shards", "Room done", "a room (rests too)", 99],
+          ["bossShards", "boss_shards", "Boss beaten", "more a boss", 999],
+          ["finalShards", "final_shards", "Final room", "more", 999]] as const).map(([field, key, label, unit, max]) => (
+          <div key={key} className="en-run">
+            <span className="muted small">{label}</span>
+            <span className="en-run-controls">
+              <NumberBox value={run.hubShop[field]} min={0} max={max} width={52} onChange={(n) => setShop(key, n)} />
+              <span className="small">Shards, {unit}</span>
+            </span>
+          </div>
+        ))}
+        <span className="muted small">Every run's end gives them (a win, a loss, the forfeit, the back door), saved in the progress block</span>
+        <div className="en-run">
+          <span className="muted small">Prices</span>
+          <span className="en-run-controls" style={{ flexWrap: "wrap" }}>
+            {run.hubShop.prices.map((p, i) => (
+              <NumberBox key={i} value={p} min={0} max={9999} width={52}
+                         onChange={(n) => setShop("prices", run.hubShop.prices.map((v, k) => (k === i ? n : v)))} />
+            ))}
+            {run.hubShop.prices.length < MAX_SHOP_PRICES && (
+              <button className="icon" title="Add a price for the next pick" onClick={() => setShop("prices", [...run.hubShop.prices, shopPrice(run.hubShop, run.hubShop.prices.length)])}>+</button>
+            )}
+            {run.hubShop.prices.length > 1 && (
+              <button className="icon" title="Remove the last price" onClick={() => setShop("prices", run.hubShop.prices.slice(0, -1))}>−</button>
+            )}
+          </span>
+        </div>
+        <div className="en-run">
+          <span className="muted small">Then each pick</span>
+          <span className="en-run-controls">
+            <span className="small">+</span>
+            <NumberBox value={run.hubShop.priceStep} min={0} max={9999} width={52} onChange={(n) => setShop("price_step", n)} />
+            <span className="small">Shards</span>
+          </span>
+        </div>
+        <span className="muted small">A card's price for its 1st, 2nd, 3rd... bought pick: {Array.from({ length: 6 }, (_, i) => shopPrice(run.hubShop, i)).join(", ")}...</span>
+        <div className="en-run">
+          <span className="muted small">Picks in all</span>
+          <span className="en-run-controls">
+            <NumberBox value={run.hubShop.totalCap} min={0} max={MAX_SHOP_TOTAL_CAP} width={52} onChange={(n) => setShop("total_cap", n)} />
+            <span className="small">picks</span>
+          </span>
+        </div>
+        <span className="muted small">The hub's shop sells blue and purple cards (not type cards) a pick at a time, up to this many across every card; each bought pick is held from every run's start and counts toward the card's cap. A Reset in the shop gives every Shard spent back</span>
 
         <h6 className="en-sub en-run-head">Enemy scaling <span className="muted">stats in percent, by depth</span></h6>
         <span className="muted small">A room (a raid in a room too) multiplies its enemies' stat by a curve of its depth across the whole run: First room, rising to Last room along the depth raised to Curve / 100 (so changing a round's rooms keeps the run's arc). A round's boss (round 3's: the final room) takes the curve at its round's last room times its Boss bonus; then each enemy's own Scale. tools/paperwhite2/entralink_sim.py simulates a run with them (and --fit proposes them)</span>

@@ -40,6 +40,9 @@ typedef struct {
     u16 description;
     // Its price in a shop, in Dream Dust
     u16 price;
+    // Its key in the save, a hash of its ID (the hub shop's bought picks, paperwhite2/entralink_hub_shop.h), which
+    // keeps the picks with their card whatever the catalogue's order
+    u16 key;
     // A purple's related gold themes, a bit each
     u32 related;
     // ENTRALINK_BUFF_TIER_*
@@ -198,6 +201,19 @@ void EntralinkBuffs_SetTitleWord(FieldScriptEnv *env, u32 word, const EntralinkC
 // taking it gives, with its price for a shop's, and its description in the system window as the cursor is on it; the
 // value of each is its index, and an ENTRALINK_CARD_NONE card is left out. Returns how many it added
 u32 EntralinkBuffs_AddCardOptions(FieldScriptEnv *env, const EntralinkCard *cards, u32 count, BOOL prices);
+// A card of the catalogue (the hub shop's)
+const EntralinkBuff *EntralinkBuffs_GetEntry(u32 buff);
+// A line of the hub shop's list: a card, the picks of it bought, and the next one's price (ENTRALINK_SHOP_LINE_MAX
+// when the card is at its highest level)
+typedef struct {
+    u16 price;
+    u8 buff;
+    u8 bought;
+} EntralinkShopLine;
+#define ENTRALINK_SHOP_LINE_MAX 0xffff
+// Adds the hub shop's lines to the open list menu, each its card's title with its picks bought and the next one's
+// price, its description in the system window as the cursor is on it, valued by its card. Returns how many it added
+u32 EntralinkBuffs_AddShopLines(FieldScriptEnv *env, const EntralinkShopLine *lines, u32 count);
 // Adds the buffs held to the open list menu: the golds with their ranks (golds: only them, valued by slot, for the
 // choice of the one a new gold replaces), then the blues and purples with their counts. Returns how many it added
 u32 EntralinkBuffs_AddHeldOptions(FieldScriptEnv *env, BOOL golds);

@@ -290,6 +290,9 @@ typedef struct {
 void EntralinkRun_Start(GameData *gameData);
 // Whether a run is on
 BOOL EntralinkRun_IsActive(GameData *gameData);
+// Ends the run if one is on (the hub shop's ENTRALINK_RUN_ACTION_SHARDS, before the script's warp to the hub), which
+// gives its Dream Shards
+void EntralinkRun_EndHere(GameData *gameData);
 // The zone of the run's room, for the Entree Forest's warp (EventEntreeForestWarp_Callback)
 u16 EntralinkRun_GetRoomZone(GameData *gameData);
 // The event of an exit (a DIR_*) of a run's room (Scrcmd_EntreeForest_MapChangeEntreeForest): the room behind its
