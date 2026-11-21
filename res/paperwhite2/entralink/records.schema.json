@@ -4,9 +4,19 @@
   "description": "The Entralink roguelike's records (docs/paperwhite2/design/entralink-roguelike-prototype.md, \"Records\"; tools/paperwhite2/entralink_records.py). The Nightmare codex records every species with \"pokedex\": false (the forest's Nightmares, in every form) and the special forms listed here, which the records also show in a list of their own.",
   "type": "object",
   "additionalProperties": false,
-  "required": [ "special_forms" ],
+  "required": [ "special_forms", "black_ranks", "white_milestones" ],
   "properties": {
     "$schema": { "type": "string" },
+    "black_ranks": {
+      "type": "array", "minItems": 5, "maxItems": 5,
+      "description": "The Entree's Black Tree ranks: the Dream Shards earned in all (whatever was spent) that reach ranks 1 to 5, each above the one before",
+      "items": { "type": "integer", "minimum": 1, "maximum": 1000000 }
+    },
+    "white_milestones": {
+      "type": "array", "uniqueItems": true, "maxItems": 5,
+      "description": "The milestones that count for the Entree's White Tree rank, each reached raising it by one in any order: beat_final (the final room beaten, Darkrai), catch_all (every catchable enemy of the rooms caught), fill_codex (every Nightmare species and special form met), shop_cap (the hub shop's picks bought up to its cap), all_rooms (every room of rooms/ entered)",
+      "items": { "enum": [ "beat_final", "catch_all", "fill_codex", "shop_cap", "all_rooms" ] }
+    },
     "special_forms": {
       "type": "array", "uniqueItems": true,
       "description": "The forest-only forms counted as Special: a species and one of its forms, each met, beaten and caught counted alone",

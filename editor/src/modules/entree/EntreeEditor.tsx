@@ -94,9 +94,11 @@ const FLOWER_COLOR = 0xff3fb4;
 const RUN = "res/paperwhite2/entralink/run.json";
 const RUN_SCHEMA = "res/paperwhite2/entralink/run.schema.json";
 const TINTS = "res/paperwhite2/field_tints/tints.json";
-/** The files the page's Save saves: the rooms, the templates, the run, the item table, the flower tiles and the buff
- * catalogue. */
-const isPageFile = (p: string) => p.startsWith(`${ROOMS_DIR}/`) || isTemplateFile(p) || p === RUN || p === ITEMS || p === FLOWER_TILES || p === BUFFS;
+const RECORDS = "res/paperwhite2/entralink/records.json";
+const RECORDS_SCHEMA = "res/paperwhite2/entralink/records.schema.json";
+/** The files the page's Save saves: the rooms, the templates, the run, the item table, the flower tiles, the buff
+ * catalogue and the records' settings. */
+const isPageFile = (p: string) => p.startsWith(`${ROOMS_DIR}/`) || isTemplateFile(p) || p === RUN || p === ITEMS || p === FLOWER_TILES || p === BUFFS || p === RECORDS;
 /** The schema's own complaint about a battle or catch with no progress id yet: Save gives it one. */
 const awaitsId = (e: { path: JsonPath; message: string }) => e.message === "progress_id is missing";
 const zoneFile = (zone: string) => zone.replace(/^ZONE_/, "").toLowerCase();
@@ -876,6 +878,8 @@ function RunSection({ rooms, templates }: { rooms: { id: string; room: Room }[];
         </div>
         <span className="muted small">The hub's shop sells blue and purple cards (not type cards) a pick at a time, up to this many across every card; each bought pick is held from every run's start and counts toward the card's cap. A Reset in the shop gives every Shard spent back</span>
 
+        <EntreeRanks />
+
         <h6 className="en-sub en-run-head">Enemy scaling <span className="muted">stats in percent, by depth</span></h6>
         <span className="muted small">A room (a raid in a room too) multiplies its enemies' stat by a curve of its depth across the whole run: First room, rising to Last room along the depth raised to Curve / 100 (so changing a round's rooms keeps the run's arc). A round's boss (round 3's: the final room) takes the curve at its round's last room times its Boss bonus; then each enemy's own Scale. tools/paperwhite2/entralink_sim.py simulates a run with them (and --fit proposes them)</span>
         <table className="en-scaling">
@@ -1014,6 +1018,66 @@ function RunSection({ rooms, templates }: { rooms: { id: string; room: Room }[];
         )}
       </>}
     </div>
+  );
+}
+
+/** The White Tree's milestones by records.json's names (its schema's enum gives the list and order). */
+const MILESTONE_LABELS: Record<string, [string, string]> = {
+  beat_final: ["Defeat Darkrai", "The final room beaten in a run"],
+  catch_all: ["Catch every catchable", "Every catchable enemy of the rooms caught at least once"],
+  fill_codex: ["Fill the codex", "Every Nightmare species and special form met"],
+  shop_cap: ["Shop's picks bought", "The hub shop's picks bought up to Picks in all"],
+  all_rooms: ["Discover every room", "Every room of rooms/ entered at least once (not templates)"],
+};
+
+/** records.json's Entree ranks, which the Entree's Status shows (prototype doc, "The Entree's menu"): the Dream Shards
+ * earned that reach each Black Tree rank, and the milestones that count for the White Tree, each raising it by one. */
+function EntreeRanks() {
+  const { docs } = useDocuments();
+  const [schema, setSchema] = useState<Schema | null>(null);
+  useEffect(() => {
+    documents.hold(RECORDS).catch(() => undefined);
+    api.schema(RECORDS_SCHEMA).then(setSchema, () => undefined);
+  }, []);
+  const doc = docs.get(RECORDS);
+  const data = doc?.data instanceof Map ? doc.data : null;
+  const blackSchema = schema?.properties?.black_ranks;
+  const milestones = (schema?.properties?.white_milestones?.items?.enum ?? []).map(String);
+  if (!data || !blackSchema || !milestones.length) return null;
+  const order = Object.keys(schema?.properties ?? {});
+  const setKey = (key: string, v: JsonValue) => documents.replace(RECORDS, put(data, key, v, order));
+  const ranks = asList(data.get("black_ranks")).map(Number);
+  const chosen = new Set(asList(data.get("white_milestones")).map(String));
+  const rising = ranks.every((r, i) => i === 0 || r > ranks[i - 1]);
+  const min = blackSchema.items?.minimum ?? 1;
+  const max = blackSchema.items?.maximum ?? 1000000;
+  const toggle = (m: string, on: boolean) => setKey("white_milestones", milestones.filter((k) => (k === m ? on : chosen.has(k))));
+  return (
+    <>
+      <h6 className="en-sub en-run-head">Entree ranks <span className="muted">records.json{doc?.dirty ? " •" : ""}</span></h6>
+      <div className="en-run">
+        <span className="muted small">Black Tree</span>
+        <span className="en-run-controls" style={{ flexWrap: "wrap" }}>
+          {ranks.map((r, i) => (
+            <NumberBox key={i} value={r} min={min} max={max} width={64} title={`Dream Shards earned for rank ${i + 1}`}
+                       onChange={(n) => setKey("black_ranks", ranks.map((v, k) => (k === i ? n : v)))} />
+          ))}
+        </span>
+      </div>
+      <span className="muted small">The Dream Shards earned in all runs (whatever was spent) that reach ranks 1 to {ranks.length}</span>
+      {!rising && <span className="en-error small">Each rank needs more Shards than the one before</span>}
+      {milestones.map((m, i) => (
+        <div key={m} className="en-run">
+          <span className="muted small">{i === 0 ? "White Tree" : ""}</span>
+          <span className="en-run-controls">
+            <label className="ow-check small" title={MILESTONE_LABELS[m]?.[1] ?? m}>
+              <input type="checkbox" checked={chosen.has(m)} onChange={(e) => toggle(m, e.target.checked)} /> {MILESTONE_LABELS[m]?.[0] ?? m}
+            </label>
+          </span>
+        </div>
+      ))}
+      <span className="muted small">The milestones that count: each reached raises the White Tree's rank by one, in any order ({chosen.size} ranks)</span>
+    </>
   );
 }
 

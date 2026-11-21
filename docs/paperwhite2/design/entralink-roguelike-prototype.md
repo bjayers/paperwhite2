@@ -10,10 +10,10 @@ the shops and the Dowsing MCHN; see "Step 2" to "Step 7" below.
 
 ## What a run is
 
-1. **The hub** (`ZONE_ENTRALINK`) has no Entree monolith, no tutorial and one NPC (the Lady south of the Entree), who
+1. **The hub** (`ZONE_ENTRALINK`) has no tutorial and one NPC (the Lady south of the Entree), who
    asks and takes the player back to their own world (`CallEntralinkWarpOut`); since the buffs' phase 7 also the
    Reserve Box NPC beside her, with the PC and the Reserve Box (`entralink-buffs.md`, section 14). Walking off the hub's south walkway
-   still asks the same (vanilla's Script_14).
+   still asks the same (vanilla's Script_14). The Entree itself opens the records' menu ("The Entree's menu").
 2. **Walking off the hub's top edge** starts a run and enters room 1.
 3. **Rooms 1-3** are run.json's pool (Dialga, the Rayquaza raid, Ho-Oh) in a random order (`GFL_RandomLC`,
    Fisher-Yates), in `entree_forest` and `entree_forest_6` in turn. **Room 4** is always Darkrai, in `entree_forest_2`.
@@ -1205,6 +1205,73 @@ of Player....
 Overlay 12 **+2,976 bytes** (the records 0.9 KB, the run's hooks 0.3 KB, the debug readout about 1.8 KB, debug builds
 only); ARM9 main +14 bytes of BSS (no change to its end, alignment); overlay 167 +0.2 KB (battle only). The DS arena
 left falls from 0x5ec0 to **0x5320 (20.8 KB)**. Save: the progress block, as above.
+
+## The Entree's menu (2026-11-21)
+
+Step 2 of the records: examining the Entree (A, in front of it) opens its menu, the Entralink monolith (overlay 143)
+repurposed. The hub's bg event is back (`entralink.json`, script 4 at (31, 33)): "Checked your Entree.", then
+`CallMonolith`, and under `PAPERWHITE2` Script_4 returns after it, skipping the Funfest mission's start. Code:
+`include/paperwhite2/entree_menu.h`, `src/paperwhite2/ov143/` (`paperwhite2_entree_data.c` the ranks, milestones and
+copies of the tables; `paperwhite2_entree_menu.c` the Status, the menu and the pages; `paperwhite2_entree_lists.c` the
+lists), and `monolith_main.c`'s screen table under `PAPERWHITE2`. Text: the end of the monolith's own bank,
+`res/text/system/btl_main_title.txt` (`BtlMainTitle_Text_Entree*`, placeholders).
+
+### The screens
+
+| Screen | Top | Bottom |
+| --- | --- | --- |
+| The menu | **Status**: the White Tree's rank (n/5) and the milestones reached, the Black Tree's rank, the Shards earned and the next rank's, and the monolith's White-against-Black bar drawn from the two ranks | the items in frames, two columns (Status, Records, Nightmares, Bosses, Special, Catchable, Buffs, Hall of Fame) and Exit, with the D-pad, A, B or touch; the return button closes too |
+| Status | Status | rows: each White Tree milestone that counts, Done or -, the Shards earned and the next Black rank |
+| Records | Status | rows (8 a page, left/right or L/R to page): deepest point (round and room), runs started, runs won, the current and best win streaks, Shards earned, the biggest hit and its Pokémon's move, the best run's total turns, rooms discovered and beaten (of the rooms of `rooms/`) |
+| A list | the list's name and the entry under the cursor described | a scrolling list (`BmpMenuList`, left/right a page) |
+
+The lists:
+
+- **Nightmares** (the codex's Nightmare species) and **Special** (records.json's forms): "?????" until met, then the
+  name; met, caught, times beaten. "Nothing here yet." while there are none (no Nightmare species exists yet).
+- **Bosses**: each boss and final room of `rooms/`, by its first enemy, "?????" until its room is discovered; its
+  enemies (each species once), times beaten and fewest turns, or never beaten.
+- **Catchable**: every catchable enemy of the rooms of `rooms/` (a catch once): caught; locked, with the battles to win
+  first (a requirement's battle by its first enemy, "Finish a run" for a run won); or catchable now.
+- **Buffs**: every card of the catalogue: "?????" until offered, then its title in its tier's colour (the buffs' bank's
+  own colour codes, the monolith's text colour set back after with `{ff00:498}`), "offered, never taken", or once
+  taken its description at every rank (a gold's title and description for ranks I to III) and the times taken. A type
+  card reads "any type".
+- **Hall of Fame**: "Won in N turns", the team by nickname (species with form, shiny, held item), then the golds held
+  at their ranks with their descriptions. A list rather than the original Hall of Fame viewer, which is a full app of
+  its own.
+
+### The ranks
+
+`records.json`'s `black_ranks` (five Shards-earned thresholds, rising: 5, 20, 60, 180, 450) and `white_milestones`
+(which count: `beat_final`, `catch_all`, `fill_codex`, `shop_cap`, `all_rooms`), packed by
+`tools/paperwhite2/entralink_records.py` into `ENTRALINK_RECORDS_BLACK_RANKS` and `ENTRALINK_RECORDS_WHITE_MILESTONES`
+(a bit each, `ENTREE_MILESTONE_*` order). The Black rank is the thresholds reached; the White rank is the counted
+milestones reached, in any order: a run won (`runsCompleted`), every catch of the rooms caught, every codex entry met,
+the hub shop's bought picks at `total_cap`, every room of `rooms/` entered. The editor's Entree page edits both (Run
+section, **Entree ranks**: the five numbers, a checkbox a milestone).
+
+### Memory
+
+Overlay 143 only, which loads for the monolith alone and sits inside the field's span (overlay 36), below the arena:
+0x6c60 to 0x9b40 (+12 KB: the code and its text tables 9.1 KB, copies of the run's rooms, battles, enemies and the
+buffs' catalogue 2.9 KB, since overlay 12's are static to the run). ARM9 main and overlay 12 unchanged; the DS arena
+stays 0x5320 (20.8 KB). The screens' work is on the monolith's own heap (1 MB of the user heap).
+
+### Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `entreemenu/h/`)
+
+- The hub's Entree opens the menu (an old save's block read and cleared by it); every item, page and list opens and
+  B or the return button goes back, the menu's cursor where it was.
+- **Black ranks at the boundary**: 4 Shards earned rank 0/5, next at 5; 5 Shards rank 1/5, next at 20; 450 rank 5/5,
+  the highest. **White**: no milestone 0/5; a run won and the codex full 2/5 (Status lists those two Done); all five
+  (every catch, the shop's 8 picks, all 13 rooms) 5/5.
+- **Records** with poked values: round 3 room 12, 7 runs, 2 won, streaks 1 and 2, 450 Shards, a 12,345 hit by
+  Pignite's Arm Thrust, 41 turns, 13/13 rooms discovered and 3/13 beaten, on two pages.
+- **Lists**: Darkrai's final room beaten twice in 3 turns, Ho-Oh's round boss never beaten; Primal Dialga met, Shadow
+  Lugia met and caught; the hall's three (Primo: Dialga form 1, shiny, Leftovers) and two golds; cards unseen, offered,
+  a blue taken twice, Galvanic taken (its three ranks); Catchable with one caught, one catchable and one locked behind
+  Darkrai's battle (a requirement poked into overlay 143's table copy, since no room has one); Nightmares empty.
+- Not tested: touch input, a list longer than the screen paged with left/right (scrolling was).
 
 ## The re-entry question
 

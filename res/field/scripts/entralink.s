@@ -57,6 +57,10 @@ L_0064:
     FieldOpen
     FadeInBlackQ
     FadeWait
+#ifdef PAPERWHITE2
+    // Paper White 2: the Entree's menu (src/paperwhite2/ov143/) has no Funfest missions to start
+    VMReturn
+#endif
     IsFestMissionAvailable 0x8010
     WorkCmpConst 0x8010, 1
     VMJumpIf CMP_EQ, L_0091

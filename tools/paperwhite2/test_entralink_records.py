@@ -11,12 +11,17 @@ from tools.data import datajson, species_list  # noqa: E402
 from tools.paperwhite2 import entralink_records  # noqa: E402
 
 
-def records_dir(tmp_path: Path, special: list[dict]) -> Path:
+def records_dir(tmp_path: Path, special: list[dict], black: list[int] | None = None,
+                white: list[str] | None = None) -> Path:
     """The real schema with a records.json of the test's own."""
     directory = tmp_path / "entralink"
     directory.mkdir()
     shutil.copy(entralink_records.SOURCE / "records.schema.json", directory)
-    (directory / "records.json").write_text(json.dumps({"$schema": "records.schema.json", "special_forms": special}))
+    (directory / "records.json").write_text(json.dumps({
+        "$schema": "records.schema.json", "special_forms": special,
+        "black_ranks": black if black is not None else [1, 2, 3, 4, 5],
+        "white_milestones": white if white is not None else ["beat_final"],
+    }))
     return directory
 
 
@@ -24,6 +29,34 @@ def test_real_data_packs():
     # (validity only: the entries are the user's data)
     text = entralink_records.header()
     assert "#define ENTRALINK_RECORDS_CODEX {" in text and "ENTRALINK_RECORDS_CODEX_COUNT" in text
+    assert "#define ENTRALINK_RECORDS_BLACK_RANK_COUNT 5" in text
+    assert "#define ENTRALINK_RECORDS_WHITE_MILESTONES 0x" in text
+
+
+def test_the_entree_ranks(tmp_path):
+    """The Black Tree's thresholds in order, and the White Tree's milestones that count as a bit each in MILESTONES'
+    order (include/paperwhite2/entree_menu.h's ENTREE_MILESTONE_*), whatever records.json's order."""
+    directory = records_dir(tmp_path, [], black=[3, 10, 30, 90, 270], white=["all_rooms", "catch_all"])
+    text = entralink_records.header(directory)
+    assert "#define ENTRALINK_RECORDS_BLACK_RANKS { 3, 10, 30, 90, 270 }" in text
+    assert "#define ENTRALINK_RECORDS_WHITE_MILESTONES 0x12 /* all_rooms, catch_all */" in text
+    assert entralink_records.MILESTONES == ["beat_final", "catch_all", "fill_codex", "shop_cap", "all_rooms"]
+
+
+def test_no_milestone_counts(tmp_path):
+    text = entralink_records.header(records_dir(tmp_path, [], white=[]))
+    assert "#define ENTRALINK_RECORDS_WHITE_MILESTONES 0x00 /* none */" in text
+
+
+def test_black_ranks_must_rise(tmp_path):
+    with pytest.raises(datajson.DataError, match="must rise: 20 follows 20"):
+        entralink_records.header(records_dir(tmp_path, [], black=[5, 20, 20, 60, 90]))
+
+
+@pytest.mark.parametrize("black", [[5, 20, 60, 180], [0, 1, 2, 3, 4]])
+def test_black_ranks_are_five_positive_numbers(tmp_path, black):
+    with pytest.raises(datajson.DataError):
+        entralink_records.header(records_dir(tmp_path, [], black=black))
 
 
 def test_special_forms_are_keys_with_the_special_bit(tmp_path):

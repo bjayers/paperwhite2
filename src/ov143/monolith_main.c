@@ -45,6 +45,10 @@
 #include "system/wipe.h"
 #include "system/wordset.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/entree_menu.h"
+#endif
+
 // The steps of the proc
 enum {
     MONOLITH_SEQ_FADE_IN,
@@ -98,12 +102,23 @@ static const BGSysVRAMConfig sMonolithVRAMConfig = {
 };
 
 // The procs of each screen, by MONOLITH_SCREEN_*
+#ifdef PAPERWHITE2
+// Paper White 2: the Entree's menu of the roguelike's records takes the place of the pass powers and missions
+// (paperwhite2/entree_menu.h): the menu, the pages of rows and the lists, by ENTREE_SCREEN_*; the last is unused
+static const MonolithScreenProcs sMonolithScreens[MONOLITH_SCREEN_COUNT] = {
+    { &ENTREE_STATUS_PROC_FUNCTIONS, &ENTREE_MENU_PROC_FUNCTIONS },
+    { &ENTREE_STATUS_PROC_FUNCTIONS, &ENTREE_PAGES_PROC_FUNCTIONS },
+    { &ENTREE_INFO_PROC_FUNCTIONS, &ENTREE_LIST_PROC_FUNCTIONS },
+    { &ENTREE_STATUS_PROC_FUNCTIONS, &ENTREE_MENU_PROC_FUNCTIONS },
+};
+#else
 static const MonolithScreenProcs sMonolithScreens[MONOLITH_SCREEN_COUNT] = {
     { &MONOLITH_STATUS_PROC_FUNCTIONS, &MONOLITH_TOP_PROC_FUNCTIONS },
     { &MONOLITH_POWER_INFO_PROC_FUNCTIONS, &MONOLITH_POWER_SELECT_PROC_FUNCTIONS },
     { &MONOLITH_STATUS_PROC_FUNCTIONS, &MONOLITH_RECORD_PROC_FUNCTIONS },
     { &MONOLITH_MISSION_INFO_PROC_FUNCTIONS, &MONOLITH_MISSION_SELECT_PROC_FUNCTIONS },
 };
+#endif
 
 static const BGSetup sMonolithBGSetupMain = {
     0,

@@ -93,6 +93,8 @@ Notes on the zones:
   Entree", then `CallMonolith` (`src/ov012/scrcmd_proc.c:260`, overlay 143). Afterwards, `IsFestMissionAvailable`
   says whether a mission was picked, and if so it runs `FunfestMissionStart`.
 - **The monolith's screens:** `src/ov143/`: top, status, record, mission select and info, Pass Power select and info.
+  In the hack they are the Entree's menu of the roguelike's records (entralink-roguelike-prototype.md, "The Entree's
+  menu").
 - **Picking a mission:** `MonolithMission` (`src/ov143/monolith_mission_select.c:606-643`) picks the mission and calls
   `LinkFestival_StartMission(festival, &mission, 0)` at once. Only then does it try to go on air
   (`MONOLITH_MISSION_SEQ_BOOT_COMM` → `GSYS_TryBootGameComm`), which in the hack does nothing.

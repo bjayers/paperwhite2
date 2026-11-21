@@ -2,6 +2,20 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-21: Entralink records, step 2: the Entree's menu (ROM session, on a branch)
+
+- **The Entree** in the hub opens its menu again (bg event, script 4): the monolith (overlay 143) repurposed. Top:
+  **Status**, the White Tree rank (milestones reached that count) and the Black Tree rank (Shards earned: 5, 20, 60,
+  180, 450) with the next rank and the White/Black bar. Menu: Status (the milestones, Done or -), Records (two pages
+  of rows), Nightmares, Bosses, Special, Catchable (caught, locked with the battles to win, catchable now), Buffs
+  (unseen, tier-coloured name, every rank's description once taken), Hall of Fame (team and golds), Exit. Lists are
+  plain for now; text placeholders at the end of `btl_main_title.txt`.
+- **Data:** `records.json`'s `black_ranks` and `white_milestones` (schema, packer, tests); the editor's Entree page,
+  Run section, **Entree ranks**.
+- **Tested** in py-desmume with poked records: ranks at 4/5/450 Shards and 0, 2, 5 milestones, every page and list.
+  Memory: overlay 143 only (+12 KB, loaded for the menu alone); arena unchanged at 20.8 KB. Prototype doc, "The
+  Entree's menu".
+
 ## 2026-11-21: Entralink records, step 1: the data and saving (ROM session, on a branch)
 
 - **Saved** in the progress block (0x1cc-0x61f, 1,108 bytes; 560 left): runs started, win streak and best, deepest

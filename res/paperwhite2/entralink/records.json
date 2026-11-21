@@ -1,5 +1,7 @@
 {
     "$schema": "records.schema.json",
+    "black_ranks": [ 5, 20, 60, 180, 450 ],
+    "white_milestones": [ "beat_final", "catch_all", "fill_codex", "shop_cap", "all_rooms" ],
     "special_forms": [
         {
             "species": "SPECIES_DIALGA",

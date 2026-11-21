@@ -26,6 +26,8 @@ GUARD = "POKEBW2_PAPERWHITE2_ENTRALINK_RECORDS_CONFIG_H"
 CODEX_MAX = 64
 SPECIES_BITS = 10
 SPECIAL = 0x8000
+# The White Tree's milestones, in the order of their bits (ENTREE_MILESTONE_*, include/paperwhite2/entree_menu.h)
+MILESTONES = ["beat_final", "catch_all", "fill_codex", "shop_cap", "all_rooms"]
 
 
 def nightmares(pokemon: Path = POKEMON) -> list[int]:
@@ -39,9 +41,27 @@ def form_count(number: int, pokemon: Path = POKEMON) -> int:
     return species_list.species_data(number, pokemon).get("forms", {}).get("count", 1)
 
 
+def load(directory: Path = SOURCE) -> dict:
+    return datajson.load(directory / "records.json", datajson.load_schema(directory / "records.schema.json"))
+
+
+def black_ranks(records: dict) -> list[int]:
+    """The Black Tree's thresholds, each above the one before, or a datajson.DataError."""
+    ranks = records["black_ranks"]
+    for before, after in zip(ranks, ranks[1:]):
+        if after <= before:
+            raise datajson.DataError(f"records.json: black_ranks must rise: {after} follows {before}")
+    return ranks
+
+
+def white_milestones(records: dict) -> int:
+    """The White Tree's milestones that count, a bit each in MILESTONES' order."""
+    return sum(1 << MILESTONES.index(milestone) for milestone in records["white_milestones"])
+
+
 def codex(directory: Path = SOURCE, pokemon: Path = POKEMON) -> list[tuple[str, int]]:
     """The codex's entries: (a name for the header's comment, the entry), or a datajson.DataError."""
-    records = datajson.load(directory / "records.json", datajson.load_schema(directory / "records.schema.json"))
+    records = load(directory)
     constants = datajson.constants()
     entries = [(datajson.name("SPECIES_", number), number) for number in nightmares(pokemon)]
     for special in records["special_forms"]:
@@ -59,6 +79,8 @@ def codex(directory: Path = SOURCE, pokemon: Path = POKEMON) -> list[tuple[str, 
 
 def header(directory: Path = SOURCE, pokemon: Path = POKEMON) -> str:
     entries = codex(directory, pokemon)
+    records = load(directory)
+    ranks = black_ranks(records)
     rows = [f"    0x{entry:04x}, /* {name} */ \\" for name, entry in entries] or ["    0, \\"]
     return "\n".join([
         f"#ifndef {GUARD}", f"#define {GUARD}", "",
@@ -67,6 +89,13 @@ def header(directory: Path = SOURCE, pokemon: Path = POKEMON) -> str:
         "// The Nightmare codex: its species (a number), then records.json's special forms",
         f"#define ENTRALINK_RECORDS_CODEX_COUNT {max(len(entries), 1)}",
         "#define ENTRALINK_RECORDS_CODEX { \\", *rows, "}",
+        "",
+        "// The Entree's Black Tree: the Dream Shards earned that reach each rank",
+        f"#define ENTRALINK_RECORDS_BLACK_RANK_COUNT {len(ranks)}",
+        f"#define ENTRALINK_RECORDS_BLACK_RANKS {{ {', '.join(str(rank) for rank in ranks)} }}",
+        "// The Entree's White Tree: the milestones that count, a bit each (ENTREE_MILESTONE_*)",
+        f"#define ENTRALINK_RECORDS_WHITE_MILESTONES 0x{white_milestones(records):02x} "
+        f"/* {', '.join(records['white_milestones']) or 'none'} */",
         "", f"#endif // {GUARD}", "",
     ])
 
@@ -78,7 +107,7 @@ def main():
     args = parser.parse_args()
     try:
         if args.check:
-            codex()
+            header()
             print("records.json is fine")
             return
         if args.output is None:
