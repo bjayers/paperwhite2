@@ -1,6 +1,7 @@
 {
     "$schema": "../room.schema.json",
     "name": "Time and Space",
+    "progress_id": 12,
     "rounds": [ 2 ],
     "role": "boss",
     "battles": [

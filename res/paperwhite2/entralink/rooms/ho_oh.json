@@ -1,6 +1,7 @@
 {
     "$schema": "../room.schema.json",
     "name": "Seaside Gales",
+    "progress_id": 4,
     "rounds": [ 1 ],
     "role": "boss",
     "weather": "BTL_WEATHER_SUN",

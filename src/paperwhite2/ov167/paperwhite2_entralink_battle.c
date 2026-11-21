@@ -1774,6 +1774,13 @@ BOOL EntralinkBattle_IsRun(void) {
     return sBattle.run;
 }
 
+void EntralinkBattle_End(BtlMainModule *mainModule) {
+    // The server counts the turns played to their end (ServerControl_TurnCheck), so the last one is one more
+    if (sBattle.run) {
+        EntralinkRun_GetState()->battleTurns = GetServerTurnCount(mainModule) + 1;
+    }
+}
+
 u32 EntralinkBattle_ClampDamage(BattleMon *defender, u32 damage) {
     u32 monId = GetMonID(defender);
     BOOL capped = sBattle.run && damage > ENTRALINK_BUFF_DAMAGE_CAP;
@@ -1804,14 +1811,29 @@ static BOOL ShowsDamageNumbers(BtlServerFlow *flow) {
     }
 }
 
-void EntralinkBattle_PutDamageNumbers(BtlServerFlow *flow, BattleMon *attacker, u32 count, BattleMon **targets,
-                                      const u8 *critical) {
+// A hit of the team's on a foe in a run battle: the run's biggest hit if it is bigger
+static void RecordHit(BattleMon *attacker, u32 move, u32 damage, BOOL critical) {
+    EntralinkRecordHit *best = &EntralinkRun_GetState()->bestHit;
+
+    if (damage <= best->damage) {
+        return;
+    }
+    best->damage = damage;
+    best->species = PokeParty_GetParam(attacker->core.src, PKM_PARAM_SPECIES, NULL);
+    best->form = PokeParty_GetParam(attacker->core.src, PKM_PARAM_FORM, NULL);
+    best->move = move;
+    best->critical = critical;
+}
+
+void EntralinkBattle_PutDamageNumbers(BtlServerFlow *flow, BattleMon *attacker, u32 move, u32 count,
+                                      BattleMon **targets, const u8 *critical) {
+    BOOL shown = ShowsDamageNumbers(flow);
     u32 player;
     u32 monId;
     u32 flags;
     u32 i;
 
-    if (!ShowsDamageNumbers(flow)) {
+    if (!shown && !sBattle.run) {
         return;
     }
     player = GetPlayerClientID(flow->mainModule);
@@ -1821,6 +1843,12 @@ void EntralinkBattle_PutDamageNumbers(BtlServerFlow *flow, BattleMon *attacker, 
     for (i = 0; i < count; i++) {
         monId = GetMonID(targets[i]);
         if (monId >= BATTLE_MONS || IsAllyClientID(GetClientIDFromMonID(monId), player)) {
+            continue;
+        }
+        if (sBattle.run) {
+            RecordHit(attacker, move, sBattle.hitDamage[monId], critical[i]);
+        }
+        if (!shown) {
             continue;
         }
         flags = critical[i] ? DAMAGE_NUMBER_CRITICAL : 0;

@@ -2,6 +2,19 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-21: Entralink records, step 1: the data and saving (ROM session, on a branch)
+
+- **Saved** in the progress block (0x1cc-0x61f, 1,108 bytes; 560 left): runs started, win streak and best, deepest
+  place, Dream Shards earned, the biggest hit (damage, species/form, move, critical), the fewest turns of a win and its
+  hall of fame (team with nicknames, golds); rooms entered/done by a new room **record id** (`progress_id` of each
+  room file, `next_room`, given by the editor on save, checked by the packer); bosses' times beaten and fewest turns;
+  the Nightmare codex (`"pokedex": false` species and `records.json`'s special forms: Primal Dialga, Shadow Lugia) met,
+  beaten, caught; the buff compendium (offered, taken). Old saves read as empty.
+- **Debug:** Player... > Entralink records... (pages, and a reset). Nothing shown in game yet.
+- **Tested** in py-desmume: a loss, a run with a poked catch, an offer and a card, two raids and the final won, the
+  hall of fame and golds, an in-game save and reboot, the reset. Memory: overlay 12 +3.0 KB (1.8 KB of it the debug
+  readout); arena 20.8 KB left. Prototype doc, "Records".
+
 ## 2026-11-21: Follower sprites for room NPCs, and field memory freed (ROM session, on a branch)
 
 - **Follower fallback:** a room's battle NPC without a sprite shows its enemy's walking Pokémon, else now its follower

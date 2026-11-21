@@ -25,6 +25,8 @@
 #include "paperwhite2/debug_actions.h"
 #include "paperwhite2/debug_commands.h"
 #include "paperwhite2/entralink_buffs.h"
+#include "paperwhite2/entralink_progress.h"
+#include "paperwhite2/entralink_records.h"
 #include "paperwhite2/flag_watch.h"
 #include "paperwhite2/following_ambient.h"
 #include "paperwhite2/following_data.h"
@@ -92,6 +94,8 @@
 #define HEX_DIGITS_SEED 8
 // The longest text of a word that the conditions' readout writes from ASCII (the word set's are 0x40 characters)
 #define ASCII_WORD_LENGTH 40
+// The lines of a page of the Entralink records' readout
+#define RECORDS_PAGE_LINES 6
 // The Follower entries' words
 #define FOLLOWER_WORD_SPECIES 0
 #define FOLLOWER_WORD_STEPS 1
@@ -272,6 +276,7 @@ static u32 DebugCommands_ConditionsRules(FieldScriptEnv *env, u32 first);
 static void DebugCommands_ConditionsPick(FieldScriptEnv *env);
 static u32 DebugCommands_SpawnGroups(FieldScriptEnv *env, u32 first);
 static u32 DebugCommands_FlagWatchEntry(FieldScriptEnv *env, u32 index);
+static BOOL DebugCommands_RecordsPage(FieldScriptEnv *env, u32 page);
 static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2, BOOL *wait);
 
 BOOL Scrcmd_PaperWhite2_Debug(VM *vm, FieldScriptEnv *env) {
@@ -430,6 +435,11 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
         return DebugCommands_GetFormCount(arg1);
     case DEBUG_ACTION_SET_BUFF:
         EntralinkBuffs_SetLevel(arg1, pkm != NULL ? PokeParty_GetParam(pkm, PKM_PARAM_TYPE1, NULL) : 0, arg2);
+        return TRUE;
+    case DEBUG_ACTION_RECORDS_PAGE:
+        return DebugCommands_RecordsPage(env, arg1);
+    case DEBUG_ACTION_RECORDS_RESET:
+        EntralinkRecords_Clear(gameData);
         return TRUE;
     case DEBUG_ACTION_SET_WILD_LEVEL:
         PaperWhite2_Debug_SetOverride(DEBUG_OVERRIDE_WILD_LEVEL,
@@ -1236,6 +1246,217 @@ static u32 DebugCommands_SpawnGroups(FieldScriptEnv *env, u32 first) {
         DebugCommands_SetWordAscii(env, i, line);
     }
     return count;
+}
+
+// The record ids of a room bit list, as many as fit in the line after end
+static void DebugCommands_AppendRoomBits(char *line, char *end, const u8 *bits) {
+    u32 i;
+
+    for (i = 0; i < ENTRALINK_RECORDS_ROOMS_MAX; i++) {
+        if (!((bits[i / 8] >> (i % 8)) & 1)) {
+            continue;
+        }
+        if (end - line > ASCII_WORD_LENGTH - 8) {
+            DebugCommands_AppendText(end, "...");
+            return;
+        }
+        end = DebugCommands_AppendNumber(end, i);
+        end = DebugCommands_AppendText(end, " ");
+    }
+}
+
+static u32 DebugCommands_CountRoomBits(const u8 *bits) {
+    u32 count = 0;
+    u32 i;
+
+    for (i = 0; i < ENTRALINK_RECORDS_ROOMS_MAX; i++) {
+        count += (bits[i / 8] >> (i % 8)) & 1;
+    }
+    return count;
+}
+
+// A species and form as "#species/form"
+static char *DebugCommands_AppendSpecies(char *text, u32 species, u32 form) {
+    text = DebugCommands_AppendText(text, "#");
+    text = DebugCommands_AppendNumber(text, species);
+    text = DebugCommands_AppendText(text, "/");
+    return DebugCommands_AppendNumber(text, form);
+}
+
+// A card's ID by its key, or ENTRALINK_BUFF_NONE
+static u32 DebugCommands_FindBuff(u32 key) {
+    u32 buff;
+
+    for (buff = 0; buff < ENTRALINK_BUFF_COUNT; buff++) {
+        if (EntralinkBuffs_GetEntry(buff)->key == key) {
+            return buff;
+        }
+    }
+    return ENTRALINK_BUFF_NONE;
+}
+
+// A line of the records' readout: the run's records, the rooms, each boss beaten, the codex and each of its entries,
+// the cards seen and taken and each card taken, and the hall of fame. FALSE past the last
+static BOOL DebugCommands_RecordsLine(const EntralinkProgress *progress, u32 index, char *line) {
+    const EntralinkRecords *records = &progress->records;
+    const EntralinkRecordEntry *entry;
+    const EntralinkHallMon *mon;
+    char *end = line;
+    u32 count;
+    u32 seen = 0;
+    u32 taken = 0;
+    u32 i;
+
+    *line = '\0';
+    switch (index) {
+    case 0:
+        end = DebugCommands_AppendText(end, "Runs ");
+        end = DebugCommands_AppendNumber(end, records->runsStarted);
+        end = DebugCommands_AppendText(end, ", won ");
+        DebugCommands_AppendNumber(end, progress->runsCompleted);
+        return TRUE;
+    case 1:
+        end = DebugCommands_AppendText(end, "Win streak ");
+        end = DebugCommands_AppendNumber(end, records->winStreak);
+        end = DebugCommands_AppendText(end, ", best ");
+        DebugCommands_AppendNumber(end, records->bestWinStreak);
+        return TRUE;
+    case 2:
+        end = DebugCommands_AppendText(end, "Deepest: place ");
+        end = DebugCommands_AppendNumber(end, records->deepestPlace);
+        end = DebugCommands_AppendText(end, ", round ");
+        DebugCommands_AppendNumber(end, records->deepestRound);
+        return TRUE;
+    case 3:
+        end = DebugCommands_AppendText(end, "Shards earned ");
+        DebugCommands_AppendNumber(end, records->shardsEarned);
+        return TRUE;
+    case 4:
+        end = DebugCommands_AppendText(end, "Fewest turns of a win ");
+        DebugCommands_AppendNumber(end, records->bestWinTurns);
+        return TRUE;
+    case 5:
+        end = DebugCommands_AppendText(end, "Hit ");
+        end = DebugCommands_AppendNumber(end, records->bestHit.damage);
+        end = DebugCommands_AppendText(end, " ");
+        end = DebugCommands_AppendSpecies(end, records->bestHit.species, records->bestHit.form);
+        end = DebugCommands_AppendText(end, " move ");
+        end = DebugCommands_AppendNumber(end, records->bestHit.move);
+        DebugCommands_AppendText(end, records->bestHit.critical ? " crit" : "");
+        return TRUE;
+    case 6:
+        end = DebugCommands_AppendText(end, "Rooms seen ");
+        end = DebugCommands_AppendNumber(end, DebugCommands_CountRoomBits(records->roomsDiscovered));
+        end = DebugCommands_AppendText(end, ", done ");
+        DebugCommands_AppendNumber(end, DebugCommands_CountRoomBits(records->roomsBeaten));
+        return TRUE;
+    case 7:
+        DebugCommands_AppendRoomBits(line, DebugCommands_AppendText(end, "Seen: "), records->roomsDiscovered);
+        return TRUE;
+    case 8:
+        DebugCommands_AppendRoomBits(line, DebugCommands_AppendText(end, "Done: "), records->roomsBeaten);
+        return TRUE;
+    }
+    index -= 9;
+    for (i = 0; i < ENTRALINK_RECORDS_BOSSES_MAX; i++) {
+        entry = &records->bosses[i];
+        if (entry->key != 0 && index-- == 0) {
+            end = DebugCommands_AppendText(end, "Boss room ");
+            end = DebugCommands_AppendNumber(end, entry->key - 1);
+            end = DebugCommands_AppendText(end, ": ");
+            end = DebugCommands_AppendNumber(end, entry->count);
+            end = DebugCommands_AppendText(end, "x, best ");
+            end = DebugCommands_AppendNumber(end, records->bossBestTurns[i]);
+            DebugCommands_AppendText(end, " turns");
+            return TRUE;
+        }
+    }
+    count = EntralinkRecords_GetCodexCount();
+    if (index-- == 0) {
+        end = DebugCommands_AppendText(end, "Codex: ");
+        end = DebugCommands_AppendNumber(end, count);
+        DebugCommands_AppendText(end, " species and forms");
+        return TRUE;
+    }
+    for (i = 0; i < ENTRALINK_RECORDS_CODEX_MAX; i++) {
+        entry = &records->codex[i];
+        if (entry->key != 0 && index-- == 0) {
+            end = DebugCommands_AppendSpecies(end, ENTRALINK_RECORDS_CODEX_SPECIES(entry->key),
+                                              ENTRALINK_RECORDS_CODEX_FORM(entry->key));
+            end = DebugCommands_AppendText(end, (entry->flags & ENTRALINK_RECORD_TAKEN) ? ": caught, " : ": met, ");
+            end = DebugCommands_AppendNumber(end, entry->count);
+            DebugCommands_AppendText(end, " beaten");
+            return TRUE;
+        }
+    }
+    for (i = 0; i < ENTRALINK_RECORDS_CARDS_MAX; i++) {
+        seen += (records->cards[i].flags & ENTRALINK_RECORD_SEEN) != 0;
+        taken += (records->cards[i].flags & ENTRALINK_RECORD_TAKEN) != 0;
+    }
+    if (index-- == 0) {
+        end = DebugCommands_AppendText(end, "Cards seen ");
+        end = DebugCommands_AppendNumber(end, seen);
+        end = DebugCommands_AppendText(end, ", taken ");
+        DebugCommands_AppendNumber(end, taken);
+        return TRUE;
+    }
+    for (i = 0; i < ENTRALINK_RECORDS_CARDS_MAX; i++) {
+        entry = &records->cards[i];
+        if ((entry->flags & ENTRALINK_RECORD_TAKEN) && index-- == 0) {
+            end = DebugCommands_AppendText(end, "Card ");
+            end = DebugCommands_AppendNumber(end, DebugCommands_FindBuff(entry->key));
+            end = DebugCommands_AppendText(end, " taken ");
+            end = DebugCommands_AppendNumber(end, entry->count);
+            DebugCommands_AppendText(end, "x");
+            return TRUE;
+        }
+    }
+    if (index-- == 0) {
+        end = DebugCommands_AppendText(end, "Hall of fame: ");
+        end = DebugCommands_AppendNumber(end, records->bestWinTurns);
+        DebugCommands_AppendText(end, " turns");
+        return TRUE;
+    }
+    for (i = 0; i < ENTRALINK_RECORDS_HALL_MONS; i++) {
+        mon = &records->hallMons[i];
+        if (mon->species != 0 && index-- == 0) {
+            end = DebugCommands_AppendSpecies(end, mon->species, mon->form);
+            end = DebugCommands_AppendText(end, mon->shiny ? " shiny, item " : ", item ");
+            DebugCommands_AppendNumber(end, mon->item);
+            return TRUE;
+        }
+    }
+    if (index-- == 0) {
+        end = DebugCommands_AppendText(end, "Golds:");
+        for (i = 0; i < ENTRALINK_RECORDS_HALL_GOLDS; i++) {
+            if (records->hallGolds[i].key != 0) {
+                end = DebugCommands_AppendText(end, " ");
+                end = DebugCommands_AppendNumber(end, DebugCommands_FindBuff(records->hallGolds[i].key));
+                end = DebugCommands_AppendText(end, "/");
+                end = DebugCommands_AppendNumber(end, records->hallGolds[i].rank);
+            }
+        }
+        return TRUE;
+    }
+    return FALSE;
+}
+
+// A page of the records' readout in words 0 to RECORDS_PAGE_LINES - 1 (DEBUG_ACTION_RECORDS_PAGE); FALSE past the last
+static BOOL DebugCommands_RecordsPage(FieldScriptEnv *env, u32 page) {
+    const EntralinkProgress *progress = EntralinkProgress_Get(GameData_GetSaveControl(FieldScriptEnv_GetGameData(env)));
+    char line[ASCII_WORD_LENGTH];
+    BOOL any = FALSE;
+    u32 i;
+
+    for (i = 0; i < RECORDS_PAGE_LINES; i++) {
+        if (DebugCommands_RecordsLine(progress, page * RECORDS_PAGE_LINES + i, line)) {
+            any = TRUE;
+        } else {
+            line[0] = '\0';
+        }
+        DebugCommands_SetWordAscii(env, i, line);
+    }
+    return any;
 }
 
 // The Memory page's words (DEBUG_ACTION_MEMORY_WORDS)

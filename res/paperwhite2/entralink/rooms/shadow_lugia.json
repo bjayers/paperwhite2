@@ -1,6 +1,7 @@
 {
     "$schema": "../room.schema.json",
     "name": "Shadow Lugia",
+    "progress_id": 7,
     "rounds": [ 2, 3 ],
     "role": "room",
     "type": "challenge",

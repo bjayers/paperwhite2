@@ -1,6 +1,7 @@
 {
     "$schema": "../room.schema.json",
     "name": "The Swords of Justice",
+    "progress_id": 11,
     "role": "room",
     "type": "enemy_choice",
     "marker": "enemy_choice",

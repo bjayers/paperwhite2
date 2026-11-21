@@ -8,6 +8,10 @@
   "properties": {
     "$schema": { "type": "string" },
     "name": { "type": "string", "description": "The room's name, for the editor" },
+    "progress_id": {
+      "type": "integer", "minimum": 0, "maximum": 127,
+      "description": "A room's record id (rooms/ only; a template has none): its discovered and beaten bits and its boss record in the save, unique over all rooms and never changed or reused once given (the editor gives the next of progress_ids.json's next_room on save)"
+    },
     "rounds": {
       "type": "array", "minItems": 1, "maxItems": 3,
       "items": { "enum": [ 1, 2, 3 ] },

@@ -181,6 +181,10 @@
 // The Entralink run's buffs (paperwhite2/entralink_buffs.h): sets buff arg1 to level arg2 (a blue's or purple's
 // count, a type card's for the target's first type; a gold's rank, in a free slot or else the first; 0 takes it away)
 #define DEBUG_ACTION_SET_BUFF 59
+// The Entralink records (paperwhite2/entralink_records.h): page arg1 of the readout, its lines in words 0 to 5, TRUE
+// while there is one; and the records cleared
+#define DEBUG_ACTION_RECORDS_PAGE 60
+#define DEBUG_ACTION_RECORDS_RESET 61
 
 // The kinds of number entry: their ranges and messages are sDebugNumberKinds (paperwhite2_debug_commands.c)
 #define DEBUG_NUMBER_LEVEL 0

@@ -148,6 +148,9 @@ DEFAULT_SPRITES = {"item": "OBJ_CODE_110", "rest": "OBJ_CODE_LADY", "buff": "OBJ
 # The save's bits (include/paperwhite2/entralink_progress.h)
 BATTLES_MAX = 1024
 CATCHES_MAX = 512
+# Rooms' record ids (ENTRALINK_RECORDS_ROOMS_MAX), and a template's or random room's none
+ROOMS_MAX = 128
+RECORD_NONE = 0xff
 # The rooms of a run, the pre-boss rests and the final's included (ENTRALINK_RUN_ROOMS_MAX)
 RUN_ROOMS_MAX = 32
 
@@ -435,32 +438,37 @@ def icon_texture(item: str) -> bytes:
 
 
 def check_progress(directory: Path, rooms: dict[str, dict], templates: dict[str, dict] | None = None):
-    """Every battle and every catchable enemy, of the rooms and the templates, has its own progress id, below
-    progress_ids.json's next ones."""
+    """Every room (its record id), battle and catchable enemy, of the rooms and the templates, has its own progress
+    id, below progress_ids.json's next ones; a template has no record id."""
     path = directory / "progress_ids.json"
-    issued = json.loads(path.read_text()) if path.is_file() else {"next_battle": BATTLES_MAX, "next_catch": CATCHES_MAX}
-    seen = {"battle": {}, "catch": {}}
-    places = [(f"rooms/{name}.json", name, room) for name, room in rooms.items()]
-    places += [(f"templates/{name}.json", f"templates/{name}", room) for name, room in (templates or {}).items()]
-    for where, name, room in places:
+    issued = {"next_battle": BATTLES_MAX, "next_catch": CATCHES_MAX, "next_room": ROOMS_MAX}
+    if path.is_file():
+        issued.update(json.loads(path.read_text()))
+    seen = {"room": {}, "battle": {}, "catch": {}}
+    places = [(f"rooms/{name}.json", name, room, False) for name, room in rooms.items()]
+    places += [(f"templates/{name}.json", f"templates/{name}", room, True) for name, room in (templates or {}).items()]
+    for where, name, room, template in places:
+        if template and "progress_id" in room:
+            error(where, "a template has no progress_id of its own (a room's record id): only rooms/ have one")
+        claims = [] if template else [("room", room.get("progress_id"), name, ROOMS_MAX, issued["next_room"])]
         for battle in room["battles"]:
             key = f"{name}/{battle['id']}"
-            claims = [("battle", battle.get("progress_id"), key, BATTLES_MAX, issued["next_battle"])]
+            claims.append(("battle", battle.get("progress_id"), key, BATTLES_MAX, issued["next_battle"]))
             claims += [("catch", enemy.get("progress_id"), f"{key}'s {enemy['species']}", CATCHES_MAX,
                         issued["next_catch"]) for enemy in battle["enemies"] if "catch" in enemy]
-            for kind, number, label, limit, next_number in claims:
-                if number is None:
-                    error(where, f"{label} has no progress_id: the editor gives one on save "
-                          f"(the next of progress_ids.json); a {kind} needs one for the save")
-                if number >= limit:
-                    error(where, f"{label}'s progress_id {number} is past the save's {limit}")
-                if number >= next_number:
-                    error(where, f"{label}'s progress_id {number} isn't below progress_ids.json's "
-                          f"next_{kind} ({next_number}), so it could be given again")
-                if number in seen[kind]:
-                    error(where, f"{label} has {kind} progress_id {number}, as {seen[kind][number]} "
-                          "has: each needs its own, never changed once given")
-                seen[kind][number] = label
+        for kind, number, label, limit, next_number in claims:
+            if number is None:
+                error(where, f"{label} has no progress_id: the editor gives one on save "
+                      f"(the next of progress_ids.json); a {kind} needs one for the save")
+            if number >= limit:
+                error(where, f"{label}'s progress_id {number} is past the save's {limit}")
+            if number >= next_number:
+                error(where, f"{label}'s progress_id {number} isn't below progress_ids.json's "
+                      f"next_{kind} ({next_number}), so it could be given again")
+            if number in seen[kind]:
+                error(where, f"{label} has {kind} progress_id {number}, as {seen[kind][number]} "
+                      "has: each needs its own, never changed once given")
+            seen[kind][number] = label
 
 
 def requirement(key: str, rooms: dict[str, dict], where: str) -> int:
@@ -713,6 +721,7 @@ def room_row(name: str, room: dict, template: bool, rooms: dict[str, dict], tabl
         "marker": MARKER_TYPES.index(room.get("marker", default_marker)),
         "type": ROOM_TYPES[kind], "template": int(template),
         "firstBattle": first_battle, "battleCount": len(battles) - first_battle,
+        "recordId": RECORD_NONE if template else room["progress_id"],
         "firstNpc": first_npc, "npcCount": len(npcs) - first_npc, "random": 0,
     }
 
@@ -777,7 +786,8 @@ def tables(directory: Path) -> dict:
         random_index[kind] = len(room_rows)
         room_rows.append({"name": f"random/{kind}", "role": ROLES["room"], "rounds": 0, "weather": WEATHER_FIELD,
                           "marker": MARKER_TYPES.index(TYPE_MARKERS[kind]), "type": ROOM_TYPES[kind], "template": 1,
-                          "firstBattle": 0, "battleCount": 0, "firstNpc": 0, "npcCount": 0, "random": 1})
+                          "firstBattle": 0, "battleCount": 0, "recordId": RECORD_NONE, "firstNpc": 0, "npcCount": 0,
+                          "random": 1})
     if len(room_rows) >= TEMPLATE_NONE:
         error("rooms", f"{len(room_rows)} rooms and templates, more than {TEMPLATE_NONE - 1}")
     # The template a door of each type takes when no premade room comes up (enemy and challenge have none)
@@ -898,7 +908,8 @@ def initializer(rows: list[str]) -> str:
 def header(directory: Path) -> str:
     data = tables(directory)
     rooms = [f"/* {r['name']} */ {{ {r['role']}, 0x{r['rounds']:x}, 0x{r['weather']:02x}, {r['marker']}, "
-             f"{r['type']}, {r['template']}, {r['firstBattle']}, {r['battleCount']}, {r['firstNpc']}, "
+             f"{r['type']}, {r['template']}, {r['firstBattle']}, {r['battleCount']}, 0x{r['recordId']:02x}, "
+             f"{r['firstNpc']}, "
              f"{r['npcCount']}, {r['random']} }}" for r in data["rooms"]]
     battles = [f"/* {b['name']} */ {{ {b['format']}, {b['enemyCount']}, {b['firstEnemy']}, {b['progressId']} }}"
                for b in data["battles"]]
@@ -988,8 +999,8 @@ def header(directory: Path) -> str:
         f"#define ENTRALINK_RUN_ITEM_ICON_FILE {MARKER_FIRST_MEMBER + len(MARKER_TYPES) + len(data['npc_markers'])}",
         f"#define ENTRALINK_RUN_ITEM_ICON_COUNT {data['icon_count']}",
         *(f"#define ENTRALINK_NPC_MARKER_{name.upper()} {i}" for i, name in enumerate(data["npc_markers"])),
-        "// EntralinkRoom: role, rounds, weather, marker, type, template, first battle, battle count, first NPC,",
-        "// NPC count, random",
+        "// EntralinkRoom: role, rounds, weather, marker, type, template, first battle, battle count, record id,",
+        "// first NPC, NPC count, random",
         f"#define ENTRALINK_RUN_ROOMS {initializer(rooms)}",
         "// EntralinkBattle: format, enemy count, first enemy, progress id",
         f"#define ENTRALINK_RUN_BATTLES {initializer(battles)}",

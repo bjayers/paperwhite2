@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include "paperwhite2/entralink_buffs.h"
+#include "paperwhite2/entralink_progress.h"
 #include "struct_decls.h"
 
 // Paper White 2: the Entralink run's state and its bag (paperwhite2/entralink_run.h), in ARM9 main
@@ -132,6 +133,13 @@ typedef struct {
     // Phase 5: the battle being fought's enemies' stat multipliers in percent, by their place in its party and
     // ENTRALINK_STAT_* (the room's depth's times the enemy's own scale), which the battle applies at its start
     u16 enemyScale[ENTRALINK_RUN_ENEMIES_MAX][ENTRALINK_STAT_COUNT];
+    // The records (paperwhite2/entralink_records.h), which the run's end saves: the turns of the run's battles won,
+    // the last battle's turns (which the battle sets as it ends), the run's biggest hit (the battle's damage numbers)
+    // and whether the final room was beaten
+    u16 turns;
+    u16 battleTurns;
+    EntralinkRecordHit bestHit;
+    u8 won;
 } EntralinkRunState;
 
 // The run's state, which overlay 12's run code keeps

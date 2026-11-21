@@ -22,7 +22,8 @@ const ROOT = resolve(import.meta.dirname, "../..");
 const constants = new Map(Object.entries(new Python(ROOT).constants()));
 const schema = JSON.parse(readFileSync(join(ROOT, ROOM_SCHEMA), "utf8")) as Schema;
 const files = globSync(`${ROOMS_DIR}/*.json`, { cwd: ROOT }).sort();
-const orders = { battle: Object.keys(schema.$defs!.battle.properties!), enemy: Object.keys(schema.$defs!.enemy.properties!) };
+const orders = { battle: Object.keys(schema.$defs!.battle.properties!), enemy: Object.keys(schema.$defs!.enemy.properties!),
+  room: Object.keys(schema.properties!) };
 const errors = (d: JsonValue) => validate(d, schema, constants).map((e) => `${e.path.join(".")}: ${e.message}`);
 const buildCheck = (file: string) =>
   JSON.parse(execFileSync("python3", ["-I", join(ROOT, "editor/server/python/validate.py")], { cwd: ROOT, input: `${file}\t${join(ROOT, ROOM_SCHEMA)}\n` }).toString());
@@ -73,7 +74,7 @@ test("a new room, edited, saves in the data tools' layout and passes the build's
   data = setIn(data, ["npcs", 1], fromPlain({ type: "battle", battle: "weather_trio", enemy: 1, x: 17, z: 14, facing: "DIR_DOWN" }));
   data = setIn(data, ["npcs", 2], fromPlain({ type: "item", item: "ITEM_POTION", count: 2, chance: 50, x: 12, z: 18, facing: "DIR_DOWN" }));
   data = setIn(data, ["npcs", 3], fromPlain({ type: "rest", sprite: "OBJ_CODE_LADY", requires: ["dialga/dialga", "run/completed"], x: 20, z: 18, facing: "DIR_LEFT" }));
-  data = assignProgressIds([{ path: "x", data }], { next_battle: 4, next_catch: 0 }, orders).changed.get("x")!;
+  data = assignProgressIds([{ path: "x", data }], { next_battle: 4, next_catch: 0, next_room: 0 }, orders).changed.get("x")!;
   assert.deepEqual(errors(data), []);
   const room = readRoom(data);
   assert.deepEqual(checkRoom(room, constants, clearings()), []);

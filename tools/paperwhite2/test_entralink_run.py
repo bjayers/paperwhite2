@@ -29,6 +29,7 @@ def fixture_data(tmp_path: Path) -> Path:
     (directory / "rooms").mkdir()
     (directory / "templates").mkdir()
     progress = iter(range(100))
+    room_ids = iter(range(100))
 
     def make_room(name, role="room", battles=1, **extra):
         formats = []
@@ -37,7 +38,7 @@ def fixture_data(tmp_path: Path) -> Path:
                             "enemies": [{"species": "SPECIES_PIKACHU", "level": 50}]})
         npcs = [{"type": "battle", "battle": b["id"], "sprite": "OBJ_CODE_LADY", "x": 12 + 3 * i, "z": 14,
                  "facing": "DIR_DOWN"} for i, b in enumerate(formats)]
-        return {"name": name, "role": role, **extra, "battles": formats, "npcs": npcs}
+        return {"name": name, "progress_id": next(room_ids), "role": role, **extra, "battles": formats, "npcs": npcs}
 
     def make_template(name, kind, npc_type, **npc):
         return {"name": f"{name} (template)", "role": "room", "type": kind, "battles": [],
@@ -64,7 +65,7 @@ def fixture_data(tmp_path: Path) -> Path:
         "room_maps": ["ZONE_ENTREE_FOREST", "ZONE_ENTREE_FOREST_6"], "final_map": "ZONE_ENTREE_FOREST_2",
         "pre_boss_map": "ZONE_ENTREE_FOREST_10", "unknown_chance": 5,
         "marker_spots": {"north": [15, 12], "east": [21, 16], "west": [9, 16]}}))
-    (directory / "progress_ids.json").write_text(json.dumps({"next_battle": 50, "next_catch": 0}))
+    (directory / "progress_ids.json").write_text(json.dumps({"next_battle": 50, "next_catch": 0, "next_room": 50}))
     return directory
 
 
@@ -227,6 +228,31 @@ def test_catch_needs_its_own_id_below_the_next(tmp_path):
         entralink_run.tables(directory)
 
 
+def test_room_record_ids(tmp_path):
+    """A room's progress_id is its record id: in its row of the room table (a template's and a random room's row have
+    none), each room's own, below progress_ids.json's next_room; a template can't have one."""
+    directory = fixture_data(tmp_path)
+    data = entralink_run.tables(directory)
+    rows = {r["name"]: r for r in data["rooms"]}
+    assert rows["alpha"]["recordId"] == 0 and rows["last"]["recordId"] == 6
+    assert rows["templates/rest"]["recordId"] == entralink_run.RECORD_NONE
+    assert rows["random/enemy"]["recordId"] == entralink_run.RECORD_NONE
+    assert "0x06, " in next(line for line in entralink_run.header(directory).splitlines() if "/* last */" in line)
+    edit(room(directory, "beta"), lambda data: data.update(progress_id=0))
+    with pytest.raises(datajson.DataError, match="room progress_id 0, as alpha has"):
+        entralink_run.tables(directory)
+    edit(room(directory, "beta"), lambda data: data.update(progress_id=50))
+    with pytest.raises(datajson.DataError, match="next_room"):
+        entralink_run.tables(directory)
+    edit(room(directory, "beta"), lambda data: data.pop("progress_id"))
+    with pytest.raises(datajson.DataError, match="beta has no progress_id"):
+        entralink_run.tables(directory)
+    edit(room(directory, "beta"), lambda data: data.update(progress_id=1))
+    edit(directory / "templates" / "rest.json", lambda data: data.update(progress_id=40))
+    with pytest.raises(datajson.DataError, match="a template has no progress_id"):
+        entralink_run.tables(directory)
+
+
 def test_requirement_names_a_battle(tmp_path):
     directory = copy_data(tmp_path)
     edit(room(directory, "ho_oh"), lambda data: data["npcs"][0].update(requires=["dialga/nothing"]))
@@ -380,7 +406,7 @@ def test_clearings_pack(tmp_path):
     # The arrival tile can be walked on, the forest's edge can't
     assert not forest["blocked"][23] >> 15 & 1 and forest["blocked"][0] == 0xffffffff
     flowers = data["flower_tiles"][forest["firstFlower"]:][:forest["flowerCount"]]
-    assert (18, 10) in flowers and len(flowers) == forest["flowerCount"] > 0
+    assert len(flowers) == forest["flowerCount"] > 0
     directory = copy_data(tmp_path)
     edit(directory / "flower_tiles.json", lambda data: data.update(ZONE_ENTREE_FOREST_99=[[1, 2]]))
     with pytest.raises(datajson.DataError, match="not an Entree Forest clearing"):

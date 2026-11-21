@@ -168,6 +168,8 @@ export const battleKey = (room: string, battle: string) => `${room}/${battle}`;
 /** The progress ids' limits: the save's won-ever and caught-ever bits. */
 export const MAX_BATTLE_IDS = 1024;
 export const MAX_CATCH_IDS = 512;
+/** The save's room records (ENTRALINK_RECORDS_ROOMS_MAX). */
+export const MAX_ROOM_IDS = 128;
 export const PROGRESS_IDS = "res/paperwhite2/entralink/progress_ids.json";
 export const PROGRESS_IDS_SCHEMA = "res/paperwhite2/entralink/progress_ids.schema.json";
 /** The item ball's sprite, as the field's item balls have it (route_4.json's items). */
@@ -263,6 +265,8 @@ export const AMBIENT_KEYS = ["behaviour", "near", "return", "far", "distance"] a
 
 export interface Room {
   name: string;
+  /** A room's record id (rooms/ only): its discovered and beaten bits and its boss record in the save, given on save. */
+  progressId?: number;
   /** A room of role room's type; enemy when left out (DEFAULT_ROOM_TYPE). */
   type?: RoomType;
   /** The rounds it is kept to; empty for any round. */
@@ -285,6 +289,7 @@ export function readRoom(data: JsonValue | null | undefined): Room {
   const m = asMap(data ?? undefined);
   return {
     name: str(m.get("name")) ?? "",
+    progressId: num(m.get("progress_id")),
     type: ROOM_TYPES.includes(m.get("type") as RoomType) ? m.get("type") as RoomType : undefined,
     rounds: asList(m.get("rounds")).filter((r): r is Round => ROUNDS.includes(r as Round)),
     role: (ROLES.includes(m.get("role") as Role) ? m.get("role") : "room") as Role,
@@ -841,23 +846,27 @@ export function runProblems(run: Pick<RunLayout, "rounds"> & Partial<Pick<RunLay
   return out;
 }
 
-/** The checks over all the rooms beyond the run's (runProblems): a room called "run", and progress ids shared. */
+/** The checks over all the rooms beyond the run's (runProblems): a room called "run", and progress ids shared (rooms'
+ * record ids, battles', catches'). */
 export function checkRooms(rooms: { id: string; room: Room }[]): string[] {
   const out: string[] = [];
   if (rooms.some((r) => r.id === RUN_COMPLETED.split("/")[0])) out.push(`A room is called "run", which "${RUN_COMPLETED}" (a finished run) would mistake for it: rename it.`);
-  // The save's bits: two battles or two catches with one number would share their progress
+  // The save's bits: two rooms, battles or catches with one number would share their progress
   const seen = new Map<string, string>();
-  for (const r of rooms) r.room.battles.forEach((b) => {
-    const where = battleKey(r.id, b.id);
-    const mark = (kind: string, id: number | undefined, what: string) => {
-      if (id === undefined) return;
-      const key = `${kind} ${id}`;
-      if (seen.has(key)) out.push(`${what} has the same ${kind} progress id (${id}) as ${seen.get(key)}: remove one's progress_id in the text view and save to give it a new one.`);
-      else seen.set(key, what);
-    };
-    mark("battle", b.progressId, where);
-    b.enemies.forEach((e, k) => { if (e.catch) mark("catch", e.progressId, `${where} enemy ${k + 1}`); });
-  });
+  const mark = (kind: string, id: number | undefined, what: string) => {
+    if (id === undefined) return;
+    const key = `${kind} ${id}`;
+    if (seen.has(key)) out.push(`${what} has the same ${kind} progress id (${id}) as ${seen.get(key)}: remove one's progress_id in the text view and save to give it a new one.`);
+    else seen.set(key, what);
+  };
+  for (const r of rooms) {
+    mark("room", r.room.progressId, r.id);
+    r.room.battles.forEach((b) => {
+      const where = battleKey(r.id, b.id);
+      mark("battle", b.progressId, where);
+      b.enemies.forEach((e, k) => { if (e.catch) mark("catch", e.progressId, `${where} enemy ${k + 1}`); });
+    });
+  }
   return out;
 }
 
@@ -996,10 +1005,13 @@ export function renameKeys(data: JsonValue, from: string, to: string, prefix = f
 // ---- Progress ids -----------------------------------------------------------------------------------------------------
 
 /** progress_ids.json: the next numbers to give, above every number ever given. */
-export interface ProgressCounters { next_battle: number; next_catch: number }
+export interface ProgressCounters { next_battle: number; next_catch: number; next_room: number }
 
-/** The key orders the progress ids go in, from the schema's battle and enemy definitions. */
-export interface RecordOrders { battle: string[]; enemy: string[] }
+/** The key orders the progress ids go in, from the schema's battle and enemy definitions and its room's properties. */
+export interface RecordOrders { battle: string[]; enemy: string[]; room: string[] }
+
+/** Whether a document is a room of rooms/ (a template has no record id). */
+const isRoomPath = (path: string) => path.startsWith(`${ROOMS_DIR}/`);
 
 const withKey = (record: JsonMap, key: string, value: JsonValue, order: string[]): JsonMap => {
   const next = new Map(record).set(key, value);
@@ -1007,15 +1019,20 @@ const withKey = (record: JsonMap, key: string, value: JsonValue, order: string[]
   return new Map([...next].sort((a, b) => rank(a[0]) - rank(b[0])));
 };
 
-/** Gives every battle and every catchable enemy without a progress_id the next number, over all the rooms in their
- * order (by path), never changing a number already given. The counters only go up: they start above the file's and
+/** Gives every room of rooms/ (its record id), battle and catchable enemy without a progress_id the next number, over
+ * all the rooms in their order (by path), never changing a number already given. The counters only go up: they start above the file's and
  * every number in use, so a deleted battle's number isn't given again. Returns the rooms it changed and the new
  * counters, or an error when the save's bits run out. */
 export function assignProgressIds(rooms: { path: string; data: JsonValue }[], counters: ProgressCounters | null, orders: RecordOrders):
   { changed: Map<string, JsonValue>; counters: ProgressCounters; error?: string } {
   let nextBattle = counters?.next_battle ?? 0;
   let nextCatch = counters?.next_catch ?? 0;
+  let nextRoom = counters?.next_room ?? 0;
   const sorted = [...rooms].sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+  for (const { path, data } of sorted) {
+    const rid = asMap(data).get("progress_id");
+    if (isRoomPath(path) && typeof rid === "number") nextRoom = Math.max(nextRoom, rid + 1);
+  }
   for (const { data } of sorted) for (const b of asList(asMap(data).get("battles"))) {
     const id = asMap(b).get("progress_id");
     if (typeof id === "number") nextBattle = Math.max(nextBattle, id + 1);
@@ -1027,7 +1044,11 @@ export function assignProgressIds(rooms: { path: string; data: JsonValue }[], co
   const changed = new Map<string, JsonValue>();
   for (const { path, data } of sorted) {
     let touched = false;
-    const room = asMap(data);
+    let room = asMap(data);
+    if (isRoomPath(path) && typeof room.get("progress_id") !== "number") {
+      room = withKey(room, "progress_id", nextRoom++, orders.room);
+      touched = true;
+    }
     const battles = asList(room.get("battles")).map((b) => {
       let bm = asMap(b);
       if (typeof bm.get("progress_id") !== "number") { bm = withKey(bm, "progress_id", nextBattle++, orders.battle); touched = true; }
@@ -1042,14 +1063,16 @@ export function assignProgressIds(rooms: { path: string; data: JsonValue }[], co
     if (touched) changed.set(path, new Map(room).set("battles", battles));
   }
   const error = nextBattle > MAX_BATTLE_IDS ? `The save has ${MAX_BATTLE_IDS} battles' bits, and these need ${nextBattle}.`
-    : nextCatch > MAX_CATCH_IDS ? `The save has ${MAX_CATCH_IDS} catches' bits, and these need ${nextCatch}.` : undefined;
-  return { changed, counters: { next_battle: nextBattle, next_catch: nextCatch }, error };
+    : nextCatch > MAX_CATCH_IDS ? `The save has ${MAX_CATCH_IDS} catches' bits, and these need ${nextCatch}.`
+    : nextRoom > MAX_ROOM_IDS ? `The save has ${MAX_ROOM_IDS} rooms' records, and these need ${nextRoom}.` : undefined;
+  return { changed, counters: { next_battle: nextBattle, next_catch: nextCatch, next_room: nextRoom }, error };
 }
 
-/** A room's data without its progress ids, for a copy: its battles and catches get new ones on save. */
+/** A room's data without its progress ids, for a copy: it, its battles and its catches get new ones on save. */
 export function withoutProgressIds(data: JsonValue): JsonValue {
-  const room = asMap(data);
-  return new Map(room).set("battles", asList(room.get("battles")).map((b) => {
+  const room = new Map(asMap(data));
+  room.delete("progress_id");
+  return room.set("battles", asList(room.get("battles")).map((b) => {
     const bm = new Map(asMap(b));
     bm.delete("progress_id");
     return bm.set("enemies", asList(bm.get("enemies")).map((e) => { const em = new Map(asMap(e)); em.delete("progress_id"); return em; }));

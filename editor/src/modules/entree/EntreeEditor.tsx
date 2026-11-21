@@ -9,7 +9,7 @@
 // the Items tab (the item table, items.json: ItemsPage.tsx); the buffs' phase 1, the Buffs tab (the buff catalogue,
 // buffs.json: BuffsPage.tsx). Every room file is held in the
 // document store, so undo, the build's check on Save and changes on disk work as for any file. Save first gives the
-// new battles and catchable enemies their progress ids (model.ts, assignProgressIds; progress_ids.json); renaming a
+// new rooms (their record ids), battles and catchable enemies their progress ids (model.ts, assignProgressIds; progress_ids.json); renaming a
 // battle or a room renames what every room's catches and spawn conditions name of it.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -257,11 +257,15 @@ export function EntreeEditor({ constants }: ToolProps) {
   const giveProgressIds = useCallback(async (): Promise<boolean> => {
     let counters: ProgressCounters | null = null;
     const held = await documents.hold(PROGRESS_IDS).catch(() => null);
-    if (held?.data instanceof Map) counters = { next_battle: Number(held.data.get("next_battle") ?? 0), next_catch: Number(held.data.get("next_catch") ?? 0) };
+    if (held?.data instanceof Map) {
+      counters = { next_battle: Number(held.data.get("next_battle") ?? 0), next_catch: Number(held.data.get("next_catch") ?? 0),
+        next_room: Number(held.data.get("next_room") ?? 0) };
+    }
     const result = assignProgressIds(everything.flatMap((r) => (r.data ? [{ path: r.path, data: r.data }] : [])), counters,
-      { battle: orderOf("battle"), enemy: orderOf("enemy") });
+      { battle: orderOf("battle"), enemy: orderOf("enemy"), room: orderOf("") });
     if (result.error) { setNote(result.error); return false; }
-    if (!result.changed.size && counters && counters.next_battle === result.counters.next_battle && counters.next_catch === result.counters.next_catch) return true;
+    if (!result.changed.size && counters && counters.next_battle === result.counters.next_battle && counters.next_catch === result.counters.next_catch
+      && counters.next_room === result.counters.next_room) return true;
     const data = fromPlain({ $schema: "progress_ids.schema.json", ...result.counters });
     if (held) documents.replace(PROGRESS_IDS, data);
     else documents.create(PROGRESS_IDS, PROGRESS_IDS_SCHEMA, data);

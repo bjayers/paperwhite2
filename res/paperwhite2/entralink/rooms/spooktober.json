@@ -1,6 +1,7 @@
 {
     "$schema": "../room.schema.json",
     "name": "Spooktober",
+    "progress_id": 8,
     "role": "room",
     "battles": [
         {

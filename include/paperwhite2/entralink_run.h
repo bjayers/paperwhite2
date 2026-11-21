@@ -238,6 +238,9 @@ typedef struct {
     // Its battles and NPCs in their tables
     u16 firstBattle;
     u8 battleCount;
+    // Its record id (its file's progress_id: paperwhite2/entralink_records.h), or ENTRALINK_RECORDS_ROOM_NONE for a
+    // template or a random room's row
+    u8 recordId;
     u16 firstNpc;
     u8 npcCount;
     // Whether it is a random room's row (an enemy or an enemy choice room), whose battles, enemies and NPCs are made

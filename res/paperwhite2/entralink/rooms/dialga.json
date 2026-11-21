@@ -1,6 +1,7 @@
 {
     "$schema": "../room.schema.json",
     "name": "Nightmare Dialga",
+    "progress_id": 2,
     "role": "room",
     "type": "challenge",
     "marker": "challenge",

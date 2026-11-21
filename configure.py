@@ -1315,6 +1315,17 @@ def main():
                           "generated/items.txt", "generated/abilities.txt", "generated/zones.txt",
                           "generated/obj_codes.txt", "include/constants/battle.h", "include/constants/directions.h"])
         constant_headers.append(output)
+        # Paper White 2: the Entralink roguelike's records' Nightmare codex, from records.json and the species' data
+        n.rule("entralink_records", "$python tools/paperwhite2/entralink_records.py $out", "Generating $out",
+               restat="1")
+        output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "entralink_records_config.h"
+        n.build([output], "entralink_records",
+                ["res/paperwhite2/entralink/records.json", "res/paperwhite2/entralink/records.schema.json",
+                 *sorted(str(path) for path in Path("res/pokemon").glob("*/data.json"))],
+                implicit=["tools/paperwhite2/entralink_records.py",
+                          *script_imports("tools/paperwhite2/entralink_records.py"),
+                          "tools/data/datajson.py", "tools/data/species_list.py", "generated/species.txt"])
+        constant_headers.append(output)
         # Paper White 2: the Entralink roguelike's random enemy rooms' settings, checked with their species, from
         # run.json, the legendaries' list and the species' data; the species' table's member number follows the run's
         # markers and item icons (the table itself is a member of a/0/4/7, HACK_ARCHIVE_MEMBERS)

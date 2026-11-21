@@ -1,6 +1,7 @@
 {
     "$schema": "../room.schema.json",
     "name": "Apples to Applin",
+    "progress_id": 0,
     "rounds": [ 1 ],
     "role": "room",
     "battles": [
