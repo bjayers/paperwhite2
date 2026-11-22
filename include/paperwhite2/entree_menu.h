@@ -51,6 +51,11 @@ EntralinkProgress *Entree_GetProgress(MonolithScreenParam *screen);
 // The rooms of rooms/ (those with a record id), and those of them entered and done
 u32 Entree_GetRoomCount(void);
 u32 Entree_CountRooms(const u8 *bits);
+// The rooms of rooms/ not yet discovered, by where they can come up as overlay 12's draws give them (the Records'
+// rows): counts[rounds] those that come up in rounds (a bit each from round 1's) as a round's room or boss, counts[0]
+// the final rooms; rooms that can't come up aren't counted. counts holds ENTREE_ROUND_GROUPS
+#define ENTREE_ROUND_GROUPS (1 << ENTRALINK_RUN_ROUNDS_MAX)
+void Entree_CountUndiscovered(EntralinkProgress *progress, u8 *counts);
 
 // The run's tables (overlay 143's copies): the rooms (whether one is a room of rooms/, not a template or a random
 // room's row), a room's battles, a battle's enemies, an enemy's catch requirements, and the battle of a progress id

@@ -142,8 +142,12 @@ typedef struct {
     EntralinkRecords records; // 0x1cc
     // The hub's fog, which the fog NPC sets (ENTRALINK_HUB_FOG_*, paperwhite2/entralink_ranks.h); zero in a block of
     // before it: none
-    u8 hubFog;       // 0x620
-    u8 unused621[3]; // 0x621
+    u8 hubFog; // 0x620
+    // The White Tree's milestones that the debug menu's "Entree White Lv +1" marked as reached, a bit each
+    // (ENTREE_MILESTONE_*, paperwhite2/entralink_ranks.h), which the White rank counts with those really reached;
+    // cleared with the records (EntralinkRecords_Clear). Zero in a block of before it: none
+    u8 debugMilestones; // 0x621
+    u8 unused622[2];    // 0x622
     // Free for the roguelike's later saves (unlocks), zero
     u8 reserved[0x850 - 0x624]; // 0x624
 } EntralinkProgress;            // 0x850, the Symbol block's size

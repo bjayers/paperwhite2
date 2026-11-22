@@ -174,6 +174,16 @@ static const EntralinkEnemy *EntralinkRun_GetEnemy(const EntralinkRoom *room, co
     return &sEnemies[battle->firstEnemy + index];
 }
 
+// A room of rooms/: not a template, nor a random room's row, with a record id
+static BOOL EntralinkRun_IsRoomOfRooms(const EntralinkRoom *room) {
+    return !room->isTemplate && !room->random && room->recordId != ENTRALINK_RECORDS_ROOM_NONE;
+}
+
+// Whether the records have a room of rooms/ as discovered (entered in a run that ended)
+static BOOL EntralinkRun_IsDiscovered(EntralinkProgress *progress, const EntralinkRoom *room) {
+    return (progress->records.roomsDiscovered[room->recordId / 8] & (1 << (room->recordId % 8))) != 0;
+}
+
 // Whether a room fits a draw: not a template, of its role and type, and fitting its round (round 0: any) as its pool
 // takes them: kept to the round, kept to no round (generic), or either
 static BOOL EntralinkRun_IsInPool(u32 index, const RoomFilter *filter) {
@@ -227,14 +237,28 @@ static u32 EntralinkRun_GetPool(u32 role, u32 round) {
     return POOL_GENERIC;
 }
 
+// A drawable room's weight in its draw: run.json's undiscovered weight for a room of rooms/ that the records don't have
+// as discovered and the run hasn't had yet, so that every room turns up for the White Tree's all_rooms; else 1
+static u32 EntralinkRun_GetDrawWeight(EntralinkProgress *progress, u32 index, const u8 *uses) {
+    const EntralinkRoom *room = &sRooms[index];
+
+    if (uses[index] == 0 && EntralinkRun_IsRoomOfRooms(room) && !EntralinkRun_IsDiscovered(progress, room)) {
+        return ENTRALINK_RUN_UNDISCOVERED_WEIGHT;
+    }
+    return 1;
+}
+
 // A room of a role and type (ENTRALINK_TYPE_ANY: any) for a round (0: any), at random among those of its pool not
 // excluded that have come up the fewest times in the run so far: so no room comes up twice while one that fits hasn't
-// come up. ENTRALINK_RUN_ROOM_NONE if none fits
-static u32 EntralinkRun_DrawRoom(EntralinkRunState *state, u32 role, u32 round, u32 type, const u8 *excluded) {
+// come up. A room not yet discovered is likelier (EntralinkRun_GetDrawWeight). ENTRALINK_RUN_ROOM_NONE if none fits
+static u32 EntralinkRun_DrawRoom(GameData *gameData, EntralinkRunState *state, u32 role, u32 round, u32 type,
+                                 const u8 *excluded) {
+    EntralinkProgress *progress = EntralinkRun_GetProgress(gameData);
     u8 uses[ENTRALINK_RUN_ROOM_COUNT];
     RoomFilter filter;
     u32 fewest = USES_NONE;
-    u32 count = 0;
+    u32 total = 0;
+    u32 weight;
     u32 pick;
     u32 i;
 
@@ -256,16 +280,17 @@ static u32 EntralinkRun_DrawRoom(EntralinkRunState *state, u32 role, u32 round, 
     }
     for (i = 0; i < ENTRALINK_RUN_ROOM_COUNT; i++) {
         if (EntralinkRun_IsDrawable(i, &filter, excluded, uses, fewest)) {
-            count++;
+            total += EntralinkRun_GetDrawWeight(progress, i, uses);
         }
     }
-    pick = GFL_RandomLC(count);
+    pick = GFL_RandomLC(total);
     for (i = 0; i < ENTRALINK_RUN_ROOM_COUNT; i++) {
         if (EntralinkRun_IsDrawable(i, &filter, excluded, uses, fewest)) {
-            if (pick == 0) {
+            weight = EntralinkRun_GetDrawWeight(progress, i, uses);
+            if (pick < weight) {
                 break;
             }
-            pick--;
+            pick -= weight;
         }
     }
     return i;
@@ -339,7 +364,7 @@ static u32 EntralinkRun_GetDrawRound(u32 role, u32 round) {
 
 // The room behind a door: never the room just played, and another than the other doors' while enough rooms fit;
 // the room just played only if it is the only one that fits
-static u32 EntralinkRun_DrawDoorRoom(EntralinkRunState *state, u32 role, u32 round, u32 type) {
+static u32 EntralinkRun_DrawDoorRoom(GameData *gameData, EntralinkRunState *state, u32 role, u32 round, u32 type) {
     u8 excluded[ENTRALINK_RUN_ROOM_COUNT];
     u32 previous = state->order[state->room - 1];
     u32 room;
@@ -352,19 +377,19 @@ static u32 EntralinkRun_DrawDoorRoom(EntralinkRunState *state, u32 role, u32 rou
             excluded[state->doorRooms[door]] = TRUE;
         }
     }
-    room = EntralinkRun_DrawRoom(state, role, round, type, excluded);
+    room = EntralinkRun_DrawRoom(gameData, state, role, round, type, excluded);
     if (room != ENTRALINK_RUN_ROOM_NONE) {
         return room;
     }
     // Fewer rooms fit than there are doors: one behind another door again
     MI_CpuFill8(excluded, 0, sizeof(excluded));
     excluded[previous] = TRUE;
-    room = EntralinkRun_DrawRoom(state, role, round, type, excluded);
+    room = EntralinkRun_DrawRoom(gameData, state, role, round, type, excluded);
     if (room != ENTRALINK_RUN_ROOM_NONE) {
         return room;
     }
     MI_CpuFill8(excluded, 0, sizeof(excluded));
-    return EntralinkRun_DrawRoom(state, role, round, type, excluded);
+    return EntralinkRun_DrawRoom(gameData, state, role, round, type, excluded);
 }
 
 // An enemy or enemy choice door's random room: at run.json's random enemy chance, or when no premade room of the type
@@ -380,7 +405,7 @@ static u32 EntralinkRun_DrawRandomRoom(u32 type, BOOL premade) {
 // else rooms/'s (a random room if none fits); challenge rooms are rooms/'s, an event room rooms/'s, else its template
 // if there is one; a rest, item, buff or shop room is rooms/'s at run.json's custom chance if one fits, else its
 // type's template. ENTRALINK_RUN_ROOM_NONE if the type has none
-static u32 EntralinkRun_DrawRoomOfType(EntralinkRunState *state, u32 round, u32 type) {
+static u32 EntralinkRun_DrawRoomOfType(GameData *gameData, EntralinkRunState *state, u32 round, u32 type) {
     u32 room;
 
     switch (type) {
@@ -388,17 +413,17 @@ static u32 EntralinkRun_DrawRoomOfType(EntralinkRunState *state, u32 round, u32 
     case ENTRALINK_TYPE_ENEMY_CHOICE:
         room = EntralinkRun_DrawRandomRoom(type, TRUE);
         if (room == ENTRALINK_RUN_ROOM_NONE) {
-            room = EntralinkRun_DrawDoorRoom(state, ENTRALINK_ROLE_ROOM, round, type);
+            room = EntralinkRun_DrawDoorRoom(gameData, state, ENTRALINK_ROLE_ROOM, round, type);
         }
         return room != ENTRALINK_RUN_ROOM_NONE ? room : EntralinkRun_DrawRandomRoom(type, FALSE);
     case ENTRALINK_TYPE_CHALLENGE:
-        return EntralinkRun_DrawDoorRoom(state, ENTRALINK_ROLE_ROOM, round, type);
+        return EntralinkRun_DrawDoorRoom(gameData, state, ENTRALINK_ROLE_ROOM, round, type);
     case ENTRALINK_TYPE_EVENT:
-        room = EntralinkRun_DrawDoorRoom(state, ENTRALINK_ROLE_ROOM, round, type);
+        room = EntralinkRun_DrawDoorRoom(gameData, state, ENTRALINK_ROLE_ROOM, round, type);
         return room != ENTRALINK_RUN_ROOM_NONE ? room : sTypeTemplates[type];
     }
     if (GFL_RandomLC(100) < ENTRALINK_RUN_CUSTOM_CHANCE) {
-        room = EntralinkRun_DrawDoorRoom(state, ENTRALINK_ROLE_ROOM, round, type);
+        room = EntralinkRun_DrawDoorRoom(gameData, state, ENTRALINK_ROLE_ROOM, round, type);
         if (room != ENTRALINK_RUN_ROOM_NONE) {
             return room;
         }
@@ -409,7 +434,7 @@ static u32 EntralinkRun_DrawRoomOfType(EntralinkRunState *state, u32 round, u32 
 // The room behind a door to a round's room: its type drawn by the round's weights, never a rest room after a rest
 // room nor a rest or shop room just before the pre-boss rest, a type with no room skipped; ENTRALINK_RUN_ROOM_NONE if
 // no type has one
-static u32 EntralinkRun_DrawTypedRoom(EntralinkRunState *state, u32 round, BOOL beforeRest) {
+static u32 EntralinkRun_DrawTypedRoom(GameData *gameData, EntralinkRunState *state, u32 round, BOOL beforeRest) {
     u8 weights[ENTRALINK_TYPE_COUNT];
     u32 total;
     u32 pick;
@@ -436,7 +461,7 @@ static u32 EntralinkRun_DrawTypedRoom(EntralinkRunState *state, u32 round, BOOL 
         for (type = 0; pick >= weights[type]; type++) {
             pick -= weights[type];
         }
-        room = EntralinkRun_DrawRoomOfType(state, round, type);
+        room = EntralinkRun_DrawRoomOfType(gameData, state, round, type);
         if (room != ENTRALINK_RUN_ROOM_NONE) {
             return room;
         }
@@ -447,7 +472,7 @@ static u32 EntralinkRun_DrawTypedRoom(EntralinkRunState *state, u32 round, BOOL 
 // The rooms behind the room's forward doors, for the run's next place: a round's room of a drawn type behind each,
 // with a chance of showing the unknown marker; before the pre-boss rest, it alone, and before a boss or the final room
 // (in the pre-boss rest), it alone, behind the north door (the pre-boss map's one way on). Nothing after the final room
-static void EntralinkRun_DrawDoors(EntralinkRunState *state) {
+static void EntralinkRun_DrawDoors(GameData *gameData, EntralinkRunState *state) {
     BOOL beforeRest;
     u32 round;
     u32 next;
@@ -467,13 +492,13 @@ static void EntralinkRun_DrawDoors(EntralinkRunState *state) {
         return;
     }
     if (role != ENTRALINK_ROLE_ROOM) {
-        state->doorRooms[ENTRALINK_DOOR_NORTH] =
-            EntralinkRun_DrawDoorRoom(state, role, EntralinkRun_GetDrawRound(role, round), ENTRALINK_TYPE_ANY);
+        state->doorRooms[ENTRALINK_DOOR_NORTH] = EntralinkRun_DrawDoorRoom(
+            gameData, state, role, EntralinkRun_GetDrawRound(role, round), ENTRALINK_TYPE_ANY);
         return;
     }
     beforeRest = EntralinkRun_GetPlace(state->room + 2, &next) == ENTRALINK_ROLE_PRE_BOSS;
     for (door = 0; door < ENTRALINK_RUN_DOORS; door++) {
-        state->doorRooms[door] = EntralinkRun_DrawTypedRoom(state, round, beforeRest);
+        state->doorRooms[door] = EntralinkRun_DrawTypedRoom(gameData, state, round, beforeRest);
         if (state->doorRooms[door] != ENTRALINK_RUN_ROOM_NONE && GFL_RandomLC(100) < ENTRALINK_RUN_UNKNOWN_CHANCE) {
             state->doorUnknown |= 1 << door;
         }
@@ -879,7 +904,7 @@ static void EntralinkRun_EnterRoom(GameData *gameData) {
     state->cleared = blocking == 0;
     state->fieldWeather = sRounds[round - 1].fieldWeather;
     EntralinkRun_DrawRoomItems(gameData, state, room, round);
-    EntralinkRun_DrawDoors(state);
+    EntralinkRun_DrawDoors(gameData, state);
 }
 
 // The place of round 2's first room, past round 1's rooms and its boss; 1 with a single round
@@ -916,13 +941,14 @@ void EntralinkRun_Start(GameData *gameData, BOOL skipRound) {
         room = role == ENTRALINK_ROLE_ROOM ? EntralinkRun_DrawRandomRoom(ENTRALINK_TYPE_ENEMY, TRUE)
                                            : ENTRALINK_RUN_ROOM_NONE;
         if (room == ENTRALINK_RUN_ROOM_NONE) {
-            room = EntralinkRun_DrawRoom(state, role, EntralinkRun_GetDrawRound(role, round),
+            room = EntralinkRun_DrawRoom(gameData, state, role, EntralinkRun_GetDrawRound(role, round),
                                          role == ENTRALINK_ROLE_ROOM ? ENTRALINK_TYPE_ENEMY : ENTRALINK_TYPE_ANY,
                                          excluded);
         }
     }
     if (room == ENTRALINK_RUN_ROOM_NONE) {
-        room = EntralinkRun_DrawRoom(state, role, EntralinkRun_GetDrawRound(role, round), ENTRALINK_TYPE_ANY, excluded);
+        room = EntralinkRun_DrawRoom(gameData, state, role, EntralinkRun_GetDrawRound(role, round), ENTRALINK_TYPE_ANY,
+                                     excluded);
     }
     if (room == ENTRALINK_RUN_ROOM_NONE) {
         return;
@@ -2019,11 +2045,6 @@ static void EntralinkRun_BuffAction(FieldScriptEnv *env, const EntralinkRoom *ro
     }
 }
 
-// A room of rooms/: not a template, nor a random room's row, with a record id
-static BOOL EntralinkRun_IsRoomOfRooms(const EntralinkRoom *room) {
-    return !room->isTemplate && !room->random && room->recordId != ENTRALINK_RECORDS_ROOM_NONE;
-}
-
 BOOL EntralinkRun_IsAllCaught(EntralinkProgress *progress) {
     const EntralinkRoom *room;
     const EntralinkBattle *battle;
@@ -2051,12 +2072,10 @@ BOOL EntralinkRun_IsAllCaught(EntralinkProgress *progress) {
 }
 
 BOOL EntralinkRun_IsEveryRoomFound(EntralinkProgress *progress) {
-    u32 id;
     u32 i;
 
     for (i = 0; i < NELEMS(sRooms); i++) {
-        id = sRooms[i].recordId;
-        if (EntralinkRun_IsRoomOfRooms(&sRooms[i]) && !(progress->records.roomsDiscovered[id / 8] & (1 << (id % 8)))) {
+        if (EntralinkRun_IsRoomOfRooms(&sRooms[i]) && !EntralinkRun_IsDiscovered(progress, &sRooms[i])) {
             return FALSE;
         }
     }

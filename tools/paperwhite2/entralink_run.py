@@ -130,6 +130,8 @@ MARKER_FIRST_MEMBER = 24
 DOORS = ["north", "east", "west"]
 DEFAULT_MARKER_SPOTS = {"north": [15, 12], "east": [21, 16], "west": [9, 16]}
 DEFAULT_UNKNOWN_CHANCE = 5
+# How many times likelier a premade room the records don't have as discovered is drawn (1: as likely as the others)
+DEFAULT_UNDISCOVERED_WEIGHT = 4
 # A pre-boss map left out: the room maps, with only the north door
 PRE_BOSS_ZONE_NONE = 0xffff
 ABILITY_SPECIES = 0
@@ -822,6 +824,7 @@ def tables(directory: Path) -> dict:
         else ("none: the room maps, north door only", PRE_BOSS_ZONE_NONE),
         "unknown_chance": run.get("unknown_chance", DEFAULT_UNKNOWN_CHANCE),
         "custom_chance": run.get("custom_chance", DEFAULT_CUSTOM_CHANCE),
+        "undiscovered_weight": run.get("undiscovered_weight", DEFAULT_UNDISCOVERED_WEIGHT),
         "ground_item_chance": run.get("ground_item_chance", DEFAULT_GROUND_ITEM_CHANCE),
         "hidden_item_chance": run.get("hidden_item_chance", DEFAULT_HIDDEN_ITEM_CHANCE),
         "dust": [{**DEFAULT_DUST, **run.get("dust", {})}[kind] for kind in DUST_KINDS],
@@ -953,6 +956,8 @@ def header(directory: Path) -> str:
         f"#define ENTRALINK_RUN_PRE_BOSS_REST {pre_boss_rest}",
         f"#define ENTRALINK_RUN_UNKNOWN_CHANCE {data['unknown_chance']}",
         f"#define ENTRALINK_RUN_CUSTOM_CHANCE {data['custom_chance']}",
+        "// A premade room not yet discovered (the records) is this many times likelier in a draw",
+        f"#define ENTRALINK_RUN_UNDISCOVERED_WEIGHT {data['undiscovered_weight']}",
         "// Random enemy rooms: the chance an enemy or enemy choice door leads to one, and their rows",
         f"#define ENTRALINK_RUN_RANDOM_ENEMY_CHANCE {data['random_enemy_chance']}",
         f"#define ENTRALINK_RUN_RANDOM_ENEMY_ROOM {data['random_rooms']['enemy']}",

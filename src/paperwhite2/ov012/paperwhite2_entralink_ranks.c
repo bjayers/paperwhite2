@@ -71,7 +71,7 @@ u32 EntralinkRanks_GetMilestones(EntralinkProgress *progress) {
     if (EntralinkRun_IsEveryRoomFound(progress)) {
         reached |= 1 << ENTREE_MILESTONE_ALL_ROOMS;
     }
-    return reached;
+    return reached | progress->debugMilestones;
 }
 
 static u32 EntralinkRanks_CountBits(u32 bits) {
@@ -114,6 +114,32 @@ u32 EntralinkRanks_GetNextBlack(EntralinkProgress *progress) {
 
 static u32 EntralinkRanks_GetRank(EntralinkProgress *progress, u32 tree) {
     return tree == ENTRALINK_TREE_WHITE ? EntralinkRanks_GetWhite(progress) : EntralinkRanks_GetBlack(progress);
+}
+
+void EntralinkRanks_DebugRaise(GameData *gameData, u32 tree) {
+    EntralinkProgress *progress = EntralinkRanks_GetProgress(gameData);
+    u32 unmet;
+    u32 rank;
+
+    if (tree == ENTRALINK_TREE_BLACK) {
+        rank = EntralinkRanks_GetBlack(progress);
+        if (rank < NELEMS(sBlackRanks)) {
+            progress->records.shardsEarned = sBlackRanks[rank];
+        }
+        return;
+    }
+    // The first milestone that counts and isn't reached
+    unmet = ENTRALINK_RECORDS_WHITE_MILESTONES & ~EntralinkRanks_GetMilestones(progress);
+    if (unmet != 0) {
+        progress->debugMilestones |= unmet & -unmet;
+    }
+}
+
+void EntralinkRanks_DebugReset(GameData *gameData) {
+    EntralinkProgress *progress = EntralinkRanks_GetProgress(gameData);
+
+    progress->records.shardsEarned = 0;
+    progress->debugMilestones = 0;
 }
 
 u32 EntralinkRanks_GetTreeStage(GameData *gameData, u32 tree) {

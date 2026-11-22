@@ -185,6 +185,12 @@
 // while there is one; and the records cleared
 #define DEBUG_ACTION_RECORDS_PAGE 60
 #define DEBUG_ACTION_RECORDS_RESET 61
+// The Entree's ranks (paperwhite2/entralink_ranks.h): the White Tree's rank and highest in words 0 and 1, the Black
+// Tree's in words 2 and 3; tree arg1's rank one higher (ENTRALINK_TREE_*, EntralinkRanks_DebugRaise); and both back to
+// 0 (EntralinkRanks_DebugReset)
+#define DEBUG_ACTION_ENTREE_RANK_WORDS 62
+#define DEBUG_ACTION_ENTREE_RANK_RAISE 63
+#define DEBUG_ACTION_ENTREE_RANKS_RESET 64
 
 // The kinds of number entry: their ranges and messages are sDebugNumberKinds (paperwhite2_debug_commands.c)
 #define DEBUG_NUMBER_LEVEL 0

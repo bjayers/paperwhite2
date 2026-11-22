@@ -47,7 +47,7 @@ enum {
     ENTREE_MILESTONE_COUNT,
 };
 
-// The milestones reached, a bit each (ENTREE_MILESTONE_*), whether they count or not
+// The milestones reached, a bit each (ENTREE_MILESTONE_*), whether they count or not, the debug menu's included
 u32 EntralinkRanks_GetMilestones(EntralinkProgress *progress);
 // The White Tree's rank: the milestones that count reached; and how many count
 u32 EntralinkRanks_GetWhite(EntralinkProgress *progress);
@@ -56,6 +56,12 @@ u32 EntralinkRanks_GetWhiteMax(void);
 u32 EntralinkRanks_GetBlack(EntralinkProgress *progress);
 u32 EntralinkRanks_GetBlackMax(void);
 u32 EntralinkRanks_GetNextBlack(EntralinkProgress *progress);
+// The debug menu's: a tree's rank (ENTRALINK_TREE_*) one higher, to its highest. The Black Tree's by the Shards earned
+// set to the next rank's; the White Tree's by its first milestone that counts and isn't reached marked as reached
+// (the progress block's debugMilestones). And both trees back to rank 0 as far as the debug menu can: no Shards
+// earned and no debug milestones (milestones really reached stay)
+void EntralinkRanks_DebugRaise(GameData *gameData, u32 tree);
+void EntralinkRanks_DebugReset(GameData *gameData);
 // The growth stage (0-4) of a tree (ENTRALINK_TREE_*), one of its five models: ranks 0 and 1 the first, then a stage
 // a rank up to the fifth at rank 5
 u32 EntralinkRanks_GetTreeStage(GameData *gameData, u32 tree);

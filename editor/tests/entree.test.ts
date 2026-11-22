@@ -230,6 +230,9 @@ test("markers: a room's and an NPC's are read and valid, the run's spots and fog
   assert.deepEqual(run.rounds.map((r) => r.fieldWeather), ["WEATHER_CUSTOM_TINT_9", "WEATHER_CUSTOM_TINT_8", "WEATHER_CUSTOM_TINT_7"]);
   assert.deepEqual(run.markerSpots, DEFAULT_MARKER_SPOTS);
   assert.equal(run.unknownChance, 5);
+  assert.ok(run.undiscoveredWeight >= 1 && run.undiscoveredWeight <= 20);
+  assert.equal(readRun(fromPlain({ rounds: [] })).undiscoveredWeight, 4);
+  assert.equal(readRun(fromPlain({ rounds: [], undiscovered_weight: 7 })).undiscoveredWeight, 7);
   assert.deepEqual(readRun(fromPlain({ rounds: [] })).markerSpots, DEFAULT_MARKER_SPOTS);
   // An NPC on a marker's spot, and one whose marker has no art
   const npc = { ...room.npcs[0], x: DEFAULT_MARKER_SPOTS.north[0] + 1, z: DEFAULT_MARKER_SPOTS.north[1] + 1, marker: "nothing" };

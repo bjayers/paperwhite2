@@ -546,6 +546,8 @@ export interface RunRound {
 export const WEIGHT_ORDER: readonly RoomType[] = ["enemy", "enemy_choice", "challenge", "item", "buff", "rest", "event", "shop"];
 export const DEFAULT_TYPE_WEIGHTS: Record<RoomType, number> = { enemy: 42, enemy_choice: 8, challenge: 12, item: 10, buff: 10, rest: 10, event: 5, shop: 3 };
 export const DEFAULT_CUSTOM_CHANCE = 25;
+/** How many times likelier a premade room the records don't have as discovered is drawn (run.json's undiscovered_weight). */
+export const DEFAULT_UNDISCOVERED_WEIGHT = 4;
 /** Random enemy rooms (run.json's random_enemy_chance and random_rooms, tools/paperwhite2/entralink_random.py): the
  * chance an enemy or enemy_choice door leads to one, and how they are made. */
 export const DEFAULT_RANDOM_ENEMY_CHANCE = 50;
@@ -691,6 +693,7 @@ export interface RunLayout {
   preBossMap?: string;
   unknownChance: number;
   customChance: number;
+  undiscoveredWeight: number;
   randomEnemyChance: number;
   randomRooms: RandomRooms;
   groundItemChance: number;
@@ -727,6 +730,7 @@ export function readRun(data: JsonValue | null | undefined): RunLayout {
     preBossMap: str(m.get("pre_boss_map")),
     unknownChance: num(m.get("unknown_chance")) ?? DEFAULT_UNKNOWN_CHANCE,
     customChance: num(m.get("custom_chance")) ?? DEFAULT_CUSTOM_CHANCE,
+    undiscoveredWeight: num(m.get("undiscovered_weight")) ?? DEFAULT_UNDISCOVERED_WEIGHT,
     randomEnemyChance: num(m.get("random_enemy_chance")) ?? DEFAULT_RANDOM_ENEMY_CHANCE,
     randomRooms: readRandomRooms(m.get("random_rooms")),
     groundItemChance: num(m.get("ground_item_chance")) ?? DEFAULT_GROUND_ITEM_CHANCE,

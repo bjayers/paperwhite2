@@ -209,9 +209,11 @@ void EntralinkRecords_EndRun(GameData *gameData, u32 round, u32 shards) {
 }
 
 void EntralinkRecords_Clear(GameData *gameData) {
-    EntralinkRecords *records = EntralinkRecords_Get(gameData);
+    EntralinkProgress *progress = EntralinkProgress_Get(GameData_GetSaveControl(gameData));
 
-    MI_CpuFill8(records, 0, sizeof(EntralinkRecords));
+    MI_CpuFill8(&progress->records, 0, sizeof(EntralinkRecords));
+    // (and the debug menu's White milestones, which stand for records)
+    progress->debugMilestones = 0;
 }
 
 u32 EntralinkRecords_GetCodexCount(void) {

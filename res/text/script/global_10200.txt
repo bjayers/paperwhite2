@@ -257,3 +257,7 @@ Global10200_Text_DebugRecordsShow = Show records
 Global10200_Text_DebugRecordsReset = Reset records
 Global10200_Text_DebugRecordsPage = {0100:0}\n{0100:1}{be01}{0100:2}\n{0100:3}{be01}{0100:4}\n{0100:5}
 Global10200_Text_DebugRecordsResetDone = The Entralink records are cleared.
+Global10200_Text_DebugEntreeWhite = Entree White Lv +1 ({0200:0}/{0200:1})
+Global10200_Text_DebugEntreeBlack = Entree Black Lv +1 ({0200:2}/{0200:3})
+Global10200_Text_DebugEntreeReset = Entree ranks: reset
+Global10200_Text_DebugEntreeResetDone = The Entree's ranks are back to 0\n(milestones really reached stay).

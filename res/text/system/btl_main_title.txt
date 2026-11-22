@@ -144,4 +144,8 @@ BtlMainTitle_Text_EntreeNewline = \n
 BtlMainTitle_Text_EntreeSeparator = , \x{ffff}
 BtlMainTitle_Text_EntreeEmpty = \x{ffff}
 BtlMainTitle_Text_EntreeTextColor = {ff00:498}
+BtlMainTitle_Text_EntreeUndiscoveredRound = Undiscovered in round {0100:1}
+BtlMainTitle_Text_EntreeUndiscoveredRounds = Undiscovered in rounds {0100:1} and {0100:2}
+BtlMainTitle_Text_EntreeUndiscoveredAnyRound = Undiscovered in any round
+BtlMainTitle_Text_EntreeUndiscoveredFinal = Undiscovered final rooms
 \pad{18}

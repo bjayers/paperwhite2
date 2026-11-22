@@ -350,7 +350,8 @@ The Symbol block (`SAVE_BLOCK_SYMBOL`, 0x850 bytes at 0x22a00 and its copy at 0x
 | 0x148 | 4 | the Dream Shards spent in the hub shop, which its Reset gives back |
 | 0x14c | 0x80 | the hub shop's bought picks: 32 entries of a card's key (u16, a hash of its ID; 0 free) and its count (u8) |
 | 0x1cc | 0x454 | the records (`EntralinkRecords`, "Records" below) |
-| 0x620 | 1 | the hub's fog (`ENTRALINK_HUB_FOG_*`, "The ranks' rewards" below), then 3 unused |
+| 0x620 | 1 | the hub's fog (`ENTRALINK_HUB_FOG_*`, "The ranks' rewards" below) |
+| 0x621 | 1 | the White milestones the debug menu marked (`debugMilestones`, "Fair discovery and debug ranks" below), then 2 unused |
 | 0x624 | 0x22c | free, zero (556 bytes, for unlocks later; a mid-run save no longer fits here) |
 
 - No encryption or checksum of its own: the save's CRC of the block covers it. `EntralinkProgress_Get` clears a block
@@ -1355,6 +1356,66 @@ The DS arena left falls from 0x5320 to **0x4b60 (18.8 KB)**. Save: one byte of t
 - **Skip round 1** at White 4: No started at place 1; Yes gave 6 picks through the chooser (6 buffs held), 250 Dust,
   and started at place 8 (round 2's first room) with 7 places skipped; a warp away at once gave no Shards.
 - Not tested: the difficulty NPC beyond its line, touch input, the fog after a reboot (its byte is the saved block's).
+
+## Fair discovery and debug ranks (2026-11-21)
+
+Step 4 of the records: the White Tree's `all_rooms` milestone made fair to chase, and two debug options for testing
+the ranks' rewards.
+
+### Undiscovered rooms come up more
+
+`EntralinkRun_DrawRoom` (every draw of a premade room: a door's room of a type, a boss, the final room, the first room)
+weights each room it can give: a room of `rooms/` that the records don't have as discovered and that the run hasn't
+had yet counts `run.json`'s **`undiscovered_weight`** times (1-20, 4 if left out; 1 for none), the others once
+(`EntralinkRun_GetDrawWeight`). The rules before it are unchanged: only the round's pool, only the least used so far,
+never the room just played or another door's, the types by the round's weights, random rooms and templates as before.
+A room discovered during a run only counts once the run ends (the records are written then), so within a run "not yet
+had" is what keeps the weight off a room already played. The editor's Run section: **Undiscovered rooms** (x1-20).
+
+### Where the undiscovered rooms are
+
+The Entree's **Records** page lists, under "Rooms discovered", the rooms not yet discovered without naming them, by
+where they can come up: "Undiscovered in round 1", "in rounds 2 and 3", "in any round" (every round of the run) and
+"final rooms", each with its count. A room's rounds follow the draws (`Entree_CountUndiscovered`,
+`src/paperwhite2/ov143/paperwhite2_entree_data.c`, with a copy of the rounds' table): a round's room in the rounds its
+pool holds it (`rounds`, or any) whose weights draw its type, and for an enemy or enemy choice room only while
+`random_enemy_chance` is below 100, for a rest, item, buff or shop room only while `custom_chance` is above 0; a boss
+in the rounds with a boss whose pool holds it (kept to the round, or generic when none is kept to it); a final room in
+the final room. A room that can't come up anywhere isn't listed (it still counts against the milestone). "Rooms beaten"
+now comes before "Rooms discovered", so the undiscovered rows sit under it; the page holds 24 rows (was 16).
+
+### The debug menu's ranks
+
+START > Player... > **Entralink records...** has three more entries (list ids 2-4, after Show and Reset records):
+
+| Entry | What it does |
+| --- | --- |
+| Entree White Lv +1 (n/m) | marks the first White milestone that counts and isn't reached (`white_milestones` order: beat_final, catch_all, fill_codex, shop_cap, all_rooms) as reached in the progress block's **`debugMilestones`** (0x621, a bit each), which `EntralinkRanks_GetMilestones` adds to those really reached; nothing at the highest rank. Words 0 and 1 the rank and its highest |
+| Entree Black Lv +1 (n/m) | sets the records' Shards earned to the next Black rank's threshold (the real record); nothing at the highest. Words 2 and 3 |
+| Entree ranks: reset | Shards earned 0 and `debugMilestones` 0; milestones really reached stay |
+
+Actions `DEBUG_ACTION_ENTREE_RANK_WORDS`, `_RANK_RAISE` (arg1 the tree, `ENTRALINK_TREE_*`) and `_RANKS_RESET` (62-64);
+`EntralinkRanks_DebugRaise` and `_DebugReset` in overlay 12. **Reset records** clears `debugMilestones` too. The hub's
+trees and NPCs follow the ranks as it next loads (warp out and back in); the Entree's menu at once.
+
+### Memory
+
+Overlay 12 **+384 bytes** (the weighting and its plumbing about 0.2 KB, the debug options 0.2 KB); the undiscovered
+counts went to overlay 143 (+0.6 KB there, the monolith's alone) rather than overlay 12, where they would have cost
+0.3 KB of arena more. ARM9 main unchanged. The DS arena left falls from 0x4b60 to **0x49e0 (18.5 KB)**. Save: one
+byte of the progress block (0x621).
+
+### Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `step4/h/`)
+
+- **The weighting** (`t1.py`): 300 run starts from the forest's gate, each with its own RNG seed, the doors' types
+  poked to enemy only; the same seeds twice. Every room discovered: the first room 150 random rooms, then Apples to Applin 39, The Illusionist 38, Spooktober 37, The Giantess 36 (even); the first room's doors
+  420 random, then 131, 120, 119 and Spooktober 110. All but Spooktober discovered: the first room 150 random, Spooktober 84 of the 150 premade (56%; 4 in 7 expected), the others 24, 23 and 19; the doors Spooktober 146, the others 118, 113, 103 (the doors of one room take different rooms, which mutes the weight there).
+- **The Records page** (`t3.py`): six rooms poked undiscovered (Apples to Applin and Ho-Oh, round 1; Time and Space,
+  round 2's boss; Shadow Lugia, rounds 2 and 3; Spooktober, any; Darkrai, final): page 2 lists round 1: 2, round 2: 1,
+  rounds 2 and 3: 1, any round: 1, final rooms: 1 (`step4/shots/t3_records_some_2.png`); every room discovered, no
+  such rows (`t3_records_none_2.png`).
+- **The debug options** (`t2.py`), from the field with the ranks' records zeroed, White +1 and Black +1 k times each:
+  Shards earned 0, 5, 20, 60, 180, 450 and `debugMilestones` 0, 0b1, 0b11 ... 0b11111 at k = 0-5, a sixth press changing nothing; the hub's stages (White, Black) 0/0, 0/0, 1/1, 2/2, 3/3, 4/4 and its NPCs: all six gone at 0, the Reserve Box and difficulty NPCs back at 1, the shop and fog at 2, the item shop at 3, the form NPC at 5 (`t2_menu_k5.png`: both entries 5/5). **Entree ranks: reset** from the hub: Shards earned 0, `debugMilestones` 0, and the hub's next load stages 0/0 with all six NPCs gone.
 
 ## The re-entry question
 

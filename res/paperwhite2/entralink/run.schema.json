@@ -26,6 +26,10 @@
       "type": "integer", "minimum": 0, "maximum": 100,
       "description": "The chance, in percent, that a door to a room of role room shows the unknown marker (???) whatever is behind it, rolled as the player enters the room with the door; 5 if left out"
     },
+    "undiscovered_weight": {
+      "type": "integer", "minimum": 1, "maximum": 20,
+      "description": "How many times likelier a premade room (rooms/) that the records don't have as discovered is drawn, among the rooms a draw can give (the rounds', least-used and never-twice-in-a-row rules still apply), so every room turns up for the White Tree's all_rooms milestone; 1 for no weighting, 4 if left out"
+    },
     "marker_spots": {
       "type": "object",
       "additionalProperties": false,

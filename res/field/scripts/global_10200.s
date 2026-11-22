@@ -836,18 +836,46 @@ L_DebugBuffShow:
 
 L_DebugRecords:
     // Entralink records...: the save's records (paperwhite2/entralink_records.h) a page at a time, 0x8026 the page,
-    // and their reset
+    // and their reset; and the Entree's ranks (paperwhite2/entralink_ranks.h) each one higher, or both back to 0,
+    // the White rank in words 0 and 1, the Black in 2 and 3. The hub's trees and NPCs follow on its next load
+    Debug DEBUG_ACTION_ENTREE_RANK_WORDS, 0, 0, 0x8025
     SystemMsg Global10200_Text_DebugRecordsTitle, 2
     ListMenuAnchorTopRight 31, 1, 0, 1, 0x8020
     ListMenuAdd Global10200_Text_DebugRecordsShow, 65535, 0
     ListMenuAdd Global10200_Text_DebugRecordsReset, 65535, 1
+    ListMenuAdd Global10200_Text_DebugEntreeWhite, 65535, 2
+    ListMenuAdd Global10200_Text_DebugEntreeBlack, 65535, 3
+    ListMenuAdd Global10200_Text_DebugEntreeReset, 65535, 4
     ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
     ListMenuShow
     WorkCmpConst 0x8020, 0
     VMJumpIf CMP_EQ, L_DebugRecordsShowStart
     WorkCmpConst 0x8020, 1
     VMJumpIf CMP_EQ, L_DebugRecordsReset
+    WorkCmpConst 0x8020, 2
+    VMJumpIf CMP_EQ, L_DebugEntreeWhite
+    WorkCmpConst 0x8020, 3
+    VMJumpIf CMP_EQ, L_DebugEntreeBlack
+    WorkCmpConst 0x8020, 4
+    VMJumpIf CMP_EQ, L_DebugEntreeReset
     VMJump L_DebugPlayer
+
+L_DebugEntreeWhite:
+    // (1: ENTRALINK_TREE_WHITE; 0 below ENTRALINK_TREE_BLACK)
+    Debug DEBUG_ACTION_ENTREE_RANK_RAISE, 1, 0, 0x8025
+    SEPlay SEQ_SE_SELECT1
+    VMJump L_DebugRecords
+
+L_DebugEntreeBlack:
+    Debug DEBUG_ACTION_ENTREE_RANK_RAISE, 0, 0, 0x8025
+    SEPlay SEQ_SE_SELECT1
+    VMJump L_DebugRecords
+
+L_DebugEntreeReset:
+    Debug DEBUG_ACTION_ENTREE_RANKS_RESET, 0, 0, 0x8025
+    SystemMsg Global10200_Text_DebugEntreeResetDone, 2
+    LastKeyWait
+    VMJump L_DebugRecords
 
 L_DebugRecordsShowStart:
     WorkSetConst 0x8026, 0

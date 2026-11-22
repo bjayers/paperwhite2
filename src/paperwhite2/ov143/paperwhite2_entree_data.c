@@ -16,6 +16,7 @@
 // read too. See include/paperwhite2/entree_menu.h
 
 static const EntralinkRoom sRooms[ENTRALINK_RUN_ROOM_COUNT] = ENTRALINK_RUN_ROOMS;
+static const EntralinkRound sRounds[ENTRALINK_RUN_ROUND_COUNT] = ENTRALINK_RUN_ROUNDS;
 static const EntralinkBattle sBattles[ENTRALINK_RUN_BATTLE_COUNT] = ENTRALINK_RUN_BATTLES;
 static const EntralinkEnemy sEnemies[ENTRALINK_RUN_ENEMY_COUNT] = ENTRALINK_RUN_ENEMIES;
 static const u16 sRequirements[ENTRALINK_RUN_REQUIREMENT_COUNT] = ENTRALINK_RUN_REQUIREMENTS;
@@ -133,4 +134,85 @@ u32 Entree_CountRooms(const u8 *bits) {
         }
     }
     return count;
+}
+
+// Whether a room's pool holds it in a round (from 1), as overlay 12's draws take them (EntralinkRun_IsInPool and
+// _GetPool): a round's room kept to the round or to none, a boss kept to it, or kept to none when no boss is
+static BOOL Entree_IsKeptTo(const EntralinkRoom *room, u32 round) {
+    return (room->rounds & (1 << (round - 1))) != 0;
+}
+
+static BOOL Entree_IsInPool(const EntralinkRoom *room, u32 round) {
+    u32 i;
+
+    if (room->role != ENTRALINK_ROLE_BOSS) {
+        return room->rounds == 0 || Entree_IsKeptTo(room, round);
+    }
+    if (Entree_IsKeptTo(room, round)) {
+        return TRUE;
+    }
+    for (i = 0; i < NELEMS(sRooms); i++) {
+        if (!sRooms[i].isTemplate && sRooms[i].role == ENTRALINK_ROLE_BOSS && Entree_IsKeptTo(&sRooms[i], round)) {
+            return FALSE;
+        }
+    }
+    return room->rounds == 0;
+}
+
+// Whether a round draws a premade room of a type (EntralinkRun_DrawRoomOfType): its type weighted there, and for an
+// enemy or enemy choice room random rooms not certain, for a rest, item, buff or shop room premade ones possible
+// (challenge and event rooms are always premade)
+static BOOL Entree_CanTypeComeUp(u32 type, u32 round) {
+    if (sRounds[round - 1].typeWeights[type] == 0) {
+        return FALSE;
+    }
+    switch (type) {
+    case ENTRALINK_TYPE_ENEMY:
+    case ENTRALINK_TYPE_ENEMY_CHOICE:
+        return ENTRALINK_RUN_RANDOM_ENEMY_CHANCE < 100;
+    case ENTRALINK_TYPE_CHALLENGE:
+    case ENTRALINK_TYPE_EVENT:
+        return TRUE;
+    }
+    return ENTRALINK_RUN_CUSTOM_CHANCE > 0;
+}
+
+// The rounds a round's room or boss can come up in, a bit each from round 1's: a room in those whose pool holds it
+// and that draw its type, a boss in those with a boss whose pool holds it
+static u32 Entree_GetRoomRounds(const EntralinkRoom *room) {
+    u32 rounds = 0;
+    u32 round;
+
+    for (round = 1; round <= ENTRALINK_RUN_ROUND_COUNT; round++) {
+        if (!Entree_IsInPool(room, round)) {
+            continue;
+        }
+        if (room->role == ENTRALINK_ROLE_BOSS ? sRounds[round - 1].boss : Entree_CanTypeComeUp(room->type, round)) {
+            rounds |= 1 << (round - 1);
+        }
+    }
+    return rounds;
+}
+
+void Entree_CountUndiscovered(EntralinkProgress *progress, u8 *counts) {
+    const EntralinkRoom *room;
+    u32 rounds;
+    u32 i;
+
+    MI_CpuFill8(counts, 0, ENTREE_ROUND_GROUPS);
+    for (i = 0; i < NELEMS(sRooms); i++) {
+        room = &sRooms[i];
+        if (!Entree_IsRoomOfRooms(room)
+            || (progress->records.roomsDiscovered[room->recordId / 8] & (1 << (room->recordId % 8)))) {
+            continue;
+        }
+        if (room->role == ENTRALINK_ROLE_FINAL) {
+            counts[0]++;
+            continue;
+        }
+        rounds = Entree_GetRoomRounds(room);
+        if (rounds != 0) {
+            counts[rounds]++;
+        }
+    }
 }

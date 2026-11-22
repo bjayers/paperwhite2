@@ -587,3 +587,13 @@ def test_ambients(tmp_path):
         with pytest.raises(datajson.DataError, match=message):
             entralink_run.tables(directory)
         edit(room(directory, name), lambda data: data["npcs"].__setitem__(-3, {**base, "x": 4, "near": 2}))
+
+
+def test_undiscovered_weight(tmp_path):
+    directory = fixture_data(tmp_path)
+    assert entralink_run.tables(directory)["undiscovered_weight"] == entralink_run.DEFAULT_UNDISCOVERED_WEIGHT
+    edit(directory / "run.json", lambda data: data.update(undiscovered_weight=7))
+    assert "#define ENTRALINK_RUN_UNDISCOVERED_WEIGHT 7" in entralink_run.header(directory)
+    edit(directory / "run.json", lambda data: data.update(undiscovered_weight=0))
+    with pytest.raises(datajson.DataError):
+        entralink_run.tables(directory)

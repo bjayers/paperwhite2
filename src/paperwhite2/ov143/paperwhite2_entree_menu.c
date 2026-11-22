@@ -18,6 +18,7 @@
 #include "nitro/gx.h"
 #include "paperwhite2/entralink_progress.h"
 #include "paperwhite2/entralink_records_config.h"
+#include "paperwhite2/entralink_run_config.h"
 #include "paperwhite2/entree_menu.h"
 #include "system/printsys.h"
 #include "system/wordset.h"
@@ -475,7 +476,7 @@ enum {
 
 // The rows a page shows (16 pixels each), the most rows, where the values end and how far a row's label is indented
 #define PAGES_ROWS 8
-#define PAGES_ROWS_MAX 16
+#define PAGES_ROWS_MAX 24
 #define PAGES_ROW_HEIGHT 16
 #define PAGES_VALUE_RIGHT 232
 #define PAGES_INDENT 8
@@ -578,6 +579,48 @@ static void EntreePages_AddStatusRows(MonolithScreenParam *screen, MonolithWork 
     }
 }
 
+// The rooms not yet discovered under the rooms discovered, by where they can come up and without naming them, so that
+// the White Tree's all_rooms can be chased: a row for each round or pair of rounds, any round, and the final rooms
+static void EntreePages_AddUndiscoveredRows(MonolithWork *wk, EntreePagesWork *pw, EntralinkProgress *progress) {
+    u8 counts[ENTREE_ROUND_GROUPS];
+    u32 anyRound = (1 << ENTRALINK_RUN_ROUND_COUNT) - 1;
+    u32 rounds;
+    u32 msg;
+    u32 word;
+    u32 i;
+
+    Entree_CountUndiscovered(progress, counts);
+    for (rounds = 1; rounds < ENTREE_ROUND_GROUPS; rounds++) {
+        if (counts[rounds] == 0) {
+            continue;
+        }
+        if (rounds == anyRound) {
+            msg = BtlMainTitle_Text_EntreeUndiscoveredAnyRound;
+        } else {
+            // Its rounds in words 1 and 2: one round, or two (with three rounds, three are any round)
+            msg = BtlMainTitle_Text_EntreeUndiscoveredRound;
+            word = 1;
+            for (i = 0; i < ENTRALINK_RUN_ROUND_COUNT; i++) {
+                if (rounds & (1 << i)) {
+                    Entree_SetNumber(wk, word, i + 1);
+                    if (word == 2) {
+                        msg = BtlMainTitle_Text_EntreeUndiscoveredRounds;
+                    }
+                    word++;
+                }
+            }
+        }
+        Entree_SetNumber(wk, 0, counts[rounds]);
+        EntreePages_AddRow(wk, pw, msg, BtlMainTitle_Text_EntreeNumber);
+        pw->rows[pw->rowCount - 1].indent = TRUE;
+    }
+    if (counts[0] != 0) {
+        Entree_SetNumber(wk, 0, counts[0]);
+        EntreePages_AddRow(wk, pw, BtlMainTitle_Text_EntreeUndiscoveredFinal, BtlMainTitle_Text_EntreeNumber);
+        pw->rows[pw->rowCount - 1].indent = TRUE;
+    }
+}
+
 // The Records' rows
 static void EntreePages_AddRecordRows(MonolithScreenParam *screen, MonolithWork *wk, EntreePagesWork *pw) {
     EntralinkProgress *progress = Entree_GetProgress(screen);
@@ -604,10 +647,11 @@ static void EntreePages_AddRecordRows(MonolithScreenParam *screen, MonolithWork 
         pw->rows[pw->rowCount - 1].indent = TRUE;
     }
     EntreePages_AddNumberOrNoneRow(wk, pw, BtlMainTitle_Text_EntreeBestTurns, records->bestWinTurns);
-    EntreePages_AddCountRow(wk, pw, BtlMainTitle_Text_EntreeRoomsFound, Entree_CountRooms(records->roomsDiscovered),
-                            rooms);
     EntreePages_AddCountRow(wk, pw, BtlMainTitle_Text_EntreeRoomsBeaten, Entree_CountRooms(records->roomsBeaten),
                             rooms);
+    EntreePages_AddCountRow(wk, pw, BtlMainTitle_Text_EntreeRoomsFound, Entree_CountRooms(records->roomsDiscovered),
+                            rooms);
+    EntreePages_AddUndiscoveredRows(wk, pw, progress);
 }
 
 static u32 EntreePages_GetPageCount(EntreePagesWork *pw) {

@@ -26,6 +26,7 @@
 #include "paperwhite2/debug_commands.h"
 #include "paperwhite2/entralink_buffs.h"
 #include "paperwhite2/entralink_progress.h"
+#include "paperwhite2/entralink_ranks.h"
 #include "paperwhite2/entralink_records.h"
 #include "paperwhite2/flag_watch.h"
 #include "paperwhite2/following_ambient.h"
@@ -440,6 +441,21 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
         return DebugCommands_RecordsPage(env, arg1);
     case DEBUG_ACTION_RECORDS_RESET:
         EntralinkRecords_Clear(gameData);
+        return TRUE;
+    case DEBUG_ACTION_ENTREE_RANK_WORDS: {
+        EntralinkProgress *progress = EntralinkProgress_Get(GameData_GetSaveControl(gameData));
+
+        DebugCommands_SetWordNumber(env, 0, EntralinkRanks_GetWhite(progress));
+        DebugCommands_SetWordNumber(env, 1, EntralinkRanks_GetWhiteMax());
+        DebugCommands_SetWordNumber(env, 2, EntralinkRanks_GetBlack(progress));
+        DebugCommands_SetWordNumber(env, 3, EntralinkRanks_GetBlackMax());
+        return TRUE;
+    }
+    case DEBUG_ACTION_ENTREE_RANK_RAISE:
+        EntralinkRanks_DebugRaise(gameData, arg1);
+        return TRUE;
+    case DEBUG_ACTION_ENTREE_RANKS_RESET:
+        EntralinkRanks_DebugReset(gameData);
         return TRUE;
     case DEBUG_ACTION_SET_WILD_LEVEL:
         PaperWhite2_Debug_SetOverride(DEBUG_OVERRIDE_WILD_LEVEL,

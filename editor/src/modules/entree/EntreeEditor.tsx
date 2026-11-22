@@ -769,6 +769,14 @@ function RunSection({ rooms, templates, constants }: { rooms: { id: string; room
           </span>
         </div>
         <span className="muted small">The chance that a rest, item, buff or shop door leads to a premade room of the type (if one fits) instead of its template</span>
+        <div className="en-run">
+          <span className="muted small">Undiscovered rooms</span>
+          <span className="en-run-controls">
+            <span className="small">×</span>
+            <NumberBox value={run.undiscoveredWeight} min={1} max={20} width={52} onChange={(n) => setKey("undiscovered_weight", n)} />
+          </span>
+        </div>
+        <span className="muted small">How many times likelier a premade room the save hasn't discovered yet is drawn, so every room turns up for the White Tree's "discover every room" (1: no weighting)</span>
         <RandomRoomsSettings run={run} setKey={setKey} />
         <div className="en-run">
           <span className="muted small">Ground items</span>

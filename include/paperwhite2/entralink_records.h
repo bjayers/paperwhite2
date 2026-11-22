@@ -45,7 +45,8 @@ void EntralinkRecords_TakeCard(GameData *gameData, const EntralinkCard *card);
 // At the run's end, before its state and party go: the deepest place (the run's room, in this round), the Shards it
 // gave, its biggest hit, and a win's streak, turns and hall of fame, or the streak's end
 void EntralinkRecords_EndRun(GameData *gameData, u32 round, u32 shards);
-// The debug menu's reset: every record cleared (the progress itself, its battles won, catches and runs, stays)
+// The debug menu's reset: every record cleared, the debug menu's White milestones too (the progress itself, its
+// battles won, catches and runs, stays)
 void EntralinkRecords_Clear(GameData *gameData);
 // The codex's species and forms (ENTRALINK_RECORDS_CODEX's), for the debug menu's readout
 u32 EntralinkRecords_GetCodexCount(void);

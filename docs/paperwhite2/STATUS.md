@@ -2,6 +2,21 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-21: Entralink records, step 4: fair room discovery and debug ranks (ROM session, on a branch)
+
+- **Undiscovered rooms come up more:** a premade room the records don't have as discovered (and the run hasn't had)
+  is `run.json`'s `undiscovered_weight` times likelier in every draw (4; editor: Run, **Undiscovered rooms**); the
+  rounds', least-used and never-twice rules still apply.
+- **The Entree's Records** lists the undiscovered rooms without naming them: "Undiscovered in round 1: 2", "in rounds
+  2 and 3", "in any round", "final rooms", by where the draws can give them.
+- **Debug:** START > Player... > Entralink records... > **Entree White Lv +1**, **Entree Black Lv +1** (each shows
+  n/5) and **Entree ranks: reset**. Black sets Shards earned to the next threshold; White marks the next unmet
+  milestone in a debug byte of the progress block (0x621) that the rank counts; Reset records clears it too. The
+  hub's trees and NPCs follow on its next load.
+- **Tested** in py-desmume: 300 seeded run starts twice (the undiscovered room about 4x the others), the Records rows,
+  each option at 0 to 5 with the trees and NPCs. Arena 18.5 KB left (-384 bytes). Prototype doc, "Fair discovery and
+  debug ranks".
+
 ## 2026-11-21: Entralink records, step 3: the ranks' rewards (ROM session, on a branch)
 
 - **The trees grow:** the hub's two trees (the White and Black level models, overlay 130) show the ranks: stage =
