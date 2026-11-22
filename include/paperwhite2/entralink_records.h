@@ -8,12 +8,12 @@
 
 // Paper White 2: the Entralink roguelike's records, saved in the progress block (paperwhite2/entralink_progress.h,
 // which has their layout): the runs started and won and their streaks, the deepest place reached, the Dream Shards
-// earned, the biggest hit, the fewest turns of a run won and its team (the hall of fame); each room entered and done,
-// by the room's record id; each boss's times beaten and fewest turns; the Nightmare codex (the forest's own species
-// and special forms, met, beaten and caught); and the buff compendium (each card offered and taken). The run gathers
-// what it can in its state and its end saves it (EntralinkRecords_EndRun); the rest is saved as it happens. All in RAM
-// until the game is next saved, like the rest of the block. Code in overlay 12, beside the run;
-// docs/paperwhite2/design/entralink-roguelike-prototype.md, "Records", has the details
+// earned, the biggest hit, the best run won (the highest tier, then the fewest turns) and its team (the hall of
+// fame); each room entered and done, by the room's record id; each boss's times beaten and fewest turns; the
+// Nightmare codex (the forest's own species and special forms, met, beaten and caught); and the buff compendium (each
+// card offered and taken). The run gathers what it can in its state and its end saves it (EntralinkRecords_EndRun);
+// the rest is saved as it happens. All in RAM until the game is next saved, like the rest of the block. Code in
+// overlay 12, beside the run; docs/paperwhite2/design/entralink-roguelike-prototype.md, "Records", has the details
 
 // A codex key, as the save holds it: a species (10 bits) and a form
 #define ENTRALINK_RECORDS_CODEX_KEY(species, form) ((species) | (form) << 10)

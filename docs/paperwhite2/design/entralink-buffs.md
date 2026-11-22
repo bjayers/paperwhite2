@@ -2023,10 +2023,45 @@ The tiers themselves are in the prototype doc ("Difficulty tiers"); what touches
   before the Black Tree's `shard_bonus` (x2), so a Nightmare win gives x3, or x6 at Black rank 5. The records' Shards
   earned and the Black rank count them.
 - **The inverse type chart** (Nightmare's `inverse_types`) and the chart buffs: the chart is inverted first, a type at a
-  time, in `GetTypeEffectiveness`; Magnetised works on the inverted values (its Flying-type addition), and its rank 3
-  "Electric hits Ground" applies only where the chart makes it an immunity, so under the inverse chart, where Electric
-  already hits Ground double, it changes nothing; Spectral then rolls on any hit not already super effective, as before.
+  time, in `GetTypeEffectiveness`; then Magnetised (changed under the inverse chart, section 22); Spectral then rolls
+  on any hit not already super effective, as before.
   Abilities' immunities (Levitate, Volt Absorb, Wonder Guard) hold under the inverse chart.
 - **Chaotic climate** (Delusion) sets the battle's starting weather; Forecast's weather (a buff) is still set after it,
   at the team's first entry, so the buff wins.
 - **Enemy levels** come from the tier (70 to 100); the stat scaling (sections 12 and 15) is unchanged and applies on top.
+
+## 22. The chart buffs under the inverse chart (2026-11-22)
+
+A review of every card that touches type matchups, for Nightmare's `inverse_types` (no chart immunities; an immunity
+or a half is double, a double half). The rule: a matchup test means the **chart in force**. Every test already does:
+the hit's effectiveness (`BATTLE_EVENT_VAR_TYPE_EFFECTIVENESS`) and `EntralinkBattle_GetEffectiveness` come after
+`GetTypeEffectiveness`, which inverts the chart, so only Magnetised changed.
+
+| Card | Under the inverse chart |
+| --- | --- |
+| **Magnetised** (changed, decided with the user) | The float stays (Ground moves miss a paralyzed foe; `CHECK_FLOATING`, not the chart). "Counts as Flying" is dropped, since Flying's turned-round matchups would make some hits worse; instead the team's Electric moves (rank 2: all its moves) are **never less than neutral** on a paralyzed foe (Electric on Water or Flying x1, not x0.5; at rank 2 no move of the team is resisted by it). Rank 3 (Ground loses its Electric immunity) has nothing to do: Electric already hits Ground double. Cards: ranks 1 and 2 end "(Nightmare: x1 min)"; rank 3's line is unchanged |
+| Spectral | As is: rolls on any hit not already super effective (there are no chart immunities left to override) |
+| Expert, Expert Edge's first part, Prism | Super effective in the chart in force (more matchups are, since immunities are double) |
+| Tinted, Expert Edge's resisted part (Glancing Blow) | Resisted in the chart in force (the usual super-effective matchups), lifted at most to neutral as before |
+| Ward, Kinship, Adaptability, Coverage, Lullaby, Type Affinity | Not the chart (STAB or the move's type): unchanged |
+| Wildfire rank 3, Corrosion, Thaw-proof | Status immunities and Ice damage, not the chart: unchanged |
+
+Code: `GetMagnetisedEffectiveness` (`paperwhite2_entralink_battle.c`, overlay 167, +20 bytes); `buffs.json`'s Magnetised
+lines. No other memory change.
+
+### 22.1 Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `tiers2/h/`)
+
+`h2.py`: the Illusionist's foe poked to Jellicent (Water/Ghost, Splash only), Expert I and Tinted I held, Magnetised I
+held or not, the lead's battle move poked each turn (Thunder Wave, Thundershock, Mud-Slap, Ember);
+`EntralinkBattle_GetEffectiveness`'s results (2 half, 3 neutral, 4 double, 5 x4) and the MATCH bucket's sums.
+
+| | Daydream | Daydream + Magnetised | Nightmare | Nightmare + Magnetised |
+| --- | --- | --- | --- | --- |
+| Thundershock on the paralyzed foe | 4 | 5 (Flying added) | 2 | **3** (x1, not x0.5) |
+| Mud-Slap on the paralyzed foe | 3, damage worked out | no damage step (floats) | 3, damage worked out | **no damage step (floats)** |
+| Ember | 2, Expert 0 | 2, Expert 0 | 4, **Expert 30** | 4, Expert 30 |
+
+`h2b.py`: Ember with Tinted I: at Daydream (x0.5) its 50% lift is applied (`GetPercentFactor(50)`) and Expert's
+isn't; at Nightmare (x2) Expert's 30 is and Tinted's isn't. Screenshot `tiers2/shots/h2_nightmare_magnetised_mudslap.png`
+(the paralyzed Jellicent, level 100, after the Mud-Slap turn). Not tested: Prism and Expert Edge (the same tests as
+Expert and Tinted), Spectral under the inverse chart, real hardware.

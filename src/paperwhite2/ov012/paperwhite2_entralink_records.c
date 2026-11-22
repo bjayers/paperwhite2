@@ -201,8 +201,11 @@ void EntralinkRecords_EndRun(GameData *gameData, u32 round, u32 shards) {
     if (records->winStreak > records->bestWinStreak) {
         records->bestWinStreak = records->winStreak;
     }
-    // The fewest turns, the first such run kept on a tie
-    if (records->bestWinTurns == 0 || state->turns < records->bestWinTurns) {
+    // The best win at the highest tier won: a win at a higher tier replaces the hall's run, one at its tier in fewer
+    // turns too (the first such run kept on a tie), one at a lower tier never. An entry from before the tiers is
+    // Daydream's (hallTier 0)
+    if (records->bestWinTurns == 0 || state->tier > records->hallTier ||
+        (state->tier == records->hallTier && state->turns < records->bestWinTurns)) {
         records->bestWinTurns = state->turns;
         records->hallTier = state->tier;
         EntralinkRecords_SetHallOfFame(records, gameData);

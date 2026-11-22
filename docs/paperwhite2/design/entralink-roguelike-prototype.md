@@ -1125,7 +1125,7 @@ codex's generator `tools/paperwhite2/entralink_records.py` and its data `res/pap
 | 0x00 | 2 | runs started (wins are the block's `runsCompleted`, 0x06) |
 | 0x02 | 2 | the current win streak (a run that ends any other way ends it) |
 | 0x04 | 2 | the best win streak |
-| 0x06 | 2 | the fewest turns of a run won (0: no win yet); the hall of fame's run |
+| 0x06 | 2 | the turns of the hall of fame's run (0: no win yet; since the tiers' follow-up, the best win at the highest tier) |
 | 0x08 | 2 | the deepest place reached (the run's room, from 1) and its round |
 | 0x0c | 4 | every Dream Shard runs gave (earned, whatever was spent; uncapped by the 99,999 held) |
 | 0x10 | 8 | the biggest hit: damage (as the damage numbers show it, capped at 60,000), species, move, form, critical |
@@ -1171,7 +1171,7 @@ generated `ENTRALINK_RECORDS_CODEX` holds both; an enemy of neither isn't record
 | A card taken (`EntralinkRun_TakeCard`, a shop's bought too) | taken, times taken |
 | Each hit of the team's on a foe (the battle) | the run's biggest hit (in its state), whether or not the numbers show |
 | A battle's end (`btl_main.c`) | the battle's turns: the server's count + 1 (the turn it ended in) |
-| The run's end, every way (`EntralinkRun_End`) | rooms entered and done (those left behind, the current if done or the final won); deepest place; Shards earned; the biggest hit; a win's streak, fewest turns and hall of fame (the team's copies and golds, on fewer turns only: a tie keeps the first), or the streak's end |
+| The run's end, every way (`EntralinkRun_End`) | rooms entered and done (those left behind, the current if done or the final won); deepest place; Shards earned; the biggest hit; a win's streak and hall of fame (the team's copies and golds, its turns and tier: a win at a higher tier than the hall's, or at its tier in fewer turns; a tie keeps the first), or the streak's end |
 
 The run's own (turns, the battle's turns, the biggest hit, won) are 14 bytes of `EntralinkRunState`. All in RAM until
 the game is next saved, as the rest of the block. Catchable now isn't stored: it follows from the catch bits and the
@@ -1501,8 +1501,16 @@ beyond it.", placeholders).
 
 - The Entree's **Records** has "Highest tier beaten" (its name, or "-") after Runs won, from `tiersBeaten`.
 - The **Hall of Fame**'s first line is "Won in N turns at <tier>": the records' `hallTier` (0x0a of the records, the
-  `unused` half-word's first byte), set with the hall. The hall still takes the run won in the fewest turns, whatever
-  its tier.
+  `unused` half-word's first byte), set with the hall.
+- **The hall's run** (follow-up, decided with the user on 2026-11-22: one entry, not a page a tier): the best win at
+  the highest tier won. A win at a higher tier than the hall's replaces it, one at its tier in fewer turns too (a tie
+  keeps the first), one at a lower tier never, however few its turns. `bestWinTurns` (0x06) is that run's turns, so
+  the Records page's "Best run's total turns" is the hall's run's. No save change: an existing entry stays where it
+  is, an old save's (before the tiers, `hallTier` 0) as Daydream's, and the next win at a higher tier replaces it.
+  Tested (`tiers2/h/h1.py`): an old entry (Daydream, 2 turns) replaced by a Delusion win in 11 turns; a Delusion
+  entry of 50 turns kept against a 1-turn Daydream win; a Nightmare entry of 50 turns replaced by a 1-turn Nightmare
+  win, and one of 1 turn kept against an 11-turn one; the Entree's Hall of Fame of the old entry ("at Daydream") and
+  of the Delusion win (`tiers2/shots/h1_old_entry.png`, `h1_case0_delusion.png`).
 
 ### The editor
 
@@ -1557,8 +1565,9 @@ doors poked as before; scripts `t1.py` to `t5.py`.
   the Hall of Fame's "Won in 1 turns at Nightmare" (`shots/t5_hall.png`).
 - The packer's and editor's tests (the tiers' defaults and header, a given set, exactly four, an old enemy level
   dropped; the editor's tiers read and written), the build, `verify_dsi_rom.py`, the plain build's module check.
-- **Not tested:** real hardware; Magnetised and Spectral under the inverse chart (the order is the code's); a Ground
-  move on a Flying type under the inverse chart.
+- **Not tested:** real hardware; Spectral under the inverse chart (the order is the code's); a Ground move on a
+  Flying type under the inverse chart. Magnetised, Expert and Tinted under it were tested in the follow-up
+  (entralink-buffs.md, 22).
 
 ## The re-entry question
 

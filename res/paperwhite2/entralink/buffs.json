@@ -1273,8 +1273,8 @@
             "name": "Magnetised",
             "tier": "gold",
             "description": [
-                "Paralyzed foes float; Flying to your Electric moves",
-                "Paralyzed foes float; Flying to all your moves",
+                "Paralyzed foes float; Flying to Electric (Nightmare: x1 min)",
+                "Paralyzed foes float; Flying to all (Nightmare: x1 min)",
                 "And paralyzed Ground types lose Electric immunity"
             ],
             "category": "type",

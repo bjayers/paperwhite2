@@ -2,6 +2,17 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-22: Entralink tiers follow-up: the hall's run and the chart buffs under inverse (ROM session, on a branch)
+
+- **Hall of Fame:** one entry, the best win at the highest tier won (a higher tier's win replaces it, one at its tier
+  in fewer turns too, a lower tier's never), its tier shown. No save change; an existing entry stays, an old save's as
+  Daydream's. Tested: the four replace/keep cases and the Entree's page (old entry "at Daydream", then "at Delusion").
+- **Chart buffs under the inverse chart:** every matchup test reads the chart in force (Expert, Expert Edge, Tinted,
+  Prism, Spectral unchanged). Magnetised: the float stays; "counts as Flying" dropped under inverse, the team's
+  Electric moves (rank 2 all) never below x1 on a paralyzed foe; its cards say "(Nightmare: x1 min)". Tested:
+  Thundershock on a paralyzed Jellicent x0.5 -> x1 with it, Mud-Slap still misses, Expert and Tinted by the chart in
+  force. Prototype doc, "Difficulty tiers"; entralink-buffs.md 22. Overlay 167 +20 bytes; arena unchanged.
+
 ## 2026-11-21: Entralink difficulty tiers and their modifiers (ROM session, on a branch)
 
 - **AI:** a run battle's wild foe already picks moves through the trainer AI's VM, but with no scripts (a wild single

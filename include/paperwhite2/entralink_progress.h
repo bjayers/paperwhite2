@@ -83,8 +83,8 @@ typedef struct {
 // The records (paperwhite2/entralink_records.h), zero in a block of before them: none
 typedef struct {
     // The runs started, the current and best streaks of runs won (a run that ends any other way ends the streak),
-    // the fewest turns of a run won (0 before the first win), and the deepest place reached (the run's room, from 1)
-    // and its round
+    // the turns of the hall of fame's run (0 before the first win), and the deepest place reached (the run's room,
+    // from 1) and its round
     u16 runsStarted;   // 0x0
     u16 winStreak;     // 0x2
     u16 bestWinStreak; // 0x4
@@ -111,8 +111,8 @@ typedef struct {
     // The buff compendium: an entry for each card offered (ENTRALINK_RECORD_SEEN), taken (ENTRALINK_RECORD_TAKEN)
     // and the times taken, by its key (EntralinkBuff's)
     EntralinkRecordEntry cards[ENTRALINK_RECORDS_CARDS_MAX]; // 0x198
-    // The hall of fame: the team of the run won in the fewest turns (bestWinTurns; the first such run on a tie), and
-    // the golds it held at its end, by their keys
+    // The hall of fame: the team of the best run won at the highest tier won (hallTier; within it the fewest turns,
+    // bestWinTurns, the first such run on a tie), and the golds it held at its end, by their keys
     EntralinkHallMon hallMons[ENTRALINK_RECORDS_HALL_MONS];    // 0x398
     EntralinkHallGold hallGolds[ENTRALINK_RECORDS_HALL_GOLDS]; // 0x440
 } EntralinkRecords;                                            // 0x454

@@ -2123,12 +2123,21 @@ BOOL EntralinkBattle_IgnoresBurnDrop(BattleMon *mon) {
 // ---- Phase 4's hooks -----------------------------------------------------------------------------------------------
 
 // Magnetised's chart on a paralyzed foe: rank 3 takes away a Ground type's immunity to Electric (the Ground type
-// counts as neutral), and the foe counts as Flying too for the team's Electric moves (rank 2: all its moves)
+// counts as neutral), and the foe counts as Flying too for the team's Electric moves (rank 2: all its moves). Under
+// the inverse chart, where Flying's matchups are turned round and would make some of those hits worse, those moves
+// are instead never less than neutral (Electric on Water or Flying x1, not x0.5), and rank 3 has nothing left
+// to do (Electric already hits Ground double)
 static u32 GetMagnetisedEffectiveness(BattleMon *target, u32 type, u32 effectiveness) {
     u32 level = GetHandlerLevel(ENTRALINK_BUFF_KIND_CUSTOM, ENTRALINK_BUFF_HANDLER_MAGNETISED);
     PokeTypePair types;
 
     if (level == 0 || GetBattleMonStatus(target) != CONDITION_PARALYSIS) {
+        return effectiveness;
+    }
+    if (sBattle.inverse) {
+        if ((level >= 2 || type == TYPE_ELECTRIC) && effectiveness < TYPE_EFFECTIVENESS_NORMAL) {
+            effectiveness = TYPE_EFFECTIVENESS_NORMAL;
+        }
         return effectiveness;
     }
     if (level >= 3 && type == TYPE_ELECTRIC && DoesMonHaveType(target, TYPE_GROUND) &&
