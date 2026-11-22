@@ -1,6 +1,6 @@
 {
     "$schema": "progress_ids.schema.json",
     "next_battle": 18,
-    "next_catch": 3,
+    "next_catch": 4,
     "next_room": 13
 }

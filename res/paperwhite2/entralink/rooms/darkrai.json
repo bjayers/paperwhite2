@@ -13,7 +13,12 @@
                     "species": "SPECIES_DARKRAI",
                     "level": 70,
                     "moves": [ "MOVE_DARK_VOID", "MOVE_DARK_PULSE", "MOVE_NASTY_PLOT", "MOVE_NIGHTMARE" ],
-                    "ability": "ABILITY_BAD_DREAMS"
+                    "ability": "ABILITY_BAD_DREAMS",
+                    "catch": {
+                        "after": [ "darkrai/darkrai" ],
+                        "once": true
+                    },
+                    "progress_id": 3
                 }
             ]
         }
