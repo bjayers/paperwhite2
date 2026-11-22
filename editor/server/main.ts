@@ -930,7 +930,7 @@ const routes: Record<string, Handler> = {
   // for the sheet an object code shows, or, without sheet, a new walking sprite (a new object code and sheet, the group's
   // follower rows pointed at it)
   "POST /api/walking-sprite/check": async (req, res) => {
-    const b = (await readJson(req)) as { species: string; form?: number; sheet?: string | null; rows?: string[]; files?: { name: string; data: string }[]; write?: boolean };
+    const b = (await readJson(req)) as { species: string; form?: number; sheet?: string | null; rows?: string[]; female?: boolean; files?: { name: string; data: string }[]; write?: boolean };
     const form = b.form ?? 0;
     if (!/^SPECIES_[A-Z0-9_]+$/.test(b.species ?? "") || !Number.isInteger(form) || form < 0) return error(res, 400, "Name a species and its form");
     if (b.sheet != null && !/^OBJ_CODE_[A-Z0-9_]+$/.test(b.sheet)) return error(res, 400, "Name the sheet's object code");
@@ -946,7 +946,8 @@ const routes: Record<string, Handler> = {
         return path;
       });
       const args = [b.write ? "walking-import" : "walking-check", b.species, "--form", String(form),
-        ...(b.sheet ? ["--sheet", b.sheet] : []), ...(b.rows ? ["--rows", b.rows.join(",")] : []), ...paths];
+        ...(b.sheet ? ["--sheet", b.sheet] : []), ...(b.rows ? ["--rows", b.rows.join(",")] : []),
+        ...(b.female === true ? ["--female"] : []), ...paths];
       const run = await python.tool(BATTLE_SPRITE_TOOL, args);
       const line = run.stdout.trim().split("\n").pop() ?? "";
       if (!line.startsWith("{")) return error(res, 500, run.stderr.trim().split("\n").pop() || "battle_sprite.py failed");
@@ -955,6 +956,18 @@ const routes: Record<string, Handler> = {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  },
+  // "Remove the female sprite" on the Follower card (follower_sexes.py remove-female): the female follower row of a
+  // species' form and its code removed, so the male's row shows both sexes; without write, what it would do
+  "POST /api/follower/remove-female": async (req, res) => {
+    const b = (await readJson(req)) as { species?: string; form?: number; write?: boolean };
+    const form = b.form ?? 0;
+    if (!/^SPECIES_[A-Z0-9_]+$/.test(b.species ?? "") || !Number.isInteger(form) || form < 0) return error(res, 400, "Name a species and its form");
+    const run = await python.tool(FOLLOWER_SEXES_TOOL, ["remove-female", b.species!, "--form", String(form), ...(b.write === true ? ["--write"] : [])]);
+    const line = run.stdout.trim().split("\n").pop() ?? "";
+    if (!line.startsWith("{")) return error(res, 500, run.stderr.trim().split("\n").pop() || "follower_sexes.py failed");
+    res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+    res.end(line);
   },
   // The Rig Editor's check of a battle sprite's rig (server/python/rig_check.py): mcss_rig.check's errors and warnings,
   // the game's limits that the schema can't say, and the five files' sizes as the build would write them
@@ -1193,6 +1206,7 @@ async function speciesTool(res: ServerResponse, args: string[]) {
   res.end(out);
 }
 const BATTLE_SPRITE_TOOL = "tools/paperwhite2/battle_sprite.py";
+const FOLLOWER_SEXES_TOOL = "tools/paperwhite2/follower_sexes.py";
 const MOVES_TOOL = "tools/paperwhite2/moves.py";
 const ABILITIES_TOOL = "tools/paperwhite2/abilities.py";
 const MOVE = /^MOVE_[A-Z0-9_]+$/;

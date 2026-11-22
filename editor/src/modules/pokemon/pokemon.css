@@ -128,6 +128,8 @@ button.danger { color: var(--error); border-color: var(--error); }
 /* The Follower card (FollowerSprites.tsx) and the "Don't mirror" toggle */
 .pkm-follower-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .pkm-follower-sheet { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 2px; font-size: 11px; }
+.pkm-follower-pair { display: inline-flex; flex-direction: column; gap: 6px; }
+.pkm-follower-noshiny { max-width: 220px; }
 .pkm-follower-sheet canvas { image-rendering: pixelated; background: var(--panel-2); border-radius: 4px; }
 .pkm-mirror { margin-top: 8px; display: flex; flex-direction: column; gap: 2px; }
 .pkm-mirror .pkm-check { font-size: 13px; font-weight: 600; }

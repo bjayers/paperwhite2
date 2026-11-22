@@ -76,9 +76,11 @@ export function WalkingPreview({ items, playing }: { items: WalkingItem[]; playi
 
 export interface WalkingRow { name: string; sprite: string | null }
 
-/** "Import a walking sprite…" on a Follower card: the PNG (and .pal) for a sheet the rows show, or a new sheet for them. */
-export function WalkingSpriteImport({ species, form, name, rows, onWritten }: {
-  species: string; form: number; name: string; rows: WalkingRow[]; onWritten(): void;
+/** "Import a walking sprite…" on a Follower card: the PNG (and .pal) for a sheet the rows show, or a new sheet for them.
+ * With female, "Add a female sprite…": a female follower row of her own with the sheet (battle_sprite.py --female),
+ * for a form whose male row shows both sexes. */
+export function WalkingSpriteImport({ species, form, name, rows, onWritten, female = false }: {
+  species: string; form: number; name: string; rows: WalkingRow[]; onWritten(): void; female?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [files, setFiles] = useState<{ name: string; data: string }[]>([]);
@@ -102,18 +104,21 @@ export function WalkingSpriteImport({ species, form, name, rows, onWritten }: {
     setCheck(null);
     setMessage(null);
     const useNew = stand.length > 0;
-    setTarget(useNew ? "new" : codes[0] ?? "");
+    setTarget(female ? "female" : useNew ? "new" : codes[0] ?? "");
     setPicked(new Set((useNew ? stand : pointable).map((r) => r.name)));
   };
   const close = () => { setOpen(false); setFiles([]); setCheck(null); };
 
   const rowList = [...picked].sort();
   const ready = files.length > 0 && !!target && (target !== "new" || rowList.length > 0);
+  // What the server is asked: the female's own row, a new sheet for the picked rows, or a sheet replaced
+  const request = () => target === "female" ? { species, form, files, female: true }
+    : { species, form, files, sheet: target === "new" ? null : target, ...(target === "new" ? { rows: rowList } : {}) };
   useEffect(() => {
     if (!open || !ready) { setCheck(null); return; }
     let live = true;
     setBusy(true);
-    api.walkingSpriteCheck({ species, form, files, sheet: target === "new" ? null : target, ...(target === "new" ? { rows: rowList } : {}) })
+    api.walkingSpriteCheck(request())
       .then((c) => live && setCheck(c), (e: Error) => live && setCheck({ ok: false, check: true, message: e.message, errors: [e.message] }))
       .finally(() => live && setBusy(false));
     return () => { live = false; };
@@ -132,8 +137,7 @@ export function WalkingSpriteImport({ species, form, name, rows, onWritten }: {
     }
     setBusy(true);
     try {
-      const result = await api.walkingSpriteCheck({ species, form, files, sheet: target === "new" ? null : target,
-        ...(target === "new" ? { rows: rowList } : {}), write: true });
+      const result = await api.walkingSpriteCheck({ ...request(), write: true });
       if (!result.ok) { setCheck(result); return; }
       for (const path of result.changed ?? []) if (documents.get(path)) await documents.reload(path);
       setMessage({ ok: true, text: `${result.message}: ${(result.changed ?? []).map((p) => p.replace(/^res\/field\/actors\//, "")).join(", ") || "none"}. Build to see it in the game.` });
@@ -148,19 +152,27 @@ export function WalkingSpriteImport({ species, form, name, rows, onWritten }: {
 
   return (
     <div className="bsp-walking-import">
-      <div className="pkm-inline">
-        <button onClick={start} disabled={!rows.length}
-          title={`A walking sheet as a PNG (and .pal): replaces a sheet ${name}'s rows show, or makes ${name} a walking sprite of its own`}>Import a walking sprite…</button>
-        <span className="muted pkm-hint" style={{ marginTop: 0 }}>
-          {stand.length ? `${name}'s rows show another species' sheet (${[...new Set(stand.map((r) => r.sprite!.replace("OBJ_CODE_POKEMON_", "")))].join(", ")}): import one of its own.`
-            : "Replaces a sheet its rows show; also in the Battle sprite card's zip, follower/."}
-        </span>
-      </div>
+      {female ? (
+        <div className="pkm-inline">
+          <button onClick={start} disabled={!rows.length}
+            title={`A walking sheet as a PNG (and .pal) for ${name}'s female: a follower row of her own`}>Add a female sprite…</button>
+          <span className="muted pkm-hint" style={{ marginTop: 0 }}>The male's sprite shows both sexes; add one only where her art differs.</span>
+        </div>
+      ) : (
+        <div className="pkm-inline">
+          <button onClick={start} disabled={!rows.length}
+            title={`A walking sheet as a PNG (and .pal): replaces a sheet ${name}'s rows show, or makes ${name} a walking sprite of its own`}>Import a walking sprite…</button>
+          <span className="muted pkm-hint" style={{ marginTop: 0 }}>
+            {stand.length ? `${name}'s rows show another species' sheet (${[...new Set(stand.map((r) => r.sprite!.replace("OBJ_CODE_POKEMON_", "")))].join(", ")}): import one of its own.`
+              : "Replaces a sheet its rows show; also in the Battle sprite card's zip, follower/."}
+          </span>
+        </div>
+      )}
       {message && <p className={`pkm-note${message.ok ? "" : " pkm-error"}`}>{message.text}</p>}
       {open && (
         <div className="bsp-import">
           <div className="pkm-card-head">
-            <h4>Walking sprite <span className="muted">{files.length ? files.map((f) => f.name).join(", ") : "choose a PNG"}</span></h4>
+            <h4>{female ? "Female sprite" : "Walking sprite"} <span className="muted">{files.length ? files.map((f) => f.name).join(", ") : "choose a PNG"}</span></h4>
             <span className="spacer" />
             <label className="pkm-check"><input type="checkbox" checked={playing} onChange={(e) => setPlaying(e.target.checked)} /> Play</label>
             <button onClick={close}>Cancel</button>
@@ -169,7 +181,13 @@ export function WalkingSpriteImport({ species, form, name, rows, onWritten }: {
           </div>
           <div className="pkm-rows">
             <span className="pkm-row-label">For</span>
-            <div className="pkm-row-control">
+            {female ? (
+              <div className="pkm-row-control">
+                <span>{name}'s female: a follower row of her own, <code>{rows[0]?.name}_female</code></span>
+                <div className="muted pkm-hint">Her code goes right after the male's (the follower codes after it renumber); her row copies the male's
+                  placement and gaps. The sheet is re-indexed onto the battle palette (method F, from the female battle art where there is one).</div>
+              </div>
+            ) : <div className="pkm-row-control">
               <select value={target} onChange={(e) => setTarget(e.target.value)}>
                 {pointable.length > 0 && <option value="new">A new walking sprite for {name}</option>}
                 {codes.map((c) => <option key={c} value={c}>Replace {c.replace("OBJ_CODE_", "").toLowerCase()}</option>)}
@@ -185,7 +203,7 @@ export function WalkingSpriteImport({ species, form, name, rows, onWritten }: {
               <div className="muted pkm-hint">{target === "new"
                 ? "Makes OBJ_CODE_POKEMON_… after the other walking Pokémon's, with its sheet; the checked rows show it (its frame layout, 6 mirrored or 8 asymmetric, is the sheet's)."
                 : "Keeps the sheet's size and frame count; 16 colours, index 0 transparent."}</div>
-            </div>
+            </div>}
             <span className="pkm-row-label">Files</span>
             <div className="pkm-row-control">
               <input type="file" multiple accept=".png,.pal" onChange={(e) => { if (e.target.files?.length) void choose(e.target.files); e.target.value = ""; }} />

@@ -508,9 +508,14 @@ export const api = {
   battleSpriteCheck: (b: { species: string; form: number; files: { name: string; data: string }[]; stillsFromSheets?: boolean; write?: boolean }) =>
     request<BattleSpriteCheck>("POST", "/api/battle-sprite/check", b),
   /** Checks a walking sprite for the Follower card (a PNG and/or .pal for the sheet `sheet` names, else a new walking sprite
-   * for the group's `rows`); with write, imports it: the sheet's files, or the new object code, sheet and rows. */
-  walkingSpriteCheck: (b: { species: string; form: number; sheet?: string | null; rows?: string[]; files: { name: string; data: string }[]; write?: boolean }) =>
+   * for the group's `rows`, or with `female` a female follower row of her own); with write, imports it: the sheet's files,
+   * or the new object code, sheet and rows. */
+  walkingSpriteCheck: (b: { species: string; form: number; sheet?: string | null; rows?: string[]; female?: boolean; files: { name: string; data: string }[]; write?: boolean }) =>
     request<BattleSpriteCheck>("POST", "/api/walking-sprite/check", b),
+  /** "Remove the female sprite" (follower_sexes.py remove-female): a species' form's female follower row removed, so the
+   * male's shows both sexes; without write, only what it would do. */
+  followerRemoveFemale: (b: { species: string; form: number; write?: boolean }) =>
+    request<{ ok: boolean; check: boolean; errors: string[]; changed: string[]; message: string }>("POST", "/api/follower/remove-female", b),
   /** A battle sprite rig's checks as the build runs them (mcss_rig.check) and the five files' sizes. */
   rigCheck: (text: string) => request<RigCheck>("POST", "/api/battle-sprite/rig-check", { text }),
   /** Converts a PNG or .cgb into a C-Gear picture and adds it; the tool's report. */

@@ -1,7 +1,9 @@
-// A species' or form's Follower card in the Pokémon Editor: its follower rows (each sex and shininess a field actor of
-// its own under res/field/actors/followers/, docs/paperwhite2/following-pokemon.md), the walking sprite each shows (its
-// "sprite", an object code with a sprite.png of its own: a walking Pokémon's OBJ_CODE_POKEMON_ or another follower's),
-// picked from every such sheet with a preview, and a link to the Follower Editor. Rows are edited through the document
+// A species' or form's Follower card in the Pokémon Editor: its follower rows (field actors of their own under
+// res/field/actors/followers/, docs/paperwhite2/following-pokemon.md), the walking sprite each shows (its "sprite", an
+// object code with a sprite.png of its own: a walking Pokémon's OBJ_CODE_POKEMON_ or another follower's), picked from
+// every such sheet with a preview, normal and shiny, and a link to the Follower Editor. The male's row shows both sexes
+// unless the female has a row of her own (only where her art differs, tools/paperwhite2/follower_sexes.py): "Add a
+// female sprite" makes hers, "Remove the female sprite" falls back to the male's. Rows are edited through the document
 // store (saved with the editor's Save, checked by the build's validator); Add form and Add Pokémon make them.
 
 import { useEffect, useMemo, useState } from "react";
@@ -10,13 +12,16 @@ import { documents, useDocuments } from "../../documents.ts";
 import { SearchSelect, type Option } from "../../shell/SearchSelect.tsx";
 import { navigate } from "../../navigation.ts";
 import { useHeld } from "../followers/DocForm.tsx";
-import { FIELD_ACTOR_SCHEMA, FOLLOWERS, variantLabel, type Variant } from "../followers/data.ts";
-import { paletteOf, sheetColors } from "../palettes/sheetColors.ts";
+import { FIELD_ACTOR_SCHEMA, FOLLOWERS, type Variant } from "../followers/data.ts";
+import { parsePal } from "../palettes/pal.ts";
+import { paletteOf, type SheetPalette } from "../palettes/sheetColors.ts";
 import { readIndexedPng, type IndexedImage } from "../palettes/png.ts";
 import { Row } from "./FormPage.tsx";
 import { WalkingSpriteImport } from "./WalkingSpriteImport.tsx";
 
 const WALKING = "res/field/actors/pokemon";
+const FEMALE = "GENDER_FEMALE";
+const MALE = "GENDER_MALE";
 
 /** An object code's folder: OBJ_CODE_POKEMON_PICHU_FORM_1 is res/field/actors/pokemon/pichu_form_1. */
 export function codeFolder(code: string): string {
@@ -62,31 +67,64 @@ function allSheets(): Promise<Option[]> {
   return sheetsPromise;
 }
 
-const sheetCache = new Map<string, Promise<{ image: IndexedImage; colors: number[][] } | null>>();
+const cache = new Map<string, Promise<unknown>>();
 
-/** A code's sheet and colours (sprite.png in its battle group's normal.pal or its own sprite.pal, sheetColors.ts), or
- * null when it has none of its own. */
-function sheetOf(code: string) {
-  if (!sheetCache.has(code)) {
-    const folder = codeFolder(code);
-    sheetCache.set(code, Promise.all([api.asset(`${folder}/sprite.png`).then(readIndexedPng), sheetColors(folder)])
-      .then(([image, colors]) => ({ image, colors: colors as number[][] }), () => null));
-  }
-  return sheetCache.get(code)!;
+function cached<T>(key: string, make: () => Promise<T>): Promise<T> {
+  if (!cache.has(key)) cache.set(key, make());
+  return cache.get(key) as Promise<T>;
 }
 
-/** A sheet's frames facing down and left (then right, its own frames or the left ones mirrored), 2x. */
-export function SheetPreview({ code }: { code: string }) {
-  const [sheet, setSheet] = useState<{ image: IndexedImage; colors: number[][] } | null | undefined>(undefined);
+/** A code's sheet (sprite.png) and its own "palette", or null when it has none of its own. */
+function sheetOf(code: string) {
+  const folder = codeFolder(code);
+  return cached(`sheet ${code}`, () => Promise.all([api.asset(`${folder}/sprite.png`).then(readIndexedPng), api.file(`${folder}/data.json`)])
+    .then(([image, data]) => ({ image, palette: paletteOf(JSON.parse(data.text)) }), () => null));
+}
+
+/** A species' and form's battle group, as overworld_palettes.group_name finds it: its form_<n> where it has one. */
+function groupOf(species: string, form: number): Promise<string> {
+  const name = species.replace(/^SPECIES_/, "").toLowerCase();
+  if (!form) return Promise.resolve(name);
+  return cached(`group ${name} ${form}`, () => api.list(`res/pokemon/${name}/form_${form}/normal.pal`)
+    .then((found) => (found.length ? `${name}/form_${form}` : name), () => name));
+}
+
+function readPal(path: string): Promise<number[][]> {
+  return cached(`pal ${path}`, () => api.file(path).then((f) => parsePal(f.text) as number[][]));
+}
+
+/** A row's colours on a sheet, normal or shiny, as the build gives them (overworld_palettes.row_palettes): the row's
+ * battle group's normal.pal or shiny.pal (through its "map" on another group's sheet), or, where the row or the sheet
+ * opts out, the sheet's own sprite.pal; null for the shiny of an opt-out, which has no shiny colours of its own. */
+async function rowColors(sheet: { palette: SheetPalette | null }, folder: string, row: { species: string; form: number; palette: SheetPalette | null },
+                         shiny: boolean): Promise<number[][] | null> {
+  if (row.palette?.opt_out || !sheet.palette?.pokemon) return shiny ? null : readPal(`${folder}/sprite.pal`);
+  const group = row.palette?.pokemon ?? await groupOf(row.species, row.form);
+  const colors = await readPal(`res/pokemon/${group}/${shiny ? "shiny" : "normal"}.pal`);
+  return row.palette?.map ? row.palette.map.map((i) => colors[i] ?? [0, 0, 0]) : colors;
+}
+
+/** A sheet's frames facing down and left (then right, its own frames or the left ones mirrored), 2x, in the colours the
+ * row shows it with: normal, or with shiny its battle shiny palette through the same indices. */
+export function SheetPreview({ code, row, shiny = false }: { code: string; row: { species: string; form: number; palette: SheetPalette | null }; shiny?: boolean }) {
+  const [sheet, setSheet] = useState<{ image: IndexedImage; colors: number[][] | null } | null | undefined>(undefined);
+  const paletteKey = JSON.stringify(row.palette);
   useEffect(() => {
     let live = true;
     setSheet(undefined);
-    sheetOf(code).then((s) => live && setSheet(s));
+    sheetOf(code).then(async (s) => {
+      if (!s) return live && setSheet(null);
+      const colors = await rowColors(s, codeFolder(code), row, shiny).catch(() => null);
+      if (live) setSheet({ image: s.image, colors });
+    });
     return () => { live = false; };
-  }, [code]);
+  }, [code, row.species, row.form, paletteKey, shiny]);
   if (sheet === undefined) return <span className="muted pkm-hint">Reading…</span>;
   if (sheet === null) return <span className="pkm-error pkm-hint">{code} has no sheet of its own</span>;
   const { image, colors } = sheet;
+  if (!colors) {
+    return <span className="muted pkm-hint pkm-follower-noshiny">No shiny colours: this sheet keeps its own (it opts out of the battle palette), so a shiny shows these too</span>;
+  }
   const size = Math.min(image.width, image.height);
   const count = Math.floor(image.width / size);
   // Up, up step, down, down step, left, left step and, with 8 frames, right, right step
@@ -108,9 +146,9 @@ export function SheetPreview({ code }: { code: string }) {
     ctx.putImageData(data, 0, 0);
   };
   return (
-    <span className="pkm-follower-sheet" title={`${count} frames of ${size}×${size}`}>
+    <span className="pkm-follower-sheet" title={`${count} frames of ${size}×${size}${shiny ? ", shiny" : ""}`}>
       <canvas ref={draw} width={size * shown.length} height={size} style={{ width: size * shown.length * 2, height: size * 2 }} />
-      <span className="muted">{count} frames{count < 8 ? ", right mirrored" : ""}</span>
+      <span className="muted">{shiny ? "Shiny (battle shiny.pal)" : `${count} frames${count < 8 ? ", right mirrored" : ""}`}</span>
     </span>
   );
 }
@@ -121,10 +159,18 @@ async function frameCount(code: string): Promise<number | null> {
   return sheet ? Math.floor(sheet.image.width / Math.min(sheet.image.width, sheet.image.height)) : null;
 }
 
-/** One follower row: what it is, the sheet it shows (its own, or the code its "sprite" names) and the picker. */
-function FollowerRow({ row, sheets }: { row: Variant; sheets: Option[] }) {
+/** What a row is, by its sex and whether the female has a row of her own. */
+function rowLabel(row: Variant, both: boolean): string {
+  if (row.sex === FEMALE) return "Female";
+  if (row.sex === MALE) return both ? "Both sexes" : "Male";
+  return "Normal";
+}
+
+/** One follower row: what it is, the sheet it shows (its own, or the code its "sprite" names), normal and shiny, the
+ * picker, and for a female row of her own, "Remove the female sprite". */
+function FollowerRow({ row, sheets, label, onRemove }: { row: Variant; sheets: Option[]; label: string; onRemove?: () => void }) {
   const { data, dirty } = useHeld(row.path);
-  if (!(data instanceof Map)) return <Row label={variantLabel(row)}><span className="muted">Reading {row.path}…</span></Row>;
+  if (!(data instanceof Map)) return <Row label={label}><span className="muted">Reading {row.path}…</span></Row>;
   const sprite = typeof data.get("sprite") === "string" ? String(data.get("sprite")) : null;
   const follower = data.get("follower");
   const profile = follower instanceof Map ? String(follower.get("animation_profile") ?? "") : "";
@@ -137,7 +183,6 @@ function FollowerRow({ row, sheets }: { row: Variant; sheets: Option[] }) {
     const wanted = frames === null ? null : frames >= 8 ? "asymmetric" : "mirrored";
     if (wanted && wanted !== profile) documents.edit(row.path, ["follower", "animation_profile"], wanted);
   };
-  const label = `${variantLabel(row).replace(/^Form \d+(, )?/, "") || "Normal"}`;
   return (
     <Row label={label} hint={<>
       <code>{row.name}</code>{row.placeholder ? " · placeholder" : ""}{dirty ? " · unsaved" : ""}
@@ -146,45 +191,91 @@ function FollowerRow({ row, sheets }: { row: Variant; sheets: Option[] }) {
       {profile ? ` · ${profile}` : ""}
     </>}>
       <div className="pkm-follower-row">
-        <SheetPreview code={code} />
+        <span className="pkm-follower-pair">
+          <SheetPreview code={code} row={row} />
+          <SheetPreview code={code} row={row} shiny />
+        </span>
         {sprite
           ? <SearchSelect value={sprite} options={sheets} onChange={(v) => void choose(v)} />
           : <span className="muted pkm-hint">Own sheet</span>}
+        {onRemove && <button onClick={onRemove} title="The female's row and code removed: the male's sprite shows both sexes">Remove the female sprite</button>}
       </div>
     </Row>
   );
 }
 
+/** Whether a species can be female (its gender_ratio isn't male-only or genderless); true when it can't be read. */
+function canBeFemale(species: string): Promise<boolean> {
+  const name = species.replace(/^SPECIES_/, "").toLowerCase();
+  return cached(`ratio ${name}`, () => api.file(`res/pokemon/${name}/data.json`)
+    .then((f) => !/^GENDER_RATIO_(MALE_ONLY|GENDERLESS)$/.test(String(JSON.parse(f.text).gender_ratio ?? "")), () => true));
+}
+
 /** The follower rows of a species' form, with their sprites: on a Follower card. */
-export function FollowerSprites({ species, form, name, epoch = 0 }: { species: string; form: number; name?: string; epoch?: number }) {
+export function FollowerSprites({ species, form, name, epoch = 0, onRows }: {
+  species: string; form: number; name?: string; epoch?: number; onRows?: (count: number) => void;
+}) {
   const [rows, setRows] = useState<Variant[] | null>(null);
   const [sheets, setSheets] = useState<Option[]>([]);
+  const [female, setFemale] = useState(false);
   const [reread, setReread] = useState(0);
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const reset = () => { rowsPromise = null; sheetsPromise = null; cache.clear(); };
   useEffect(() => documents.onFiles((paths) => {
     if (paths.some((p) => p.startsWith(`${FOLLOWERS}/`) || p.startsWith(`${WALKING}/`))) {
-      rowsPromise = null;
-      sheetsPromise = null;
-      sheetCache.clear();
+      reset();
       setReread((n) => n + 1);
     }
   }), []);
   useEffect(() => {
     if (epoch) { rowsPromise = null; sheetsPromise = null; }
     let live = true;
-    allRows().then((all) => live && setRows(all.filter((r) => r.species === species && r.form === form)
-      .sort((a, b) => Number(a.shiny) - Number(b.shiny) || Number(a.sex === "GENDER_FEMALE") - Number(b.sex === "GENDER_FEMALE"))));
+    allRows().then((all) => {
+      if (!live) return;
+      const own = all.filter((r) => r.species === species && r.form === form)
+        .sort((a, b) => Number(a.shiny) - Number(b.shiny) || Number(a.sex === FEMALE) - Number(b.sex === FEMALE));
+      setRows(own);
+      onRows?.(own.length);
+    });
     allSheets().then((s) => live && setSheets(s));
+    canBeFemale(species).then((f) => live && setFemale(f));
     return () => { live = false; };
   }, [species, form, epoch, reread]);
   if (!rows) return <p className="muted pkm-note">Reading the followers…</p>;
   if (!rows.length) return <p className="muted pkm-note">No follower rows: while it leads the party, the next party member follows (as for an Egg).</p>;
+  const label = name ?? species.replace(/^SPECIES_/, "").toLowerCase();
+  const male = rows.find((r) => r.sex === MALE && !r.shiny);
+  const hasFemale = rows.some((r) => r.sex === FEMALE);
+  const written = () => { reset(); setReread((n) => n + 1); };
+  const removeFemale = async () => {
+    setMessage(null);
+    try {
+      const plan = await api.followerRemoveFemale({ species, form });
+      if (!plan.ok) { setMessage({ ok: false, text: plan.message }); return; }
+      const unsaved = documents.dirtyPaths().filter((p) => plan.changed.includes(p));
+      if (unsaved.length) { alert(`Save or revert your changes first (${unsaved.join(", ")}): this writes the files on disk.`); return; }
+      if (!confirm(`${plan.message}.\n\nRemoves ${plan.changed.join(", ")}.`)) return;
+      const done = await api.followerRemoveFemale({ species, form, write: true });
+      setMessage({ ok: done.ok, text: done.ok ? `${done.message}. Build to see it in the game.` : done.message });
+      written();
+    } catch (e) {
+      setMessage({ ok: false, text: (e as Error).message });
+    }
+  };
   return (
     <>
-      <WalkingSpriteImport species={species} form={form} name={name ?? species.replace(/^SPECIES_/, "").toLowerCase()}
-        rows={rows.map((r) => ({ name: r.name, sprite: r.sprite }))}
-        onWritten={() => { rowsPromise = null; sheetsPromise = null; sheetCache.clear(); setReread((n) => n + 1); }} />
+      <WalkingSpriteImport species={species} form={form} name={label}
+        rows={rows.map((r) => ({ name: r.name, sprite: r.sprite }))} onWritten={written} />
+      {male && !hasFemale && female && (
+        <WalkingSpriteImport species={species} form={form} name={label} female
+          rows={[{ name: male.name, sprite: male.sprite }]} onWritten={written} />
+      )}
+      {message && <p className={`pkm-note${message.ok ? "" : " pkm-error"}`}>{message.text}</p>}
       <div className="pkm-rows">
-        {rows.map((row) => <FollowerRow key={row.path} row={row} sheets={sheets} />)}
+        {rows.map((row) => (
+          <FollowerRow key={row.path} row={row} sheets={sheets} label={rowLabel(row, !hasFemale && female)}
+            onRemove={row.sex === FEMALE && male ? () => void removeFemale() : undefined} />
+        ))}
       </div>
     </>
   );
@@ -192,13 +283,10 @@ export function FollowerSprites({ species, form, name, epoch = 0 }: { species: s
 
 /** The Follower card of an original species' or a form's page. */
 export function FollowerSpritesCard({ species, form, name }: { species: string; form: number; name: string }) {
+  // (the rows' count comes from the list below, which reads them again after Add or Remove the female sprite)
   const [count, setCount] = useState<number | null>(null);
   const { docs } = useDocuments();
-  useEffect(() => {
-    let live = true;
-    allRows().then((all) => live && setCount(all.filter((r) => r.species === species && r.form === form).length));
-    return () => { live = false; };
-  }, [species, form]);
+  useEffect(() => setCount(null), [species, form]);
   const unsaved = useMemo(() => [...docs.values()].filter((d) => d.dirty && d.path.startsWith(`${FOLLOWERS}/`)).length, [docs]);
   return (
     <section className="pkm-card">
@@ -208,10 +296,11 @@ export function FollowerSpritesCard({ species, form, name }: { species: string; 
         {!!count && <button onClick={() => navigate("followers", { species, ...(form ? { form } : {}) })}
           title="Its rows' placement, gaps and dialogue">Open in the Follower Editor</button>}
       </div>
-      <p className="muted pkm-note">The overworld sprite that follows the player while {name} leads: each sex and shininess is a row of its own
-        (<code>{FOLLOWERS}/</code>), showing a walking sprite. Pick the sheet each row shows; Save writes it, and the next build uses it.
+      <p className="muted pkm-note">The overworld sprite that follows the player while {name} leads (<code>{FOLLOWERS}/</code>), showing a walking
+        sprite: the male's row shows both sexes unless the female has a row of her own, and a shiny shows the same sheet in its battle
+        shiny palette. Pick the sheet each row shows; Save writes it, and the next build uses it.
         {form ? " Add form gave this form copies of its template's rows." : ""}</p>
-      <FollowerSprites species={species} form={form} name={name} />
+      <FollowerSprites species={species} form={form} name={name} onRows={setCount} />
     </section>
   );
 }
