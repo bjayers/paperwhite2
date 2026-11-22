@@ -138,6 +138,36 @@
 // Gives back every Dream Shard spent and clears the picks bought
 #define ENTRALINK_RUN_ACTION_SHOP_RESET 43
 
+// The Entree's ranks' rewards (paperwhite2/entralink_ranks.h). arg1 0: takes away the hub's NPCs whose reward isn't
+// unlocked (the hub's init script); 1: whether reward arg2 (ENTRALINK_REWARD_*) is unlocked
+#define ENTRALINK_RUN_ACTION_RANKS 44
+// The hub's fog: arg1 0 returns it (ENTRALINK_HUB_FOG_*); 1 sets it to arg2, which FieldSetWeather 0xffff then shows
+#define ENTRALINK_RUN_ACTION_HUB_FOG 45
+// The form NPC: arg1 0 returns what changing party slot arg2's form would do (ENTRALINK_FORM_*); 1 changes it
+#define ENTRALINK_RUN_ACTION_FORM 46
+// Starting a run with the skip_round reward (global_10490.s's Script_12). arg1 0: starts the run, skipping round 1 if
+// arg2 is 1, and returns the head start's picks (0 without the skip); 1: draws the next pick's offer, round 1's, and
+// returns its cards (0 once the picks are done); 2: gives the head start's Dream Dust and returns it; 3: warps into
+// the forest
+#define ENTRALINK_RUN_ACTION_SKIP_ROUND 47
+
+// The hub's fogs (ENTRALINK_RUN_ACTION_HUB_FOG), the forest's rounds' tints: none, pink, purple, black
+#define ENTRALINK_HUB_FOG_NONE 0
+#define ENTRALINK_HUB_FOG_PINK 1
+#define ENTRALINK_HUB_FOG_PURPLE 2
+#define ENTRALINK_HUB_FOG_BLACK 3
+#define ENTRALINK_HUB_FOG_COUNT 4
+
+// What ENTRALINK_RUN_ACTION_FORM returns: the Pokémon would take its special form (records.json's special_forms), go
+// back to form 0, has no special form, or is an egg
+#define ENTRALINK_FORM_TO_SPECIAL 0
+#define ENTRALINK_FORM_TO_USUAL 1
+#define ENTRALINK_FORM_NONE 2
+#define ENTRALINK_FORM_EGG 3
+
+// The script that asks whether to skip round 1 as a run starts (global_10490.s's Script_12)
+#define SCRID_ENTRALINK_RUN_START 10501
+
 // What ENTRALINK_RUN_ACTION_SHOP_PICK returns: it can be bought; too few Dream Shards; the shop's picks are all
 // bought; the card is at its highest level (its picks reach its cap)
 #define ENTRALINK_SHOP_OK 0
@@ -225,5 +255,8 @@
 // The shop ID of a run's shop for CallFriendlyShopBuy (src/ov036/scrcmd_shop.c): the Poké Mart's screen with the room's
 // goods (EntralinkRunState's shopItems), sold for Dream Dust into the run's bag
 #define ENTRALINK_RUN_SHOP_ID 0xfc
+// The hub's item shop (the shard_shop reward, paperwhite2/entralink_ranks.h): the same screen with records.json's
+// shard_shop goods, sold for Dream Shards into the real bag
+#define ENTRALINK_SHARD_SHOP_ID 0xfb
 
 #endif // PAPERWHITE2_ENTRALINK_RUN_ACTIONS_H

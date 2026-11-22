@@ -29,7 +29,9 @@
 #include "paperwhite2/entralink_hub_shop.h"
 #include "paperwhite2/entralink_progress.h"
 #include "paperwhite2/entralink_random_rooms.h"
+#include "paperwhite2/entralink_ranks.h"
 #include "paperwhite2/entralink_records.h"
+#include "paperwhite2/entralink_records_config.h"
 #include "paperwhite2/entralink_reserve.h"
 #include "paperwhite2/entralink_run.h"
 #include "paperwhite2/entralink_run_actions.h"
@@ -880,21 +882,35 @@ static void EntralinkRun_EnterRoom(GameData *gameData) {
     EntralinkRun_DrawDoors(state);
 }
 
-void EntralinkRun_Start(GameData *gameData) {
+// The place of round 2's first room, past round 1's rooms and its boss; 1 with a single round
+static u32 EntralinkRun_GetSecondRoundPlace(void) {
+    if (ENTRALINK_RUN_ROUND_COUNT < 2) {
+        return 1;
+    }
+    return sRounds[0].rooms + 2 * sRounds[0].boss + 1;
+}
+
+void EntralinkRun_Start(GameData *gameData, BOOL skipRound) {
     EntralinkRunState *state = EntralinkRun_GetState();
     u8 excluded[ENTRALINK_RUN_ROOM_COUNT];
+    u32 first = skipRound ? EntralinkRun_GetSecondRoundPlace() : 1;
     u32 round;
     u32 role;
     u32 room;
+    u32 i;
 
     MI_CpuFill8(state, 0, sizeof(EntralinkRunState));
     EntralinkBuffs_Clear();
     MI_CpuFill8(excluded, 0, sizeof(excluded));
-    // The first room, an enemy room if there is one (it is no door's, whose types are drawn); each room draws the
-    // rooms behind its doors as the player enters it
+    // The first room, an enemy room if there is one (it is no door's, whose types are drawn), or the buff room with
+    // the buff_room reward; each room draws the rooms behind its doors as the player enters it. A run that skips
+    // round 1 starts at round 2's first room
     state->roomCount = EntralinkRun_CountPlaces();
-    role = EntralinkRun_GetPlace(1, &round);
-    if (role == ENTRALINK_ROLE_PRE_BOSS) {
+    role = EntralinkRun_GetPlace(first, &round);
+    if (role == ENTRALINK_ROLE_ROOM && sTypeTemplates[ENTRALINK_TYPE_BUFF] != ENTRALINK_RUN_ROOM_NONE &&
+        EntralinkRanks_HasReward(gameData, ENTRALINK_REWARD_BUFF_ROOM)) {
+        room = sTypeTemplates[ENTRALINK_TYPE_BUFF];
+    } else if (role == ENTRALINK_ROLE_PRE_BOSS) {
         room = ENTRALINK_RUN_PRE_BOSS_REST;
     } else {
         room = role == ENTRALINK_ROLE_ROOM ? EntralinkRun_DrawRandomRoom(ENTRALINK_TYPE_ENEMY, TRUE)
@@ -913,8 +929,13 @@ void EntralinkRun_Start(GameData *gameData) {
     }
     // The hub shop's picks bought are held from the start, before the room's offers are drawn
     EntralinkHubShop_HoldBought(gameData);
-    state->order[0] = room;
-    state->room = 1;
+    // The places skipped hold the pre-boss rest's template, no room of rooms/ and in no pool
+    for (i = 0; i + 1 < first; i++) {
+        state->order[i] = ENTRALINK_RUN_PRE_BOSS_REST;
+    }
+    state->placesSkipped = first - 1;
+    state->order[first - 1] = room;
+    state->room = first;
     EntralinkRun_EnterRoom(gameData);
     // The team, the party's copies at level 100 (paperwhite2/entralink_run_party.h), and the run's own bag, empty
     EntralinkRun_KeepParty(gameData);
@@ -935,6 +956,10 @@ static void EntralinkRun_End(GameData *gameData) {
     u32 round;
     u32 i;
 
+    // The shard_bonus reward: records.json's times the Shards
+    if (EntralinkRanks_HasReward(gameData, ENTRALINK_REWARD_SHARD_BONUS)) {
+        shards *= ENTRALINK_RECORDS_SHARD_MULTIPLIER;
+    }
     // The records (paperwhite2/entralink_records.h): the rooms entered, those left behind done (their exits opened
     // only then) and the one the player is in if it is, or is the final room beaten; and the run's own, from its state
     // and its team before they go
@@ -1599,6 +1624,7 @@ static u16 EntralinkRun_FinishBattle(GameSystem *gsys, const EntralinkRoom *room
     EntralinkRunState *state = EntralinkRun_GetState();
     EntralinkProgress *progress = EntralinkRun_GetProgress(gameData);
     u32 result = GameData_GetLastBtlResult(gameData);
+    u32 dust;
     u32 i;
 
     if (result != BTL_RESULT_VICTORY && result != BTL_RESULT_CAPTURE) {
@@ -1615,7 +1641,12 @@ static u16 EntralinkRun_FinishBattle(GameSystem *gsys, const EntralinkRoom *room
     if (room->role == ENTRALINK_ROLE_BOSS || room->role == ENTRALINK_ROLE_FINAL) {
         EntralinkRecords_BeatBoss(gameData, room->recordId, state->battleTurns);
     }
-    state->dustGained = EntralinkRun_AddDust(state, EntralinkRun_GetBattleDust(state, room));
+    // (the dust_bonus reward: records.json's percent more)
+    dust = EntralinkRun_GetBattleDust(state, room);
+    if (EntralinkRanks_HasReward(gameData, ENTRALINK_REWARD_DUST_BONUS)) {
+        dust += dust * ENTRALINK_RECORDS_DUST_BONUS / 100;
+    }
+    state->dustGained = EntralinkRun_AddDust(state, dust);
     EntralinkRun_HealAfterBattle(gameData);
     for (i = 0; i < ENTRALINK_RUN_ENEMIES_MAX; i++) {
         state->catchIds[i] = ENTRALINK_CATCH_NONE;
@@ -1988,6 +2019,50 @@ static void EntralinkRun_BuffAction(FieldScriptEnv *env, const EntralinkRoom *ro
     }
 }
 
+// A room of rooms/: not a template, nor a random room's row, with a record id
+static BOOL EntralinkRun_IsRoomOfRooms(const EntralinkRoom *room) {
+    return !room->isTemplate && !room->random && room->recordId != ENTRALINK_RECORDS_ROOM_NONE;
+}
+
+BOOL EntralinkRun_IsAllCaught(EntralinkProgress *progress) {
+    const EntralinkRoom *room;
+    const EntralinkBattle *battle;
+    const EntralinkEnemy *enemy;
+    u32 i;
+    u32 j;
+    u32 k;
+
+    for (i = 0; i < NELEMS(sRooms); i++) {
+        room = &sRooms[i];
+        if (!EntralinkRun_IsRoomOfRooms(room)) {
+            continue;
+        }
+        for (j = 0; j < room->battleCount; j++) {
+            battle = &sBattles[room->firstBattle + j];
+            for (k = 0; k < battle->enemyCount; k++) {
+                enemy = &sEnemies[battle->firstEnemy + k];
+                if (enemy->catchId != ENTRALINK_NONE && !EntralinkProgress_IsCaught(progress, enemy->catchId)) {
+                    return FALSE;
+                }
+            }
+        }
+    }
+    return TRUE;
+}
+
+BOOL EntralinkRun_IsEveryRoomFound(EntralinkProgress *progress) {
+    u32 id;
+    u32 i;
+
+    for (i = 0; i < NELEMS(sRooms); i++) {
+        id = sRooms[i].recordId;
+        if (EntralinkRun_IsRoomOfRooms(&sRooms[i]) && !(progress->records.roomsDiscovered[id / 8] & (1 << (id % 8)))) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
 BOOL Scrcmd_PaperWhite2_EntralinkRun(VM *vm, FieldScriptEnv *env) {
     u16 action = ScriptReadAny(vm, env);
     u16 arg = ScriptReadAny(vm, env);
@@ -2151,6 +2226,12 @@ BOOL Scrcmd_PaperWhite2_EntralinkRun(VM *vm, FieldScriptEnv *env) {
         // The hub shop and Dream Shards
         EntralinkHubShop_Action(env, action, arg, arg2, result);
         return FALSE;
+    case ENTRALINK_RUN_ACTION_RANKS:
+    case ENTRALINK_RUN_ACTION_HUB_FOG:
+    case ENTRALINK_RUN_ACTION_FORM:
+    case ENTRALINK_RUN_ACTION_SKIP_ROUND:
+        // The Entree's ranks' rewards
+        return EntralinkRanks_Action(env, action, arg, arg2, result);
     }
     return FALSE;
 }

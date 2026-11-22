@@ -1292,6 +1292,9 @@ which a rest stop's swap NPC brings into the run's team for Dream Dust.
   - Text: 23 lines at the end of `res/text/script/entralink.txt` (`Entralink_Text_Reserve*`), two in `box2_bmp.txt`,
     one in `btl_pokeparam_box_main_save_init.txt`; placeholders for the user to edit.
 
+- **Since the Entree's ranks (2026-11-21):** the hub's NPC appears only from the Black Tree's rank 1 (`records.json`'s
+  `rewards`, `reserve_box`; prototype doc, "The ranks' rewards"); below it the hub's init script takes it away.
+
 ### 14.2 The swap NPC
 
 - **NPC type `swap`** (`ENTRALINK_NPC_SWAP`, 10; the scripts' ground and done results moved to 100 and 101), a choice
@@ -1849,6 +1852,10 @@ The DS main arena: **19.8 KB left** (19.5 KB before). No heap or VRAM.
 - Ids kept for every survivor; a run saved mid-way on the old catalogue reads its cards by the old numbers.
 
 ## 19. The hub shop and Dream Shards (2026-11-21)
+
+Since the Entree's ranks (2026-11-21) the shop NPC appears from the Black Tree's rank 2 (`records.json`'s `rewards`,
+`hub_shop`), a run's end gives twice its Shards from rank 5 (`shard_bonus`), and the White Tree's rank 3 adds an item
+shop that spends Shards on items for the real bag (prototype doc, "The ranks' rewards").
 
 Decided with the user on 2026-11-21: a permanent currency that every run's end gives, and a shop in the hub that sells
 blue and purple picks for it, held from every run's start. Code: `include/paperwhite2/entralink_hub_shop.h`,

@@ -39,4 +39,9 @@ ScrcmdShop_Text_DustBalance = {0205:0} Dust
 ScrcmdShop_Text_DustAmount = {0205:0} Dust
 ScrcmdShop_Text_DontHaveEnoughDust = You don't have enough Dream Dust.{be01}
 ScrcmdShop_Text_WantWillDustOk = {0109:0}, and you want {0201:1}.\nThat will be {0205:2} Dream Dust. OK?
+ScrcmdShop_Text_DreamShards = Dream Shards
+ScrcmdShop_Text_ShardBalance = {0205:0} Shards
+ScrcmdShop_Text_ShardAmount = {0205:0} Shards
+ScrcmdShop_Text_DontHaveEnoughShards = You don't have enough Dream Shards.{be01}
+ScrcmdShop_Text_WantWillShardsOk = {0109:0}, and you want {0201:1}.\nThat will be {0205:2} Dream Shards. OK?
 \pad{fc}

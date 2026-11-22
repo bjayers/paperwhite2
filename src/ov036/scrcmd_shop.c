@@ -56,6 +56,8 @@
 #include "text/script/scrcmd_shop.h"
 
 #ifdef PAPERWHITE2
+#include "paperwhite2/entralink_progress.h"
+#include "paperwhite2/entralink_records_config.h"
 #include "paperwhite2/entralink_run_actions.h"
 #include "paperwhite2/entralink_run_state.h"
 #include "paperwhite2/move_tutors.h"
@@ -93,8 +95,10 @@ enum {
     SHOP_CURRENCY_BP,
     SHOP_CURRENCY_SHARDS,
 #ifdef PAPERWHITE2
-    // Paper White 2: an Entralink run's Dream Dust (paperwhite2/entralink_run_state.h)
+    // Paper White 2: an Entralink run's Dream Dust (paperwhite2/entralink_run_state.h), and the hub's item shop's
+    // Dream Shards (paperwhite2/entralink_ranks.h)
     SHOP_CURRENCY_DREAM_DUST,
+    SHOP_CURRENCY_DREAM_SHARDS,
 #endif
 };
 
@@ -231,6 +235,11 @@ typedef struct {
     GameRecords *records;
     BSubwayScoreData *bsubwayScore;
     KeyDataSave *keyData;
+#ifdef PAPERWHITE2
+    // Paper White 2: the Entralink's progress, whose Dream Shards the hub's item shop sells for (NULL in any other
+    // shop)
+    EntralinkProgress *entralinkProgress;
+#endif
     ShopItem entries[45];
     u16 entryCount;
     u8 listMode;
@@ -299,6 +308,7 @@ static void ShopUI_LoadBPShopItems(ShopUIWork *wk, u32 index);
 static void ShopUI_LoadSpecialPokeMartItems(ShopUIWork *wk, int shopId);
 #ifdef PAPERWHITE2
 static void ShopUI_LoadEntralinkRunItems(ShopUIWork *wk);
+static void ShopUI_LoadShardShopItems(ShopUIWork *wk);
 #endif
 static void ShopUI_LoadMoveTutorItems(ShopUIWork *wk, u32 tutor);
 static void ShopUI_FreeListMenu(ShopUIWork *wk);
@@ -355,11 +365,13 @@ static const ConfirmDialogSetup sConfirmDialogSetup = { 1, 24, 13, 11, 25 };
 
 // The price's format for money and for Battle Points
 #ifdef PAPERWHITE2
-// Paper White 2: and for an Entralink run's Dream Dust (the shards' is never shown: a tutor's moves take no amount)
+// Paper White 2: and for an Entralink run's Dream Dust and the hub's Dream Shards (the shards' is never shown: a
+// tutor's moves take no amount)
 static const u32 SHOP_UI_CURRENCY_MSGIDS[] = {
     [SHOP_CURRENCY_MONEY] = ScrcmdShop_Text_Empty_10,
     [SHOP_CURRENCY_BP] = ScrcmdShop_Text_Bp_3,
     [SHOP_CURRENCY_DREAM_DUST] = ScrcmdShop_Text_DustAmount,
+    [SHOP_CURRENCY_DREAM_SHARDS] = ScrcmdShop_Text_ShardAmount,
 };
 #else
 static const u32 SHOP_UI_CURRENCY_MSGIDS[] = { ScrcmdShop_Text_Empty_10, ScrcmdShop_Text_Bp_3 };
@@ -681,6 +693,11 @@ BOOL Scrcmd_Shop_CallFriendlyShopBuy(VM *vm, FieldScriptEnv *env) {
         // Paper White 2: an Entralink run's shop
         shop->shopId = shopId;
         break;
+    case ENTRALINK_SHARD_SHOP_ID:
+        // Paper White 2: the hub's item shop
+        shop->work.entralinkProgress = EntralinkProgress_Get(GameData_GetSaveControl(gameData));
+        shop->shopId = shopId;
+        break;
 #endif
     default:
         // A Poké Mart's list
@@ -711,7 +728,7 @@ BOOL Scrcmd_Shop_CallFriendlyShopBuy(VM *vm, FieldScriptEnv *env) {
     // it)
     if (shopId != SHOP_ID_BP_ITEMS && shopId != SHOP_ID_BP_TMS && shopId != SHOP_ID_MOVE_TUTOR_DRIFTVEIL &&
         shopId != SHOP_ID_MOVE_TUTOR_LENTIMAS && shopId != SHOP_ID_MOVE_TUTOR_HUMILAU &&
-        shopId != SHOP_ID_MOVE_TUTOR_NACRENE && shopId != ENTRALINK_RUN_SHOP_ID) {
+        shopId != SHOP_ID_MOVE_TUTOR_NACRENE && shopId != ENTRALINK_RUN_SHOP_ID && shopId != ENTRALINK_SHARD_SHOP_ID) {
 #else
     if (shopId != SHOP_ID_BP_ITEMS && shopId != SHOP_ID_BP_TMS && shopId != SHOP_ID_MOVE_TUTOR_DRIFTVEIL &&
         shopId != SHOP_ID_MOVE_TUTOR_LENTIMAS && shopId != SHOP_ID_MOVE_TUTOR_HUMILAU &&
@@ -889,6 +906,10 @@ static void ShopUI_Init(GameSystem *gsys, ShopUIWork *wk, u32 shopId, u32 subId)
         wk->currency = SHOP_CURRENCY_DREAM_DUST;
         ShopUI_LoadEntralinkRunItems(wk);
         break;
+    case ENTRALINK_SHARD_SHOP_ID:
+        wk->currency = SHOP_CURRENCY_DREAM_SHARDS;
+        ShopUI_LoadShardShopItems(wk);
+        break;
 #endif
     default:
         ShopUI_LoadPokeMartItems(wk, shopId, subId, 0);
@@ -910,7 +931,7 @@ static void ShopUI_LoadCurrencyDispMsg(ShopUIWork *wk, u8 currency) {
     // Paper White 2: an Entralink run's prices are in Dream Dust
     if (currency == SHOP_CURRENCY_DREAM_DUST) {
         wk->priceFormat = GFL_MsgDataLoadStrbufNew(wk->msgData, ScrcmdShop_Text_DustPrice);
-    } else if (currency == SHOP_CURRENCY_SHARDS) {
+    } else if (currency == SHOP_CURRENCY_SHARDS || currency == SHOP_CURRENCY_DREAM_SHARDS) {
 #else
     if (currency == SHOP_CURRENCY_SHARDS) {
 #endif
@@ -928,6 +949,10 @@ static u32 ShopUI_GetBalance(ShopUIWork *wk) {
     // Paper White 2: the Entralink run's Dream Dust
     if (wk->currency == SHOP_CURRENCY_DREAM_DUST) {
         return EntralinkRun_GetState()->dust;
+    }
+    // and the hub's Dream Shards
+    if (wk->currency == SHOP_CURRENCY_DREAM_SHARDS) {
+        return wk->entralinkProgress->shards;
     }
 #endif
     if (wk->currency == SHOP_CURRENCY_SHARDS) {
@@ -957,6 +982,8 @@ static void ShopUI_TryBuyItem(ShopUIWork *wk) {
         } else if (wk->currency == SHOP_CURRENCY_DREAM_DUST) {
             // Paper White 2: not enough Dream Dust
             ShopUI_SetStatusDialogue(wk, ScrcmdShop_Text_DontHaveEnoughDust, wk->item, FALSE);
+        } else if (wk->currency == SHOP_CURRENCY_DREAM_SHARDS) {
+            ShopUI_SetStatusDialogue(wk, ScrcmdShop_Text_DontHaveEnoughShards, wk->item, FALSE);
 #endif
         } else {
             ShopUI_SetStatusDialogue(wk, ScrcmdShop_Text_DontHaveEnoughBp, wk->item, FALSE);
@@ -1055,6 +1082,11 @@ static void ShopUI_SpendMoney(ShopUIWork *wk, u32 amount) {
     // Paper White 2: an Entralink run's Dream Dust, which the records don't count (the run touches nothing outside it)
     if (wk->currency == SHOP_CURRENCY_DREAM_DUST) {
         EntralinkRun_GetState()->dust -= amount;
+        return;
+    }
+    // and the hub's Dream Shards, spent for good (the buff shop's reset gives back only its own)
+    if (wk->currency == SHOP_CURRENCY_DREAM_SHARDS) {
+        wk->entralinkProgress->shards -= amount;
         return;
     }
 #endif
@@ -1297,6 +1329,23 @@ static void ShopUI_LoadEntralinkRunItems(ShopUIWork *wk) {
     ListMenuCore_AppendMsgOption(&wk->options[i], wk->msgData, ScrcmdShop_Text_Cancel, BMPMENULIST_CANCEL, wk->heapId);
     GFL_MsgDataFree(msgData);
 }
+
+// Paper White 2: the hub's item shop's goods (records.json's shard_shop), at their prices in Dream Shards
+static void ShopUI_LoadShardShopItems(ShopUIWork *wk) {
+    static const ShopItem ITEMS[ENTRALINK_RECORDS_SHOP_ITEM_COUNT] = ENTRALINK_RECORDS_SHOP_ITEMS;
+    MsgData *msgData = GFL_MsgSysLoadData(FALSE, ARCID_SYSTEM_MESSAGE, TEXT_BANK_ITEM_NAMES, wk->heapId);
+    int i;
+
+    wk->options = ListMenuCore_CreateOptionList(NELEMS(ITEMS) + 1, wk->heapId);
+    for (i = 0; i < NELEMS(ITEMS); i++) {
+        ShopUI_AppendOption(wk, i, wk->listMode, ITEMS[i].item, msgData);
+        wk->entries[i].item = ITEMS[i].item;
+        wk->entries[i].price = ITEMS[i].price;
+    }
+    wk->entryCount = i;
+    ListMenuCore_AppendMsgOption(&wk->options[i], wk->msgData, ScrcmdShop_Text_Cancel, BMPMENULIST_CANCEL, wk->heapId);
+    GFL_MsgDataFree(msgData);
+}
 #endif
 
 static void ShopUI_LoadSpecialPokeMartItems(ShopUIWork *wk, int shopId) {
@@ -1518,8 +1567,14 @@ static void ShopUI_SetupBmpWin(ShopUIWork *wk) {
     }
 #ifdef PAPERWHITE2
     // Paper White 2: an Entralink run's shop's balance is titled Dream Dust
-    strbuf = GFL_MsgDataLoadStrbufNew(wk->msgData, wk->currency == SHOP_CURRENCY_DREAM_DUST ? ScrcmdShop_Text_DreamDust
-                                                                                            : ScrcmdShop_Text_Money);
+    // and the hub's item shop's Dream Shards
+    if (wk->currency == SHOP_CURRENCY_DREAM_DUST) {
+        strbuf = GFL_MsgDataLoadStrbufNew(wk->msgData, ScrcmdShop_Text_DreamDust);
+    } else if (wk->currency == SHOP_CURRENCY_DREAM_SHARDS) {
+        strbuf = GFL_MsgDataLoadStrbufNew(wk->msgData, ScrcmdShop_Text_DreamShards);
+    } else {
+        strbuf = GFL_MsgDataLoadStrbufNew(wk->msgData, ScrcmdShop_Text_Money);
+    }
 #else
     strbuf = GFL_MsgDataLoadStrbufNew(wk->msgData, ScrcmdShop_Text_Money);
 #endif
@@ -1566,6 +1621,11 @@ static void ShopUI_UpdateMoneyDisp(ShopUIWork *wk) {
         format = GFL_MsgDataLoadStrbufNew(wk->msgData, ScrcmdShop_Text_DustBalance);
         strbuf = GFL_StrBufCreate(16, wk->heapId);
         WordSetNumber(wk->wordSet, 0, EntralinkRun_GetState()->dust, 5, NUM_PAD_SPACE, 1);
+    } else if (wk->currency == SHOP_CURRENCY_DREAM_SHARDS) {
+        // and the hub's Dream Shards
+        format = GFL_MsgDataLoadStrbufNew(wk->msgData, ScrcmdShop_Text_ShardBalance);
+        strbuf = GFL_StrBufCreate(16, wk->heapId);
+        WordSetNumber(wk->wordSet, 0, wk->entralinkProgress->shards, 5, NUM_PAD_SPACE, 1);
 #endif
     } else {
         format = GFL_MsgDataLoadStrbufNew(wk->msgData, ScrcmdShop_Text_Empty_9);
@@ -1797,6 +1857,8 @@ static void ShopUI_SetBuyConfirmMessage(ShopUIWork *wk, u8 listMode) {
         } else if (wk->currency == SHOP_CURRENCY_DREAM_DUST) {
             // Paper White 2: the price in Dream Dust
             ShopUI_PrintItemBuyMessage(wk, ScrcmdShop_Text_WantWillDustOk, wk->item, wk->price, wk->amount);
+        } else if (wk->currency == SHOP_CURRENCY_DREAM_SHARDS) {
+            ShopUI_PrintItemBuyMessage(wk, ScrcmdShop_Text_WantWillShardsOk, wk->item, wk->price, wk->amount);
 #endif
         } else {
             ShopUI_PrintItemBuyMessage(wk, ScrcmdShop_Text_WantWillOk, wk->item, wk->price, wk->amount);

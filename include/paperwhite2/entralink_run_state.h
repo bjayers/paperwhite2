@@ -140,6 +140,10 @@ typedef struct {
     u16 battleTurns;
     EntralinkRecordHit bestHit;
     u8 won;
+    // The skip_round reward (paperwhite2/entralink_ranks.h): the places a run that skipped round 1 started past (its
+    // order holds no room of rooms/ for them, and they give no Dream Shards), and the head start's picks left
+    u8 placesSkipped;
+    u8 headStartPicks;
 } EntralinkRunState;
 
 // The run's state, which overlay 12's run code keeps

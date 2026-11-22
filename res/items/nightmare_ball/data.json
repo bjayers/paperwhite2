@@ -2,7 +2,7 @@
     "$schema": "../item.schema.json",
     "name": "Nightmare Ball",
     "name_plural": "Nightmare Balls",
-    "description": "A Ball born of the Entralink's nightmare.\nIt catches a nightmare's Pokémon without\nfail, and works nowhere else.",
+    "description": "A Ball born of the Entralink's nightmare.\nIt never fails on a nightmare's Pokémon,\nand works as a Poké Ball elsewhere.",
     "price": 0,
     "hold_effect": "HOLD_EFFECT_NONE",
     "hold_param": 0,

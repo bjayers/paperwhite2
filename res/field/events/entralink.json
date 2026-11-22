@@ -69,6 +69,82 @@
                 "z": 42,
                 "y": 131072
             }
+        },
+        {
+            "id": 7,
+            "model": "OBJ_CODE_VETERAN_M",
+            "movement": "MOVE_CODE_NONE",
+            "type": "ACTOR_EVENT_TYPE_NONE",
+            "flag": 0,
+            "script": 17,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 26,
+                "z": 43,
+                "y": 131072
+            }
+        },
+        {
+            "id": 8,
+            "model": "OBJ_CODE_PSYCHIC_F",
+            "movement": "MOVE_CODE_NONE",
+            "type": "ACTOR_EVENT_TYPE_NONE",
+            "flag": 0,
+            "script": 18,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 36,
+                "z": 43,
+                "y": 131072
+            }
+        },
+        {
+            "id": 9,
+            "model": "OBJ_CODE_CLERK_M_67",
+            "movement": "MOVE_CODE_NONE",
+            "type": "ACTOR_EVENT_TYPE_NONE",
+            "flag": 0,
+            "script": 19,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 26,
+                "z": 40,
+                "y": 131072
+            }
+        },
+        {
+            "id": 10,
+            "model": "OBJ_CODE_SCIENTIST_M_52",
+            "movement": "MOVE_CODE_NONE",
+            "type": "ACTOR_EVENT_TYPE_NONE",
+            "flag": 0,
+            "script": 20,
+            "direction": "DIR_DOWN",
+            "params": [ 0, 0, 0 ],
+            "area": {
+                "width": 0,
+                "height": 0
+            },
+            "grid": {
+                "x": 36,
+                "z": 40,
+                "y": 131072
+            }
         }
     ],
     "warps": [],

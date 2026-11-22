@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include "field/field_script.h"
+#include "paperwhite2/entralink_progress.h"
 #include "struct_decls.h"
 
 // Paper White 2: the Entralink hub's shop and Dream Shards (entralink-buffs.md, section 19). Dream Shards are the
@@ -21,6 +22,8 @@
 u32 EntralinkHubShop_GetRunShards(void);
 // Adds Dream Shards to the save's (at most ENTRALINK_SHARDS_MAX); returns what it added
 u32 EntralinkHubShop_AddShards(GameData *gameData, u32 shards);
+// The picks bought in all, a gone card's among them
+u32 EntralinkHubShop_CountBought(EntralinkProgress *progress);
 // At a run's start: the picks bought, held (the run's buffs must be empty)
 void EntralinkHubShop_HoldBought(GameData *gameData);
 // The hub shop's actions of the script command EntralinkRun

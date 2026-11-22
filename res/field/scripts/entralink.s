@@ -21,11 +21,20 @@
 #ifdef PAPERWHITE2
     ScriptEntry Script_15
     ScriptEntry Script_16
+    ScriptEntry Script_17
+    ScriptEntry Script_18
+    ScriptEntry Script_19
+    ScriptEntry Script_20
 #endif
     ScriptEntriesEnd
     WorkSetConst 0x8020, 0
 
 Script_1:
+#ifdef PAPERWHITE2
+    // Paper White 2: the hub's NPCs of the Entree's ranks' rewards that aren't unlocked yet go
+    // (paperwhite2/entralink_ranks.h)
+    EntralinkRun ENTRALINK_RUN_ACTION_RANKS, 0, 0, 0x8000
+#endif
     VMHalt
 
 Script_2:
@@ -753,6 +762,110 @@ L_HubShopResetNone:
     LastKeyWait
     SystemMsgClose
     VMJump L_HubShopEnd
+
+Script_17:
+    // Paper White 2: the hub's difficulty NPC (the difficulty reward, paperwhite2/entralink_ranks.h), a placeholder
+    // until the difficulty tiers come
+    ActorsPauseAll
+    SEPlay SEQ_SE_MESSAGE
+    ActorSetEyeToEye
+    SystemMsg Entralink_Text_DifficultyHello, 2
+    LastKeyWait
+    SystemMsgClose
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+Script_18:
+    // Paper White 2: the hub's fog NPC (the fog reward): the hub's fog, one of the forest's rounds' tints or none,
+    // saved in the progress block and shown at once
+    ActorsPauseAll
+    SEPlay SEQ_SE_MESSAGE
+    ActorSetEyeToEye
+    SystemMsg Entralink_Text_FogHello, 2
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8010
+    ListMenuAdd Entralink_Text_FogPink, 65535, ENTRALINK_HUB_FOG_PINK
+    ListMenuAdd Entralink_Text_FogPurple, 65535, ENTRALINK_HUB_FOG_PURPLE
+    ListMenuAdd Entralink_Text_FogBlack, 65535, ENTRALINK_HUB_FOG_BLACK
+    ListMenuAdd Entralink_Text_FogNone, 65535, ENTRALINK_HUB_FOG_NONE
+    ListMenuAdd Entralink_Text_FogCancel, 65535, ENTRALINK_HUB_FOG_COUNT
+    ListMenuShow
+    SystemMsgClose
+    WorkCmpConst 0x8010, ENTRALINK_HUB_FOG_COUNT
+    VMJumpIf CMP_GE, L_HubFogEnd
+    EntralinkRun ENTRALINK_RUN_ACTION_HUB_FOG, 1, 0x8010, 0x8011
+    FieldSetWeather 0xffff, 0
+    SystemMsg Entralink_Text_FogDone, 2
+    LastKeyWait
+    SystemMsgClose
+
+L_HubFogEnd:
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+Script_19:
+    // Paper White 2: the hub's item shop (the shard_shop reward): the Poké Mart's screen with records.json's
+    // shard_shop goods, for Dream Shards into the real bag
+    ActorsPauseAll
+    SEPlay SEQ_SE_MESSAGE
+    ActorSetEyeToEye
+    SystemMsg Entralink_Text_ShardShopHello, 2
+    LastKeyWait
+    SystemMsgClose
+    CallFriendlyShopBuy ENTRALINK_SHARD_SHOP_ID, 0x8000
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
+
+Script_20:
+    // Paper White 2: the hub's form NPC (the form_change reward): a party Pokémon of a species with a special form
+    // (records.json's special_forms) takes that form, or goes back to its usual one
+    ActorsPauseAll
+    SEPlay SEQ_SE_MESSAGE
+    ActorSetEyeToEye
+    SystemMsg Entralink_Text_FormHello, 2
+    YesNoWin 0x8010
+    SystemMsgClose
+    WorkCmpConst 0x8010, 0
+    VMJumpIf CMP_NE, L_HubFormEnd
+    CallPokeSelect 0, 0x8011, 0x8012, 0
+    WorkCmpConst 0x8011, 0
+    VMJumpIf CMP_EQ, L_HubFormEnd
+    EntralinkRun ENTRALINK_RUN_ACTION_FORM, 0, 0x8012, 0x8013
+    WordSetPartyPokeName 0, 0x8012
+    WorkCmpConst 0x8013, ENTRALINK_FORM_TO_SPECIAL
+    VMJumpIf CMP_EQ, L_HubFormToSpecial
+    WorkCmpConst 0x8013, ENTRALINK_FORM_TO_USUAL
+    VMJumpIf CMP_EQ, L_HubFormToUsual
+    SystemMsg Entralink_Text_FormNone, 2
+    VMJump L_HubFormSaid
+
+L_HubFormToSpecial:
+    SystemMsg Entralink_Text_FormAskSpecial, 2
+    VMJump L_HubFormAsk
+
+L_HubFormToUsual:
+    SystemMsg Entralink_Text_FormAskUsual, 2
+
+L_HubFormAsk:
+    YesNoWin 0x8010
+    SystemMsgClose
+    WorkCmpConst 0x8010, 0
+    VMJumpIf CMP_NE, L_HubFormEnd
+    EntralinkRun ENTRALINK_RUN_ACTION_FORM, 1, 0x8012, 0x8013
+    MEPlay SEQ_ME_ITEM
+    SystemMsg Entralink_Text_FormChanged, 2
+    MEWait
+
+L_HubFormSaid:
+    LastKeyWait
+    SystemMsgClose
+
+L_HubFormEnd:
+    FinishAllEvents
+    ActorsUnpauseAll
+    VMHalt
 #endif
 
 Script_14:
