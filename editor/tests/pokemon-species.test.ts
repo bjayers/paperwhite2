@@ -119,18 +119,20 @@ test("followers are copies of the template's, with their codes after the last, a
   const before = state();
   const last = followerCodes().at(-1)!;
   const testone = run("add", "Testone", "--from", "SPECIES_BUDEW", "--number", "900");
-  assert.equal(testone.followers, 4);
-  assert.match(testone.message, /4 followers copied from Budew's/);
+  assert.equal(testone.followers, 2);
+  assert.match(testone.message, /2 followers copied from Budew's/);
   const codes = followerCodes();
-  assert.deepEqual(codes.slice(codes.indexOf(last) + 1), ["OBJ_CODE_FOLLOWER_TESTONE", "OBJ_CODE_FOLLOWER_TESTONE_SHINY",
-    "OBJ_CODE_FOLLOWER_TESTONE_FEMALE", "OBJ_CODE_FOLLOWER_TESTONE_FEMALE_SHINY"]);
-  for (const suffix of ["", "_shiny", "_female", "_female_shiny"]) {
+  assert.deepEqual(codes.slice(codes.indexOf(last) + 1), ["OBJ_CODE_FOLLOWER_TESTONE", "OBJ_CODE_FOLLOWER_TESTONE_FEMALE"]);
+  for (const suffix of ["", "_female"]) {
     const copy = JSON.parse(readFileSync(join(scratch, FOLLOWERS, `testone${suffix}`, "data.json"), "utf8"));
     const original = JSON.parse(readFileSync(join(ROOT, FOLLOWERS, `budew${suffix}`, "data.json"), "utf8"));
     assert.equal(copy.follower.species, "SPECIES_TESTONE");
-    assert.deepEqual({ ...copy, follower: { ...copy.follower, species: original.follower.species } }, original);
+    // Budew's sheet plays the new species' battle palette (a copy of Budew's) index for index until it has its own
+    assert.deepEqual(copy.palette, { pokemon: "testone", map: [...Array(16).keys()] });
+    const { palette: _, ...rest } = copy;
+    assert.deepEqual({ ...rest, follower: { ...copy.follower, species: original.follower.species } }, original);
   }
-  assert.deepEqual(info().species.find((s) => s.species === "SPECIES_TESTONE")!.followers, ["testone", "testone_shiny", "testone_female", "testone_female_shiny"]);
+  assert.deepEqual(info().species.find((s) => s.species === "SPECIES_TESTONE")!.followers, ["testone", "testone_female"]);
 
   // a sprite named by another copied follower's code names that one's copy (Pignite's female shows its own sprite)
   run("add", "Testpig", "--from", "SPECIES_PIGNITE");
@@ -145,9 +147,8 @@ test("followers are copies of the template's, with their codes after the last, a
   assert.equal(run("add", "Blankmon", "--blank").followers, 0);
   assert.ok(!readdirSync(join(scratch, FOLLOWERS)).some((name) => name.startsWith("nofollow") || name.startsWith("blankmon")));
   assert.match(refusal("follower", "SPECIES_BLANKMON", "--none"), /has no follower/);
-  assert.equal(run("follower", "SPECIES_BLANKMON", "--from", "SPECIES_BUDEW").followers, 4);
-  assert.deepEqual(followerCodes().slice(-4), ["OBJ_CODE_FOLLOWER_BLANKMON", "OBJ_CODE_FOLLOWER_BLANKMON_SHINY",
-    "OBJ_CODE_FOLLOWER_BLANKMON_FEMALE", "OBJ_CODE_FOLLOWER_BLANKMON_FEMALE_SHINY"]);
+  assert.equal(run("follower", "SPECIES_BLANKMON", "--from", "SPECIES_BUDEW").followers, 2);
+  assert.deepEqual(followerCodes().slice(-2), ["OBJ_CODE_FOLLOWER_BLANKMON", "OBJ_CODE_FOLLOWER_BLANKMON_FEMALE"]);
   run("follower", "SPECIES_BLANKMON", "--none");
   assert.ok(!followerCodes().some((code) => code.includes("BLANKMON")));
   assert.match(refusal("follower", "SPECIES_BULBASAUR", "--none"), /original game's/);
@@ -155,14 +156,14 @@ test("followers are copies of the template's, with their codes after the last, a
   // a species' own dialogue file goes with it; another file naming its followers' codes stops its removal
   writeFileSync(join(scratch, "res/paperwhite2/following/dialogue/species/testpig.json"), "{\n}\n");
   const event = join(scratch, "res/paperwhite2/pokemon_center/uses_testpig.json");
-  writeFileSync(event, '{ "sprite": "OBJ_CODE_FOLLOWER_TESTPIG_SHINY" }\n');
+  writeFileSync(event, '{ "sprite": "OBJ_CODE_FOLLOWER_TESTPIG_FEMALE" }\n');
   run("remove", "SPECIES_BLANKMON");
   run("remove", "SPECIES_NOFOLLOW");
   assert.match(refusal("remove", "SPECIES_TESTPIG"), /still named in res\/paperwhite2\/pokemon_center\/uses_testpig\.json/);
   rmSync(event);
   const removed = run("remove", "SPECIES_TESTPIG");
   assert.ok(removed.removed.includes("res/paperwhite2/following/dialogue/species/testpig.json"));
-  assert.ok(removed.removed.includes(`${FOLLOWERS}/testpig_female_shiny`));
+  assert.ok(removed.removed.includes(`${FOLLOWERS}/testpig_female`));
   run("remove", "SPECIES_TESTONE");
   assert.deepEqual(state(), before);
 });

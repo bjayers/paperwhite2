@@ -69,7 +69,7 @@ test("a new walking sprite for Flapple makes the code, the sheet and the rows' p
   assert.equal(check.ok, true, check.message);
   const item = check.walking![0];
   assert.deepEqual([item.new, item.code, item.layout, item.currentCode], [true, "OBJ_CODE_POKEMON_FLAPPLE", "asymmetric", "OBJ_CODE_POKEMON_BUDEW"]);
-  assert.deepEqual(item.rows, ["flapple", "flapple_female", "flapple_female_shiny", "flapple_shiny"]);
+  assert.deepEqual(item.rows, ["flapple", "flapple_female"]);
   assert.ok(check.changed!.includes("generated/obj_codes.txt"));
   assert.ok(check.changed!.includes("res/field/actors/pokemon/flapple/sprite.png"));
   assert.ok(item.strips!.down.length > 100);
@@ -89,7 +89,7 @@ open(sys.argv[1], "wb").write(write_indexed_png(200, 32, bytes(200 * 32), [(0, 0
     assert.equal(check.ok, false);
     assert.match(check.errors[0], /200 by 32/);
     assert.deepEqual(check.changed, []);
-    const shared = walking("SPECIES_FLAPPLE", "--sheet", "OBJ_CODE_POKEMON_BUDEW", join(ROOT, "res/field/actors/pokemon/budew/sprite.pal"));
+    const shared = walking("SPECIES_FLAPPLE", "--sheet", "OBJ_CODE_POKEMON_BUDEW", join(ROOT, "res/pokemon/budew/normal.pal"));
     assert.equal(shared.ok, true, shared.message);
     assert.deepEqual(shared.changed, []);
   } finally {

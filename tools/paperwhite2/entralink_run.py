@@ -123,8 +123,8 @@ MARKER_SIZE = 32
 NPC_MARKER_SIZE = 16
 MARKER_COLORS = 16
 GX_TEXFMT_PLTT16 = 3
-# The model table's first member after the Following Pokémon's members 0 to 23 (field_actor_data.py)
-MARKER_FIRST_MEMBER = 24
+# The model table's first member after the Following Pokémon's members 0 to 24 (field_actor_data.py)
+MARKER_FIRST_MEMBER = 25
 # The doors in front of which the markers lie, in ENTRALINK_DOOR_* order, and their spots' defaults (each the top-left
 # tile of the 2 by 2 marker on the clearings' 32 by 32 grid)
 DOORS = ["north", "east", "west"]

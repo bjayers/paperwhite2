@@ -1,12 +1,12 @@
-// A field actor's sprite as the map and the model picker show it: one frame of its sheet (sprite.png in its sprite.pal,
-// tools/data/field_actor_data.py), the frame it shows facing a direction. A sheet's frames are square, side by side,
-// in groups by direction: up, down, then left, the right frames being the left ones mirrored (several sheets repeat
+// A field actor's sprite as the map and the model picker show it: one frame of its sheet (sprite.png in its colours,
+// sheetColors.ts, as tools/data/field_actor_data.py writes them), the frame it shows facing a direction. A sheet's
+// frames are square, side by side, in groups by direction: up, down, then left, the right frames being the left ones mirrored (several sheets repeat
 // the left frames there, as the game flips them). People's sheets have three frames a direction (twelve and more in
 // all), the walking Pokémon's and most others two (six or eight); a sheet of fewer frames, a tree or a prop, faces one
 // way.
 
 import { api } from "../../api.ts";
-import { parsePal } from "../palettes/pal.ts";
+import { paletteOf, sheetColors } from "../palettes/sheetColors.ts";
 import { readIndexedPng } from "../palettes/png.ts";
 import { actorFolder } from "./entities.ts";
 
@@ -29,8 +29,9 @@ function sheetOf(model: string): Promise<Sheet | null> {
         const data = JSON.parse((await api.file(`${folder}/data.json`)).text) as { type?: string; sprite?: string };
         if (data.type !== "sprite") return null;
         const from = data.sprite ? actorFolder(data.sprite) : folder;
-        const [image, pal] = await Promise.all([api.asset(`${from}/sprite.png`).then(readIndexedPng), api.file(`${from}/sprite.pal`)]);
-        return { pixels: image.pixels, width: image.width, height: image.height, colors: parsePal(pal.text) };
+        const [image, colors] = await Promise.all([api.asset(`${from}/sprite.png`).then(readIndexedPng),
+          sheetColors(from, data.sprite ? paletteOf(data) : null)]);
+        return { pixels: image.pixels, width: image.width, height: image.height, colors };
       } catch {
         return null;
       }

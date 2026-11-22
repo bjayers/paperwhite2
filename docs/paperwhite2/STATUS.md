@@ -2,6 +2,20 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-22: Overworld sheets on the battle palettes (ROM session, on a branch)
+
+- **Every overworld Pokémon sheet** (174 follower sheets, 644 walking sprites) re-indexed in place onto its battle
+  palette with method F (`tools/paperwhite2/palette_remap.py`, ported from the experiment and checked identical); the
+  build writes its colours from the battle `normal.pal`; a shiny follower or wanderer gets `shiny.pal` through the
+  palette slots (`a/0/4/7` member 24), with the variation on top. NPCs and ambients show the normal colours.
+- **Data:** the 1302 shiny follower codes removed (174 `_shiny` sheets; `a/0/4/8` -872 KB, `res/field/actors`
+  4.06 to 2.72 MB); Arceus rows 9-16 point at the right sheets, form 17 coloured by its own palette; opt-outs:
+  Castform, Cherrim, Hydrapple, the ??? Arceus sheet; Appletun and Flapple mapped onto Budew's sheet. Usage listing:
+  `docs/paperwhite2/design/overworld-sheet-usage.md`. New art through the walking sprite import is re-indexed with F.
+- **Tested:** build, DSi check, Python and editor tests; emulator: followers normal and shiny (Dipplin, Krokorok,
+  Reshiram, Arceus forms, Genesect, Appletun), shiny wanderers, NPC and Pidove ambient sheets with the battle colours,
+  Castform unchanged. Arena -288 bytes. Details and the sheets worth a look: follower-palette-remap.md section 9.
+
 ## 2026-11-22: Entralink tiers follow-up: the hall's run and the chart buffs under inverse (ROM session, on a branch)
 
 - **Hall of Fame:** one entry, the best win at the highest tier won (a higher tier's win replaces it, one at its tier

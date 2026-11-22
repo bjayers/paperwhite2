@@ -11,7 +11,7 @@ import { SearchSelect, type Option } from "../../shell/SearchSelect.tsx";
 import { navigate } from "../../navigation.ts";
 import { useHeld } from "../followers/DocForm.tsx";
 import { FIELD_ACTOR_SCHEMA, FOLLOWERS, variantLabel, type Variant } from "../followers/data.ts";
-import { parsePal } from "../palettes/pal.ts";
+import { paletteOf, sheetColors } from "../palettes/sheetColors.ts";
 import { readIndexedPng, type IndexedImage } from "../palettes/png.ts";
 import { Row } from "./FormPage.tsx";
 import { WalkingSpriteImport } from "./WalkingSpriteImport.tsx";
@@ -33,13 +33,14 @@ let rowsPromise: Promise<Variant[]> | null = null;
 
 /** Every follower row, read once (again after a follower's file changes on disk). */
 function allRows(): Promise<Variant[]> {
-  rowsPromise ??= api.data(FIELD_ACTOR_SCHEMA, ["follower", "sprite"]).then((files) => files.flatMap(({ path, data }) => {
+  rowsPromise ??= api.data(FIELD_ACTOR_SCHEMA, ["follower", "sprite", "palette"]).then((files) => files.flatMap(({ path, data }) => {
     const follower = data.follower as Record<string, unknown> | undefined;
     if (!follower || !path.startsWith(`${FOLLOWERS}/`)) return [];
     return [{
       name: path.slice(FOLLOWERS.length + 1, path.lastIndexOf("/")), path, species: String(follower.species),
       form: Number(follower.form ?? 0), sex: String(follower.sex ?? ""), shiny: follower.shiny === true,
       placeholder: follower.placeholder === true, sprite: typeof data.sprite === "string" ? data.sprite : null,
+      palette: paletteOf(data),
     }];
   }));
   return rowsPromise;
@@ -63,12 +64,13 @@ function allSheets(): Promise<Option[]> {
 
 const sheetCache = new Map<string, Promise<{ image: IndexedImage; colors: number[][] } | null>>();
 
-/** A code's sheet and colours (sprite.png in its sprite.pal), or null when it has none of its own. */
+/** A code's sheet and colours (sprite.png in its battle group's normal.pal or its own sprite.pal, sheetColors.ts), or
+ * null when it has none of its own. */
 function sheetOf(code: string) {
   if (!sheetCache.has(code)) {
     const folder = codeFolder(code);
-    sheetCache.set(code, Promise.all([api.asset(`${folder}/sprite.png`).then(readIndexedPng), api.file(`${folder}/sprite.pal`)])
-      .then(([image, pal]) => ({ image, colors: parsePal(pal.text) }), () => null));
+    sheetCache.set(code, Promise.all([api.asset(`${folder}/sprite.png`).then(readIndexedPng), sheetColors(folder)])
+      .then(([image, colors]) => ({ image, colors: colors as number[][] }), () => null));
   }
   return sheetCache.get(code)!;
 }
@@ -138,7 +140,7 @@ function FollowerRow({ row, sheets }: { row: Variant; sheets: Option[] }) {
   const label = `${variantLabel(row).replace(/^Form \d+(, )?/, "") || "Normal"}`;
   return (
     <Row label={label} hint={<>
-      <code>{row.name}</code>{row.placeholder ? " · placeholder (a shiny with the normal colours for now)" : ""}{dirty ? " · unsaved" : ""}
+      <code>{row.name}</code>{row.placeholder ? " · placeholder" : ""}{dirty ? " · unsaved" : ""}
       {sprite ? <> · shows <code>{sprite}</code></> : <> · its own sheet (<code>{row.name}/sprite.png</code>), which other rows can show too: pick one to share instead
         in the Follower Editor</>}
       {profile ? ` · ${profile}` : ""}

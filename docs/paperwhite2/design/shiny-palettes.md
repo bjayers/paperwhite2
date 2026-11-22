@@ -6,6 +6,13 @@ not checked. The dry-run scripts are in the ROM session's scratchpad (`.../scrat
 `dry2.py`, `icons.py`, `walk.py`, `rend2.py`, `rend3.py`, results in `dry.json`) and are the prototype of the remap
 tool below.
 
+**Followers and field actors, built differently (2026-11-22):** every overworld Pokémon sheet is re-indexed onto its
+battle palette (the `shared` mode, walking sprites included: no `mapped` mode except four rows on another species'
+sheet), its colours written from `normal.pal` at build time, and a shiny follower or wanderer gets `shiny.pal` through
+the per-actor palette slots (`a/0/4/7` member 24), not a patch on load; the 174 `_shiny` sheets and every shiny
+follower row are gone. See [follower-palette-remap.md](follower-palette-remap.md) section 9; sections 1.3, 2.3 and
+4.2 below describe the earlier plan.
+
 ## 0. What is decided, and what this design adds
 
 Decided (ROADMAP, user, 2026-10-29): the variant is `((pid >> 8) & 0xff) % N` with the shiny check unchanged; N is

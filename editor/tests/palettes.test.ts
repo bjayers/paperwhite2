@@ -12,7 +12,7 @@ const ROOT = resolve(import.meta.dirname, "../..");
 
 test("every res/ palette round-trips", () => {
   const files = globSync("res/**/*.pal", { cwd: ROOT });
-  assert.ok(files.length > 5000);
+  assert.ok(files.length > 4000);
   for (const file of files) {
     const text = readFileSync(join(ROOT, file), "utf8");
     assert.equal(writePal(parsePal(text)), text, file);

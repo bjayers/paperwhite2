@@ -33,5 +33,9 @@
         "side_gap": 0,
         "gap": 6
     },
-    "sprite": "OBJ_CODE_POKEMON_BUDEW"
+    "sprite": "OBJ_CODE_POKEMON_BUDEW",
+    "palette": {
+        "pokemon": "appletun",
+        "map": [ 0, 1, 11, 14, 10, 12, 3, 4, 8, 7, 13, 9, 5, 14, 10, 4 ]
+    }
 }

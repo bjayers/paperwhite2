@@ -17,5 +17,8 @@
         "x": 0,
         "y": 0,
         "z": 0
+    },
+    "palette": {
+        "opt_out": "Hydrapple's battle sprites and palettes are still Budew's placeholders, so it has no palette of its own to index this sheet on"
     }
 }

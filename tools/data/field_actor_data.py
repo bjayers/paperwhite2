@@ -26,8 +26,14 @@ The sprites' texture sets are written from the PNGs, as the game's are, byte for
 installer wrote them for a sprite whose "texture_set_format" is "pokeweb". When some codes have a "follower", the
 table's archive gets the follower registry and positioning table as members 1 and 2
 (tools/paperwhite2/following_data.py), and the follower's interactions, contextual dialogues and gifts, emotes,
-effects and balls from res/paperwhite2/following/ as members 3 to 23 (tools/paperwhite2/following_assets.py), and
-the Entralink run's markers from res/paperwhite2/entralink/ from member 24 (tools/paperwhite2/entralink_run.py).
+effects and balls from res/paperwhite2/following/ as members 3 to 23 (tools/paperwhite2/following_assets.py), the
+followers' palettes as member 24 (tools/paperwhite2/overworld_palettes.py), and the Entralink run's markers from
+res/paperwhite2/entralink/ from member 25 (tools/paperwhite2/entralink_run.py).
+
+Paper White 2: a Pokémon sheet (followers/, pokemon/) is on a battle group's palette: data.json's "palette" names the
+group ("pokemon"), whose res/pokemon/<group>/normal.pal the texture set is written with, and the sheet has no
+sprite.pal; or it opts out ("opt_out", with the reason) and keeps its sprite.pal
+(docs/paperwhite2/design/follower-palette-remap.md, section 9).
 """
 import struct
 import sys
@@ -40,7 +46,7 @@ from tools.data.narc import read_narc, write_narc  # noqa: E402
 from tools.data.nitro_2d import (color5, encode_characters, palette_indices, read_indexed_png,  # noqa: E402
                                  read_palette, write_indexed_png, write_palette)
 from tools.data.nitro_btx import texture_set  # noqa: E402
-from tools.paperwhite2 import entralink_run, following_assets  # noqa: E402
+from tools.paperwhite2 import entralink_run, following_assets, overworld_palettes  # noqa: E402
 from tools.paperwhite2.following_data import members  # noqa: E402
 
 TABLE = "a/0/4/7"
@@ -173,19 +179,54 @@ def check(condition: bool, path: Path, message: str):
         raise DataError(f"{label(path)}: {message}")
 
 
-def sprite(path: Path, texture_set_format: str = "game") -> bytes:
+def sprite(path: Path, texture_set_format: str = "game", data: dict | None = None) -> bytes:
     palette = path / "sprite.pal"
     image = path / "sprite.png"
-    check(palette.is_file() and image.is_file(), path, "a sprite needs sprite.png and sprite.pal")
-    colors = read_palette(palette)
+    battle = (data or {}).get("palette", {}).get("pokemon")
+    if battle is not None:
+        # Paper White 2: a Pokémon sheet on its battle group's palette (tools/paperwhite2/overworld_palettes.py) is
+        # written with the group's normal.pal
+        check(image.is_file(), path, "a sprite needs sprite.png")
+        check(not palette.is_file(), path, "has a sprite.pal although its \"palette\" puts it on "
+              f"{battle}'s battle palette: new art is re-indexed with tools/paperwhite2/overworld_palettes.py remap "
+              f"{label(path)} {battle}")
+        try:
+            colors = overworld_palettes.group_palettes(battle)[0]
+        except OSError:
+            raise DataError(f"{label(path)}: \"palette\" names {battle}, which has no normal.pal and shiny.pal in "
+                            "res/pokemon") from None
+    else:
+        check(palette.is_file() and image.is_file(), path, "a sprite needs sprite.png and sprite.pal")
+        colors = read_palette(palette)
     check(len(colors) == COLORS, palette, f"must have {COLORS} colors, not {len(colors)}")
     width, height, pixels, png_colors = read_indexed_png(image)
     check(height in FRAME_SIZES and width % height == 0, image,
           f"must be frames side by side, each square and {' or '.join(map(str, FRAME_SIZES))} pixels wide, "
           f"not {width} by {height}")
     check(width // height <= 255, image, "has more frames than a texture set can name")
-    return sprite_texture_set(width, height, palette_indices(image, pixels, png_colors, colors), colors,
-                              texture_set_format)
+    # (a sheet on a battle palette has its PNG's indices as they are: its PNG palette is the one it was re-indexed
+    # with, which a later edit of normal.pal leaves behind)
+    indices = pixels if battle is not None else palette_indices(image, pixels, png_colors, colors)
+    return sprite_texture_set(width, height, indices, colors, texture_set_format)
+
+
+def check_palette(path: Path, data: dict, own_sprite: bool):
+    """Paper White 2: a Pokémon sheet's or follower row's "palette" (tools/paperwhite2/overworld_palettes.py)."""
+    palette = data.get("palette")
+    pokemon_sheet = own_sprite and path.parent.name in ("followers", "pokemon")
+    check(palette is not None or not pokemon_sheet, path,
+          "a Pokémon sheet needs a \"palette\": re-index it onto its battle palette with "
+          f"tools/paperwhite2/overworld_palettes.py remap {label(path)} GROUP, or give it an \"opt_out\"")
+    if palette is None:
+        return
+    check(data["type"] == "sprite", path, "only a sprite has a \"palette\"")
+    check(("opt_out" in palette) != ("pokemon" in palette), path,
+          "a \"palette\" has a \"pokemon\" or an \"opt_out\", not both")
+    if "opt_out" in palette:
+        check(not own_sprite or (path / "sprite.pal").is_file(), path, "an opted-out sheet keeps its sprite.pal")
+    if "map" in palette:
+        check(not own_sprite and "follower" in data, path,
+              "only a follower row that shows another code's sheet has a \"map\"")
 
 
 def pack(root: Path, table_output: Path, graphics_output: Path):
@@ -206,6 +247,7 @@ def pack(root: Path, table_output: Path, graphics_output: Path):
         check(not (own_sprite and "sprite" in data), path, "a sprite has its own sprite.png or a \"sprite\", not both")
         check("sprite" not in data or not ({"sprite_batch", "texture_set_format"} & data.keys()), path,
               "a sprite that shows another code's sprite.png has no \"sprite_batch\" or \"texture_set_format\"")
+        check_palette(path, data, own_sprite)
         entries.append((code, number, path, data))
     models: list[bytes] = []
     model_index: dict[str, int] = {}
@@ -223,15 +265,21 @@ def pack(root: Path, table_output: Path, graphics_output: Path):
     sprite_size: dict[str, int] = {}
     for _, _, code, path, data in sorted(owners, key=lambda owner: owner[:2]):
         sprite_index[code] = len(models) + len(sprites)
-        sprites.append(sprite(path, data.get("texture_set_format", "game")))
+        sprites.append(sprite(path, data.get("texture_set_format", "game"), data))
         sprite_size[code] = read_indexed_png(path / "sprite.png")[1]
     records = []
     followers = []
+    palettes = []
+    by_code = {code: data for code, _, _, data in entries}
     for code, number, path, data in entries:
         if "follower" in data:
             owner = data.get("sprite", code)
             check(data["type"] == "sprite" and owner in sprite_index, path, "a follower is a sprite")
             followers.append((number, len(records), sprite_index[owner], sprite_size[owner], data["follower"]))
+            try:
+                palettes.append((number, overworld_palettes.row_palettes(data, by_code[owner])))
+            except (ValueError, OSError) as error:
+                raise DataError(f"{label(path)}: {error}") from None
         if data["type"] == "sprite":
             owner = data.get("sprite", code)
             check(owner in sprite_index, path,
@@ -263,6 +311,9 @@ def pack(root: Path, table_output: Path, graphics_output: Path):
         except ValueError as error:
             raise DataError(f"{label(root)}: {error}") from error
         table += following_assets.members()
+        # Paper White 2: the followers' palettes, each row's normal and shiny colours from its battle group
+        # (tools/paperwhite2/overworld_palettes.py, paperwhite2_actor_palettes.c)
+        table.append(overworld_palettes.palette_member(palettes, followers[0][0]))
         # Paper White 2: the Entralink run's ground and NPC markers (tools/paperwhite2/entralink_run.py), whose
         # members' numbers its header gives the game
         if len(table) != entralink_run.MARKER_FIRST_MEMBER:

@@ -49,7 +49,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from tools.data.nitro_2d import (color5, palette_indices, read_indexed_png, read_palette, unfilter_png,  # noqa: E402
                                  write_indexed_png, write_palette, write_rgba_png)
-from tools.paperwhite2 import mcss, mcss_rig, pokemon_form  # noqa: E402
+from tools.paperwhite2 import mcss, mcss_rig, overworld_palettes, palette_remap, pokemon_form  # noqa: E402
 
 POKEMON = ROOT / "res" / "pokemon"
 SHEETS = ("front", "back", "front_female", "back_female")
@@ -86,7 +86,7 @@ preview/*.png             the assembled sprite (first frame), normal and shiny, 
                           the follower sheets 3x: not imported
 icon.png, icon_palette.pal  the party and box icon and its bank's colours (see below)
 follower/*.png, *.pal     the follower's walking sprite sheets, when it has followers (see
-                          below): imported, each in its own colours
+                          below): imported, re-indexed onto the battle palette
 
 How the sprite is built
 -----------------------
@@ -503,22 +503,23 @@ The overworld sprite that follows the player when {name} leads the party, as its
 (res/field/actors/followers/) give it:
 {rows}
 follower/<code>.png is each sheet as it is in res/ (res/field/actors/.../sprite.png), and
-follower/<code>.pal its 16 colours (JASC; index 0 transparent): its own palette, not the battle
-sprite's. A sheet is one row of square frames, 32x32 (or 64x64 for a large Pokemon): up, up step,
-down, down step, left, left step, and for an 8-frame sheet right, right step (6 frames: the game
-mirrors the left ones to face right). preview/follower_<code>.png is it three times its size.
+follower/<code>.pal its 16 colours (JASC; index 0 transparent). A sheet's pixels are indices of the
+battle palette: normal.pal colours it, and shiny.pal colours a shiny follower or wanderer, so this .pal
+is normal.pal (docs/paperwhite2/design/follower-palette-remap.md). A few sheets opt out and keep a
+palette of their own. A sheet is one row of square frames, 32x32 (or 64x64 for a large Pokemon): up,
+up step, down, down step, left, left step, and for an 8-frame sheet right, right step (6 frames: the
+game mirrors the left ones to face right). preview/follower_<code>.png is it three times its size.
 A walking sprite (POKEMON_...) is also what the field shows when a map puts that Pokemon there.
-Shiny rows marked "placeholder" show the normal colours for now (docs/paperwhite2/design/
-shiny-palettes.md).
 
-Import them back with the rest (the zip, or follower/<code>.png and .pal alone): each replaces the sheet
-its name says. A sheet keeps its size and frame count; keep 16 colours at most with index 0 transparent
-(the .pal's colours win; an indexed PNG's changed colours recolour that index; a new colour takes a free
-one). A sheet that other species' followers show too (a stand-in such as Budew's for a new species) is
-not changed from here: use the Follower card's "Import a walking sprite..." to give the species one of
-its own, which makes a new object code and points its follower rows at it. Frame layout: 6 frames
-(32x32 or 64x64) mirror the left-facing ones to face right, 8 frames (32x32) have their own. Shiny rows
-marked "placeholder" show these colours for now.
+Import them back with the rest (the zip, or follower/<code>.png alone): each replaces the sheet its name
+says. A sheet keeps its size and frame count; keep 16 colours at most with index 0 transparent. Draw in
+any colours: a sheet in colours other than the battle palette's is re-indexed onto it (method F), and
+the import says where the result needs a look. To recolour a sheet, edit the battle normal.pal (every
+overworld sheet of the Pokemon follows). A sheet that other species' followers show too (a stand-in
+such as Budew's for a new species) is not changed from here: use the Follower card's "Import a walking
+sprite..." to give the species one of its own, which makes a new object code and points its follower
+rows at it. Frame layout: 6 frames (32x32 or 64x64) mirror the left-facing ones to face right, 8 frames
+(32x32) have their own.
 """
 
 
@@ -602,6 +603,10 @@ def follower_files(folder: Path) -> tuple[dict[str, bytes], str]:
         if (directory / "sprite.pal").is_file():
             files[f"follower/{stem}.pal"] = (directory / "sprite.pal").read_bytes()
             colours = read_palette(directory / "sprite.pal")
+        elif sheet_group(directory):
+            # (a sheet on its battle palette: the group's normal.pal colours it)
+            files[f"follower/{stem}.pal"] = (POKEMON / sheet_group(directory) / "normal.pal").read_bytes()
+            colours = read_palette(POKEMON / sheet_group(directory) / "normal.pal")
         big = scaled(width, height, pixels, 3)
         files[f"preview/follower_{stem}.png"] = colourise(*big, [color5(c) for c in colours[:COLOURS]],
                                                           (255, 255, 255, 255))
@@ -1054,7 +1059,8 @@ def changes(group: Group, resolved: dict, normal: list, shiny: list) -> dict[Pat
     if shiny != old_shiny:
         shiny_colours = [group.shiny[i] if shiny[i] == old_shiny[i] else expand(shiny[i]) for i in range(COLOURS)]
         writes[group.folder / "shiny.pal"] = write_palette(shiny_colours).encode()
-    return {path: data for path, data in writes.items() if not path.is_file() or path.read_bytes() != data}
+    return {path: data for path, data in writes.items()
+            if (path.is_file() if data is None else not path.is_file() or path.read_bytes() != data)}
 
 
 def outside_pixels(rig: dict, before: bytes, after: bytes) -> tuple[int, tuple | None]:
@@ -1145,10 +1151,7 @@ def check(folder: Path, paths: list[Path], stills_from_sheets: bool, write: bool
                         "keep its head where it is")
     writes = {} if errors else {**changes(group, resolved, normal, shiny), **icon_writes, **walking['writes']}
     if write and not errors:
-        for path, data in writes.items():
-            with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as temporary:
-                temporary.write(data)
-            Path(temporary.name).replace(path)
+        write_files(writes)
     result = {"ok": not errors, "check": not write, "folder": rel(folder), "given": given, "errors": errors,
               "warnings": warnings, "notes": notes, "changed": sorted(rel(p) for p in writes)}
     if errors:
@@ -1185,6 +1188,19 @@ def check(folder: Path, paths: list[Path], stills_from_sheets: bool, write: bool
 
 
 # --- the walking sprites: checked import and new sheets -------------------------------------------------------------
+
+def write_files(writes: dict):
+    """The files of an import written, each whole or not at all; None removes a file (a sheet's sprite.pal, once the
+    sheet is on its battle palette)."""
+    for path, data in writes.items():
+        if data is None:
+            path.unlink(missing_ok=True)
+            continue
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as temporary:
+            temporary.write(data)
+        Path(temporary.name).replace(path)
+
 
 OBJ_CODES = ROOT / "generated" / "obj_codes.txt"
 # A sheet's layout, (frames, size), and the record fields its actor has (all 990 sheets of res/field/actors are one of
@@ -1232,7 +1248,7 @@ def walking_sheets(species: str, form: int) -> dict[str, dict]:
         if row["species"] != constant or row["form"] != form:
             continue
         directory = actor_directory(row["code"])
-        if not (directory / "sprite.png").is_file() or not (directory / "sprite.pal").is_file():
+        if not (directory / "sprite.png").is_file():
             continue
         sheet = sheets.setdefault(row["code"], {"code": row["code"], "stem": follower_stem(row["code"]),
                                                 "directory": directory, "rows": [], "others": []})
@@ -1242,12 +1258,40 @@ def walking_sheets(species: str, form: int) -> dict[str, dict]:
     return sheets
 
 
+def sheet_group(directory: Path) -> str | None:
+    """The battle group a sheet is on (its data.json's "palette"), None for an opted-out one or one of its own."""
+    try:
+        return json.loads((directory / "data.json").read_text()).get("palette", {}).get("pokemon")
+    except (OSError, ValueError):
+        return None
+
+
 def read_sheet(directory: Path) -> tuple[int, int, bytes, list]:
-    """A sheet as the packer reads it: its size, its pixels as indices of sprite.pal, and its 16 colours (5-bit)."""
-    colours = read_palette(directory / "sprite.pal")
+    """A sheet as the packer reads it: its size, its pixels as indices of its palette (its battle group's normal.pal
+    or its own sprite.pal), and its 16 colours (5-bit)."""
+    group = sheet_group(directory)
     width, height, pixels, png_colours = read_indexed_png(directory / "sprite.png")
+    if group is not None:
+        return width, height, pixels, [color5(c) for c in overworld_palettes.group_palettes(group)[0]]
+    colours = read_palette(directory / "sprite.pal")
     return width, height, palette_indices(directory / "sprite.png", pixels, png_colours, colours), \
         [color5(c) for c in colours]
+
+
+def onto_battle_palette(width: int, height: int, pixels: bytes, palette: list, group: str,
+                        female: bool) -> tuple[bytes, list, list]:
+    """New art (pixels in its own 16 colours, 5-bit) re-indexed onto GROUP's battle palette with method F
+    (tools/paperwhite2/palette_remap.py): its pixels as battle indices, the battle normal colours (5-bit), and the
+    needs-a-look reasons. Art already on the battle palette (each index it uses in the battle normal colour, as an
+    exported sheet comes back) keeps its indices."""
+    normal = [color5(c) for c in overworld_palettes.group_palettes(group)[0]]
+    if all(palette[i] == normal[i] for i in set(pixels) - {0}):
+        return pixels, normal, []
+    sheet = palette_remap.Sheet(width, height, pixels, [expand(c) for c in palette])
+    sexes = "f" if female and overworld_palettes.has_female_art(group) else "m"
+    art = palette_remap.BattleArt.load(POKEMON / group, overworld_palettes.art_directory(group), sexes)
+    remapped, mapping = palette_remap.remap(sheet, art)
+    return remapped, [color5(c) for c in art.normal], palette_remap.report(sheet, art, mapping)
 
 
 def fit_sheet(picture: Picture, base: list | None, label: str, recolour: bool) -> tuple[bytes, list, list, list]:
@@ -1378,11 +1422,25 @@ def plan_walking(species: str, form: int, sheet: str | None, png: bytes | None, 
             return fail(f"{sheet} isn't a sheet {label}'s follower rows show")
         target = sheets[sheet]
         width, height, current, colours = read_sheet(target["directory"])
+        group = sheet_group(target["directory"])
         pixels, palette = current, base or colours
+        if group is not None and picture is None and base is not None and base[1:] != colours[1:]:
+            errors.append(f"{target['stem']}.png is on {group}'s battle palette: recolour it in res/pokemon/{group}/"
+                          "normal.pal (every overworld sheet of the group follows), or import a new PNG")
         if picture is not None:
             if (picture.width, picture.height) != (width, height):
                 errors.append(f"{target['stem']}.png is {picture.width} by {picture.height} pixels, not {width} by "
                               f"{height} (this sheet has {width // height} frames of {height}x{height})")
+            elif group is not None:
+                # New art in its own colours, re-indexed onto the battle palette (method F)
+                pixels, palette, found, more = fit_sheet(picture, base, f"{target['stem']}.png", False)
+                errors += found
+                notes += more
+                if not found:
+                    pixels, palette, reasons = onto_battle_palette(width, height, pixels, palette, group,
+                                                                   target["stem"].endswith("_female"))
+                    notes.append(f"Re-indexed onto {group}'s battle palette (method F)")
+                    warnings += [f"{target['stem']}.png needs a look after the re-index: {r}" for r in reasons]
             else:
                 pixels, palette, found, more = fit_sheet(picture, base or colours, f"{target['stem']}.png", True)
                 errors += found
@@ -1398,7 +1456,11 @@ def plan_walking(species: str, form: int, sheet: str | None, png: bytes | None, 
             if not errors:
                 colour_list = [expand(c) for c in palette]
                 writes[target["directory"] / "sprite.png"] = write_indexed_png(width, height, pixels, colour_list)
-                writes[target["directory"] / "sprite.pal"] = write_palette(colour_list).encode()
+                # (a sheet on a battle palette has none of its own: the build writes the group's normal.pal)
+                if group is None:
+                    writes[target["directory"] / "sprite.pal"] = write_palette(colour_list).encode()
+                elif (target["directory"] / "sprite.pal").is_file():
+                    writes[target["directory"] / "sprite.pal"] = None
     else:
         if picture is None:
             return fail("Give the new walking sprite's PNG")
@@ -1428,12 +1490,19 @@ def plan_walking(species: str, form: int, sheet: str | None, png: bytes | None, 
         pixels, palette, found, more = fit_sheet(picture, base, "the walking sprite", False)
         errors += found
         notes += more
+        group_dir = overworld_palettes.group_name(constant, form)
+        if not errors:
+            # Re-indexed onto the group's battle palette (method F): the battle palettes colour every overworld sheet
+            pixels, palette, reasons = onto_battle_palette(width, height, pixels, palette, group_dir, False)
+            notes.append(f"Re-indexed onto {group_dir}'s battle palette (method F)")
+            warnings += [f"the new walking sprite needs a look after the re-index: {r}" for r in reasons]
         item.update(code=code, stem=follower_stem(code), rows=[r["row"] for r in wanted], shared=[])
         # What the first row shows now, for comparison
         before = None
         for row in wanted[:1]:
             directory = actor_directory(row["code"])
-            if (directory / "sprite.png").is_file() and (directory / "sprite.pal").is_file():
+            if (directory / "sprite.png").is_file() and ((directory / "sprite.pal").is_file() or
+                                                         sheet_group(directory)):
                 old = read_sheet(directory)
                 before = (old[2], old[3], old[0], old[1], row["code"])
         if not errors:
@@ -1442,10 +1511,9 @@ def plan_walking(species: str, form: int, sheet: str | None, png: bytes | None, 
                 "$schema": "field_actor.schema.json", "type": "sprite", "scene_node_type": record[3], "shadow": True,
                 "footprint_type": 0, "reflections": True, "billboard_size": record[2], "sprite_atlas_size": record[1],
                 "sprite_controller_type": record[0], "gender": None, "collision": {"width": 1, "height": 1},
-                "offset": {"x": 0, "y": 0, "z": 0}})
+                "offset": {"x": 0, "y": 0, "z": 0}, "palette": {"pokemon": group_dir}})
             colour_list = [expand(c) for c in palette]
             writes[folder / "sprite.png"] = write_indexed_png(width, height, pixels, colour_list)
-            writes[folder / "sprite.pal"] = write_palette(colour_list).encode()
             writes[OBJ_CODES] = object_code_text(OBJ_CODES.read_text(), code).encode()
             for row in wanted:
                 data = dict(row["data"])
@@ -1455,9 +1523,6 @@ def plan_walking(species: str, form: int, sheet: str | None, png: bytes | None, 
                 writes[row["path"]] = json_text(data)
             notes.append(f"A new object code, {code} ({frames} frames of {height}x{height}, {PROFILES[frames]}), after "
                          f"the walking Pokémon's; {len(wanted)} follower rows point at it")
-            if any(r["shiny"] for r in wanted):
-                notes.append("Its shiny rows show the same colours: shiny walking colours come with the shiny palettes "
-                             "(docs/paperwhite2/design/shiny-palettes.md)")
     frames = width // height
     for index in range(frames):
         if not any(pixels[y * width + index * height + x] for y in range(height) for x in range(height)):
@@ -1513,11 +1578,7 @@ def walking_check(species: str, form: int, sheet: str | None, files: list[Path],
     plan = plan_walking(species, form, sheet, png, pal, rows)
     errors, writes = plan["errors"], plan["writes"]
     if write and not errors:
-        for path, data in writes.items():
-            path.parent.mkdir(parents=True, exist_ok=True)
-            with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as temporary:
-                temporary.write(data)
-            Path(temporary.name).replace(path)
+        write_files(writes)
     result = {"ok": not errors, "check": not write, "errors": errors, "warnings": plan["warnings"],
               "notes": plan["notes"], "changed": sorted(rel(p) for p in writes),
               "walking": [plan["item"]] if plan["item"] else []}

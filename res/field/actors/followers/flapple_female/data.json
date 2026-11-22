@@ -33,5 +33,9 @@
         "side_gap": 0,
         "gap": 6
     },
-    "sprite": "OBJ_CODE_POKEMON_BUDEW"
+    "sprite": "OBJ_CODE_POKEMON_BUDEW",
+    "palette": {
+        "pokemon": "flapple",
+        "map": [ 0, 1, 9, 13, 10, 14, 3, 4, 5, 12, 7, 9, 11, 11, 10, 4 ]
+    }
 }

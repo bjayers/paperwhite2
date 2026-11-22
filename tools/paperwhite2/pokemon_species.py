@@ -30,7 +30,7 @@ and the template's display number, its own display number (--number, or none: "?
 evolution stage 1, itself as its baby species, and "art_template": the original species whose files' formats the
 packers use (tools/data/pokemon_graphics.py). --no-wonder-trade lists it in services.json's excluded_species. Its
 followers are copies of the template's (unless --no-follower; the blank template has none): each of
-res/field/actors/followers/<template>[_shiny][_female][_female_shiny]/ copied to <name>... with "species" its own and a
+res/field/actors/followers/<template>[_female]/ copied to <name>... with "species" its own and a
 sprite named by another of the copied followers' codes renamed to the copy's, so they show the template's sprite
 until redrawn, and their OBJ_CODE_FOLLOWER_<NAME>... codes after the last follower code in generated/obj_codes.txt
 (pokemon_form.add_obj_codes). A species without followers has none in the game, and the others' are unchanged. The
@@ -82,6 +82,7 @@ from tools.data.pokemon_cries import wav_bytes  # noqa: E402
 from tools.data.sound_data import CRY_BUFFER, cry_swar  # noqa: E402
 from tools.paperwhite2.pokemon_form import (FOLLOWER_SUFFIXES, FOLLOWERS, OBJ_CODES, add_obj_codes,  # noqa: E402
                                             remove_obj_codes)
+from tools.paperwhite2 import overworld_palettes  # noqa: E402
 
 POKEMON = ROOT / "res/pokemon"
 SPECIES_TXT = ROOT / "generated/species.txt"
@@ -410,6 +411,9 @@ def copy_followers(changes: Changes, source_folder: str, folder: str, constant: 
                 follower["follower"]["form"] = 0
                 if follower.get("sprite") in renamed:
                     follower["sprite"] = renamed[follower["sprite"]]
+                # Its colours: the new species' battle palettes, a copy of the template's (overworld_palettes.py)
+                follower = overworld_palettes.copied_palette(
+                    follower, folder, (source / "sprite.png").is_file() or follower.get("sprite") in renamed.values())
                 changes.json(target / "data.json", follower)
             elif file.is_file():
                 changes.copy(file, target / file.name)

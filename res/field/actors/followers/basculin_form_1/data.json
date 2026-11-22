@@ -34,5 +34,8 @@
         "gap": 7
     },
     "texture_set_format": "pokeweb",
-    "sprite_batch": 2
+    "sprite_batch": 2,
+    "palette": {
+        "pokemon": "basculin/form_1"
+    }
 }

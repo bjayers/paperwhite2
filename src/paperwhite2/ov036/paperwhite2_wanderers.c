@@ -552,7 +552,7 @@ static BOOL Wanderers_Spawn(Field *field, Wanderer *wanderer) {
     at.y = y - WANDERER_RISE_DEPTH;
     // Its own palette, varied by its PID, asked for before its sprite loads so that the load keeps the sprite's colours
     PaperWhite2_ActorPalettes_Set((u32)(wanderer - sWanderers.list), wanderer->objCode, wanderer->param.species,
-                                  wanderer->param.pid);
+                                  wanderer->param.pid, wanderer->shiny);
     FldBillboardActor_AddActorPosOrReserve(field->actorSystem, &config, wanderer->billboard, &at, NULL, NULL,
                                            func_ov012_02166fc0(field->actorSystem));
     return TRUE;

@@ -1944,7 +1944,7 @@ void PaperWhite2_FollowingPreloadFollower(Field *field, MMSys *system) {
 // The follower's billboard takes its palette variation, in a palette of its own (paperwhite2_actor_palettes.c,
 // docs/paperwhite2/design/palette-variation.md): set as its sheet's code is chosen, before the sheet loads
 static void SetVariation(u16 code, const FollowingPokemon *mon) {
-    PaperWhite2_ActorPalettes_Set(ACTOR_PALETTE_FOLLOWER, code, mon->species, mon->personality);
+    PaperWhite2_ActorPalettes_Set(ACTOR_PALETTE_FOLLOWER, code, mon->species, mon->personality, mon->shiny);
 }
 
 static void CycleFollower(GameData *gameData) {

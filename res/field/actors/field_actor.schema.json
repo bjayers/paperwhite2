@@ -30,6 +30,18 @@
             "enum": [ "game", "pokeweb" ],
             "description": "For a sprite of its own, how its texture set is written: as the game's (the default), or as Pokeweb's Following Pokémon installer wrote them, with textures named following0 and on, a palette named following, and no search trees"
         },
+        "palette": {
+            "type": "object", "additionalProperties": false,
+            "description": "Paper White 2: a Pokémon sheet's battle palette (docs/paperwhite2/design/follower-palette-remap.md, section 9). On a sheet of its own (followers/, pokemon/, which must have one): \"pokemon\", the battle group its pixels are indices of, whose normal.pal the build writes as its colours (no sprite.pal), or \"opt_out\", why it keeps its own sprite.pal. On a follower row that shows another species' sheet: \"pokemon\" and \"map\", or \"opt_out\". The follower's and the wanderers' colours are their row's group's normal or shiny palette",
+            "properties": {
+                "pokemon": { "type": "string", "pattern": "^[a-z0-9_]+(/form_[0-9]+)?$", "description": "The battle group: a directory of res/pokemon, <species> or <species>/form_<n>" },
+                "map": {
+                    "type": "array", "minItems": 16, "maxItems": 16, "items": { "type": "integer", "minimum": 0, "maximum": 15 },
+                    "description": "A follower row on another group's sheet: the index of this group's palette that each of the sheet's 16 indices plays (overworld_palettes.py writes it)"
+                },
+                "opt_out": { "type": "string", "pattern": "\\S", "description": "Why this sheet keeps its own palette, not a battle one (until it gets art that can share)" }
+            }
+        },
         "follower": {
             "type": "object", "additionalProperties": false,
             "required": [ "species", "form", "sex", "shiny", "placeholder", "animation_profile", "art_offset", "side_gap", "gap" ],

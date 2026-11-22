@@ -10,7 +10,8 @@ import { documents, useDocuments } from "../../documents.ts";
 import { toPlain, type JsonValue } from "../../../shared/json.ts";
 import type { ToolProps } from "../types.ts";
 import { PalettePreview } from "../palettes/PaletteEditor.tsx";
-import { parsePal, type Rgb } from "../palettes/pal.ts";
+import type { Rgb } from "../palettes/pal.ts";
+import { paletteNote, paletteOf, sheetColors, type SheetPalette } from "../palettes/sheetColors.ts";
 import { readIndexedPng, type IndexedImage } from "../palettes/png.ts";
 import { DocForm, useHeld } from "./DocForm.tsx";
 import { useToolActive } from "../active.ts";
@@ -37,7 +38,7 @@ const isFollowerFile = (path: string) => path.startsWith(`${FOLLOWING}/`) || pat
 // ---------------------------------------------------------------- Pieces
 
 function Sprite({ variant }: { variant: Variant }) {
-  const [image, setImage] = useState<{ image: IndexedImage; colors: Rgb[] } | null>(null);
+  const [image, setImage] = useState<{ image: IndexedImage; colors: Rgb[]; sheet: SheetPalette | null } | null>(null);
   const [missing, setMissing] = useState(false);
   // Its own sheet, another follower's, or a walking Pokémon's (OBJ_CODE_POKEMON_X: res/field/actors/pokemon/x)
   const walking = variant.sprite?.startsWith("OBJ_CODE_POKEMON_") ? variant.sprite.slice("OBJ_CODE_POKEMON_".length).toLowerCase() : null;
@@ -48,17 +49,24 @@ function Sprite({ variant }: { variant: Variant }) {
     setMissing(false);
     if (!name) return;
     const folder = walking ? `res/field/actors/${name}` : `${FOLLOWERS}/${name}`;
-    Promise.all([api.asset(`${folder}/sprite.png`).then(readIndexedPng), api.file(`${folder}/sprite.pal`)])
-      .then(([img, pal]) => live && setImage({ image: img, colors: parsePal(pal.text) }))
+    const row = name !== variant.name ? variant.palette : null;
+    Promise.all([api.asset(`${folder}/sprite.png`).then(readIndexedPng), sheetColors(folder, row),
+      api.file(`${folder}/data.json`).then((f) => paletteOf(JSON.parse(f.text)))])
+      .then(([img, colors, sheet]) => live && setImage({ image: img, colors, sheet }))
       .catch(() => live && setMissing(true));
     return () => { live = false; };
-  }, [name]);
+  }, [name, variant.palette]);
   if (!name) return <p className="muted flw-note">Shows {variant.sprite}'s sprite.</p>;
   if (missing) return <p className="muted flw-note">{variant.placeholder ? "A placeholder: no sprite of its own." : "No sprite."}</p>;
   if (!image) return <p className="muted flw-note">Reading the sprite…</p>;
+  const row = name !== variant.name ? variant.palette : null;
+  const optedOut = Boolean(row?.opt_out ?? image.sheet?.opt_out);
   return (
     <div className="flw-sprite">
       <PalettePreview image={image.image} colors={image.colors} offset={0} zoom={2} transparent highlight={null} />
+      <p className={optedOut ? "flw-note flw-optout" : "muted flw-note"}>
+        <strong>{optedOut ? "Opted out." : "Colours."}</strong> {paletteNote(image.sheet, row)}.
+      </p>
       {walking ? <p className="muted flw-note">{variant.name} shows the walking sprite {variant.sprite} ({name}/sprite.png); the Pokémon Editor's Follower card picks it.</p>
         : name !== variant.name && <p className="muted flw-note">{variant.name} shares {name}'s sprite ({variant.sprite}).</p>}
     </div>
@@ -109,8 +117,10 @@ function SpeciesPage({ entry, constants, onChanged, open, focusForm = 0 }: {
       <h2>#{entry.number} {speciesName(entry.species)}</h2>
       <section className="flw-card">
         <h3>Followers <span className="muted">{entry.variants.length}</span></h3>
-        <p className="muted flw-note">Each form, sex and shininess is a follower of its own, a field actor under <code>{FOLLOWERS}/</code>:
-          its sprite (colors in Graphics & Palettes, <code>sprite.pal</code>), and how it is drawn and keeps its distance.</p>
+        <p className="muted flw-note">Each form and sex is a follower of its own, a field actor under <code>{FOLLOWERS}/</code>:
+          its sprite, and how it is drawn and keeps its distance. A sprite's pixels are indices of the battle palette: the
+          Pokémon's <code>normal.pal</code> colours it, and <code>shiny.pal</code> a shiny follower or wanderer (there are no shiny
+          sprites). A sheet that can't share the battle palette yet opts out and keeps its own <code>sprite.pal</code>.</p>
         {entry.variants.map((v, i) => (
           <details key={v.name} className="flw-variant" open={i === first}>
             <summary>

@@ -4,6 +4,7 @@
 
 import { api } from "../../api.ts";
 import type { Constants } from "../../../shared/schema.ts";
+import { paletteOf, type SheetPalette } from "../palettes/sheetColors.ts";
 
 export const FIELD_ACTOR_SCHEMA = "res/field/actors/field_actor.schema.json";
 export const FOLLOWERS = "res/field/actors/followers";
@@ -13,9 +14,10 @@ export const SPECIES_DIALOGUE = `${FOLLOWING}/dialogue/species`;
 export const POOLS = `${FOLLOWING}/pools.json`;
 export const INTERACTIONS = `${FOLLOWING}/interactions.json`;
 
-/** One follower: a species' sprite for one form, sex and shininess. */
+/** One follower: a species' sprite for one form and sex. A shiny one shows the same sprite in its battle shiny.pal
+ * (docs/paperwhite2/design/follower-palette-remap.md); rows marked shiny remain only where a sheet opts out. */
 export interface Variant {
-  /** Its folder under FOLLOWERS, such as "snivy_shiny". */
+  /** Its folder under FOLLOWERS, such as "snivy_female". */
   name: string;
   path: string;
   species: string;
@@ -25,6 +27,8 @@ export interface Variant {
   placeholder: boolean;
   /** Another object code whose sprite it shows, when it has none of its own. */
   sprite: string | null;
+  /** Its data.json's "palette": its own sheet's battle group or opt-out, or a map onto another group's sheet. */
+  palette: SheetPalette | null;
 }
 
 export interface FollowerSpecies {
@@ -37,7 +41,7 @@ export interface FollowerSpecies {
 
 export async function loadFollowers(constants: Constants): Promise<FollowerSpecies[]> {
   const [files, dialogues] = await Promise.all([
-    api.data(FIELD_ACTOR_SCHEMA, ["follower", "sprite"]),
+    api.data(FIELD_ACTOR_SCHEMA, ["follower", "sprite", "palette"]),
     api.list(`${SPECIES_DIALOGUE}/*.json`),
   ]);
   const bySpecies = new Map<string, FollowerSpecies>();
@@ -57,6 +61,7 @@ export async function loadFollowers(constants: Constants): Promise<FollowerSpeci
       shiny: follower.shiny === true,
       placeholder: follower.placeholder === true,
       sprite: typeof data.sprite === "string" ? data.sprite : null,
+      palette: paletteOf(data),
     });
   }
   for (const entry of bySpecies.values()) {

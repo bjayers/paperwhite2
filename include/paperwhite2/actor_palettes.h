@@ -15,9 +15,14 @@
 #define ACTOR_PALETTE_FOLLOWER WANDERERS_MAX
 #define ACTOR_PALETTES (WANDERERS_MAX + 1)
 
-// The individual a slot shows: its sprite's object code, species and PID. Called before its sprite's load is asked
-// for, so that the load keeps the sprite's colours (PaperWhite2_ActorPalettes_Capture); objCode 0 for none
-void PaperWhite2_ActorPalettes_Set(u32 slot, u16 objCode, u32 species, u32 personality);
+// The model table's member with the followers' palettes: each follower code's battle normal and shiny colours
+// (tools/paperwhite2/overworld_palettes.py, docs/paperwhite2/design/follower-palette-remap.md)
+#define FOLLOWING_PALETTES_FILE 24
+
+// The individual a slot shows: its sprite's object code, species, PID and whether it is shiny, which takes its code's
+// battle shiny palette. Called before its sprite's load is asked for, so that the load keeps the sprite's colours
+// (PaperWhite2_ActorPalettes_Capture); objCode 0 for none
+void PaperWhite2_ActorPalettes_Set(u32 slot, u16 objCode, u32 species, u32 personality, BOOL shiny);
 // Gives the slot's billboard (a handle of the field actors' billboard system) its own palette, made the first time and
 // again when the billboard, its material or the individual changes; called every frame its billboard is out. Where the
 // sprite's colours weren't kept as it loaded, they're read from its file in the archive, once. Where there's no room (a

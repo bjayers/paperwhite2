@@ -34,5 +34,8 @@
         "gap": 10
     },
     "texture_set_format": "pokeweb",
-    "sprite_batch": 2
+    "sprite_batch": 2,
+    "palette": {
+        "pokemon": "keldeo/form_1"
+    }
 }

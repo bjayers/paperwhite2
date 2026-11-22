@@ -311,6 +311,11 @@ from the decomp's headers, adding fields where they are still `unk`.
 | `install.json` | the installer's state | nothing in the game | not ported |
 | `a/0/0/2` member 32 (`title_2` bank) | the Options rows' text, four entries changed | the Options menu | `res/text/system/title_2.txt`: `Title2_Text_Followers` (6), `FollowersOn` (21), `FollowersOff` (22), `ChooseWhetherPokemonFollow` (30), done (step 5) |
 
+**Since 2026-11-22** ([follower-palette-remap.md](design/follower-palette-remap.md) section 9) the registry has no shiny
+rows (a shiny Pokémon takes its normal row) and `a/0/4/7` member 24 has the followers' battle palettes (normal and
+shiny a code, "FWCL"), which `paperwhite2_actor_palettes.c` gives the follower and the wanderers; the Entralink
+markers start at member 25.
+
 The files are read by name (`rom:/following/...`, `FS_OpenFile`). dsd builds the file system from the extracted ROM's
 `config.yaml` and path order, and adding new files there is not supported by the build yet (a file would take an ID),
 so the port reads them as members of an archive instead: one new NARC would still be a new file, so the plan is to

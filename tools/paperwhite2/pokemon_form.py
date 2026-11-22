@@ -29,7 +29,7 @@ add makes form N, the species' forms.count, from the species (or from --from FOR
   learnset.egg_moves), and with no evolutions: the game reads the species' for every form, and an evolution's form
   says which form takes it. Records made for the species' other forms then too, as copies of the species'. The
   species' form records' forms.count follows.
-- the followers: res/field/actors/followers/<species>_form_<N>[_female][_shiny]/, copies of the template's, with
+- the followers: res/field/actors/followers/<species>_form_<N>[_female]/, copies of the template's, with
   their OBJ_CODE_FOLLOWER_ constants after the last follower code in generated/obj_codes.txt (GetIndexOfObjID's range
   ends at the generated FOLLOWING_LAST_OBJ_CODE).
 - the Wonder Trade: a species listed in wonder_trade.forms gets a weight for the form, its first form's; one not listed
@@ -72,7 +72,7 @@ from tools.data.gen_constants import parse  # noqa: E402
 from tools.data.narc import read_narc  # noqa: E402
 from tools.data.nitro_2d import (color5, read_indexed_png, read_palette, read_rgba_png, write_indexed_png,  # noqa: E402
                                  write_rgba_png)
-from tools.paperwhite2 import mcss_rig  # noqa: E402
+from tools.paperwhite2 import mcss_rig, overworld_palettes  # noqa: E402
 
 POKEMON = ROOT / "res/pokemon"
 FORMS = POKEMON / "forms.json"
@@ -90,7 +90,7 @@ ART_FILES = tuple(f"{side}{kind}" for side in ("front", "back") for kind in (
     "_single.png", "_single_female.png", ".png", "_female.png", mcss_rig.RIG_FILE)) + ("normal.pal", "shiny.pal",
                                                                                          "icon.png", "icon_female.png")
 # The follower variants of a form, in the order their codes take (as the Spiky-eared Pichu's)
-FOLLOWER_SUFFIXES = ("", "_shiny", "_female", "_female_shiny")
+FOLLOWER_SUFFIXES = ("", "_female")
 # The pokedex object's keys in the schema's order, where form_name goes
 POKEDEX_ORDER = ("category", "entry", "height", "weight", "shape", "form_name", "forms", "languages")
 ICON_SIZE = (32, 64)
@@ -341,6 +341,9 @@ def add(name: str, template_form: int, form_name: str | None, record: bool, chec
             if file.name == "data.json":
                 follower = read(file)
                 follower["follower"]["form"] = form
+                # Its colours: the form's battle palettes, a copy of the template's (overworld_palettes.py)
+                follower = overworld_palettes.copied_palette(follower, f"{folder}/form_{form}",
+                                                             (source_folder / "sprite.png").is_file())
                 changes.json(target / "data.json", follower)
             else:
                 changes.copy(file, target / file.name)

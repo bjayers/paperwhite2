@@ -1,5 +1,6 @@
 #include "types.h"
 #include "field/field_actor.h"
+#include "field/field_actor_internal.h"
 #include "gfl/arc.h"
 #include "gfl/billboard_actor.h"
 #include "gfl/g3d.h"
@@ -17,7 +18,10 @@
 // sprite's colours are kept as its sheet loads (a trimmed sheet keeps no palette in main memory, and palette VRAM
 // can't be read back): those of every follower sprite, and of the sprites the slots wait for. A slot whose sprite's
 // colours aren't kept (loaded before it was wanted, its colours since replaced by others') reads them from the sheet's
-// file in the archive, its palette only
+// file in the archive, its palette only. A follower code's colours are its row's battle palette, normal or shiny, which
+// the build writes into the model table (FOLLOWING_PALETTES_FILE, docs/paperwhite2/design/follower-palette-remap.md):
+// the sheet's indices are the battle palette's, so a shiny follower or wanderer shows its normal row's sheet in the
+// shiny colours
 
 // The colours of a sprite's palette (a 16-colour texture's)
 #define ACTOR_PALETTE_COLORS 16
@@ -25,6 +29,12 @@
 #define ACTOR_PALETTE_CAPTURES 8
 // The kind of a G3D file's texture block, "TEX0"
 #define ACTOR_PALETTE_TEX_BLOCK 0x30584554
+// The followers' palettes' header: "FWCL", its version and the count of codes it covers; then a u16 a code, the index
+// of its pair of palettes (normal, then shiny) or ACTOR_PALETTE_NONE
+#define ACTOR_PALETTE_MAGIC 0x4c435746
+#define ACTOR_PALETTE_VERSION 1
+#define ACTOR_PALETTE_HEADER_SIZE 8
+#define ACTOR_PALETTE_NONE 0xffff
 
 typedef struct {
     u16 objCode;
@@ -34,7 +44,8 @@ typedef struct {
 } CapturedPalette;
 
 typedef struct {
-    // The individual: its sprite, species and PID, and whether it changed since its colours were made
+    // The individual: its sprite, species and PID (and shininess, below), and whether it changed since its colours
+    // were made
     u16 objCode;
     u8 changed;
     // Whether it has its copy: the billboard of sys it's on, the shared material it copies and the copy
@@ -46,6 +57,8 @@ typedef struct {
     // Whether its sprite's colours were neither kept nor could be read from its file: it stays on the shared material
     // and isn't read again until its sprite changes
     u8 unreadable;
+    // Whether it is shiny: its colours are its code's battle shiny palette
+    u8 shiny;
     u32 species;
     u32 personality;
     // Its colours, which the VBlank's transfer reads (in main memory, not the stack)
@@ -161,23 +174,74 @@ static BOOL ActorPalettes_ReadFromArchive(MMSys *actorSystem, u16 objCode) {
     return TRUE;
 }
 
-// The slot's colours made from its sprite's and sent to its palette; FALSE where its sprite's weren't kept
-static BOOL ActorPalettes_Upload(ActorPalette *slot) {
-    const CapturedPalette *captured = ActorPalettes_FindCaptured(slot->objCode);
-    u32 plttAddr;
+// A follower code's colours from the followers' palettes, its battle group's normal or shiny palette. FALSE where the
+// code has none (its sheet keeps its own colours) or the member isn't there
+static BOOL ActorPalettes_ReadGenerated(MMSys *actorSystem, ActorPalette *slot) {
+    ArcTool *arc = actorSystem->actorConfigArc;
+    u32 header[ACTOR_PALETTE_HEADER_SIZE / sizeof(u32)];
+    u32 count;
+    u32 length;
+    u32 offset;
+    u16 index;
 
-    if (captured == NULL) {
+    if (slot->objCode < FOLLOWING_CODE_BASE || arc == NULL || GFL_ArcToolGetDataMax(arc) <= FOLLOWING_PALETTES_FILE) {
         return FALSE;
     }
+    length = GFL_ArcToolGetDataLength(arc, FOLLOWING_PALETTES_FILE);
+    if (length < sizeof(header)) {
+        return FALSE;
+    }
+    GFL_ArcToolReadRange(arc, FOLLOWING_PALETTES_FILE, 0, sizeof(header), header);
+    count = header[1] >> 16;
+    if (header[0] != ACTOR_PALETTE_MAGIC || (header[1] & 0xffff) != ACTOR_PALETTE_VERSION ||
+        slot->objCode - FOLLOWING_CODE_BASE >= count || length < sizeof(header) + count * sizeof(u16)) {
+        return FALSE;
+    }
+    GFL_ArcToolReadRange(arc, FOLLOWING_PALETTES_FILE,
+                         sizeof(header) + (slot->objCode - FOLLOWING_CODE_BASE) * sizeof(u16), sizeof(index), &index);
+    if (index == ACTOR_PALETTE_NONE) {
+        return FALSE;
+    }
+    // A pair is the normal palette, then the shiny one
+    offset = sizeof(header) + count * sizeof(u16) + (index * 2 + (slot->shiny ? 1 : 0)) * sizeof(slot->colors);
+    if (offset > length || length - offset < sizeof(slot->colors)) {
+        return FALSE;
+    }
+    GFL_ArcToolReadRange(arc, FOLLOWING_PALETTES_FILE, offset, sizeof(slot->colors), slot->colors);
+    return TRUE;
+}
+
+// The slot's unvaried colours: its code's battle palette, else its sprite's colours as kept, else read from its file
+// (once a sprite). FALSE where there are none
+static BOOL ActorPalettes_LoadBase(ActorPalette *slot, MMSys *actorSystem) {
+    const CapturedPalette *captured;
+
     MI_CpuClear16(slot->colors, sizeof(slot->colors));
+    if (ActorPalettes_ReadGenerated(actorSystem, slot)) {
+        return TRUE;
+    }
+    captured = ActorPalettes_FindCaptured(slot->objCode);
+    if (captured == NULL && !slot->unreadable && ActorPalettes_ReadFromArchive(actorSystem, slot->objCode)) {
+        captured = ActorPalettes_FindCaptured(slot->objCode);
+    }
+    if (captured == NULL) {
+        slot->unreadable = TRUE;
+        return FALSE;
+    }
     MI_CpuCopy16(captured->colors, slot->colors, captured->count * sizeof(u16));
-    PaperWhite2_VaryPalette(slot->colors, captured->count, slot->species, slot->personality);
+    return TRUE;
+}
+
+// The slot's colours varied by its PID and sent to its palette
+static void ActorPalettes_Upload(ActorPalette *slot) {
+    u32 plttAddr;
+
+    PaperWhite2_VaryPalette(slot->colors, ACTOR_PALETTE_COLORS, slot->species, slot->personality);
     BillboardActorScene_GetMaterialPlttAddr(slot->sys->scene, slot->material, &plttAddr);
     if (slot->sys->transfer != NULL) {
         slot->sys->transfer(TRUE, plttAddr, slot->colors, sizeof(slot->colors));
     }
     slot->changed = FALSE;
-    return TRUE;
 }
 
 // The slot's copy freed, and its billboard, if still on it, put back on the shared material
@@ -211,10 +275,7 @@ static BOOL ActorPalettes_MakeCopy(ActorPalette *slot, MMSys *actorSystem, Billb
     if (source >= scene->setup.materialCount || scene->materials[source].texFormat != GX_TEXFMT_PLTT16) {
         return FALSE;
     }
-    // Its sprite's colours read from the archive where they weren't kept, once a sprite
-    if (ActorPalettes_FindCaptured(slot->objCode) == NULL &&
-        (slot->unreadable || !ActorPalettes_ReadFromArchive(actorSystem, slot->objCode))) {
-        slot->unreadable = TRUE;
+    if (!ActorPalettes_LoadBase(slot, actorSystem)) {
         return FALSE;
     }
     key = NNS_GfdAllocPlttVram(sizeof(slot->colors), FALSE, 0);
@@ -231,13 +292,15 @@ static BOOL ActorPalettes_MakeCopy(ActorPalette *slot, MMSys *actorSystem, Billb
     slot->source = source;
     slot->material = (u16)material;
     slot->bound = TRUE;
-    return ActorPalettes_Upload(slot);
+    ActorPalettes_Upload(slot);
+    return TRUE;
 }
 
-void PaperWhite2_ActorPalettes_Set(u32 slot, u16 objCode, u32 species, u32 personality) {
+void PaperWhite2_ActorPalettes_Set(u32 slot, u16 objCode, u32 species, u32 personality, BOOL shiny) {
     ActorPalette *palette = &sSlots[slot];
 
-    if (palette->objCode == objCode && palette->species == species && palette->personality == personality) {
+    if (palette->objCode == objCode && palette->species == species && palette->personality == personality &&
+        palette->shiny == shiny) {
         return;
     }
     // Another sprite is another material: the copy is made again on it
@@ -248,6 +311,7 @@ void PaperWhite2_ActorPalettes_Set(u32 slot, u16 objCode, u32 species, u32 perso
     palette->objCode = objCode;
     palette->species = species;
     palette->personality = personality;
+    palette->shiny = (u8)shiny;
     palette->changed = TRUE;
 }
 
@@ -275,9 +339,12 @@ void PaperWhite2_ActorPalettes_Bind(u32 slot, MMSys *actorSystem, u16 billboard)
             ActorPalettes_Unbind(palette);
             return;
         }
-    } else if (palette->changed && !ActorPalettes_Upload(palette)) {
-        ActorPalettes_Unbind(palette);
-        return;
+    } else if (palette->changed) {
+        if (!ActorPalettes_LoadBase(palette, actorSystem)) {
+            ActorPalettes_Unbind(palette);
+            return;
+        }
+        ActorPalettes_Upload(palette);
     }
     // On the copy, unless something else than its shared material was put on the billboard
     actor = sys->handles[billboard].actor;

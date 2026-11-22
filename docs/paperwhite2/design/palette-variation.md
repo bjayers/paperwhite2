@@ -68,6 +68,10 @@ colours varied by its PID; the shared material stays unvaried for everything els
   It happens once as the slot's copy is made without kept colours, not per frame; a file without a palette marks the
   slot unreadable until its sprite changes, and only then does it keep the shared material. Slots' object codes are
   all follower codes (from `FOLLOWING_CODE_BASE`), so in practice the read covers the eviction.
+- **Shiny (2026-11-22):** a follower code's base colours are its row's battle palette, normal or shiny, from the model
+  table's member 24, written by the build (`_Set` takes the individual's shininess; the sheets are indices of the battle
+  palette, [follower-palette-remap.md](follower-palette-remap.md) section 9); the capture and the archive read above
+  are only for codes without one (opted-out sheets).
 - **Cost:** 32 bytes of texture palette VRAM a slot, 128 bytes at most (4 slots) of the field's 16 KB; no texture
   VRAM; one of the 96 billboard materials a slot; 0x224 bytes of overlay 36's BSS (slots and captures).
 - **Wanderers' PIDs:** a wanderer's whole PID is rolled as it spawns (`EventWildBattleCall_PickWanderer` calls
