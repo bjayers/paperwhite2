@@ -91,7 +91,9 @@ typedef struct {
     u16 bestWinTurns;  // 0x6
     u8 deepestPlace;   // 0x8
     u8 deepestRound;   // 0x9
-    u16 unused;        // 0xa
+    // The difficulty tier (from 0) of the hall of fame's run
+    u8 hallTier; // 0xa
+    u8 unused;   // 0xb
     // Every Dream Shard runs have given, whatever was spent since
     u32 shardsEarned; // 0xc
     // The biggest hit of the team's ever
@@ -147,7 +149,11 @@ typedef struct {
     // (ENTREE_MILESTONE_*, paperwhite2/entralink_ranks.h), which the White rank counts with those really reached;
     // cleared with the records (EntralinkRecords_Clear). Zero in a block of before it: none
     u8 debugMilestones; // 0x621
-    u8 unused622[2];    // 0x622
+    // The difficulty tier chosen at the hub's tier NPC (run.json's tiers, from 0), which every run takes, and a bit
+    // for each tier whose final room has been beaten at least once, which opens the next. Zero in a block of before
+    // them: the first tier, none beaten (a block with runs completed counts the first as beaten: those runs were its)
+    u8 tier;        // 0x622
+    u8 tiersBeaten; // 0x623
     // Free for the roguelike's later saves (unlocks), zero
     u8 reserved[0x850 - 0x624]; // 0x624
 } EntralinkProgress;            // 0x850, the Symbol block's size

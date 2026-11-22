@@ -103,7 +103,7 @@ test("progress ids: new battles and catches get the next numbers, old ones never
   assert.equal(getIn(out, ["progress_id"]), nextRoom);
   // In the schema's order: a battle's after its id, an enemy's after its catch
   assert.deepEqual([...(getIn(out, ["battles", 0]) as Map<string, JsonValue>).keys()], ["id", "progress_id", "format", "enemies"]);
-  assert.deepEqual([...(getIn(out, ["battles", 0, "enemies", 0]) as Map<string, JsonValue>).keys()], ["species", "level", "catch", "progress_id"]);
+  assert.deepEqual([...(getIn(out, ["battles", 0, "enemies", 0]) as Map<string, JsonValue>).keys()], ["species", "catch", "progress_id"]);
   assert.deepEqual(errors(out), []);
   assert.deepEqual(buildCheck(out), { ok: true });
   // Saved again: nothing changes

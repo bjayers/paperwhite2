@@ -11,7 +11,6 @@
             "enemies": [
                 {
                     "species": "SPECIES_GENGAR",
-                    "level": 70,
                     "moves": [ "MOVE_SHADOW_BALL", "MOVE_SHADOW_SNEAK", "MOVE_TOXIC", "MOVE_TOXIC_SPIKES" ]
                 }
             ]

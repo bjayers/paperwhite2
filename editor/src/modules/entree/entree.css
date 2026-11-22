@@ -98,6 +98,7 @@
 .en-scaling th { text-align: left; font-size: 12px; padding: 0 8px 2px 0; }
 .en-scaling td { padding: 1px 4px 1px 0; }
 .en-run-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.en-tier { display: flex; flex-direction: column; gap: 4px; padding: 4px 0; border-top: 1px solid var(--border, #8884); }
 .en-run-summary { line-height: 1.35; padding: 2px 0 4px 8px; border-left: 2px solid var(--border); }
 .en-run-problems { padding-left: 16px; font-size: 12px; }
 .en-dialogue .dialogue-actions .view-switch button { padding: 1px 6px; }

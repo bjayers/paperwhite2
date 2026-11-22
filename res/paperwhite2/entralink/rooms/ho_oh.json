@@ -13,13 +13,11 @@
             "enemies": [
                 {
                     "species": "SPECIES_HO_OH",
-                    "level": 70,
                     "moves": [ "MOVE_SACRED_FIRE", "MOVE_BRAVE_BIRD", "MOVE_SUNNY_DAY", "MOVE_RECOVER" ],
                     "ability": "ABILITY_PRESSURE"
                 },
                 {
                     "species": "SPECIES_LUGIA",
-                    "level": 70,
                     "moves": [ "MOVE_WEATHER_BALL", "MOVE_AEROBLAST", "MOVE_RAIN_DANCE", "MOVE_SAFEGUARD" ],
                     "ability": "ABILITY_MULTISCALE"
                 }

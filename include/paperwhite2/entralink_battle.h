@@ -18,6 +18,12 @@
 void EntralinkBattle_Start(BtlServerFlow *flow);
 // Whether the battle is a run's
 BOOL EntralinkBattle_IsRun(void);
+// The trainer AI flags of the run's tier (run.json's tiers' ai_flags) that a run battle's foes think with on top of a
+// wild battle's (GetClientAIFlags); 0 in any other battle
+u32 EntralinkBattle_GetAIFlags(BtlMainModule *mainModule);
+// Whether the battle uses the inverse type chart (the run's tier's inverse_types modifier, GetTypeEffectiveness):
+// super effective and not very effective swap, and an immunity is super effective, as Gen 6's inverse battles
+BOOL EntralinkBattle_IsInverse(void);
 
 // The damage of a hit as ServerEvent_CalcDamage cuts it to 16 bits: in a run battle, at most the damage cap
 // (settings' damage_cap, 60,000); in every battle, the hit's full damage (at most 65,535) and whether the cap cut it

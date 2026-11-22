@@ -77,7 +77,6 @@
           "type": "integer", "minimum": 0, "maximum": 100,
           "description": "The chance, in percent, that a random double or triple battle's enemies all share a type or an evolution family with its first; 70 if left out"
         },
-        "level": { "type": "integer", "minimum": 1, "maximum": 100, "description": "The random enemies' level; 70 if left out" },
         "move_pool": {
           "type": "integer", "minimum": 4, "maximum": 12,
           "description": "How many of the last level-up moves a random enemy knows at its level its 4 moves are drawn from; 7 if left out"
@@ -169,6 +168,35 @@
     "field_weather": {
       "$ref": "#/$defs/field_weather",
       "description": "The forest's field weather (include/system/zone_weather.h) in the rounds with no field_weather of their own, the hack's tints (WEATHER_CUSTOM_TINT_*, res/paperwhite2/field_tints/tints.json) among them; the forest's own if left out"
+    },
+    "tiers": {
+      "type": "array", "minItems": 4, "maxItems": 4,
+      "description": "The difficulty tiers, easiest first, which the hub's tier NPC chooses between (the first always open, each other once the tier before it has had its final room beaten): every run enemy's level, the foes' trainer AI and the run's Dream Shards. Left out: Daydream (70, the wild AI, x1), Reverie (80, AI_FLAG_BASIC, x1.5), Delusion (90, + AI_FLAG_EVAL_ATTACK, x2), Nightmare (100, + AI_FLAG_EXPERT, x3)",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [ "name", "level", "ai_flags", "shard_multiplier" ],
+        "properties": {
+          "name": { "type": "string", "pattern": "^.{1,16}$", "description": "Its name, which the tier NPC and the Entree's records show" },
+          "level": { "type": "integer", "minimum": 1, "maximum": 100, "description": "Every run enemy's level: the rooms', the random rooms' (their moves are those it knows at it), the bosses' and the raids'" },
+          "ai_flags": {
+            "type": "array",
+            "items": { "type": "string", "x-constant": "AI_FLAG_" },
+            "description": "The trainer AI scripts the foes think with, AI_FLAG_* constants, on top of a wild battle's own (none for a single, tag strategy for a double or triple); empty: as a wild Pok\u00e9mon"
+          },
+          "shard_multiplier": { "type": "number", "minimum": 0, "maximum": 10, "description": "The run's Dream Shards at its end times this (before the Black Tree's shard_bonus)" },
+          "modifiers": {
+            "type": "array",
+            "items": { "enum": [ "heavy_fog", "chaotic_climate", "inverse_types" ] },
+            "description": "Its strategic modifiers, each listed in full (a harder tier lists the easier ones' again to keep them). heavy_fog: every door's marker shows ??? whatever is behind it. chaotic_climate: every run battle starts in a weather drawn from climate_weathers, over the room's. inverse_types: the run's battles use the inverse type chart (Gen 6's inverse battles: super effective and not very effective swap, immunities become super effective)"
+          }
+        }
+      }
+    },
+    "climate_weathers": {
+      "type": "array", "minItems": 1, "maxItems": 5,
+      "items": { "type": "string", "x-constant": "BTL_WEATHER_" },
+      "description": "The weathers the chaotic_climate modifier draws a run battle's from, at even odds (BTL_WEATHER_NONE for a clear one). Left out: sun, rain, sandstorm and hail"
     },
     "raid_hp_factor": {
       "type": "number", "minimum": 0.1, "maximum": 20,

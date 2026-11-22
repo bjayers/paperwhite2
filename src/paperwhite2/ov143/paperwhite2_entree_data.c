@@ -1,5 +1,10 @@
 #include "types.h"
+#include "constants/arc.h"
+#include "constants/script_text_banks.h"
+#include "gfl/heap.h"
+#include "gfl/msg.h"
 #include "gfl/std.h"
+#include "gfl/str.h"
 #include "paperwhite2/entralink_buffs.h"
 #include "paperwhite2/entralink_progress.h"
 #include "paperwhite2/entralink_records.h"
@@ -9,6 +14,7 @@
 #include "paperwhite2/entree_menu.h"
 #include "system/game_data.h"
 #include "system/game_system.h"
+#include "system/wordset.h"
 
 // Paper White 2: what the Entree's menu reads, in overlay 143 with it: copies of the run's room tables, the codex and
 // the buffs' catalogue (overlay 12's are static to the run's code; overlay 143 loads only for the menu, so its copies
@@ -108,6 +114,26 @@ const EntralinkRecordEntry *Entree_FindCodexRecord(EntralinkProgress *progress, 
 
 // ---- The rooms ------------------------------------------------------------------------------------------------------
 
+void Entree_SetTierWord(WordSet *wordSet, u32 word, u32 tier) {
+    MsgData *names = GFL_MsgSysLoadData(FALSE, ARCID_SCRIPT_MESSAGE, SCRIPT_TEXT_ENTRALINK_DIALOGUE, HEAPID_MONOLITH);
+    StrBuf *name = GFL_MsgDataLoadStrbufNew(names, ENTRALINK_RUN_TIER_NAMES + tier);
+
+    GFL_WordSetSetStrbuf(wordSet, word, name, 0, TRUE, 0);
+    GFL_StrBufFree(name);
+    GFL_MsgDataFree(names);
+}
+
+s32 Entree_GetHighestTierBeaten(EntralinkProgress *progress) {
+    s32 tier;
+
+    for (tier = ENTRALINK_RUN_TIER_COUNT - 1; tier >= 0; tier--) {
+        if (EntralinkRun_IsTierBeaten(progress, tier)) {
+            break;
+        }
+    }
+    return tier;
+}
+
 u32 Entree_GetRoomCount(void) {
     u32 count = 0;
     u32 i;
@@ -202,8 +228,8 @@ void Entree_CountUndiscovered(EntralinkProgress *progress, u8 *counts) {
     MI_CpuFill8(counts, 0, ENTREE_ROUND_GROUPS);
     for (i = 0; i < NELEMS(sRooms); i++) {
         room = &sRooms[i];
-        if (!Entree_IsRoomOfRooms(room)
-            || (progress->records.roomsDiscovered[room->recordId / 8] & (1 << (room->recordId % 8)))) {
+        if (!Entree_IsRoomOfRooms(room) ||
+            (progress->records.roomsDiscovered[room->recordId / 8] & (1 << (room->recordId % 8)))) {
             continue;
         }
         if (room->role == ENTRALINK_ROLE_FINAL) {

@@ -50,6 +50,10 @@ extern const GameProcFunctions ENTREE_LIST_PROC_FUNCTIONS;
 EntralinkProgress *Entree_GetProgress(MonolithScreenParam *screen);
 // The rooms of rooms/ (those with a record id), and those of them entered and done
 u32 Entree_GetRoomCount(void);
+// A difficulty tier's name (run.json's tiers, in SCRIPT_TEXT_ENTRALINK_DIALOGUE) into a word, and the highest tier
+// whose final room has been beaten, or -1 for none
+void Entree_SetTierWord(WordSet *wordSet, u32 word, u32 tier);
+s32 Entree_GetHighestTierBeaten(EntralinkProgress *progress);
 u32 Entree_CountRooms(const u8 *bits);
 // The rooms of rooms/ not yet discovered, by where they can come up as overlay 12's draws give them (the Records'
 // rows): counts[rounds] those that come up in rounds (a bit each from round 1's) as a round's room or boss, counts[0]

@@ -134,7 +134,7 @@ BtlMainTitle_Text_EntreeNotOffered = Not offered yet.
 BtlMainTitle_Text_EntreeOffered = Offered, never taken.
 BtlMainTitle_Text_EntreeTaken = Taken {0100:0} times.
 BtlMainTitle_Text_EntreeAnyType = any type
-BtlMainTitle_Text_EntreeHallTurns = Won in {0100:0} turns
+BtlMainTitle_Text_EntreeHallTurns = Won in {0100:0} turns at {0100:1}
 BtlMainTitle_Text_EntreeHallNone = No run won yet.
 BtlMainTitle_Text_EntreeHallMon = {0100:0}{0100:1}\nHeld item: {0100:2}
 BtlMainTitle_Text_EntreeHallShiny =  (shiny)
@@ -148,4 +148,5 @@ BtlMainTitle_Text_EntreeUndiscoveredRound = Undiscovered in round {0100:1}
 BtlMainTitle_Text_EntreeUndiscoveredRounds = Undiscovered in rounds {0100:1} and {0100:2}
 BtlMainTitle_Text_EntreeUndiscoveredAnyRound = Undiscovered in any round
 BtlMainTitle_Text_EntreeUndiscoveredFinal = Undiscovered final rooms
+BtlMainTitle_Text_EntreeBestTier = Highest tier beaten
 \pad{18}

@@ -204,6 +204,7 @@ void EntralinkRecords_EndRun(GameData *gameData, u32 round, u32 shards) {
     // The fewest turns, the first such run kept on a tie
     if (records->bestWinTurns == 0 || state->turns < records->bestWinTurns) {
         records->bestWinTurns = state->turns;
+        records->hallTier = state->tier;
         EntralinkRecords_SetHallOfFame(records, gameData);
     }
 }

@@ -411,7 +411,7 @@ static void EntreeList_AddBuffs(EntreeListWork *lw) {
     }
 }
 
-// Hall of Fame: the best run's turns, its team by their nicknames, then its golds
+// Hall of Fame: the best run's turns and tier, its team by their nicknames, then its golds
 static void EntreeList_AddHallOfFame(EntreeListWork *lw) {
     const EntralinkRecords *records = &lw->progress->records;
     const EntralinkHallGold *gold;
@@ -424,6 +424,7 @@ static void EntreeList_AddHallOfFame(EntreeListWork *lw) {
         return;
     }
     EntreeList_SetNumber(lw, 0, records->bestWinTurns);
+    Entree_SetTierWord(lw->wordSet, 1, records->hallTier);
     EntreeList_AddEntry(lw, BtlMainTitle_Text_EntreeHallTurns, NOTHING);
     for (i = 0; i < ENTRALINK_RECORDS_HALL_MONS; i++) {
         if (records->hallMons[i].species != 0) {

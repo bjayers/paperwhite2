@@ -14,7 +14,6 @@
                 {
                     "species": "SPECIES_DIALGA",
                     "form": 1,
-                    "level": 70,
                     "scale": 120,
                     "moves": [ "MOVE_ROAR_OF_TIME", "MOVE_DRAGON_PULSE", "MOVE_FLASH_CANNON", "MOVE_ICE_BEAM" ],
                     "item": "ITEM_ADAMANT_ORB"

@@ -34,7 +34,7 @@ import { BuffsPage } from "./BuffsPage.tsx";
 import { BUFFS } from "./buffs.ts";
 import { NumberBox, Row, Section, Switch, cap } from "./parts.tsx";
 import {
-  ARRIVAL, CLEARINGS_PREFIX, exitAt, ROUNDS, ROUND_NOTES, clearingName, inRound, DEFAULT_CHANCE, DEFAULT_COUNT, DEFAULT_LEVEL, EXIT_SCRIPTS, FACINGS, FORMAT_ENEMIES, FORMATS, ID_PATTERN,
+  ARRIVAL, CLEARINGS_PREFIX, exitAt, ROUNDS, ROUND_NOTES, clearingName, inRound, DEFAULT_CHANCE, DEFAULT_COUNT, EXIT_SCRIPTS, FACINGS, FORMAT_ENEMIES, FORMATS, ID_PATTERN,
   ITEM_BALL_SPRITE, ROLES, ROOMS_DIR, ROOM_SCHEMA, checkRoom, checkRooms, freeId, idFromName, newNpc,
   newRoomData, npcSprite, readRoom, roomId, roomPath, pokemonSprite, shownEnemy,
   DEFAULT_ONCE, PROGRESS_IDS, PROGRESS_IDS_SCHEMA, RUN_COMPLETED, assignProgressIds, battleKey, battleKeys, renameKeys, withoutProgressIds,
@@ -45,7 +45,7 @@ import {
   isTemplateFile, newTemplateData, percent, readFlowerTiles, setFlowerTiles, templatePath, typeChances, type RoomType,
   type Round, type Exit, type MapInfo, type NpcType, type Problem, type ProgressCounters, type Role, type Room,
   AMBIENT_BEHAVIOURS, AMBIENT_DEFAULTS, type AmbientBehaviour,
-  RANDOM_FORMATS, randomRoomsJson, type RandomRooms, type RunLayout,
+  RANDOM_FORMATS, randomRoomsJson, type RandomRooms, type RunLayout, type Tier, tierJson,
 } from "./model.ts";
 
 // The run's dialogue: its script puts the player's name in word 0 before every message (global_10490.s)
@@ -656,8 +656,7 @@ function RandomRoomsSettings({ run, setKey }: { run: RunLayout; setKey: (key: st
     ))}
     <span className="muted small">Any species of the Pokédex with a walking sprite but those of legendaries.json, from its round's base stat total band; the choices of one room of different types and families</span>
     {row("Themed battles", r.themeChance, 0, 100, "%", "The chance that a double or triple's enemies all share a type or an evolution family with its first", (n) => set({ themeChance: n }))}
-    {row("Level", r.level, 1, 100, "", "The random enemies' level", (n) => set({ level: n }))}
-    {row("Move pool", r.movePool, 4, 12, "moves", "Its 4 moves are drawn from this many of the last level-up moves it knows at its level", (n) => set({ movePool: n }))}
+    {row("Move pool", r.movePool, 4, 12, "moves", "Its 4 moves are drawn from this many of the last level-up moves it knows at the run's tier's level (Difficulty tiers)", (n) => set({ movePool: n }))}
     {row("TM moves", r.tmChance, 0, 100, "%", "The chance that one move is replaced by a TM, HM, tutor or egg move; one move is always damaging", (n) => set({ tmChance: n }))}
     {row("Hidden ability", r.hiddenAbilityChance, 0, 100, "%", "The chance of its hidden ability rather than one of its two", (n) => set({ hiddenAbilityChance: n }))}
     {r.anchors.map((group, n) => group.map(([x, z], k) => {
@@ -675,6 +674,67 @@ function RandomRoomsSettings({ run, setKey }: { run: RunLayout; setKey: (key: st
       );
     }))}
     <span className="muted small">Where the battles stand, facing down; the build checks every format's tiles against every clearing's walls, the exits, the markers and the arrival, and that choices stand 2 tiles apart</span>
+  </>;
+}
+
+/** The Run section's difficulty tiers (run.json's tiers and climate_weathers): each tier's name, level, the foes'
+ * trainer AI flags, the Dream Shards' multiplier and its modifiers (checkboxes of run.schema.json's enum), and the
+ * chaotic_climate modifier's weathers. */
+function TierSettings({ run, schema, constants, setKey }: { run: RunLayout; schema: Schema | null; constants: Constants; setKey: (key: string, v: JsonValue | undefined) => void }) {
+  const tierSchema = schema?.properties?.tiers?.items;
+  const modifiers = (tierSchema?.properties?.modifiers?.items?.enum ?? []).map(String);
+  const flagPrefix = String(tierSchema?.properties?.ai_flags?.items?.["x-constant"] ?? "AI_FLAG_");
+  const flags = [...constants].filter(([k]) => k.startsWith(flagPrefix)).sort((a, b) => a[1] - b[1]).map(([k]) => k);
+  const weatherPrefix = String(schema?.properties?.climate_weathers?.items?.["x-constant"] ?? "BTL_WEATHER_");
+  const weathers = [...constants].filter(([k]) => k.startsWith(weatherPrefix)).sort((a, b) => a[1] - b[1]).map(([k]) => k);
+  const setTier = (i: number, change: Partial<Tier>) => setKey("tiers", run.tiers.map((t, k) => tierJson(k === i ? { ...t, ...change } : t)));
+  const toggle = (list: string[], item: string, on: boolean, order: string[]) => order.filter((x) => (x === item ? on : list.includes(x)));
+  const label = (k: string, prefix: string) => cap(k.slice(prefix.length).toLowerCase().replace(/_/g, " "));
+  return <>
+    <h6 className="en-sub en-run-head">Difficulty tiers <span className="muted">the hub's tier NPC</span></h6>
+    {run.tiers.map((t, i) => (
+      <div key={i} className="en-tier">
+        <div className="en-run">
+          <span className="muted small">Tier {i + 1}</span>
+          <input type="text" value={t.name} maxLength={16} title="Its name, which the tier NPC and the Entree's records show"
+                 onChange={(e) => setTier(i, { name: e.target.value })} />
+        </div>
+        <div className="en-run">
+          <span className="muted small">Level</span>
+          <span className="en-run-controls">
+            <NumberBox value={t.level} min={1} max={100} width={52} title="Every run enemy's level" onChange={(n) => setTier(i, { level: n })} />
+            <span className="small">Shards ×</span>
+            <NumberBox value={t.shardMultiplier} min={0} max={10} step={0.5} width={52} title="The run's Dream Shards at its end times this"
+                       onChange={(n) => setTier(i, { shardMultiplier: n })} />
+          </span>
+        </div>
+        <div className="en-run" title="The trainer AI scripts the foes think with, on top of a wild battle's own; none: as a wild Pokémon">
+          <span className="muted small">Trainer AI</span>
+          <KeysPicker value={t.aiFlags} options={flags.map((f) => ({ value: f, label: label(f, flagPrefix) }))} empty="As a wild Pokémon"
+                      onChange={(v) => setTier(i, { aiFlags: flags.filter((f) => v.includes(f)) })} />
+        </div>
+        <div className="en-run">
+          <span className="muted small">Modifiers</span>
+          <span className="en-run-controls">
+            {modifiers.map((m) => (
+              <label key={m} className="ow-check small"><input type="checkbox" checked={t.modifiers.includes(m)}
+                     onChange={(e) => setTier(i, { modifiers: toggle(t.modifiers, m, e.target.checked, modifiers) })} /> {cap(m.replace(/_/g, " "))}</label>
+            ))}
+          </span>
+        </div>
+      </div>
+    ))}
+    <span className="muted small">Every run enemy's level (rooms, random rooms, bosses, raids) is its run's tier's. The first tier is always open, each other once the tier before it has had its final room beaten. The Shards multiply at the run's end, before the Black Tree's bonus. A tier lists every modifier it keeps: heavy fog (every door shows ???), chaotic climate (each battle starts in a weather below), inverse types (the inverse type chart)</span>
+    <div className="en-run">
+      <span className="muted small">Climate weathers</span>
+      <span className="en-run-controls" title="The weathers chaotic climate draws a battle's from, at even odds">
+        {weathers.map((w) => (
+          <label key={w} className="ow-check small"><input type="checkbox" checked={run.climateWeathers.includes(w)}
+                 disabled={run.climateWeathers.length === 1 && run.climateWeathers.includes(w)}
+                 onChange={(e) => setKey("climate_weathers", toggle(run.climateWeathers, w, e.target.checked, weathers))} /> {label(w, weatherPrefix)}</label>
+        ))}
+      </span>
+    </div>
   </>;
 }
 
@@ -777,6 +837,7 @@ function RunSection({ rooms, templates, constants }: { rooms: { id: string; room
           </span>
         </div>
         <span className="muted small">How many times likelier a premade room the save hasn't discovered yet is drawn, so every room turns up for the White Tree's "discover every room" (1: no weighting)</span>
+        <TierSettings run={run} schema={schema} constants={constants} setKey={setKey} />
         <RandomRoomsSettings run={run} setKey={setKey} />
         <div className="en-run">
           <span className="muted small">Ground items</span>
@@ -1353,7 +1414,7 @@ function BattlesSection({ room, roomId: id, constants, get, set, setField, repla
   const battles = asList(get(["battles"]));
   const add = () => {
     const id = freeId("battle", new Set(room.battles.map((b) => b.id)));
-    set(["battles"], [...battles, fromPlain({ id, format: "single", enemies: [{ species: "SPECIES_BULBASAUR", level: DEFAULT_LEVEL }] })]);
+    set(["battles"], [...battles, fromPlain({ id, format: "single", enemies: [{ species: "SPECIES_BULBASAUR" }] })]);
   };
   /** Renames a battle, the NPCs that start it and what every room's catches and spawn conditions name of it. */
   const renameBattle = (i: number, from: string, to: string) => {
@@ -1391,7 +1452,7 @@ function BattlesSection({ room, roomId: id, constants, get, set, setField, repla
             ))}
             <div className="ow-section-actions en-enemy-add">
               <button disabled={b.enemies.length >= max} title={b.enemies.length >= max ? `A ${b.format} battle takes ${max === 1 ? "one enemy" : `at most ${max}`}` : undefined}
-                      onClick={() => set(["battles", i, "enemies"], [...asList(get(["battles", i, "enemies"])), fromPlain({ species: "SPECIES_BULBASAUR", level: DEFAULT_LEVEL })])}>+ Add an enemy</button>
+                      onClick={() => set(["battles", i, "enemies"], [...asList(get(["battles", i, "enemies"])), fromPlain({ species: "SPECIES_BULBASAUR" })])}>+ Add an enemy</button>
               <span className="muted">{b.enemies.length} of {max}</span>
             </div>
           </div>
@@ -1444,9 +1505,7 @@ function EnemyCard({ at, index, over, constants, get, set, setField, remove, bat
         {remove && <button className="icon" title="Remove the enemy" onClick={remove}>×</button>}
       </div>
       <div className="ow-condition">
-        <Row label="Level" hint="Its level; the run scales its stats with the run's depth (the Run section's Enemy scaling)">
-          <NumberBox value={Number(e.get("level") ?? DEFAULT_LEVEL)} min={1} max={100} onChange={(n) => f("level", n)} />
-          <span className="muted">Form</span>
+        <Row label="Form" hint="Its level is the run's difficulty tier's (the Run section's Difficulty tiers); the run scales its stats with the run's depth (Enemy scaling)">
           <NumberBox value={Number(e.get("form") ?? 0)} min={0} max={255} onChange={(n) => f("form", n || undefined)} />
         </Row>
         <Row label="Scale" hint="Its own multiplier on every stat, on top of the run's scaling by depth, for an enemy that comes out too easy or too hard (100: none)">

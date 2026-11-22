@@ -141,7 +141,21 @@ NONE16 = 0xffff
 # A requirement that is a finished run rather than a battle's progress id
 RUN_COMPLETED = "run/completed"
 REQUIRE_RUN_COMPLETED = 0xffff
-DEFAULT_LEVEL = 70
+# The difficulty tiers (run.json's tiers), when it leaves them out: name, level, AI flags, Dream Shard multiplier,
+# modifiers. Each tier's modifiers are a bit each in the header, by their place in MODIFIERS, the order of
+# include/paperwhite2/entralink_run_actions.h's ENTRALINK_MODIFIER_*
+TIER_COUNT = 4
+MODIFIERS = ["heavy_fog", "chaotic_climate", "inverse_types"]
+DEFAULT_TIERS = [
+    {"name": "Daydream", "level": 70, "ai_flags": [], "shard_multiplier": 1.0, "modifiers": []},
+    {"name": "Reverie", "level": 80, "ai_flags": ["AI_FLAG_BASIC"], "shard_multiplier": 1.5,
+     "modifiers": ["heavy_fog"]},
+    {"name": "Delusion", "level": 90, "ai_flags": ["AI_FLAG_BASIC", "AI_FLAG_EVAL_ATTACK"],
+     "shard_multiplier": 2.0, "modifiers": ["heavy_fog", "chaotic_climate"]},
+    {"name": "Nightmare", "level": 100, "ai_flags": ["AI_FLAG_BASIC", "AI_FLAG_EVAL_ATTACK", "AI_FLAG_EXPERT"],
+     "shard_multiplier": 3.0, "modifiers": ["heavy_fog", "chaotic_climate", "inverse_types"]},
+]
+DEFAULT_CLIMATE_WEATHERS = ["BTL_WEATHER_SUN", "BTL_WEATHER_RAIN", "BTL_WEATHER_SANDSTORM", "BTL_WEATHER_HAIL"]
 # The sprites an NPC shows without its own: an item NPC the item ball, rest and buff NPCs the Lady
 DEFAULT_SPRITES = {"item": "OBJ_CODE_110", "rest": "OBJ_CODE_LADY", "buff": "OBJ_CODE_LADY", "heal": "OBJ_CODE_LADY",
                    "revive": "OBJ_CODE_LADY", "gift": "OBJ_CODE_LADY", "shop": "OBJ_CODE_LADY",
@@ -207,10 +221,28 @@ def load_run(directory: Path) -> dict:
     return datajson.load(directory / "run.json", datajson.load_schema(directory / "run.schema.json"))
 
 
+def load_room(path: Path, schema: dict) -> dict:
+    """A room or template file, checked against the schema. An enemy's level, which rooms had before the difficulty
+    tiers gave every run enemy theirs (run.json's tiers), is ignored: the editor no longer writes it."""
+    try:
+        room = json.loads(path.read_text())
+    except json.JSONDecodeError as error_:
+        raise datajson.DataError(f"{path}: {error_}") from None
+    for battle in room.get("battles", []) if isinstance(room, dict) else []:
+        for enemy in battle.get("enemies", []) if isinstance(battle, dict) else []:
+            if isinstance(enemy, dict):
+                enemy.pop("level", None)
+    try:
+        datajson.validate(room, schema, "")
+    except datajson.DataError as error_:
+        raise datajson.DataError(f"{datajson.label(path)}: {error_}") from None
+    return room
+
+
 def load_rooms(directory: Path) -> dict[str, dict]:
     """Every room by ID, in ID order, checked against the schema and the rules the schema can't say."""
     schema = datajson.load_schema(directory / "room.schema.json")
-    rooms = {path.stem: datajson.load(path, schema) for path in sorted((directory / "rooms").glob("*.json"))}
+    rooms = {path.stem: load_room(path, schema) for path in sorted((directory / "rooms").glob("*.json"))}
     for name, room in rooms.items():
         where = f"rooms/{name}.json"
         if name == RUN_COMPLETED.split("/")[0]:
@@ -229,7 +261,7 @@ def load_templates(directory: Path) -> dict[str, dict]:
         where = f"templates/{name}.json"
         if not path.is_file():
             continue
-        template = datajson.load(path, schema)
+        template = load_room(path, schema)
         if template["role"] != "room":
             error(where, f"a template's role is room, not {template['role']}")
         if template.get("type", kind) != kind:
@@ -237,6 +269,43 @@ def load_templates(directory: Path) -> dict[str, dict]:
         check_room(directory, where, template)
         templates[name] = template
     return templates
+
+
+def load_tiers(run: dict) -> list[dict]:
+    """run.json's tiers (DEFAULT_TIERS if left out), each with its AI flags, Shard percent and modifiers as numbers."""
+    constants = datajson.constants()
+    tiers = []
+    if len(run.get("tiers", DEFAULT_TIERS)) != TIER_COUNT:
+        error("run.json", f"tiers has {TIER_COUNT} tiers, which the hub's tier NPC lists")
+    for number, tier in enumerate(run.get("tiers", DEFAULT_TIERS), 1):
+        for key in ("ai_flags", "modifiers"):
+            if len(set(tier.get(key, []))) != len(tier.get(key, [])):
+                error("run.json", f"tier {number}'s {key} lists one twice")
+        if not 0 <= tier["shard_multiplier"] <= 10:
+            error("run.json", f"tier {number}'s shard_multiplier {tier['shard_multiplier']} is not from 0 to 10")
+        for flag in tier["ai_flags"]:
+            if flag not in constants:
+                error("run.json", f"tier {number}'s AI flag {flag!r} is not an AI_FLAG_* of include/constants/tr_ai.h")
+        tiers.append({
+            "name": tier["name"], "level": tier["level"],
+            "ai": sum(constants[flag] for flag in tier["ai_flags"]),
+            "ai_names": tier["ai_flags"],
+            "shard_percent": round(tier["shard_multiplier"] * 100),
+            "modifiers": sum(1 << MODIFIERS.index(m) for m in tier.get("modifiers", [])),
+        })
+    return tiers
+
+
+def climate_weathers(run: dict) -> list[int]:
+    """The chaotic_climate modifier's weathers (run.json's climate_weathers) as BTL_WEATHER_* values."""
+    constants = datajson.constants()
+    weathers = run.get("climate_weathers", DEFAULT_CLIMATE_WEATHERS)
+    if len(set(weathers)) != len(weathers):
+        error("run.json", "climate_weathers lists one twice")
+    for weather in weathers:
+        if weather not in constants:
+            error("run.json", f"climate_weathers' {weather!r} is not a BTL_WEATHER_* of include/constants/battle.h")
+    return [constants[weather] for weather in weathers]
 
 
 def round_weights(round_: dict) -> dict[str, int]:
@@ -498,7 +567,7 @@ def spoken(npc: dict, key: str) -> bool:
 
 def dialogue_lines(directory: Path = SOURCE) -> list[str]:
     """The script text bank entralink_dialogue: every NPC's before and after lines, room by room, then template by
-    template, in tables()'s order. Its first line is empty, so the bank is never empty and no NPC's message is 0."""
+    template, in tables()'s order, then the difficulty tiers' names. Its first line is empty, so the bank is never empty and no NPC's message is 0."""
     lines = [""]
     for room in [*load_rooms(directory).values(), *load_templates(directory).values()]:
         for npc in room["npcs"]:
@@ -506,6 +575,8 @@ def dialogue_lines(directory: Path = SOURCE) -> list[str]:
             for key in ("before", "after"):
                 if spoken(npc, key):
                     lines.append(text_line(dialogue[key]))
+    # The difficulty tiers' names, after the NPCs' (ENTRALINK_RUN_TIER_NAMES)
+    lines += [text_line(tier["name"]) for tier in load_tiers(load_run(directory))]
     return lines
 
 
@@ -666,7 +737,6 @@ def room_row(name: str, room: dict, template: bool, rooms: dict[str, dict], tabl
                 "ability": ABILITY_SPECIES if ability is None else ABILITY_HIDDEN if ability == "hidden"
                 else constants[ability],
                 "form": enemy.get("form", 0),
-                "level": enemy.get("level", DEFAULT_LEVEL),
                 "scale": enemy.get("scale", DEFAULT_SCALE),
                 "gender": GENDERS[enemy.get("gender")],
                 "shiny": int(enemy.get("shiny", False)),
@@ -810,7 +880,11 @@ def tables(directory: Path) -> dict:
         clearings.append({"name": zone, "zone": constants[zone], "firstFlower": len(flower_tiles),
                           "flowerCount": len(tiles), "blocked": blocked_rows(models[zone])})
         flower_tiles += [tuple(tile) for tile in tiles]
+    tiers = load_tiers(run)
     return {
+        "tiers": tiers,
+        "tier_names": message[0],
+        "climate_weathers": climate_weathers(run),
         "ids": list(rooms),
         "templates": template_index,
         "random_rooms": random_index,
@@ -918,7 +992,6 @@ def header(directory: Path) -> str:
                for b in data["battles"]]
     enemies = [f"/* {e['name']} */ {{ {e['species']}, {e['item']}, {{ {', '.join(map(str, e['moves']))} }}, "
                f"0x{e['ability']:x}, 0x{e['catchId']:x}, {e['firstRequirement']}, {e['scale']}, {e['form']}, "
-               f"{e['level']}, "
                f"{e['gender']}, {e['shiny']}, {e['catchOnce']}, {e['requirementCount']} }}" for e in data["enemies"]]
     npcs = [f"/* {n['name']} */ {{ {n['item']}, {n['sprite']}, {n['firstRequirement']}, "
             f"0x{n['before']:x}, 0x{n['after']:x}, {n['type']}, {n['battle']}, {n['enemy']}, {n['count']}, "
@@ -950,6 +1023,19 @@ def header(directory: Path) -> str:
         f"#define ENTRALINK_RUN_NPC_COUNT {max(len(data['npcs']), 1)}",
         f"#define ENTRALINK_RUN_REQUIREMENT_COUNT {max(len(data['requirements']), 1)}",
         f"#define ENTRALINK_RUN_ROUND_COUNT {len(data['rounds'])}",
+        "// The difficulty tiers (run.json's tiers), easiest first: every run enemy's level, the foes' trainer AI flags",
+        "// (on top of a wild battle's), the run's Dream Shards in percent, the modifiers (1 << ENTRALINK_MODIFIER_*",
+        "// bits), and the first name's message in SCRIPT_TEXT_ENTRALINK_DIALOGUE, the others after it",
+        f"#define ENTRALINK_RUN_TIER_COUNT {len(data['tiers'])}",
+        f"#define ENTRALINK_RUN_TIER_LEVELS {{ {', '.join(str(t['level']) for t in data['tiers'])} }}",
+        "#define ENTRALINK_RUN_TIER_AI_FLAGS { " + ", ".join(
+            f"0x{t['ai']:x} /* {' | '.join(t['ai_names']) or 'none'} */" for t in data["tiers"]) + " }",
+        f"#define ENTRALINK_RUN_TIER_SHARD_PERCENTS {{ {', '.join(str(t['shard_percent']) for t in data['tiers'])} }}",
+        "#define ENTRALINK_RUN_TIER_MODIFIERS { " + ", ".join(f"0x{t['modifiers']:x}" for t in data["tiers"]) + " }",
+        f"#define ENTRALINK_RUN_TIER_NAMES {data['tier_names']}",
+        "// The chaotic_climate modifier's weathers (BTL_WEATHER_*), drawn at even odds",
+        f"#define ENTRALINK_RUN_CLIMATE_WEATHERS {{ {', '.join(map(str, data['climate_weathers']))} }}",
+        f"#define ENTRALINK_RUN_CLIMATE_WEATHER_COUNT {len(data['climate_weathers'])}",
         f"#define ENTRALINK_RUN_ROOM_ZONE_COUNT {len(zones)}",
         f"#define ENTRALINK_RUN_FINAL_ZONE {data['final_zone'][1]} // {data['final_zone'][0]}",
         f"#define ENTRALINK_RUN_PRE_BOSS_ZONE 0x{data['pre_boss_zone'][1]:x} // {data['pre_boss_zone'][0]}",
@@ -1009,7 +1095,7 @@ def header(directory: Path) -> str:
         f"#define ENTRALINK_RUN_ROOMS {initializer(rooms)}",
         "// EntralinkBattle: format, enemy count, first enemy, progress id",
         f"#define ENTRALINK_RUN_BATTLES {initializer(battles)}",
-        "// EntralinkEnemy: species, item, moves, ability, catch id, first requirement, scale, form, level, gender,",
+        "// EntralinkEnemy: species, item, moves, ability, catch id, first requirement, scale, form, gender,",
         "// shiny, catch once, requirement count",
         f"#define ENTRALINK_RUN_ENEMIES {initializer(enemies)}",
         "// EntralinkNpc: item, sprite, first requirement, before and after messages, type, battle, enemy, count,",

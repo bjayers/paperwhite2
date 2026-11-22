@@ -47,7 +47,6 @@
             }
         ],
         "theme_chance": 70,
-        "level": 70,
         "move_pool": 7,
         "tm_chance": 25,
         "hidden_ability_chance": 5,
@@ -66,6 +65,37 @@
             ]
         ]
     },
+    "tiers": [
+        {
+            "name": "Daydream",
+            "level": 70,
+            "ai_flags": [],
+            "shard_multiplier": 1.0,
+            "modifiers": []
+        },
+        {
+            "name": "Reverie",
+            "level": 80,
+            "ai_flags": [ "AI_FLAG_BASIC" ],
+            "shard_multiplier": 1.5,
+            "modifiers": [ "heavy_fog" ]
+        },
+        {
+            "name": "Delusion",
+            "level": 90,
+            "ai_flags": [ "AI_FLAG_BASIC", "AI_FLAG_EVAL_ATTACK" ],
+            "shard_multiplier": 2.0,
+            "modifiers": [ "heavy_fog", "chaotic_climate" ]
+        },
+        {
+            "name": "Nightmare",
+            "level": 100,
+            "ai_flags": [ "AI_FLAG_BASIC", "AI_FLAG_EVAL_ATTACK", "AI_FLAG_EXPERT" ],
+            "shard_multiplier": 3.0,
+            "modifiers": [ "heavy_fog", "chaotic_climate", "inverse_types" ]
+        }
+    ],
+    "climate_weathers": [ "BTL_WEATHER_SUN", "BTL_WEATHER_RAIN", "BTL_WEATHER_SANDSTORM", "BTL_WEATHER_HAIL" ],
     "raid_hp_factor": 3.0,
     "boss_double_factor": 0.85,
     "boss_triple_factor": 0.7,

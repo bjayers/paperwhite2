@@ -108,7 +108,7 @@ final room). All names are the repo's constants.
 | `role` | `room` (one of a round's rooms), `boss` (ends round 1 or 2; the bosses have their own pool) or `final` (the run's last room; one is drawn if there are several) |
 | `weather` | Optional `BTL_WEATHER_*`: its battles start in it. Since step 5 the field doesn't show it (step 3 showed the matching field weather): the field has its round's fog. Left out, the battles take the field's |
 | `marker` | Optional (step 5): what lies in front of any door leading to it, `enemy`, `challenge`, `boss`, `rest`, `gift`, `event`, `shop`, `unknown` (always ???) or `final`; left out, its role's (`enemy`, `boss`, `final`). `catch` is never set: the game shows it instead of `enemy`, `challenge` or `boss` while one of its enemies can be caught and the run's bag holds a Nightmare Ball |
-| `battles[]` | Up to 8 of: `id` (lower case, the name NPCs use), `progress_id` (its won-ever bit, below), `format` (exactly: `single` 1 enemy, `double` 2, `triple` 3, `raid` 1 in the center; the packer and the editor refuse other counts, and the game plays a short double or triple as the format its enemies fill), `enemies[]` (1-3: `species`, `form` (0), `level` (70), `moves`, `ability` (`ABILITY_*` or `"hidden"`), `item`, `gender`, `shiny` (false), `catch`, `progress_id`) |
+| `battles[]` | Up to 8 of: `id` (lower case, the name NPCs use), `progress_id` (its won-ever bit, below), `format` (exactly: `single` 1 enemy, `double` 2, `triple` 3, `raid` 1 in the center; the packer and the editor refuse other counts, and the game plays a short double or triple as the format its enemies fill), `enemies[]` (1-3: `species`, `form` (0), `moves`, `ability` (`ABILITY_*` or `"hidden"`), `item`, `gender`, `shiny` (false), `catch`, `progress_id`) |
 | `npcs[]` | Up to 16 of the NPC record below. If no battle NPC spawns, the room is free: its exits are open at once |
 
 An enemy's `catch` (left out: it can't be caught): `after` (a list of `"<room id>/<battle id>"`, battles that must have
@@ -157,7 +157,7 @@ faintly behind the grid, switchable, and checks each NPC against all nine: on an
 tile blocked in any is a warning, as is standing where the player arrives (x 15 z 23).
 
 **Levels are base values:** since phase 5 of the buffs (`entralink-buffs.md` section 12) the run scales the enemies' stats
-with its depth across the run (run.json's `enemy_scaling`, each enemy's `scale`; raids take their place's multipliers with their HP times `raid_hp_factor`; bosses and the final room the curve at their round's last room times `boss_bonus`, entralink-buffs.md 15.2); their levels stay as given.
+with its depth across the run (run.json's `enemy_scaling`, each enemy's `scale`; raids take their place's multipliers with their HP times `raid_hp_factor`; bosses and the final room the curve at their round's last room times `boss_bonus`, entralink-buffs.md 15.2). Since the difficulty tiers (below) an enemy has no level of its own: every run enemy takes its run's tier's.
 
 The editor's other checks: a battle NPC naming no battle or a missing one, a battle no NPC starts, more enemies than the
 format takes, a battle NPC showing an enemy its battle doesn't have, an item NPC without an item, two NPCs on one tile,
@@ -1059,7 +1059,7 @@ raids, bosses or the final room.
 
 | Where | What |
 | --- | --- |
-| `run.json` | `random_enemy_chance` (0-100, 50) and `random_rooms`: `format_weights` (single 40, double 35, triple 25), `bst` (a `{ min, max }` base stat total band for rounds 1-3, the last given for those left out; 300-480, 380-540, 450-600), `theme_chance` (70), `level` (70), `move_pool` (7), `tm_chance` (25), `hidden_ability_chance` (5), `anchors` (the battles' tiles for 1, 2 and 3 choices: `[15, 15]`; `[12, 15]`, `[19, 15]`; `[10, 15]`, `[15, 15]`, `[20, 15]`) |
+| `run.json` | `random_enemy_chance` (0-100, 50) and `random_rooms`: `format_weights` (single 40, double 35, triple 25), `bst` (a `{ min, max }` base stat total band for rounds 1-3, the last given for those left out; 300-480, 380-540, 450-600), `theme_chance` (70), `move_pool` (7), `tm_chance` (25), `hidden_ability_chance` (5), `anchors` (the battles' tiles for 1, 2 and 3 choices: `[15, 15]`; `[12, 15]`, `[19, 15]`; `[10, 15]`, `[15, 15]`, `[20, 15]`) |
 | `legendaries.json` | The legendary and mythical species (the species data has no such flag), never drawn; a new legendary species goes here |
 | `tools/paperwhite2/entralink_random.py` | Checks them and writes `paperwhite2/entralink_random_config.h` (the settings and the species table's member number); its `archive` command adds the species table to a/0/4/7 (`EntralinkRandomSpecies`: species, sprite, evolution family as its line's first species, base stat total, types, the female's sprite's distance from the sprite; 12 bytes each), which the game reads into the event heap only while it makes a room (memory.md) |
 | `tools/paperwhite2/entralink_run.py` | Two rows after the templates, `random/enemy` and `random/enemy_choice` (`EntralinkRoom`'s new `random`, `isTemplate` so never in a pool, their types' markers), `ENTRALINK_RUN_RANDOM_ENEMY_ROOM`, `_CHOICE_ROOM` and `_ENEMY_CHANCE`; a round's enemy and enemy_choice types are never "skipped" while the chance is above 0 (`type_problems`, the editor's `runProblems`) |
@@ -1067,14 +1067,14 @@ raids, bosses or the final room.
 **The species:** those of the Pokédex (`species_list.pokedex_species`, so never a `"pokedex": false` one), the hack's
 new ones included, but legendaries.json's, that have a walking or follower sprite (the packer's `npc_sprite`: 597
 today, 76 of them by their follower; Flapple and Appletun left out, their followers still Budew's; entralink-buffs.md
-20; 523 before the followers) and know a damaging level-up move (power above 0) at the rooms' level.
+20; 523 before the followers) and know a damaging level-up move (power above 0) at the easiest tier's level (run.json's `tiers`; since the tiers).
 
 **Making a room** (`EntralinkRun_MakeRandomRoom`, `src/paperwhite2/ov012/paperwhite2_entralink_random_rooms.c`, as the
 player enters it, before its NPCs come up): 1 battle (enemy) or 2-3 at even odds (enemy choice); each battle's format
 by the weights; its enemies from the round's band, the first at random and, at `theme_chance`, the others sharing a
 type or the family with it; every enemy keeps off the types and families of the room's earlier choices and no species
 comes twice in a battle. A rule no species fits is dropped, in the order theme-and-apart, theme, apart, distinct.
-Each enemy: the level, 4 moves drawn from the last `move_pool` level-up moves it knows at it (`PML_LearnsetLvUpLoad`),
+Each enemy: 4 moves drawn from the last `move_pool` level-up moves it knows at the run's tier's level (`PML_LearnsetLvUpLoad`),
 at `tm_chance` one replaced (or added, with fewer than 4) by a TM or HM (the personal data's TM bits), tutor (the free
 and paid tutors' bits, `paperwhite2/move_tutors.h`) or egg move (a/1/2/4); then, if none of them is damaging
 (`PML_MoveIsDamaging`), one replaced by a damaging one of those it knows. One of its two abilities at random, its
@@ -1307,7 +1307,7 @@ the packer. `EntralinkRanks_HasReward` compares with the rank now. The defaults:
 | Black 3 | `buff_room` | every run's first room is the buff template (`sTypeTemplates[ENTRALINK_TYPE_BUFF]`), whose ball offers buffs |
 | Black 4 | `dust_bonus` | a battle's Dream Dust + `dust_bonus` percent (50) |
 | Black 5 | `shard_bonus` | a run's end gives `shard_multiplier` times its Dream Shards (2; the records' Shards earned count them) |
-| White 1 | `difficulty` | the difficulty NPC (id 7, script 17): a placeholder line, no mechanics yet |
+| White 1 | `difficulty` | the tier NPC (id 7, script 17): chooses the difficulty tier ("Difficulty tiers", below) |
 | White 2 | `fog` | the fog NPC (id 8, script 18): the hub's fog, pink, purple, black (the rounds' tints `WEATHER_CUSTOM_TINT_9`, `_8`, `_7`) or none, saved at the progress block's 0x620 (`hubFog`) and shown at once (`FieldSetWeather 0xffff`, which reads `GetWeatherAll`'s new hub hook) |
 | White 3 | `shard_shop` | the item shop NPC (id 9, script 19): the Poké Mart's screen (shop ID `ENTRALINK_SHARD_SHOP_ID` 0xfb, currency Dream Shards) selling `shard_shop`'s goods into the real bag: a Nightmare Ball for 15, a Shiny Candy for 60. Shards spent here are spent for good (the buff shop's reset gives back only its own) |
 | White 4 | `skip_round` | stepping into the forest asks "Skip the forest's first round?": Yes starts at round 2's first room with a head start, `skip_round`'s picks (6) each chosen from an offer of round 1's (an enemy room's odds) with the usual chooser, and its Dream Dust (250); No (or B) starts as before |
@@ -1416,6 +1416,149 @@ byte of the progress block (0x621).
   such rows (`t3_records_none_2.png`).
 - **The debug options** (`t2.py`), from the field with the ranks' records zeroed, White +1 and Black +1 k times each:
   Shards earned 0, 5, 20, 60, 180, 450 and `debugMilestones` 0, 0b1, 0b11 ... 0b11111 at k = 0-5, a sixth press changing nothing; the hub's stages (White, Black) 0/0, 0/0, 1/1, 2/2, 3/3, 4/4 and its NPCs: all six gone at 0, the Reserve Box and difficulty NPCs back at 1, the shop and fog at 2, the item shop at 3, the form NPC at 5 (`t2_menu_k5.png`: both entries 5/5). **Entree ranks: reset** from the hub: Shards earned 0, `debugMilestones` 0, and the hub's next load stages 0/0 with all six NPCs gone.
+
+## Difficulty tiers (2026-11-21)
+
+Decided with the user on 2026-11-21: four tiers that set every run enemy's level, the foes' AI, the run's Dream Shards
+and strategic modifiers, chosen at the White Tree's rank 1 NPC (the placeholder difficulty NPC before). Code:
+`paperwhite2_entralink_run.c` (the level, Shards, the final's bit, heavy fog, chaotic climate),
+`paperwhite2_entralink_ranks.c` (the chooser's action), `paperwhite2_entralink_random_rooms.c` (moves at the tier's
+level), overlay 167's `paperwhite2_entralink_battle.c`, `btl_main.c` (`GetClientAIFlags`) and `btl_calc.c`
+(`GetTypeEffectiveness`), overlay 143's Records and Hall of Fame; Script_17 of `entralink.s`.
+
+### The AI finding
+
+A run battle is a wild battle, and a wild battle's foe already thinks through the trainer AI's VM: the battle makes an
+AI client for it (`BattleClient_Create`, `TrAI_CreateVM` with `GetClientAIFlags`) and picks every move with
+`TrAI_Think`, but `GetClientAIFlags` gives a wild single no flags (no script runs: every usable move scores the same,
+so the pick is random) and a wild double or triple only `AI_FLAG_TAG_STRATEGY` (0x80). A trainer's flags come from
+`mainModule->trainers[client]`, which a wild battle never fills, so setting a trainer's AI field on the setup does
+nothing for a wild foe. **The hook:** `GetClientAIFlags`'s wild branch ORs in `EntralinkBattle_GetAIFlags`, the run's
+tier's flags in a run battle (`ENTRALINK_RUN_BTL_SETUP_FLAG`) and 0 in any other, so wild battles outside the forest
+are unchanged. Tested below: the same foe's choices with and without the flags.
+
+### The data
+
+`run.json`'s `tiers`, exactly four (the chooser lists four; the packer refuses another count), easiest first, and
+`climate_weathers`:
+
+| Tier | `level` | `ai_flags` | `shard_multiplier` | `modifiers` |
+| --- | --- | --- | --- | --- |
+| Daydream | 70 | none (a wild foe's own) | 1.0 | none |
+| Reverie | 80 | `AI_FLAG_BASIC` (293 of the game's trainers: no useless moves) | 1.5 | `heavy_fog` |
+| Delusion | 90 | + `AI_FLAG_EVAL_ATTACK` (37 trainers: the strongest move, type matchups) | 2.0 | + `chaotic_climate` |
+| Nightmare | 100 | + `AI_FLAG_EXPERT` (293 trainers, every gym leader, the Elite Four and Iris) | 3.0 | + `inverse_types` |
+
+`name` (1-16 characters) is the chooser's and the Entree's: the packer appends the four names to the
+`entralink_dialogue` text bank after the NPCs' lines (`ENTRALINK_RUN_TIER_NAMES` the first's message), so the data is
+the only copy. A tier lists every modifier it has (the defaults repeat the easier tiers', so each can be changed
+alone). `climate_weathers` (`BTL_WEATHER_*`, sun, rain, sandstorm and hail by default; `BTL_WEATHER_NONE` may be one)
+is what chaotic climate draws from. The header: `ENTRALINK_RUN_TIER_COUNT`, `_LEVELS`, `_AI_FLAGS` (numbers, with the
+constants' names in comments), `_SHARD_PERCENTS`, `_MODIFIERS` (a bit each, `ENTRALINK_MODIFIER_*` of
+`entralink_run_actions.h`), `_NAMES`, `ENTRALINK_RUN_CLIMATE_WEATHERS`.
+
+**The level** is the tier's for every run enemy: rooms, random rooms (their four moves come from those they know at
+it; the species table keeps those that know a damaging move at the easiest tier's), bosses and raids. The room
+format has no `level` any more (`room.schema.json`, the editor's enemy card, `random_rooms.level` gone); the packer
+drops one left in a room file as it reads it (`load_room`), and the rooms' 25 were removed from the files (the lines
+only, the rest byte for byte).
+
+### The modifiers
+
+- **heavy_fog**: `EntralinkRun_GetDoorMarker` gives the unknown marker for every door, a boss's, a rest's, the final
+  room's and a catch's included; the doors and what is behind them are as before.
+- **chaotic_climate**: `EntralinkRun_CreateBattle` sets the battle's starting weather to one of `climate_weathers` at
+  even odds, over the room's `weather`; weather moves and abilities in the battle work as usual, and Forecast's (a
+  buff) still applies after, at the team's first entry.
+- **inverse_types**: `GetTypeEffectiveness` inverts the chart in a run battle (`EntralinkBattle_IsInverse`, set at
+  the battle's start): an immunity or a half is double, a double is half, as Gen 6's inverse battles, for both sides,
+  everything that reads the chart (moves, the AI's checks, Stealth Rock). Abilities and items keep their immunities
+  (Levitate, Wonder Guard, Volt Absorb), and a Flying type is hit by Ground moves (its immunity is the chart's).
+  **Order with the buffs:** the inverse chart first, a type at a time; then Magnetised (its Flying-type addition reads
+  the inverted chart; its "Ground no longer immune to Electric" applies only where the chart makes it an immunity, so
+  never under the inverse chart, where it is already double); then Spectral's roll on what isn't already super
+  effective.
+
+The chooser shows each of the chosen tier's modifiers in a line after choosing ("Heavy fog: no door shows what lies
+beyond it.", placeholders).
+
+### Choosing and saving
+
+- **The tier NPC** (id 7, Script_17, the White Tree's rank 1 `difficulty` reward): "Your dreams run at <tier> now.
+  How deep would you like to dream?", the four tiers, a locked one as "<name> (locked)", and Cancel. A locked one:
+  "Not yet... Defeat the final nightmare at <the tier before> first."; an open one is saved and its modifiers listed.
+  Action `ENTRALINK_RUN_ACTION_TIER` (48): 0 sets words 0-3 to the names (a locked one's through
+  `Entralink_Text_TierLocked`) and word 4 to the chosen tier's; 1 chooses; 2 asks for a modifier.
+- **Open:** Daydream always; another once the tier before it has had its final room beaten (a bit per tier).
+  A block with runs completed counts Daydream as beaten (those runs were at its level 70).
+- **Saved** in the progress block: `tier` at 0x622, `tiersBeaten` at 0x623 (the block's last two unused bytes; 0 in an
+  old block: Daydream, none beaten). A run takes the chosen tier as it starts (`EntralinkRunState`'s `tier`, in its
+  padding: ARM9 main unchanged), or Daydream if the chosen one isn't open.
+- **Shards:** at the run's end, the rooms' and bonuses' Shards times the tier's percent (rounded down), then times
+  the Black Tree's `shard_bonus` (x2 at rank 5): x1, x1.5, x2, x3, or x2 to x6 with it.
+
+### Records
+
+- The Entree's **Records** has "Highest tier beaten" (its name, or "-") after Runs won, from `tiersBeaten`.
+- The **Hall of Fame**'s first line is "Won in N turns at <tier>": the records' `hallTier` (0x0a of the records, the
+  `unused` half-word's first byte), set with the hall. The hall still takes the run won in the fewest turns, whatever
+  its tier.
+
+### The editor
+
+The Entree page's Run section, **Difficulty tiers** above Random rooms: each tier's name, level, Shards multiplier, its
+trainer AI flags (a checkbox per `AI_FLAG_*` constant) and its modifiers (a checkbox per the schema's enum), and the
+Climate weathers (a checkbox per `BTL_WEATHER_*`, at least one). The enemy card's Level and the random rooms' Level are
+gone. `editor/tests/entree-tiers.test.ts`.
+
+### Memory
+
+Overlay 12 +704 bytes (the tiers' tables, the chooser's words and the modifiers); ARM9 main unchanged (the run state's
+tier is in its padding); overlay 167 +0.1 KB (the AI flags, the inverse chart); overlay 143 +0.3 KB at most. The DS arena left
+falls from 0x49e0 to **0x4720 (17.8 KB)**. Save: two bytes of the progress block, one of the records.
+
+### Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `tiers/h/`)
+
+Each part a run started at its tier with the progress block poked (every tier open unless said), the room's place and
+doors poked as before; scripts `t1.py` to `t5.py`.
+
+- **The AI** (`t2.py`, the Illusionist's Zoroark at place 3 with its moves poked, the lead Pignite's to Splash only,
+  its HP refilled, the foe's picks counted at `BattleAction_SetFightParam`): Dream Eater, Tackle and Body Slam against
+  an awake Pignite: Daydream 10/10/9 (no scripts: random), Reverie 0/15/14 (Basic drops Dream Eater), Delusion 0/9/7,
+  Nightmare 0/1/14 (Expert). In that set Eval attack takes Dream Eater for the strongest (its damage, 472 against
+  Tackle's 86 and Body Slam's 146, ignores the sleep it needs), so the other two both lose its point and tie; hence
+  `t2c.py`: Tackle, Body Slam and Confusion (super effective on Pignite, lower base power; the AI's damage 96, 162,
+  214): Reverie (Basic only) 1/7/4, Delusion Confusion in 3 of 3 picks while Pignite wasn't confused, Body Slam once
+  in a later run with it confused (likely Basic's mark against a confusing move on a confused target). Small samples:
+  the emulator's turns are slow with hail and confusion, and the harness's HP refill wrote the unscaled HP.
+- **Levels** (`t3.py`, `PokeParty_CreatePkm`'s level): Ho-Oh and Lugia's boss double 90 at Delusion and 100 at
+  Nightmare, a random enemy room (Ninjask, Rufflet, Vullaby) 90 and 100, Dialga's raid 90 and 100, Prince or
+  Princess's Gardevoir 70 at Daydream and 90 at Delusion; the Illusionist's Zoroark 70, 80, 90, 100 (`t2.py`).
+- **Heavy fog** (`t3.py`, `EntralinkRun_GetDoorMarker`'s results): the pre-boss rest's door to Ho-Oh (a boss) shows
+  boss at Daydream and ??? at Reverie; a room's three doors (a random room, Dialga's raid, the buff template) enemy,
+  challenge and gift at Daydream, ??? ??? ??? at Reverie (`shots/t3_fog_tier1_room.png`).
+- **Chaotic climate** (`BtlSetup_SetWildNormal`'s weather): Ho-Oh's room (`BTL_WEATHER_SUN`) started in hail at
+  Delusion and Nightmare, Prince or Princess's (`BTL_WEATHER_NONE`) clear at Daydream and in a sandstorm at Delusion
+  (`shots/t3_tier2_climate.png`, the weather icon), the Illusionist's in a sandstorm.
+- **Inverse types** (`t4.py`, the foe poked to Jellicent, Water/Ghost; `GetTypeEffectiveness`'s results): at
+  Daydream Ember on Water half and Tackle on Ghost immune; at Nightmare Ember on Water double, Tackle on Ghost double,
+  and both moves double on Jellicent as a whole (`ServerControl_CheckMoveEffectiveness`).
+- **The tier NPC** (`t1.py`, White rank 1 through the debug milestone, no run completed): the list with three locked
+  (`shots/t1_reverie_locked_menu.png`); Reverie refused (the tier stays 0); with Daydream beaten, Reverie chosen (tier
+  1) and its heavy fog line; with an old save's run completed and nothing beaten, Reverie chosen; Delusion refused;
+  with tiers 0-2 beaten, Nightmare chosen (tier 3) and its three lines (`shots/t1_nightmare_*.png`).
+- **Saved and reloaded** (`t1c.py`): out by the debug menu, Save (the save copy's forced season sync, which hides
+  Save, cleared for the test), both copies of the block in the file hold tier 3 and tiers beaten 7, and so does the
+  block after a reboot.
+- **Shards** (`t3.py`, the final room, Darkrai at place 21, won): 31 at Daydream, 93 at Nightmare (x3), 186 at
+  Nightmare with Black rank 5 (x6). **The final's bit** (`t5.py`): a Daydream win with nothing beaten set tiers beaten
+  to 1, a Nightmare win with 0-2 beaten to 15; the hall's tier 0 and 3.
+- **Records** (`t3.py`, `t5.py`): "Highest tier beaten: Nightmare" on the Records page (`shots/t3_records_0.png`);
+  the Hall of Fame's "Won in 1 turns at Nightmare" (`shots/t5_hall.png`).
+- The packer's and editor's tests (the tiers' defaults and header, a given set, exactly four, an old enemy level
+  dropped; the editor's tiers read and written), the build, `verify_dsi_rom.py`, the plain build's module check.
+- **Not tested:** real hardware; Magnetised and Spectral under the inverse chart (the order is the code's); a Ground
+  move on a Flying type under the inverse chart.
 
 ## The re-entry question
 

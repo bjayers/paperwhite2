@@ -764,14 +764,60 @@ L_HubShopResetNone:
     VMJump L_HubShopEnd
 
 Script_17:
-    // Paper White 2: the hub's difficulty NPC (the difficulty reward, paperwhite2/entralink_ranks.h), a placeholder
-    // until the difficulty tiers come
+    // Paper White 2: the hub's tier NPC (the difficulty reward, paperwhite2/entralink_ranks.h): the four difficulty
+    // tiers (run.json's tiers), a locked one shown locked, the one chosen saved in the progress block for every run;
+    // then the chosen tier's modifiers, a line each
     ActorsPauseAll
     SEPlay SEQ_SE_MESSAGE
     ActorSetEyeToEye
-    SystemMsg Entralink_Text_DifficultyHello, 2
+    EntralinkRun ENTRALINK_RUN_ACTION_TIER, 0, 0, 0x8011
+    SystemMsg Entralink_Text_TierHello, 2
+    ListMenuAnchorTopLeft 1, 1, 0, 1, 0x8010
+    ListMenuAdd Entralink_Text_TierItem0, 65535, 0
+    ListMenuAdd Entralink_Text_TierItem1, 65535, 1
+    ListMenuAdd Entralink_Text_TierItem2, 65535, 2
+    ListMenuAdd Entralink_Text_TierItem3, 65535, 3
+    ListMenuAdd Entralink_Text_TierCancel, 65535, 4
+    ListMenuShow
+    SystemMsgClose
+    WorkCmpConst 0x8010, 4
+    VMJumpIf CMP_GE, L_HubTierEnd
+    EntralinkRun ENTRALINK_RUN_ACTION_TIER, 1, 0x8010, 0x8011
+    WorkCmpConst 0x8011, 0
+    VMJumpIf CMP_EQ, L_HubTierLocked
+    EntralinkRun ENTRALINK_RUN_ACTION_TIER, 0, 0, 0x8011
+    SystemMsg Entralink_Text_TierDone, 2
+    LastKeyWait
+    EntralinkRun ENTRALINK_RUN_ACTION_TIER, 2, ENTRALINK_MODIFIER_HEAVY_FOG, 0x8011
+    WorkCmpConst 0x8011, 0
+    VMJumpIf CMP_EQ, L_HubTierClimate
+    SystemMsg Entralink_Text_TierHeavyFog, 2
+    LastKeyWait
+
+L_HubTierClimate:
+    EntralinkRun ENTRALINK_RUN_ACTION_TIER, 2, ENTRALINK_MODIFIER_CHAOTIC_CLIMATE, 0x8011
+    WorkCmpConst 0x8011, 0
+    VMJumpIf CMP_EQ, L_HubTierInverse
+    SystemMsg Entralink_Text_TierChaoticClimate, 2
+    LastKeyWait
+
+L_HubTierInverse:
+    EntralinkRun ENTRALINK_RUN_ACTION_TIER, 2, ENTRALINK_MODIFIER_INVERSE_TYPES, 0x8011
+    WorkCmpConst 0x8011, 0
+    VMJumpIf CMP_EQ, L_HubTierClose
+    SystemMsg Entralink_Text_TierInverseTypes, 2
+    LastKeyWait
+
+L_HubTierClose:
+    SystemMsgClose
+    VMJump L_HubTierEnd
+
+L_HubTierLocked:
+    SystemMsg Entralink_Text_TierRefused, 2
     LastKeyWait
     SystemMsgClose
+
+L_HubTierEnd:
     FinishAllEvents
     ActorsUnpauseAll
     VMHalt

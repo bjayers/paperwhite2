@@ -13,7 +13,6 @@
             "enemies": [
                 {
                     "species": "SPECIES_RAYQUAZA",
-                    "level": 70,
                     "scale": 110,
                     "moves": [ "MOVE_OUTRAGE", "MOVE_EXTREME_SPEED", "MOVE_EARTHQUAKE", "MOVE_DRAGON_PULSE" ]
                 }

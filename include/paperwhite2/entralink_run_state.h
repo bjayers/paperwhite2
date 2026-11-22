@@ -144,6 +144,10 @@ typedef struct {
     // order holds no room of rooms/ for them, and they give no Dream Shards), and the head start's picks left
     u8 placesSkipped;
     u8 headStartPicks;
+    // The run's difficulty tier (run.json's tiers, from 0), chosen at the hub's tier NPC and saved in the progress
+    // block (EntralinkProgress's tier): its enemies' level, its foes' trainer AI (the battle reads it), its Dream
+    // Shards and its modifiers (ENTRALINK_TIER_MODIFIER_*)
+    u8 tier;
 } EntralinkRunState;
 
 // The run's state, which overlay 12's run code keeps

@@ -189,12 +189,13 @@ static u16 EntralinkRandom_DrawExtraMove(u32 species, const PersonalData *person
     return move;
 }
 
-// An enemy's moves: 4 of the last ENTRALINK_RANDOM_MOVE_POOL level-up moves it knows at its level, one replaced by an
-// extra move (or added, with fewer than 4) at ENTRALINK_RANDOM_TM_CHANCE; then, if none of them is damaging, one
+// An enemy's moves: 4 of the last ENTRALINK_RANDOM_MOVE_POOL level-up moves it knows at the tier's level, one replaced
+// by an extra move (or added, with fewer than 4) at ENTRALINK_RANDOM_TM_CHANCE; then, if none of them is damaging, one
 // replaced by a damaging one of those it knows (the packer only takes species that have one)
 static void EntralinkRandom_DrawMoves(EntralinkEnemy *enemy, const PersonalData *personal, HeapID heapId) {
     LearnsetEntry learnset[LEARNSET_MAX];
     u16 pool[LEARNSET_MAX];
+    u32 level = EntralinkRun_GetEnemyLevel();
     u32 count = 0;
     u32 first;
     u32 known;
@@ -207,7 +208,7 @@ static void EntralinkRandom_DrawMoves(EntralinkEnemy *enemy, const PersonalData 
     PML_LearnsetLvUpLoad(enemy->species, enemy->form, learnset);
     for (i = 0; i < LEARNSET_MAX && !LearnsetEntry_IsEnd(learnset[i]); i++) {
         move = LearnsetEntry_GetMove(learnset[i]);
-        if (LearnsetEntry_GetLevel(learnset[i]) > enemy->level) {
+        if (LearnsetEntry_GetLevel(learnset[i]) > level) {
             break;
         }
         if (!EntralinkRandom_HasValue(pool, count, move)) {
@@ -258,7 +259,7 @@ static void EntralinkRandom_DrawMoves(EntralinkEnemy *enemy, const PersonalData 
     }
 }
 
-// An enemy of a species: the rooms' level, its moves, one of its two abilities at random (its hidden one at
+// An enemy of a species: its moves at the tier's level, one of its two abilities at random (its hidden one at
 // ENTRALINK_RANDOM_HIDDEN_ABILITY_CHANCE), no item, a gender by its species' ratio, not shiny, never caught; and the
 // NPC that shows it, which starts its battle
 static void EntralinkRandom_MakeEnemy(EntralinkEnemy *enemy, EntralinkNpc *npc, const EntralinkRandomSpecies *species,
@@ -268,7 +269,6 @@ static void EntralinkRandom_MakeEnemy(EntralinkEnemy *enemy, EntralinkNpc *npc, 
 
     MI_CpuFill8(enemy, 0, sizeof(EntralinkEnemy));
     enemy->species = species->species;
-    enemy->level = ENTRALINK_RANDOM_LEVEL;
     enemy->scale = 100;
     enemy->catchId = ENTRALINK_NONE;
     if (personal->abilities[2] != 0 && GFL_RandomLC(100) < ENTRALINK_RANDOM_HIDDEN_ABILITY_CHANCE) {
@@ -343,8 +343,8 @@ void EntralinkRun_MakeRandomRoom(const EntralinkRoom *row, u32 round) {
     // tail; it was data in this overlay, which kept it in the DS's main arena for good)
     table = GFL_ArcSysReadHeapNew(ARCID_MMODEL_TBL, ENTRALINK_RANDOM_SPECIES_FILE, HEAPID_TAIL(HEAPID_GAMEEVENT));
     filter.table = table;
-    filter.tableCount = GFL_ArcSysGetDataLength(ARCID_MMODEL_TBL, ENTRALINK_RANDOM_SPECIES_FILE) /
-                        sizeof(EntralinkRandomSpecies);
+    filter.tableCount =
+        GFL_ArcSysGetDataLength(ARCID_MMODEL_TBL, ENTRALINK_RANDOM_SPECIES_FILE) / sizeof(EntralinkRandomSpecies);
     MI_CpuFill8(random, 0, sizeof(EntralinkRandomRoom));
     random->room = *row;
     random->room.firstBattle = 0;

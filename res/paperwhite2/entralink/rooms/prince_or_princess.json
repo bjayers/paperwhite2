@@ -13,7 +13,6 @@
             "enemies": [
                 {
                     "species": "SPECIES_GARDEVOIR",
-                    "level": 70,
                     "moves": [ "MOVE_HYPNOSIS", "MOVE_MOONBLAST", "MOVE_PSYCHIC", "MOVE_DRAINING_KISS" ],
                     "ability": "ABILITY_TRACE",
                     "gender": "female"
@@ -27,7 +26,6 @@
             "enemies": [
                 {
                     "species": "SPECIES_GALLADE",
-                    "level": 70,
                     "moves": [ "MOVE_DOUBLE_TEAM", "MOVE_PSYCHO_CUT", "MOVE_SWORDS_DANCE", "MOVE_PROTECT" ],
                     "ability": "ABILITY_STEADFAST",
                     "gender": "male"

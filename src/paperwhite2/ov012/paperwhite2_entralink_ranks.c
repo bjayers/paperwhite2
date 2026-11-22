@@ -1,11 +1,15 @@
 #include "types.h"
+#include "constants/arc.h"
 #include "constants/pokemon.h"
+#include "constants/script_text_banks.h"
 #include "field/entree_forest.h"
 #include "field/field.h"
 #include "field/field_actor.h"
 #include "field/field_script.h"
 #include "field/field_script_event.h"
+#include "gfl/msg.h"
 #include "gfl/std.h"
+#include "gfl/str.h"
 #include "nitro/math.h"
 #include "paperwhite2/entralink_buffs.h"
 #include "paperwhite2/entralink_hub_shop.h"
@@ -22,6 +26,8 @@
 #include "system/game_event.h"
 #include "system/game_system.h"
 #include "system/vm.h"
+#include "system/wordset.h"
+#include "text/script/entralink.h"
 
 // Paper White 2: the Entree's tree ranks and their rewards, in overlay 12 beside the run. See
 // include/paperwhite2/entralink_ranks.h
@@ -237,6 +243,54 @@ static u32 EntralinkRanks_DrawHeadStartOffer(GameData *gameData) {
     return EntralinkBuffs_DrawOffer(gameData, ENTRALINK_BUFF_SOURCE_ENEMY, 1, state->offer, ENTRALINK_BUFF_OFFERS);
 }
 
+// The tier NPC's words: the tiers' names in words 0 to ENTRALINK_RUN_TIER_COUNT - 1, a locked one's as
+// Entralink_Text_TierLocked has it (its name in TIER_WORD_NAME), and the chosen tier's in TIER_WORD_CHOSEN
+#define TIER_WORD_CHOSEN 4
+#define TIER_WORD_NAME 5
+
+static void EntralinkRanks_SetTierWords(FieldScriptEnv *env, EntralinkProgress *progress) {
+    ScriptWork *work = FieldScriptEnv_GetScriptWork(env);
+    WordSet *wordSet = ScriptWork_GetWordSet(work);
+    StrBuf *name = ScriptWork_GetMainStrBuf(work);
+    StrBuf *raw = ScriptWork_GetAltStrBuf(work);
+    MsgData *names =
+        GFL_MsgSysLoadData(FALSE, ARCID_SCRIPT_MESSAGE, SCRIPT_TEXT_ENTRALINK_DIALOGUE, FieldScriptEnv_GetHeapID(env));
+    u32 tier;
+
+    for (tier = 0; tier < ENTRALINK_RUN_TIER_COUNT; tier++) {
+        GFL_MsgDataLoadStrbuf(names, ENTRALINK_RUN_TIER_NAMES + tier, name);
+        if (tier == EntralinkRun_GetChosenTier(progress)) {
+            GFL_WordSetSetStrbuf(wordSet, TIER_WORD_CHOSEN, name, 0, TRUE, 0);
+        }
+        if (!EntralinkRun_IsTierOpen(progress, tier)) {
+            GFL_WordSetSetStrbuf(wordSet, TIER_WORD_NAME, name, 0, TRUE, 0);
+            GFL_MsgDataLoadStrbuf(GetFieldScriptMsgData(env), Entralink_Text_TierLocked, raw);
+            GFL_WordSetFormatStrbuf(wordSet, name, raw);
+        }
+        GFL_WordSetSetStrbuf(wordSet, tier, name, 0, TRUE, 0);
+    }
+    GFL_MsgDataFree(names);
+}
+
+// Chooses a tier if it is open (TRUE); else FALSE, with the tier before it, which opens it, in TIER_WORD_CHOSEN
+static BOOL EntralinkRanks_ChooseTier(FieldScriptEnv *env, EntralinkProgress *progress, u32 tier) {
+    ScriptWork *work = FieldScriptEnv_GetScriptWork(env);
+    MsgData *names;
+
+    if (EntralinkRun_IsTierOpen(progress, tier)) {
+        progress->tier = tier;
+        return TRUE;
+    }
+    if (tier != 0 && tier < ENTRALINK_RUN_TIER_COUNT) {
+        names = GFL_MsgSysLoadData(FALSE, ARCID_SCRIPT_MESSAGE, SCRIPT_TEXT_ENTRALINK_DIALOGUE,
+                                   FieldScriptEnv_GetHeapID(env));
+        GFL_MsgDataLoadStrbuf(names, ENTRALINK_RUN_TIER_NAMES + tier - 1, ScriptWork_GetMainStrBuf(work));
+        GFL_WordSetSetStrbuf(ScriptWork_GetWordSet(work), TIER_WORD_CHOSEN, ScriptWork_GetMainStrBuf(work), 0, TRUE, 0);
+        GFL_MsgDataFree(names);
+    }
+    return FALSE;
+}
+
 BOOL EntralinkRanks_Action(FieldScriptEnv *env, u16 action, u16 arg, u16 arg2, u16 *result) {
     GameSystem *gsys = FieldScriptEnv_GetGameSystem(env);
     GameData *gameData = GSYS_GetGameData(gsys);
@@ -252,6 +306,16 @@ BOOL EntralinkRanks_Action(FieldScriptEnv *env, u16 action, u16 arg, u16 arg2, u
             progress->hubFog = arg2;
         }
         *result = progress->hubFog;
+        break;
+    case ENTRALINK_RUN_ACTION_TIER:
+        if (arg == 0) {
+            EntralinkRanks_SetTierWords(env, progress);
+            *result = EntralinkRun_GetChosenTier(progress);
+        } else if (arg == 1) {
+            *result = EntralinkRanks_ChooseTier(env, progress, arg2);
+        } else {
+            *result = EntralinkRun_TierHasModifier(EntralinkRun_GetChosenTier(progress), arg2);
+        }
         break;
     case ENTRALINK_RUN_ACTION_FORM:
         if (arg == 0) {

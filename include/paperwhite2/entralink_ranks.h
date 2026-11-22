@@ -71,7 +71,7 @@ BOOL EntralinkRanks_HasReward(GameData *gameData, u32 reward);
 // skip round 1 and warps into the forest (the warp to warpPos), which the caller runs instead of its own warp; else
 // NULL, and the caller starts the run itself
 GameEvent *EntralinkRanks_CreateRunStartEvent(GameSystem *gsys, const VecFx32 *warpPos, HeapID heapId);
-// The ranks' actions of the script command EntralinkRun (ENTRALINK_RUN_ACTION_RANKS to ENTRALINK_RUN_ACTION_SKIP_ROUND,
+// The ranks' actions of the script command EntralinkRun (ENTRALINK_RUN_ACTION_RANKS to ENTRALINK_RUN_ACTION_TIER,
 // paperwhite2/entralink_run_actions.h); TRUE when the script waits for an event
 BOOL EntralinkRanks_Action(FieldScriptEnv *env, u16 action, u16 arg, u16 arg2, u16 *result);
 

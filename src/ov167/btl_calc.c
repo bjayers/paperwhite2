@@ -146,6 +146,20 @@ u32 GetTypeEffectiveness(u8 attackType, u8 defenseType) {
     if (attackType == 17 || defenseType == 17) {
         return 3;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: an Entralink run's inverse_types modifier inverts the chart, as Gen 6's inverse battles: an
+    // immunity and a half are double, a double is half (paperwhite2/entralink_battle.h)
+    if (EntralinkBattle_IsInverse()) {
+        switch (BTL_TYPE_CHART[attackType][defenseType]) {
+        case 0:
+        case 2:
+            return 4;
+        case 8:
+            return 2;
+        }
+        return 3;
+    }
+#endif
     switch (BTL_TYPE_CHART[attackType][defenseType]) {
     case 0:
         return 0;

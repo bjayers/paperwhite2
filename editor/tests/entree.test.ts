@@ -69,7 +69,7 @@ test("a new room, edited, saves in the data tools' layout and passes the build's
   assert.deepEqual(errors(data), ["battles.0: progress_id is missing"]);
   data = setIn(data, ["rounds"], [2, 3]);
   data = setIn(data, ["battles", 0], fromPlain({ id: "weather_trio", format: "double", enemies: [
-    { species: "SPECIES_KYOGRE", level: 75, moves: ["MOVE_WATER_SPOUT", "MOVE_ICE_BEAM"] }, { species: "SPECIES_GROUDON", shiny: true }] }));
+    { species: "SPECIES_KYOGRE", moves: ["MOVE_WATER_SPOUT", "MOVE_ICE_BEAM"] }, { species: "SPECIES_GROUDON", shiny: true }] }));
   data = setIn(data, ["npcs", 0, "battle"], "weather_trio");
   data = setIn(data, ["npcs", 1], fromPlain({ type: "battle", battle: "weather_trio", enemy: 1, x: 17, z: 14, facing: "DIR_DOWN" }));
   data = setIn(data, ["npcs", 2], fromPlain({ type: "item", item: "ITEM_POTION", count: 2, chance: 50, x: 12, z: 18, facing: "DIR_DOWN" }));

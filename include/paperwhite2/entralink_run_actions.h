@@ -150,6 +150,17 @@
 // returns its cards (0 once the picks are done); 2: gives the head start's Dream Dust and returns it; 3: warps into
 // the forest
 #define ENTRALINK_RUN_ACTION_SKIP_ROUND 47
+// The difficulty tiers (the hub's tier NPC, entralink.s's Script_17). arg1 0: sets words 0-3 to the tiers' names (a
+// locked one's marked locked) and word 4 to the chosen tier's, and returns the chosen tier; 1: chooses tier arg2 if it
+// is open and returns 1, else returns 0 with word 4 the tier before it; 2: whether the chosen tier has modifier arg2
+// (ENTRALINK_MODIFIER_*)
+#define ENTRALINK_RUN_ACTION_TIER 48
+// The tiers' modifiers (run.json's tiers' modifiers, a bit each in the header's ENTRALINK_RUN_TIER_MODIFIERS):
+// every door shows the unknown marker; every run battle starts in a weather of run.json's climate_weathers; the
+// run's battles use the inverse type chart
+#define ENTRALINK_MODIFIER_HEAVY_FOG 0
+#define ENTRALINK_MODIFIER_CHAOTIC_CLIMATE 1
+#define ENTRALINK_MODIFIER_INVERSE_TYPES 2
 
 // The hub's fogs (ENTRALINK_RUN_ACTION_HUB_FOG), the forest's rounds' tints: none, pink, purple, black
 #define ENTRALINK_HUB_FOG_NONE 0

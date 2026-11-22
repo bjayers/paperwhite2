@@ -597,3 +597,45 @@ def test_undiscovered_weight(tmp_path):
     edit(directory / "run.json", lambda data: data.update(undiscovered_weight=0))
     with pytest.raises(datajson.DataError):
         entralink_run.tables(directory)
+
+
+def test_tiers_default_and_header(tmp_path):
+    """A run.json without tiers takes the four defaults; the header gives each tier's level, AI flags, Shards and
+    modifiers, and the tiers' names follow the NPCs' messages in the dialogue bank."""
+    directory = fixture_data(tmp_path)
+    text = entralink_run.header(directory)
+    assert "#define ENTRALINK_RUN_TIER_LEVELS { 70, 80, 90, 100 }" in text
+    assert "#define ENTRALINK_RUN_TIER_SHARD_PERCENTS { 100, 150, 200, 300 }" in text
+    assert "#define ENTRALINK_RUN_TIER_MODIFIERS { 0x0, 0x1, 0x3, 0x7 }" in text
+    assert "0x7 /* AI_FLAG_BASIC | AI_FLAG_EVAL_ATTACK | AI_FLAG_EXPERT */" in text
+    lines = entralink_run.dialogue_lines(directory)
+    first = entralink_run.tables(directory)["tier_names"]
+    assert lines[first:] == ["Daydream", "Reverie", "Delusion", "Nightmare"]
+
+
+def test_tiers_given(tmp_path):
+    directory = fixture_data(tmp_path)
+    tiers = [{"name": f"T{i}", "level": 50 + i, "ai_flags": ["AI_FLAG_EXPERT"] if i else [],
+              "shard_multiplier": 1.25, "modifiers": ["inverse_types"] if i == 3 else []} for i in range(4)]
+    edit(directory / "run.json", lambda data: data.update(tiers=tiers, climate_weathers=["BTL_WEATHER_NONE"]))
+    text = entralink_run.header(directory)
+    assert "#define ENTRALINK_RUN_TIER_LEVELS { 50, 51, 52, 53 }" in text
+    assert "#define ENTRALINK_RUN_TIER_SHARD_PERCENTS { 125, 125, 125, 125 }" in text
+    assert "#define ENTRALINK_RUN_TIER_MODIFIERS { 0x0, 0x0, 0x0, 0x4 }" in text
+    assert "#define ENTRALINK_RUN_CLIMATE_WEATHERS { 0 }" in text
+
+
+def test_tiers_must_be_four(tmp_path):
+    directory = fixture_data(tmp_path)
+    tiers = [{"name": "Only", "level": 70, "ai_flags": [], "shard_multiplier": 1.0}]
+    edit(directory / "run.json", lambda data: data.update(tiers=tiers))
+    with pytest.raises(datajson.DataError):
+        entralink_run.tables(directory)
+
+
+def test_enemy_level_is_ignored(tmp_path):
+    """An enemy's level of before the tiers is dropped as the room is read (the schema has none)."""
+    directory = fixture_data(tmp_path)
+    assert "level" in json.loads(room(directory, "alpha").read_text())["battles"][0]["enemies"][0]
+    rooms = entralink_run.load_rooms(directory)
+    assert "level" not in rooms["alpha"]["battles"][0]["enemies"][0]

@@ -3213,11 +3213,13 @@ u32 GetClientAIFlags(BtlMainModule *mainModule, u8 clientId) {
             return 0x800;
         }
 #ifdef PAPERWHITE2
-        // Paper White 2: a wild triple battle's mons have a wild double's AI too
+        // Paper White 2: a wild triple battle's mons have a wild double's AI too; an Entralink run's foes think with
+        // its tier's trainer AI as well (EntralinkBattle_GetAIFlags, 0 outside a run)
         if (BtlSetup_GetBattleStyle(mainModule) == BTL_STYLE_DOUBLE ||
             BtlSetup_GetBattleStyle(mainModule) == BTL_STYLE_TRIPLE) {
-            return 0x80;
+            return 0x80 | EntralinkBattle_GetAIFlags(mainModule);
         }
+        return EntralinkBattle_GetAIFlags(mainModule);
 #else
         if (BtlSetup_GetBattleStyle(mainModule) == 1) {
             return 0x80;

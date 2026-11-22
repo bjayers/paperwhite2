@@ -13,7 +13,6 @@
             "enemies": [
                 {
                     "species": "SPECIES_COBALION",
-                    "level": 70,
                     "moves": [ "MOVE_SACRED_SWORD", "MOVE_SWORDS_DANCE", "MOVE_AIR_SLASH", "MOVE_IRON_HEAD" ]
                 }
             ]
@@ -25,7 +24,6 @@
             "enemies": [
                 {
                     "species": "SPECIES_TERRAKION",
-                    "level": 70,
                     "moves": [ "MOVE_SACRED_SWORD", "MOVE_SWORDS_DANCE", "MOVE_TAKE_DOWN", "MOVE_STONE_EDGE" ]
                 }
             ]
@@ -37,7 +35,6 @@
             "enemies": [
                 {
                     "species": "SPECIES_VIRIZION",
-                    "level": 70,
                     "moves": [ "MOVE_SACRED_SWORD", "MOVE_LEAF_BLADE", "MOVE_AIR_SLASH", "MOVE_SWORDS_DANCE" ]
                 }
             ]
@@ -49,17 +46,14 @@
             "enemies": [
                 {
                     "species": "SPECIES_TERRAKION",
-                    "level": 70,
                     "moves": [ "MOVE_SACRED_SWORD", "MOVE_SWORDS_DANCE", "MOVE_STONE_EDGE", "MOVE_STONE_EDGE" ]
                 },
                 {
                     "species": "SPECIES_VIRIZION",
-                    "level": 70,
                     "moves": [ "MOVE_SACRED_SWORD", "MOVE_SWORDS_DANCE", "MOVE_AIR_SLASH", "MOVE_LEAF_BLADE" ]
                 },
                 {
                     "species": "SPECIES_COBALION",
-                    "level": 70,
                     "moves": [ "MOVE_SACRED_SWORD", "MOVE_SWORDS_DANCE", "MOVE_AIR_SLASH", "MOVE_IRON_HEAD" ]
                 }
             ]

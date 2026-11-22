@@ -2,6 +2,31 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-21: Entralink difficulty tiers and their modifiers (ROM session, on a branch)
+
+- **AI:** a run battle's wild foe already picks moves through the trainer AI's VM, but with no scripts (a wild single
+  has no AI flags, a double or triple only tag strategy), and a trainer's flags on the setup are never read for a
+  wild foe. `GetClientAIFlags` now adds the run's tier's flags in run battles only. Tested: a foe with Dream Eater,
+  Tackle and Body Slam against an awake Pignite: Daydream 10/10/9, Reverie (Basic) 0/15/14, Nightmare (+ Expert)
+  0/1/14; with Tackle, Body Slam and a super-effective Confusion: Reverie 1/7/4, Delusion (+ Eval attack) Confusion
+  3 of 3 (small samples: the emulator's turns are slow).
+- **Four tiers** (`run.json`'s `tiers`, editable in the Entree page's Run section): Daydream (70, the wild AI, x1
+  Shards), Reverie (80, Basic, x1.5, heavy fog), Delusion (90, + Eval attack, x2, + chaotic climate), Nightmare (100,
+  + Expert, x3, + inverse types). Every run enemy's level is its tier's: the rooms' `level` field and the random rooms'
+  level are gone (the 25 values removed from the room files; the packer drops any left).
+- **Modifiers:** heavy fog (every door shows ???, bosses' and the final's too), chaotic climate (each run battle starts
+  in sun, rain, sand or hail, `climate_weathers`, over the room's), inverse types (Gen 6's inverse chart in run
+  battles, both sides; the chart buffs apply after it).
+- **The hub's White 1 NPC** chooses the tier (locked ones shown locked; a tier opens once the one before has had its
+  final room beaten; old saves with a run won count Daydream as beaten), saved at 0x622 of the progress block (0x623
+  the tiers beaten), and lists the chosen tier's modifiers. Shards at a run's end times the tier's multiplier, then
+  Black 5's x2.
+- **Records:** "Highest tier beaten" on the Entree's Records page; the Hall of Fame's "Won in N turns at <tier>".
+- **Tested** in py-desmume: the chooser (refusals, unlocks, save and reboot), levels 70-100 (custom room, random room,
+  boss, raid), the fog, the climate, the inverse chart (Ember on Jellicent's Water x2, Tackle on its Ghost x2), Shards
+  31/93/186 (x1, x3, x6), the Records and Hall lines. Arena 17.8 KB left (-704 bytes, overlay 12). Prototype doc,
+  "Difficulty tiers"; entralink-buffs.md 21.
+
 ## 2026-11-21: Entralink records, step 4: fair room discovery and debug ranks (ROM session, on a branch)
 
 - **Undiscovered rooms come up more:** a premade room the records don't have as discovered (and the run hasn't had)

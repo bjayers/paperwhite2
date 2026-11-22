@@ -20,7 +20,9 @@
 #include "paperwhite2/entralink_bars.h"
 #include "paperwhite2/entralink_battle.h"
 #include "paperwhite2/entralink_buffs.h"
+#include "paperwhite2/entralink_run_actions.h"
 #include "paperwhite2/entralink_run_battle.h"
+#include "paperwhite2/entralink_run_config.h"
 #include "paperwhite2/entralink_run_state.h"
 #include "pml/move.h"
 #include "pml/poke_party.h"
@@ -96,6 +98,8 @@ typedef struct {
 static struct {
     BOOL run;
     BOOL boss;
+    // The run's tier's inverse_types modifier: the inverse type chart
+    u8 inverse;
     u8 playerClient;
     u8 count;
     EntralinkBattleBuff buffs[BATTLE_BUFFS_MAX];
@@ -1741,6 +1745,13 @@ static const BattleEventHandlerEntry sReactionHandlers[] = {
 
 // ---- The battle's start and the hooks ------------------------------------------------------------------------------
 
+// Whether the run's tier has a modifier (ENTRALINK_MODIFIER_*)
+static BOOL EntralinkBattle_HasModifier(u32 modifier) {
+    static const u8 TIER_MODIFIERS[ENTRALINK_RUN_TIER_COUNT] = ENTRALINK_RUN_TIER_MODIFIERS;
+
+    return (TIER_MODIFIERS[EntralinkRun_GetState()->tier] >> modifier) & 1;
+}
+
 void EntralinkBattle_Start(BtlServerFlow *flow) {
     u32 buff;
     u32 type;
@@ -1752,6 +1763,7 @@ void EntralinkBattle_Start(BtlServerFlow *flow) {
     sBattle.run = TRUE;
     sBattle.boss = BtlSetup_IsBattleType(flow->mainModule, ENTRALINK_RUN_BOSS_BTL_SETUP_FLAG) != 0;
     sBattle.playerClient = GetPlayerClientID(flow->mainModule);
+    sBattle.inverse = EntralinkBattle_HasModifier(ENTRALINK_MODIFIER_INVERSE_TYPES);
     for (buff = 0; buff < ENTRALINK_BUFF_COUNT; buff++) {
         if (EntralinkBuffs_GetLevel(buff) == 0) {
             continue;
@@ -1772,6 +1784,19 @@ void EntralinkBattle_Start(BtlServerFlow *flow) {
 
 BOOL EntralinkBattle_IsRun(void) {
     return sBattle.run;
+}
+
+u32 EntralinkBattle_GetAIFlags(BtlMainModule *mainModule) {
+    static const u32 TIER_AI_FLAGS[ENTRALINK_RUN_TIER_COUNT] = ENTRALINK_RUN_TIER_AI_FLAGS;
+
+    if (!BtlSetup_IsBattleType(mainModule, ENTRALINK_RUN_BTL_SETUP_FLAG)) {
+        return 0;
+    }
+    return TIER_AI_FLAGS[EntralinkRun_GetState()->tier];
+}
+
+BOOL EntralinkBattle_IsInverse(void) {
+    return sBattle.inverse;
 }
 
 void EntralinkBattle_End(BtlMainModule *mainModule) {
@@ -2106,7 +2131,8 @@ static u32 GetMagnetisedEffectiveness(BattleMon *target, u32 type, u32 effective
     if (level == 0 || GetBattleMonStatus(target) != CONDITION_PARALYSIS) {
         return effectiveness;
     }
-    if (level >= 3 && type == TYPE_ELECTRIC && DoesMonHaveType(target, TYPE_GROUND)) {
+    if (level >= 3 && type == TYPE_ELECTRIC && DoesMonHaveType(target, TYPE_GROUND) &&
+        GetTypeEffectiveness(type, TYPE_GROUND) == TYPE_EFFECTIVENESS_IMMUNE) {
         types = GetPokeType(target);
         effectiveness = TYPE_EFFECTIVENESS_NORMAL;
         if (PokeTypePair_GetType1(types) != TYPE_GROUND) {

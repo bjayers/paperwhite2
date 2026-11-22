@@ -636,6 +636,12 @@ static void EntreePages_AddRecordRows(MonolithScreenParam *screen, MonolithWork 
     }
     EntreePages_AddNumberRow(wk, pw, BtlMainTitle_Text_EntreeRunsStarted, records->runsStarted);
     EntreePages_AddNumberRow(wk, pw, BtlMainTitle_Text_EntreeWins, progress->runsCompleted);
+    if (Entree_GetHighestTierBeaten(progress) >= 0) {
+        Entree_SetTierWord(wk->wordSet, 0, Entree_GetHighestTierBeaten(progress));
+        EntreePages_AddRow(wk, pw, BtlMainTitle_Text_EntreeBestTier, BtlMainTitle_Text_EntreeNumber);
+    } else {
+        EntreePages_AddRow(wk, pw, BtlMainTitle_Text_EntreeBestTier, BtlMainTitle_Text_EntreeNotDone);
+    }
     EntreePages_AddNumberRow(wk, pw, BtlMainTitle_Text_EntreeStreak, records->winStreak);
     EntreePages_AddNumberRow(wk, pw, BtlMainTitle_Text_EntreeBestStreak, records->bestWinStreak);
     EntreePages_AddNumberRow(wk, pw, BtlMainTitle_Text_EntreeShardsEarned, records->shardsEarned);

@@ -12,7 +12,6 @@
             "enemies": [
                 {
                     "species": "SPECIES_DITTO",
-                    "level": 70,
                     "scale": 500,
                     "moves": [ "MOVE_TRANSFORM" ]
                 }
@@ -25,7 +24,6 @@
             "enemies": [
                 {
                     "species": "SPECIES_DITTO",
-                    "level": 70,
                     "scale": 70,
                     "moves": [ "MOVE_TRANSFORM" ]
                 }

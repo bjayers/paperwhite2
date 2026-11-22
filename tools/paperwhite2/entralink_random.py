@@ -11,7 +11,7 @@ game makes as the player enters it (src/paperwhite2/ov012/paperwhite2_entralink_
 docs/paperwhite2/design/entralink-roguelike-prototype.md, "Random enemy rooms"). Its settings are run.json's
 random_rooms (run.schema.json says each); its species are those of the Pokédex (tools/data/species_list.py's
 pokedex_species: never a "pokedex": false one) that legendaries.json doesn't list, that have a walking or a follower
-sprite (the NPC shows it: entralink_run.npc_sprite) and that know a damaging level-up move at the rooms' level, each
+sprite (the NPC shows it: entralink_run.npc_sprite) and that know a damaging level-up move at the easiest tier's level (run.json's tiers), each
 with its base stat total, types and evolution family (its line's first species), which the draw's bands and themes
 read. The game reads the moves, abilities and gender ratio from the species' own data as it makes an enemy.
 
@@ -42,7 +42,7 @@ GUARD = "POKEBW2_PAPERWHITE2_ENTRALINK_RANDOM_CONFIG_H"
 FORMATS = ["single", "double", "triple"]
 DEFAULT_FORMAT_WEIGHTS = {"single": 40, "double": 35, "triple": 25}
 DEFAULT_BST = [{"min": 300, "max": 480}, {"min": 380, "max": 540}, {"min": 450, "max": 600}]
-DEFAULTS = {"theme_chance": 70, "level": 70, "move_pool": 7, "tm_chance": 25, "hidden_ability_chance": 5}
+DEFAULTS = {"theme_chance": 70, "move_pool": 7, "tm_chance": 25, "hidden_ability_chance": 5}
 DEFAULT_ANCHORS = [[[15, 15]], [[12, 15], [19, 15]], [[10, 15], [15, 15], [20, 15]]]
 # A battle's enemies' tiles from its anchor, by format: a single's on it, a double's side by side, a triple's first in
 # front and the other two one tile back on either side (as the user's Time and Space room stands them)
@@ -70,6 +70,8 @@ def settings(run: dict) -> dict:
         "bst": [bands[min(i, len(bands) - 1)] for i in range(3)],
         **{key: given.get(key, value) for key, value in DEFAULTS.items()},
         "anchors": given.get("anchors", DEFAULT_ANCHORS),
+        # The species must know a damaging move at the easiest tier's level (run.json's tiers), so at every tier's
+        "level": min(tier["level"] for tier in entralink_run.load_tiers(run)),
     }
     if not any(out["format_weights"].values()):
         error("run.json", "random_rooms.format_weights add up to 0")
@@ -243,7 +245,6 @@ def header(directory: Path) -> str:
         f"#define ENTRALINK_RANDOM_FORMAT_WEIGHTS {{ {', '.join(str(weights[f]) for f in FORMATS)} }}",
         f"#define ENTRALINK_RANDOM_BST {{ {', '.join(bands)} }}",
         f"#define ENTRALINK_RANDOM_THEME_CHANCE {data['theme_chance']}",
-        f"#define ENTRALINK_RANDOM_LEVEL {data['level']}",
         f"#define ENTRALINK_RANDOM_MOVE_POOL {data['move_pool']}",
         f"#define ENTRALINK_RANDOM_TM_CHANCE {data['tm_chance']}",
         f"#define ENTRALINK_RANDOM_HIDDEN_ABILITY_CHANCE {data['hidden_ability_chance']}",

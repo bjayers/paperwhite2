@@ -12,7 +12,6 @@
             "enemies": [
                 {
                     "species": "SPECIES_DIALGA",
-                    "level": 70,
                     "moves": [ "MOVE_ROAR_OF_TIME", "MOVE_THUNDER", "MOVE_IRON_HEAD", "MOVE_METAL_SOUND" ],
                     "catch": {
                         "after": [],
@@ -23,7 +22,6 @@
                 {
                     "species": "SPECIES_GIRATINA",
                     "form": 1,
-                    "level": 70,
                     "scale": 80,
                     "moves": [ "MOVE_SHADOW_FORCE", "MOVE_DRAGON_CLAW", "MOVE_DRAGON_DANCE", "MOVE_ANCIENT_POWER" ],
                     "catch": {
@@ -34,7 +32,6 @@
                 },
                 {
                     "species": "SPECIES_PALKIA",
-                    "level": 70,
                     "moves": [ "MOVE_SPACIAL_REND", "MOVE_AQUA_RING", "MOVE_AURA_SPHERE", "MOVE_POWER_GEM" ],
                     "catch": {
                         "after": [],

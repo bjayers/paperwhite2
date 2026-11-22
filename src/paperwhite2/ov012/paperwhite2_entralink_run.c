@@ -110,6 +110,10 @@ static const u8 sTypeTemplates[ENTRALINK_TYPE_COUNT] = ENTRALINK_RUN_TYPE_TEMPLA
 static const EntralinkItem sItems[ENTRALINK_RUN_ITEM_COUNT] = ENTRALINK_RUN_ITEMS;
 static const EntralinkClearing sClearings[ENTRALINK_RUN_CLEARING_COUNT] = ENTRALINK_RUN_CLEARINGS;
 static const u8 sFlowerTiles[ENTRALINK_RUN_FLOWER_TILE_COUNT][2] = ENTRALINK_RUN_FLOWER_TILES;
+// The difficulty tiers (run.json's tiers): every enemy's level, the Dream Shards in percent, the modifiers' bits
+static const u8 sTierLevels[ENTRALINK_RUN_TIER_COUNT] = ENTRALINK_RUN_TIER_LEVELS;
+static const u16 sTierShardPercents[ENTRALINK_RUN_TIER_COUNT] = ENTRALINK_RUN_TIER_SHARD_PERCENTS;
+static const u8 sTierModifiers[ENTRALINK_RUN_TIER_COUNT] = ENTRALINK_RUN_TIER_MODIFIERS;
 
 static EntralinkProgress *EntralinkRun_GetProgress(GameData *gameData) {
     return EntralinkProgress_Get(GameData_GetSaveControl(gameData));
@@ -955,6 +959,7 @@ void EntralinkRun_Start(GameData *gameData, BOOL skipRound) {
     }
     // The hub shop's picks bought are held from the start, before the room's offers are drawn
     EntralinkHubShop_HoldBought(gameData);
+    state->tier = EntralinkRun_GetChosenTier(EntralinkRun_GetProgress(gameData));
     // The places skipped hold the pre-boss rest's template, no room of rooms/ and in no pool
     for (i = 0; i + 1 < first; i++) {
         state->order[i] = ENTRALINK_RUN_PRE_BOSS_REST;
@@ -967,6 +972,31 @@ void EntralinkRun_Start(GameData *gameData, BOOL skipRound) {
     EntralinkRun_KeepParty(gameData);
     EntralinkRun_KeepBag(gameData);
     EntralinkRecords_StartRun(gameData);
+}
+
+BOOL EntralinkRun_IsTierBeaten(EntralinkProgress *progress, u32 tier) {
+    // (runs completed before the tiers were the first tier's)
+    return (progress->tiersBeaten & (1 << tier)) || (tier == 0 && progress->runsCompleted != 0);
+}
+
+BOOL EntralinkRun_IsTierOpen(EntralinkProgress *progress, u32 tier) {
+    return tier == 0 || (tier < ENTRALINK_RUN_TIER_COUNT && EntralinkRun_IsTierBeaten(progress, tier - 1));
+}
+
+u32 EntralinkRun_GetChosenTier(EntralinkProgress *progress) {
+    return EntralinkRun_IsTierOpen(progress, progress->tier) ? progress->tier : 0;
+}
+
+u32 EntralinkRun_GetEnemyLevel(void) {
+    return sTierLevels[EntralinkRun_GetState()->tier];
+}
+
+BOOL EntralinkRun_TierHasModifier(u32 tier, u32 modifier) {
+    return (sTierModifiers[tier] >> modifier) & 1;
+}
+
+BOOL EntralinkRun_HasModifier(u32 modifier) {
+    return EntralinkRun_TierHasModifier(EntralinkRun_GetState()->tier, modifier);
 }
 
 BOOL EntralinkRun_IsActive(GameData *gameData) {
@@ -982,7 +1012,8 @@ static void EntralinkRun_End(GameData *gameData) {
     u32 round;
     u32 i;
 
-    // The shard_bonus reward: records.json's times the Shards
+    // The tier's multiplier, then the shard_bonus reward: records.json's times the Shards
+    shards = shards * sTierShardPercents[state->tier] / 100;
     if (EntralinkRanks_HasReward(gameData, ENTRALINK_REWARD_SHARD_BONUS)) {
         shards *= ENTRALINK_RECORDS_SHARD_MULTIPLIER;
     }
@@ -1303,16 +1334,18 @@ static void EntralinkRun_MakeChoice(GameSystem *gsys) {
     state->cleared = TRUE;
 }
 
-// An enemy of the data as a Pokémon, as the Entree Forest makes its own (EntreeForest_CreateSymbolMon)
+// An enemy of the data as a Pokémon at the run's tier's level, as the Entree Forest makes its own
+// (EntreeForest_CreateSymbolMon)
 static PartyPkm *EntralinkRun_CreateEnemyPkm(GameData *gameData, const EntralinkEnemy *enemy, HeapID heapId) {
     static const u8 PID_GENDERS[] = { GENDER_UNKNOWN, GENDER_MALE, GENDER_FEMALE };
     u32 id = getIDAsUInt(GetGameDataPlayerInfo(gameData));
     u32 pid = PML_GenPID(id, enemy->species, enemy->form, PID_GENDERS[enemy->gender], 0,
                          enemy->shiny ? PID_RARE_ALWAYS : PID_RARE_NEVER);
-    PartyPkm *pkm = PokeParty_NewTempPkm(enemy->species, enemy->level, -1, heapId);
+    u32 level = EntralinkRun_GetEnemyLevel();
+    PartyPkm *pkm = PokeParty_NewTempPkm(enemy->species, level, -1, heapId);
     u32 i;
 
-    PokeParty_CreatePkm(pkm, enemy->species, enemy->level, id, PKM_IVS_RANDOM, pid);
+    PokeParty_CreatePkm(pkm, enemy->species, level, id, PKM_IVS_RANDOM, pid);
     PokeParty_ChangeForme(pkm, enemy->form);
     if (enemy->ability == ENTRALINK_ABILITY_HIDDEN) {
         PokeParty_SetHiddenAbil(pkm, enemy->species, enemy->form);
@@ -1336,7 +1369,8 @@ u32 EntralinkRun_GetDoorMarker(GameData *gameData, u32 door) {
     if (state->room == 0 || door >= ENTRALINK_RUN_DOORS || state->doorRooms[door] == ENTRALINK_RUN_ROOM_NONE) {
         return ENTRALINK_MARKER_NONE;
     }
-    if (state->doorUnknown & (1 << door)) {
+    // (the heavy_fog modifier hides every door's room, a boss's and the final room's too)
+    if ((state->doorUnknown & (1 << door)) || EntralinkRun_HasModifier(ENTRALINK_MODIFIER_HEAVY_FOG)) {
         return ENTRALINK_MARKER_UNKNOWN;
     }
     room = &sRooms[state->doorRooms[door]];
@@ -1510,6 +1544,7 @@ static void EntralinkRun_RecordEnemies(GameData *gameData, const EntralinkRoom *
 static GameEvent *EntralinkRun_CreateBattle(GameSystem *gsys, const EntralinkRoom *room,
                                             const EntralinkBattle *battle) {
     static const u8 FORMAT_STYLES[] = { BTL_STYLE_SINGLE, BTL_STYLE_DOUBLE, BTL_STYLE_TRIPLE, BTL_STYLE_TRIPLE };
+    static const u8 sClimateWeathers[ENTRALINK_RUN_CLIMATE_WEATHER_COUNT] = ENTRALINK_RUN_CLIMATE_WEATHERS;
     EntralinkRunState *state = EntralinkRun_GetState();
     GameData *gameData = GSYS_GetGameData(gsys);
     Field *field = GSYS_GetField(gsys);
@@ -1544,6 +1579,10 @@ static GameEvent *EntralinkRun_CreateBattle(GameSystem *gsys, const EntralinkRoo
     SaveBtlFieldStatus(&status, gameData, field);
     if (room->weather != ENTRALINK_WEATHER_FIELD) {
         status.weather = room->weather;
+    }
+    // The chaotic_climate modifier: a weather drawn from run.json's climate_weathers, over the room's
+    if (EntralinkRun_HasModifier(ENTRALINK_MODIFIER_CHAOTIC_CLIMATE)) {
+        status.weather = sClimateWeathers[GFL_RandomLC(ENTRALINK_RUN_CLIMATE_WEATHER_COUNT)];
     }
     BtlSetup_SetWildNormal(setup, gameData, party, &status, FORMAT_STYLES[format], HEAPID_GAMEEVENT);
     BtlSetup_SetFlag(setup, ENTRALINK_RUN_BTL_SETUP_FLAG);
@@ -1687,6 +1726,7 @@ static u16 EntralinkRun_FinishBattle(GameSystem *gsys, const EntralinkRoom *room
         state->shardBonus += ENTRALINK_RUN_FINAL_SHARDS + ENTRALINK_RUN_ROOM_SHARDS;
         state->won = TRUE;
         EntralinkProgress_AddRunCompleted(progress);
+        progress->tiersBeaten |= 1 << state->tier;
         return ENTRALINK_RUN_RESULT_RUN_WON;
     }
     return ENTRALINK_RUN_RESULT_CLEARED;
@@ -2249,6 +2289,7 @@ BOOL Scrcmd_PaperWhite2_EntralinkRun(VM *vm, FieldScriptEnv *env) {
     case ENTRALINK_RUN_ACTION_HUB_FOG:
     case ENTRALINK_RUN_ACTION_FORM:
     case ENTRALINK_RUN_ACTION_SKIP_ROUND:
+    case ENTRALINK_RUN_ACTION_TIER:
         // The Entree's ranks' rewards
         return EntralinkRanks_Action(env, action, arg, arg2, result);
     }

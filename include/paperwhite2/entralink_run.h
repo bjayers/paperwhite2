@@ -167,7 +167,6 @@ typedef struct {
     // Its own multiplier in percent on its stats, on top of the run's depth's (phase 5)
     u16 scale;
     u8 form;
-    u8 level;
     // ENTRALINK_GENDER_*
     u8 gender;
     u8 shiny;
@@ -298,6 +297,16 @@ BOOL EntralinkRun_IsActive(GameData *gameData);
 // The White Tree's milestones that read the rooms (paperwhite2/entralink_ranks.h): every catchable enemy of the rooms
 // of rooms/ caught, and every room of rooms/ entered
 BOOL EntralinkRun_IsAllCaught(EntralinkProgress *progress);
+// The difficulty tiers (run.json's tiers, from 0): whether a tier's final room was ever beaten, whether it is open
+// (the first always, each other once the tier before it is beaten), the tier a run takes (the chosen one, or the first
+// if it isn't open), the run's enemies' level, and whether a tier, or the run's, has a modifier
+// (ENTRALINK_MODIFIER_*, paperwhite2/entralink_run_actions.h)
+BOOL EntralinkRun_IsTierBeaten(EntralinkProgress *progress, u32 tier);
+BOOL EntralinkRun_IsTierOpen(EntralinkProgress *progress, u32 tier);
+u32 EntralinkRun_GetChosenTier(EntralinkProgress *progress);
+u32 EntralinkRun_GetEnemyLevel(void);
+BOOL EntralinkRun_TierHasModifier(u32 tier, u32 modifier);
+BOOL EntralinkRun_HasModifier(u32 modifier);
 BOOL EntralinkRun_IsEveryRoomFound(EntralinkProgress *progress);
 // Ends the run if one is on (the hub shop's ENTRALINK_RUN_ACTION_SHARDS, before the script's warp to the hub), which
 // gives its Dream Shards

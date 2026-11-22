@@ -12,20 +12,17 @@
             "enemies": [
                 {
                     "species": "SPECIES_DIPPLIN",
-                    "level": 70,
                     "moves": [ "MOVE_SYRUP_BOMB", "MOVE_DRAGON_CHEER", "MOVE_DRAGON_BREATH", "MOVE_GIGA_DRAIN" ],
                     "ability": "ABILITY_SWEET_SYRUP"
                 },
                 {
                     "species": "SPECIES_DIPPLIN",
-                    "level": 70,
                     "scale": 120,
                     "moves": [ "MOVE_DRAGON_CHEER", "MOVE_SYRUP_BOMB", "MOVE_DRAGON_TAIL", "MOVE_SUNNY_DAY" ],
                     "shiny": true
                 },
                 {
                     "species": "SPECIES_DIPPLIN",
-                    "level": 70,
                     "moves": [ "MOVE_DRAGON_BREATH", "MOVE_GROWTH", "MOVE_WITHDRAW", "MOVE_HYPER_BEAM" ]
                 }
             ]

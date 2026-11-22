@@ -7,7 +7,7 @@
 // ("<room>/<battle>") that catches and spawn conditions name, renamed with a battle or a room; and the progress ids,
 // the save's won-ever and caught-ever bits, given on save above every number ever given and never changed.
 
-import { fromPlain, type JsonMap, type JsonValue } from "../../../shared/json.ts";
+import { fromPlain, JsonFloat, numberOf, type JsonMap, type JsonValue } from "../../../shared/json.ts";
 
 export const ROOMS_DIR = "res/paperwhite2/entralink/rooms";
 /** A room file, which only the Entree page saves: its Save gives new battles and catches their progress ids first. */
@@ -156,7 +156,6 @@ export const FORMAT_ENEMIES: Record<Format, { min: number; max: number }> = {
 };
 
 // The game's defaults for what a file leaves out (the prototype's packer, tools/paperwhite2/entralink_run.py)
-export const DEFAULT_LEVEL = 70;
 export const DEFAULT_CHANCE = 100;
 export const DEFAULT_COUNT = 1;
 /** A catch's "once" when left out. */
@@ -204,7 +203,6 @@ export interface Catch { after: string[]; once: boolean }
 export interface Enemy {
   species: string;
   form?: number;
-  level?: number;
   moves?: string[];
   ability?: string;
   item?: string;
@@ -306,7 +304,7 @@ export function readRoom(data: JsonValue | null | undefined): Room {
           const c = em.get("catch");
           return {
             species: str(em.get("species")) ?? "",
-            form: num(em.get("form")), level: num(em.get("level")),
+            form: num(em.get("form")),
             moves: Array.isArray(moves) ? moves.map(String) : undefined,
             ability: str(em.get("ability")), item: str(em.get("item")),
             gender: str(em.get("gender")) as Enemy["gender"], shiny: em.get("shiny") === true ? true : em.get("shiny") === false ? false : undefined,
@@ -343,7 +341,7 @@ export function newRoomData(name: string): JsonValue {
     $schema: "../room.schema.json",
     name,
     role: "room",
-    battles: [{ id: "battle", format: "single", enemies: [{ species: "SPECIES_BULBASAUR", level: DEFAULT_LEVEL }] }],
+    battles: [{ id: "battle", format: "single", enemies: [{ species: "SPECIES_BULBASAUR" }] }],
     npcs: [{ type: "battle", battle: "battle", x: 15, z: 14, facing: "DIR_DOWN" }],
   });
 }
@@ -558,7 +556,6 @@ export interface RandomRooms {
   /** Rounds 1, 2 and 3's base stat total bands (the last given for those left out). */
   bst: { min: number; max: number }[];
   themeChance: number;
-  level: number;
   movePool: number;
   tmChance: number;
   hiddenAbilityChance: number;
@@ -568,7 +565,7 @@ export interface RandomRooms {
 export const DEFAULT_RANDOM_ROOMS: RandomRooms = {
   formatWeights: { single: 40, double: 35, triple: 25 },
   bst: [{ min: 300, max: 480 }, { min: 380, max: 540 }, { min: 450, max: 600 }],
-  themeChance: 70, level: 70, movePool: 7, tmChance: 25, hiddenAbilityChance: 5,
+  themeChance: 70, movePool: 7, tmChance: 25, hiddenAbilityChance: 5,
   anchors: [[[15, 15]], [[12, 15], [19, 15]], [[10, 15], [15, 15], [20, 15]]],
 };
 /** random_rooms' value for run.json, keys in the schema's order. */
@@ -576,7 +573,7 @@ export function randomRoomsJson(r: RandomRooms): Map<string, JsonValue> {
   return new Map<string, JsonValue>([
     ["format_weights", new Map<string, JsonValue>(RANDOM_FORMATS.map((f) => [f, r.formatWeights[f]]))],
     ["bst", r.bst.map((b) => new Map<string, JsonValue>([["min", b.min], ["max", b.max]]))],
-    ["theme_chance", r.themeChance], ["level", r.level], ["move_pool", r.movePool], ["tm_chance", r.tmChance],
+    ["theme_chance", r.themeChance], ["move_pool", r.movePool], ["tm_chance", r.tmChance],
     ["hidden_ability_chance", r.hiddenAbilityChance],
     ["anchors", r.anchors.map((group) => group.map(([x, z]) => [x, z]))],
   ]);
@@ -593,7 +590,6 @@ export function readRandomRooms(value: JsonValue | undefined): RandomRooms {
     formatWeights: Object.fromEntries(RANDOM_FORMATS.map((f) => [f, num(fw.get(f)) ?? d.formatWeights[f]])) as Record<RandomFormat, number>,
     bst: ROUNDS.map((_, i) => bands[Math.min(i, bands.length - 1)]),
     themeChance: num(m.get("theme_chance")) ?? d.themeChance,
-    level: num(m.get("level")) ?? d.level,
     movePool: num(m.get("move_pool")) ?? d.movePool,
     tmChance: num(m.get("tm_chance")) ?? d.tmChance,
     hiddenAbilityChance: num(m.get("hidden_ability_chance")) ?? d.hiddenAbilityChance,
@@ -685,7 +681,51 @@ export function percent(p: number): string {
   if (p < 0.1) return "<0.1%";
   return `${p >= 10 ? Math.round(p) : Math.round(p * 10) / 10}%`;
 }
+/** The difficulty tiers (run.json's tiers, the packer's DEFAULT_TIERS): each one's name, every run enemy's level, the
+ * foes' trainer AI flags (AI_FLAG_*), the Dream Shards' multiplier and its modifiers (run.schema.json's enum). The
+ * hub's tier NPC lists exactly four. */
+export interface Tier {
+  name: string;
+  level: number;
+  aiFlags: string[];
+  shardMultiplier: number;
+  modifiers: string[];
+}
+export const TIER_COUNT = 4;
+export const DEFAULT_TIERS: Tier[] = [
+  { name: "Daydream", level: 70, aiFlags: [], shardMultiplier: 1, modifiers: [] },
+  { name: "Reverie", level: 80, aiFlags: ["AI_FLAG_BASIC"], shardMultiplier: 1.5, modifiers: ["heavy_fog"] },
+  { name: "Delusion", level: 90, aiFlags: ["AI_FLAG_BASIC", "AI_FLAG_EVAL_ATTACK"], shardMultiplier: 2, modifiers: ["heavy_fog", "chaotic_climate"] },
+  { name: "Nightmare", level: 100, aiFlags: ["AI_FLAG_BASIC", "AI_FLAG_EVAL_ATTACK", "AI_FLAG_EXPERT"], shardMultiplier: 3, modifiers: ["heavy_fog", "chaotic_climate", "inverse_types"] },
+];
+export const DEFAULT_CLIMATE_WEATHERS = ["BTL_WEATHER_SUN", "BTL_WEATHER_RAIN", "BTL_WEATHER_SANDSTORM", "BTL_WEATHER_HAIL"];
+/** run.json's tiers with their defaults. */
+export function readTiers(value: JsonValue | undefined): Tier[] {
+  const given = asList(value);
+  if (given.length !== TIER_COUNT) return DEFAULT_TIERS;
+  return given.map((t, i) => {
+    const m = asMap(t);
+    const d = DEFAULT_TIERS[i];
+    return {
+      name: str(m.get("name")) ?? d.name,
+      level: num(m.get("level")) ?? d.level,
+      aiFlags: asList(m.get("ai_flags")).map(String),
+      shardMultiplier: numberOf(m.get("shard_multiplier") ?? null) ?? d.shardMultiplier,
+      modifiers: asList(m.get("modifiers")).map(String),
+    };
+  });
+}
+/** A tier as run.json writes it, keys in the schema's order; the multiplier keeps its point (1.0). */
+export function tierJson(t: Tier): Map<string, JsonValue> {
+  return new Map<string, JsonValue>([
+    ["name", t.name], ["level", t.level], ["ai_flags", [...t.aiFlags]], ["shard_multiplier", new JsonFloat(t.shardMultiplier)],
+    ["modifiers", [...t.modifiers]],
+  ]);
+}
 export interface RunLayout {
+  /** The difficulty tiers, and the chaotic_climate modifier's weathers. */
+  tiers: Tier[];
+  climateWeathers: string[];
   rounds: RunRound[];
   roomMaps: string[];
   finalMap?: string;
@@ -719,6 +759,8 @@ export interface RunLayout {
 export function readRun(data: JsonValue | null | undefined): RunLayout {
   const m = asMap(data ?? undefined);
   return {
+    tiers: readTiers(m.get("tiers")),
+    climateWeathers: m.has("climate_weathers") ? asList(m.get("climate_weathers")).map(String) : DEFAULT_CLIMATE_WEATHERS,
     rounds: asList(m.get("rounds")).map((r) => {
       const rm = asMap(r);
       const tw = asMap(rm.get("type_weights"));

@@ -2014,3 +2014,19 @@ follower, and an ambient Hydreigon follower), removed after:
   tests), `verify_dsi_rom.py`, the plain build's module check.
 - **Not tested:** real hardware; a room's ambient with a follower sprite seen at a distance (the player came within its
   fade distance in the shot).
+
+## 21. Difficulty tiers: the buffs' side (2026-11-21)
+
+The tiers themselves are in the prototype doc ("Difficulty tiers"); what touches the buffs:
+
+- **Dream Shards** at a run's end (19.1) are multiplied by the run's tier's `shard_multiplier` (x1, x1.5, x2, x3)
+  before the Black Tree's `shard_bonus` (x2), so a Nightmare win gives x3, or x6 at Black rank 5. The records' Shards
+  earned and the Black rank count them.
+- **The inverse type chart** (Nightmare's `inverse_types`) and the chart buffs: the chart is inverted first, a type at a
+  time, in `GetTypeEffectiveness`; Magnetised works on the inverted values (its Flying-type addition), and its rank 3
+  "Electric hits Ground" applies only where the chart makes it an immunity, so under the inverse chart, where Electric
+  already hits Ground double, it changes nothing; Spectral then rolls on any hit not already super effective, as before.
+  Abilities' immunities (Levitate, Volt Absorb, Wonder Guard) hold under the inverse chart.
+- **Chaotic climate** (Delusion) sets the battle's starting weather; Forecast's weather (a buff) is still set after it,
+  at the team's first entry, so the buff wins.
+- **Enemy levels** come from the tier (70 to 100); the stat scaling (sections 12 and 15) is unchanged and applies on top.
