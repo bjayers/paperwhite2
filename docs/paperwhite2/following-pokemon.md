@@ -1214,6 +1214,36 @@ its rows at it with the layout's record fields and profile (6 frames mirrored, 8
 the walking codes at the generated `WALKING_LAST_OBJ_CODE`, so no C changes. Details and proof:
 `docs/paperwhite2/design/battle-sprites.md` section 14.7.
 
+## One row for both sexes (2026-11-22)
+
+The installer gave every species with genders a male and a female row, almost all showing the same sheet. Now a
+female has a row of her own (`followers/<row>_female`, `OBJ_CODE_FOLLOWER_..._FEMALE`) only where her follower art
+differs; otherwise the male's row is both sexes'.
+
+- **The data:** of 562 species and forms with both rows, 547 female rows showed the male's sheet (the same code) with
+  the same settings; `tools/paperwhite2/follower_sexes.py dedupe` removed them and their codes (nothing in `res/`
+  names one; the follower codes after them renumber, which nothing stores). None had a sheet of its own, so `a/0/4/8`
+  is unchanged; `a/0/4/7` went from 214,432 to 178,332 bytes (-36,100: their table records, registry and
+  positioning rows, palette indices). 15 keep a female sheet of their own: Venusaur, Pikachu, Meganium, Wobbuffet,
+  Steelix, Heracross, Gible, Gabite, Garchomp, Hippopotas, Hippowdon, Combee, Unfezant, Frillish, Jellicent. 22
+  species that are always female keep their female row alone, 22 always male their male row. `follower_sexes.py
+  duplicates` lists any duplicate again (the Python test checks there is none).
+- **The game:** `FindFollowerRow` scores the other sex's row of the same form -2 (it was -20, as a wrong form is), so
+  a female takes the male's row of her own form before form 0's female (a Deerling form 2 female shows form 2's
+  sheet even once form 0 gets a female). Wanderers and `PaperWhite2_FollowingCodeFor` use the same lookup; the
+  Entralink tools (`entralink_run.follower_sprite`) already fell back to the male's code. No size change.
+- **The editor** (Pokémon Editor, Follower card): each row shows its sheet normal and, below, shiny (the row's battle
+  `shiny.pal` through the same indices as the game, `overworld_palettes.row_palettes`; an opt-out sheet has no shiny
+  colours, which it says). The male's row reads "Both sexes" where there is no female row and the species can be
+  female; **Add a female sprite…** imports her sheet (`battle_sprite.py walking-import --female`: re-indexed with F
+  from the female battle art where there is one, her row a copy of the male's settings, her code after his) and
+  **Remove the female sprite** on her row falls back to the male's (`follower_sexes.py remove-female`: refused for a
+  species that is always female, a sheet another row shows, or a code `res/` names).
+- **Tested:** emulator (followers made in party slot 1, R): female Snivy, Bulbasaur and Deerling show the male's code,
+  female Pikachu and Frillish their own and the males theirs, female Deerling form 2 and Sawsbuck form 3 their form's;
+  a female Snivy sheet added with the tool built and showed `OBJ_CODE_FOLLOWER_SNIVY_FEMALE`, then was removed again.
+  Editor: add then remove on a scratch copy left `res/` and `obj_codes.txt` byte for byte as before.
+
 ## What remains
 
 Every step of the base package is ported (1 to 6, above), each built with `--hack`, no warnings, `verify_dsi_rom.py`

@@ -1682,7 +1682,9 @@ static u16 FindFollowerRow(MMSys *system, const FollowingPokemon *mon, u8 *found
             return 0;
         }
         score = row[2] == mon->form ? 8 : row[2] == 0 ? 0 : -20;
-        score += row[3] == mon->gender ? 4 : row[3] == 2 ? 2 : -20;
+        // A species or form whose female has no art of her own has only the male's row: the other sex's row of the
+        // same form costs less than another form's (a form's male over form 0's female)
+        score += row[3] == mon->gender ? 4 : row[3] == 2 ? 2 : -2;
         score += row[4] == mon->shiny ? 1 : -20;
         if (score > best) {
             best = score;

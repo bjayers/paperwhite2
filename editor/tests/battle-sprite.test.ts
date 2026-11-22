@@ -4,7 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -69,7 +69,7 @@ test("a new walking sprite for Flapple makes the code, the sheet and the rows' p
   assert.equal(check.ok, true, check.message);
   const item = check.walking![0];
   assert.deepEqual([item.new, item.code, item.layout, item.currentCode], [true, "OBJ_CODE_POKEMON_FLAPPLE", "asymmetric", "OBJ_CODE_POKEMON_BUDEW"]);
-  assert.deepEqual(item.rows, ["flapple", "flapple_female"]);
+  assert.ok(item.rows.includes("flapple") && item.rows.every((r) => r.startsWith("flapple")), item.rows.join());
   assert.ok(check.changed!.includes("generated/obj_codes.txt"));
   assert.ok(check.changed!.includes("res/field/actors/pokemon/flapple/sprite.png"));
   assert.ok(item.strips!.down.length > 100);
@@ -95,4 +95,48 @@ open(sys.argv[1], "wb").write(write_indexed_png(200, 32, bytes(200 * 32), [(0, 0
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+// "Add a female sprite" and "Remove the female sprite" (tools/paperwhite2/follower_sexes.py): checks only. The species
+// are found in res/, whichever they are: one whose male row shows both sexes, one with a female row of her own
+const FOLLOWER_DIR = join(ROOT, "res/field/actors/followers");
+function followerSexes(): Map<string, Set<string>> {
+  const out = new Map<string, Set<string>>();
+  for (const name of readdirSync(FOLLOWER_DIR)) {
+    const follower = JSON.parse(readFileSync(join(FOLLOWER_DIR, name, "data.json"), "utf8")).follower;
+    if (!follower || follower.form) continue;
+    if (!out.has(follower.species)) out.set(follower.species, new Set());
+    out.get(follower.species)!.add(String(follower.sex));
+  }
+  return out;
+}
+
+test("a female sprite of her own is a new row after the male's, and one that exists is refused", () => {
+  const sexes = followerSexes();
+  const both = [...sexes].find(([, s]) => s.has("GENDER_MALE") && !s.has("GENDER_FEMALE"))![0];
+  const check = walking(both, "--female", join(APPLIN, "sprite.png"));
+  assert.equal(check.ok, true, check.message);
+  const row = `${both.replace("SPECIES_", "").toLowerCase()}_female`;
+  const item = check.walking![0];
+  assert.deepEqual([item.new, item.code, item.rows], [true, `OBJ_CODE_FOLLOWER_${row.toUpperCase()}`, [row]]);
+  assert.deepEqual(check.changed, ["generated/obj_codes.txt", `res/field/actors/followers/${row}/data.json`,
+    `res/field/actors/followers/${row}/sprite.png`]);
+  const own = [...sexes].find(([, s]) => s.has("GENDER_MALE") && s.has("GENDER_FEMALE"))![0];
+  const refused = walking(own, "--female", join(APPLIN, "sprite.png"));
+  assert.equal(refused.ok, false);
+  assert.match(refused.errors[0], /has a female follower row already/);
+});
+
+test("removing a female sprite removes her row and code; a species that is always female keeps hers", () => {
+  const sexes = followerSexes();
+  const tool = join(ROOT, "tools/paperwhite2/follower_sexes.py");
+  const remove = (species: string) => JSON.parse(execFileSync("python3", ["-I", tool, "remove-female", species], { cwd: ROOT })
+    .toString().trim().split("\n").pop()!) as { ok: boolean; changed: string[]; errors: string[] };
+  const own = [...sexes].find(([, s]) => s.has("GENDER_MALE") && s.has("GENDER_FEMALE"))![0];
+  const plan = remove(own);
+  assert.equal(plan.ok, true, plan.errors.join());
+  assert.ok(plan.changed.includes("generated/obj_codes.txt"));
+  assert.ok(plan.changed.includes(`res/field/actors/followers/${own.replace("SPECIES_", "").toLowerCase()}_female/data.json`));
+  const alone = [...sexes].find(([, s]) => !s.has("GENDER_MALE") && s.has("GENDER_FEMALE"));
+  if (alone) assert.match(remove(alone[0]).errors[0], /no male follower row/);
 });

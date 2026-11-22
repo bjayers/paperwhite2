@@ -6,6 +6,7 @@ Art; docs/paperwhite2/design/battle-sprites.md section 14).
     battle_sprite.py check SPECIES [--form N] [FILE...] [--stills-from-sheets]
     battle_sprite.py import SPECIES [--form N] FILE... [--stills-from-sheets]
     battle_sprite.py walking-check|walking-import SPECIES [--form N] [--sheet OBJ_CODE] [--rows ROW,...] PNG [PAL]
+    battle_sprite.py walking-check|walking-import SPECIES [--form N] --female PNG [PAL]   (a female row of her own)
 
 SPECIES is a species' directory in res/pokemon (pichu) or its constant (SPECIES_PICHU); --form N takes its form_<N>/
 art. The art is a group's images, all in one 16-colour palette (index 0 transparent): the 256 by 128 sheets that MCSS
@@ -1539,6 +1540,99 @@ def plan_walking(species: str, form: int, sheet: str | None, png: bytes | None, 
     return {"errors": errors, "warnings": warnings, "notes": notes, "writes": writes, "item": item}
 
 
+def follower_code_text(text: str, after: str, code: str) -> str:
+    """generated/obj_codes.txt with a follower code right after another (the female's after the male's)."""
+    lines = text.splitlines(keepends=True)
+    index = next((i for i, line in enumerate(lines) if line.split("#")[0].split("=")[0].strip() == after), None)
+    if index is None:
+        raise ArtError(f"generated/obj_codes.txt has no {after}")
+    if not lines[index].endswith("\n"):
+        lines[index] += "\n"
+    return "".join(lines[:index + 1] + [f"{code}\n"] + lines[index + 1:])
+
+
+def plan_female(species: str, form: int, png: bytes | None, pal: bytes | None, preview: bool = True) -> dict:
+    """"Add a female sprite" on the Follower card (follower_sexes.py): a female follower row of her own for a species'
+    or form whose male row shows both sexes, with her sheet in her folder (followers/<male row>_female/sprite.png),
+    re-indexed onto the group's battle palette with F from the female battle art where the group has it. Her code,
+    OBJ_CODE_FOLLOWER_<MALE ROW>_FEMALE, goes right after the male's (the codes after it renumber); her row copies
+    the male's settings (offsets, gaps), with the profile of her sheet's frames."""
+    errors, warnings, notes, writes = [], [], [], {}
+    name, constant = species_names(species)
+    label = display_name(POKEMON / name / f"form_{form}" if form else POKEMON / name)
+    fail = lambda message: {"errors": [message], "warnings": [], "notes": [], "writes": {}, "item": None}  # noqa: E731
+    if png is None:
+        return fail("Give the female's walking sprite PNG")
+    try:
+        picture = read_png(png, "the female's walking sprite PNG")
+        given = read_jasc(pal, "the female's walking sprite palette") if pal is not None else None
+    except ArtError as error:
+        return fail(str(error))
+    base = [color5(c) for c in given[:COLOURS]] if given is not None and len(given) >= COLOURS else None
+    if given is not None and base is None:
+        errors.append(f"the palette has {len(given)} colours, not {COLOURS} (JASC; index 0 is transparent)")
+    group = [r for r in follower_rows() if r["species"] == constant and r["form"] == form and not r["shiny"]]
+    sexes = {r["data"]["follower"].get("sex"): r for r in group}
+    if "GENDER_FEMALE" in sexes:
+        return fail(f"{label} has a female follower row already ({sexes['GENDER_FEMALE']['row']}): import onto it")
+    male = sexes.get("GENDER_MALE")
+    if male is None:
+        return fail(f"{label} has no male follower row (a female is added to a species whose male's row shows both)")
+    row = f"{male['row']}_female"
+    code = f"OBJ_CODE_FOLLOWER_{row.upper()}"
+    folder = FOLLOWERS / row
+    if code in code_names() or folder.exists():
+        return fail(f"{code} exists already")
+    width, height = picture.width, picture.height
+    frames = width // height if height and width % height == 0 else 0
+    if (frames, height) not in LAYOUTS:
+        errors.append(f"the PNG is {width} by {height} pixels: a walking sprite is one row of 6 or 8 square frames, "
+                      "32x32 (or 6 of 64x64): up, up step, down, down step, left, left step, and for 8 frames "
+                      "right, right step")
+    pixels, palette, found, more = fit_sheet(picture, base, "the female's walking sprite", False)
+    errors += found
+    notes += more
+    group_dir = overworld_palettes.group_name(constant, form)
+    if not errors:
+        pixels, palette, reasons = onto_battle_palette(width, height, pixels, palette, group_dir, True)
+        female_art = overworld_palettes.has_female_art(group_dir)
+        notes.append(f"Re-indexed onto {group_dir}'s battle palette (method F{', from the female battle art' if female_art else ''})")
+        warnings += [f"the female's sprite needs a look after the re-index: {r}" for r in reasons]
+    before = None
+    directory = actor_directory(male["code"])
+    if (directory / "sprite.png").is_file() and ((directory / "sprite.pal").is_file() or sheet_group(directory)):
+        old = read_sheet(directory)
+        before = (old[2], old[3], old[0], old[1], male["code"])
+    item = {"new": True, "code": code, "stem": follower_stem(code), "rows": [row], "shared": []}
+    if not errors:
+        record = LAYOUTS[(frames, height)]
+        data = {k: v for k, v in male["data"].items() if k not in ("sprite", "palette", "texture_set_format",
+                                                                     "sprite_batch")}
+        data.update(sprite_atlas_size=record[1], sprite_controller_type=record[0], billboard_size=record[2],
+                    scene_node_type=record[3])
+        data["follower"] = {**data["follower"], "sex": "GENDER_FEMALE", "animation_profile": PROFILES[frames]}
+        data["palette"] = {"pokemon": group_dir}
+        writes[folder / "data.json"] = json_text(data)
+        writes[folder / "sprite.png"] = write_indexed_png(width, height, pixels, [expand(c) for c in palette])
+        writes[OBJ_CODES] = follower_code_text(OBJ_CODES.read_text(), f"OBJ_CODE_FOLLOWER_{male['row'].upper()}",
+                                               code).encode()
+        notes.append(f"A female follower row, {row} ({code}, {frames} frames of {height}x{height}, "
+                     f"{PROFILES[frames]}), after the male's; the follower codes after it renumber")
+    if frames:
+        for index in range(frames):
+            if not any(pixels[y * width + index * height + x] for y in range(height) for x in range(height)):
+                warnings.append(f"Frame {index + 1} is empty (every pixel transparent)")
+    used = set(pixels) - {0}
+    drawable = preview and frames and (frames, height) in LAYOUTS
+    item.update(changed=bool(writes), size=height, frames=frames, layout=PROFILES.get(frames, "?"), colours=len(used),
+                palette=[colour_text(c) for c in palette], currentCode=before[4] if before else None)
+    if drawable:
+        item.update(strips=walking_strips(pixels, width, height, palette),
+                    sheet=b64(colourise(*scaled(width, height, pixels, 2), palette)),
+                    current=walking_strips(before[0], before[2], before[3], before[1]) if before else None)
+    return {"errors": errors, "warnings": warnings, "notes": notes, "writes": writes, "item": item}
+
+
 def walking_uploads(species: str, form: int, uploads: list[tuple[str, bytes]]) -> dict:
     """The follower sheets in an import's files (follower/<code>.png and .pal, loose or in the zip): each replaces the
     sheet its name says, if the group's follower rows show it."""
@@ -1569,13 +1663,14 @@ def walking_uploads(species: str, form: int, uploads: list[tuple[str, bytes]]) -
 
 
 def walking_check(species: str, form: int, sheet: str | None, files: list[Path], rows: list[str] | None,
-                  write: bool) -> dict:
+                  write: bool, female: bool = False) -> dict:
     """The dedicated import of the Follower card: a PNG and/or a palette for the sheet an object code shows, or for
-    a new one (sheet None); the result is battle sprite's check shape with the preview item in "walking"."""
+    a new one (sheet None), or with female a female follower row of her own (plan_female); the result is battle
+    sprite's check shape with the preview item in "walking"."""
     uploads, _ = gather(files)
     png = next((d for n, d in uploads if n.lower().endswith(".png")), None)
     pal = next((d for n, d in uploads if n.lower().endswith(".pal")), None)
-    plan = plan_walking(species, form, sheet, png, pal, rows)
+    plan = plan_female(species, form, png, pal) if female else plan_walking(species, form, sheet, png, pal, rows)
     errors, writes = plan["errors"], plan["writes"]
     if write and not errors:
         write_files(writes)
@@ -1612,6 +1707,7 @@ def main():
         p.add_argument("--form", type=int, default=0)
         p.add_argument("--sheet", help="the object code whose sheet to replace; without it a new walking sprite")
         p.add_argument("--rows", help="the follower rows (comma separated) a new walking sprite is for")
+        p.add_argument("--female", action="store_true", help="a female follower row of her own, with this sheet")
         p.add_argument("files", type=Path, nargs="*")
     for name in ("export", "check", "import", "info"):
         p = commands.add_parser(name)
@@ -1627,7 +1723,8 @@ def main():
     try:
         if args.command.startswith("walking-"):
             rows = [r for r in (args.rows or "").split(",") if r] if args.rows is not None else None
-            result = walking_check(args.species, args.form, args.sheet, args.files, rows, args.command == "walking-import")
+            result = walking_check(args.species, args.form, args.sheet, args.files, rows, args.command == "walking-import",
+                                   args.female)
             print(json.dumps(result, ensure_ascii=False))
             sys.exit(0 if result["ok"] or args.command == "walking-check" else 1)
         folder = folder_of(args.species, args.form)

@@ -2,6 +2,18 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-22: Follower card: shiny previews and one row for both sexes (ROM session, on a branch)
+
+- **Shiny preview:** the Pokémon Editor's Follower card shows each row's sheet normal and shiny (the row's battle
+  palettes as the build gives them; an opt-out sheet says it has no shiny colours).
+- **Sexes:** the 547 female follower rows that showed the male's sheet with the same settings removed with their codes
+  (`tools/paperwhite2/follower_sexes.py`; `a/0/4/7` -36,100 bytes, no sheets freed); 15 species keep female art of
+  their own. `FindFollowerRow` takes the other sex's row of the same form (-2, was -20). Editor: "Both sexes", **Add a
+  female sprite…** (import with F) and **Remove the female sprite**.
+- **Tested:** build, DSi check, plain modules, Python and editor tests; emulator: females without their own sheet show
+  the male's code, Pikachu/Frillish females theirs, form females their form's; an added Snivy female showed its own.
+  Details: following-pokemon.md, "One row for both sexes".
+
 ## 2026-11-22: Overworld sheets on the battle palettes (ROM session, on a branch)
 
 - **Every overworld Pokémon sheet** (174 follower sheets, 644 walking sprites) re-indexed in place onto its battle

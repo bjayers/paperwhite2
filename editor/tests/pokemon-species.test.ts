@@ -7,7 +7,7 @@
 import { after, before, test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -116,14 +116,30 @@ test("adding species and removing them again leaves every file as it was", () =>
 });
 
 test("followers are copies of the template's, with their codes after the last, and go with the species", () => {
+  // A female row that shows the male's own sheet (Pignite's, made in the scratch checkout when res/ has none: a female
+  // row of her own exists only where her art differs, tools/paperwhite2/follower_sexes.py)
+  const fixture = join(scratch, FOLLOWERS, "pignite_female");
+  const codesText = readFileSync(join(scratch, "generated/obj_codes.txt"), "utf8");
+  const made = !existsSync(fixture);
+  if (made) {
+    const pignite = JSON.parse(readFileSync(join(ROOT, FOLLOWERS, "pignite/data.json"), "utf8"));
+    const { palette: _p, texture_set_format: _t, ...record } = pignite;
+    mkdirSync(fixture);
+    writeFileSync(join(fixture, "data.json"), JSON.stringify({ ...record, follower: { ...pignite.follower, sex: "GENDER_FEMALE" },
+      sprite: "OBJ_CODE_FOLLOWER_PIGNITE" }, null, 4) + "\n");
+    writeFileSync(join(scratch, "generated/obj_codes.txt"), codesText.replace(/^OBJ_CODE_FOLLOWER_PIGNITE\n/m,
+      "OBJ_CODE_FOLLOWER_PIGNITE\nOBJ_CODE_FOLLOWER_PIGNITE_FEMALE\n"));
+  }
   const before = state();
   const last = followerCodes().at(-1)!;
+  // Budew's rows, whichever res/ has: its male's, and a female's of her own if any
+  const budew = ["", "_female"].filter((suffix) => existsSync(join(ROOT, FOLLOWERS, `budew${suffix}`)));
   const testone = run("add", "Testone", "--from", "SPECIES_BUDEW", "--number", "900");
-  assert.equal(testone.followers, 2);
-  assert.match(testone.message, /2 followers copied from Budew's/);
+  assert.equal(testone.followers, budew.length);
+  assert.match(testone.message, new RegExp(`${budew.length} followers? copied from Budew's`));
   const codes = followerCodes();
-  assert.deepEqual(codes.slice(codes.indexOf(last) + 1), ["OBJ_CODE_FOLLOWER_TESTONE", "OBJ_CODE_FOLLOWER_TESTONE_FEMALE"]);
-  for (const suffix of ["", "_female"]) {
+  assert.deepEqual(codes.slice(codes.indexOf(last) + 1), budew.map((suffix) => `OBJ_CODE_FOLLOWER_TESTONE${suffix.toUpperCase()}`));
+  for (const suffix of budew) {
     const copy = JSON.parse(readFileSync(join(scratch, FOLLOWERS, `testone${suffix}`, "data.json"), "utf8"));
     const original = JSON.parse(readFileSync(join(ROOT, FOLLOWERS, `budew${suffix}`, "data.json"), "utf8"));
     assert.equal(copy.follower.species, "SPECIES_TESTONE");
@@ -132,11 +148,11 @@ test("followers are copies of the template's, with their codes after the last, a
     const { palette: _, ...rest } = copy;
     assert.deepEqual({ ...rest, follower: { ...copy.follower, species: original.follower.species } }, original);
   }
-  assert.deepEqual(info().species.find((s) => s.species === "SPECIES_TESTONE")!.followers, ["testone", "testone_female"]);
+  assert.deepEqual(info().species.find((s) => s.species === "SPECIES_TESTONE")!.followers, budew.map((suffix) => `testone${suffix}`));
 
   // a sprite named by another copied follower's code names that one's copy (Pignite's female shows its own sprite)
   run("add", "Testpig", "--from", "SPECIES_PIGNITE");
-  const pignite = JSON.parse(readFileSync(join(ROOT, FOLLOWERS, "pignite_female/data.json"), "utf8"));
+  const pignite = JSON.parse(readFileSync(join(fixture, "data.json"), "utf8"));
   assert.equal(pignite.sprite, "OBJ_CODE_FOLLOWER_PIGNITE");
   assert.equal(JSON.parse(readFileSync(join(scratch, FOLLOWERS, "testpig_female/data.json"), "utf8")).sprite,
     "OBJ_CODE_FOLLOWER_TESTPIG");
@@ -147,8 +163,8 @@ test("followers are copies of the template's, with their codes after the last, a
   assert.equal(run("add", "Blankmon", "--blank").followers, 0);
   assert.ok(!readdirSync(join(scratch, FOLLOWERS)).some((name) => name.startsWith("nofollow") || name.startsWith("blankmon")));
   assert.match(refusal("follower", "SPECIES_BLANKMON", "--none"), /has no follower/);
-  assert.equal(run("follower", "SPECIES_BLANKMON", "--from", "SPECIES_BUDEW").followers, 2);
-  assert.deepEqual(followerCodes().slice(-2), ["OBJ_CODE_FOLLOWER_BLANKMON", "OBJ_CODE_FOLLOWER_BLANKMON_FEMALE"]);
+  assert.equal(run("follower", "SPECIES_BLANKMON", "--from", "SPECIES_BUDEW").followers, budew.length);
+  assert.deepEqual(followerCodes().slice(-budew.length), budew.map((suffix) => `OBJ_CODE_FOLLOWER_BLANKMON${suffix.toUpperCase()}`));
   run("follower", "SPECIES_BLANKMON", "--none");
   assert.ok(!followerCodes().some((code) => code.includes("BLANKMON")));
   assert.match(refusal("follower", "SPECIES_BULBASAUR", "--none"), /original game's/);
@@ -166,6 +182,10 @@ test("followers are copies of the template's, with their codes after the last, a
   assert.ok(removed.removed.includes(`${FOLLOWERS}/testpig_female`));
   run("remove", "SPECIES_TESTONE");
   assert.deepEqual(state(), before);
+  if (made) {
+    rmSync(fixture, { recursive: true });
+    writeFileSync(join(scratch, "generated/obj_codes.txt"), codesText);
+  }
 });
 
 test("retiring keeps the ID and frees the number; a retired ID is reused in place", () => {
