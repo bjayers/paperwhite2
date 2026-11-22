@@ -350,7 +350,8 @@ The Symbol block (`SAVE_BLOCK_SYMBOL`, 0x850 bytes at 0x22a00 and its copy at 0x
 | 0x148 | 4 | the Dream Shards spent in the hub shop, which its Reset gives back |
 | 0x14c | 0x80 | the hub shop's bought picks: 32 entries of a card's key (u16, a hash of its ID; 0 free) and its count (u8) |
 | 0x1cc | 0x454 | the records (`EntralinkRecords`, "Records" below) |
-| 0x620 | 0x230 | free, zero (560 bytes, for unlocks later; a mid-run save no longer fits here) |
+| 0x620 | 1 | the hub's fog (`ENTRALINK_HUB_FOG_*`, "The ranks' rewards" below), then 3 unused |
+| 0x624 | 0x22c | free, zero (556 bytes, for unlocks later; a mid-run save no longer fits here) |
 
 - No encryption or checksum of its own: the save's CRC of the block covers it. `EntralinkProgress_Get` clears a block
   without the magic or with another version to an empty progress, so an old save's forest data is dropped the first
@@ -1249,7 +1250,9 @@ The lists:
 (a bit each, `ENTREE_MILESTONE_*` order). The Black rank is the thresholds reached; the White rank is the counted
 milestones reached, in any order: a run won (`runsCompleted`), every catch of the rooms caught, every codex entry met,
 the hub shop's bought picks at `total_cap`, every room of `rooms/` entered. The editor's Entree page edits both (Run
-section, **Entree ranks**: the five numbers, a checkbox a milestone).
+section, **Entree ranks**: the five numbers, a checkbox a milestone). Since step 3 the ranks are computed in overlay 12
+(`include/paperwhite2/entralink_ranks.h`, which stays loaded while the monolith runs), which the menu, the hub's trees
+and the rewards all read ("The ranks' rewards").
 
 ### Memory
 
@@ -1272,6 +1275,86 @@ stays 0x5320 (20.8 KB). The screens' work is on the monolith's own heap (1 MB of
   a blue taken twice, Galvanic taken (its three ranks); Catchable with one caught, one catchable and one locked behind
   Darkrai's battle (a requirement poked into overlay 143's table copy, since no room has one); Nightmares empty.
 - Not tested: touch input, a list longer than the screen paged with left/right (scrolling was).
+
+## The ranks' rewards (2026-11-21)
+
+Step 3 of the records, decided with the user on 2026-11-21: the two trees grow with the ranks, and each rank unlocks
+something. Code: `include/paperwhite2/entralink_ranks.h`, `src/paperwhite2/ov012/paperwhite2_entralink_ranks.c` (the
+ranks, moved from overlay 143, the hub's NPCs, the fog and form actions, the skip), hooks in
+`paperwhite2_entralink_run.c` (`EntralinkRun_Start`, `EntralinkRun_FinishBattle`, `EntralinkRun_End`),
+`src/ov130/gimmick_funfest_levels.c` (the trees), `src/ov033/entree_forest_first_warp.c` (the skip's question),
+`src/ov036/scrcmd_shop.c` (the item shop), `src/ov167/btl_server_flow_sub.c` (the Nightmare Ball), `zone_weather.c`
+(the fog); scripts 1 and 17-20 of `entralink.s`, Script_12 of `global_10490.s`; data `records.json`.
+
+### The trees
+
+The hub's two trees are the original's White and Black level models (`GimmickFunfestLevels`, overlay 130, five models
+a colour, field gimmick 29 of the hub). `ShowLevels` lights the stage of the White and Black ranks in place of the
+Funfest levels: **stage = rank - 1, ranks 0 and 1 both the first** (`EntralinkRanks_GetTreeStage`), rank 5 the fifth.
+The stages are read as the hub's field loads (the gimmick's setup), so a rank reached shows on the next visit.
+
+### What each rank unlocks
+
+`records.json`'s `rewards`: each reward's tree and rank (0-5; 0 from the start), packed as `tree << 4 | rank` into
+`ENTRALINK_RECORDS_REWARDS` (`ENTRALINK_REWARD_*` order); a White rank past the milestones that count is refused by
+the packer. `EntralinkRanks_HasReward` compares with the rank now. The defaults:
+
+| Tree, rank | Reward | What it does |
+| --- | --- | --- |
+| Black 1 | `reserve_box` | the Reserve Box NPC (id 5) is in the hub |
+| Black 2 | `hub_shop` | the buff shop NPC (id 6) is in the hub |
+| Black 3 | `buff_room` | every run's first room is the buff template (`sTypeTemplates[ENTRALINK_TYPE_BUFF]`), whose ball offers buffs |
+| Black 4 | `dust_bonus` | a battle's Dream Dust + `dust_bonus` percent (50) |
+| Black 5 | `shard_bonus` | a run's end gives `shard_multiplier` times its Dream Shards (2; the records' Shards earned count them) |
+| White 1 | `difficulty` | the difficulty NPC (id 7, script 17): a placeholder line, no mechanics yet |
+| White 2 | `fog` | the fog NPC (id 8, script 18): the hub's fog, pink, purple, black (the rounds' tints `WEATHER_CUSTOM_TINT_9`, `_8`, `_7`) or none, saved at the progress block's 0x620 (`hubFog`) and shown at once (`FieldSetWeather 0xffff`, which reads `GetWeatherAll`'s new hub hook) |
+| White 3 | `shard_shop` | the item shop NPC (id 9, script 19): the Poké Mart's screen (shop ID `ENTRALINK_SHARD_SHOP_ID` 0xfb, currency Dream Shards) selling `shard_shop`'s goods into the real bag: a Nightmare Ball for 15, a Shiny Candy for 60. Shards spent here are spent for good (the buff shop's reset gives back only its own) |
+| White 4 | `skip_round` | stepping into the forest asks "Skip the forest's first round?": Yes starts at round 2's first room with a head start, `skip_round`'s picks (6) each chosen from an offer of round 1's (an enemy room's odds) with the usual chooser, and its Dream Dust (250); No (or B) starts as before |
+| White 5 | `form_change` | the form NPC (id 10, script 20): a party Pokémon picked whose species has a special form (`special_forms`: Lugia, Dialga) takes it, or goes back to form 0 (`PokeParty_ChangeForme`, stats recalculated); cosmetic |
+
+- **The hub's NPCs** stay in `res/field/events/entralink.json` (placeholder sprites and places for the user to move:
+  (26, 43), (36, 43), (26, 40), (36, 40)); the hub's init script (Script_1, `ENTRALINK_RUN_ACTION_RANKS` 0) deletes
+  each whose reward is locked as the map loads, by its actor ID (`sHubNpcs`). No event flags.
+- **The skip:** the forest entrance's tile runs `SCRID_ENTRALINK_RUN_START` (10501) instead of its warp when the reward
+  is unlocked; the script starts the run (`EntralinkRun_Start(gameData, skipRound)`), offers the picks
+  (`ENTRALINK_RUN_ACTION_SKIP_ROUND` 1, then `L_RunBuffOfferMenu`, Skip giving its Dust as after a battle), gives the
+  Dust and warps (the entrance's warp, kept from the tile). The run's places before round 2 hold the pre-boss rest's
+  template in `order` (no room of `rooms/`, in no pool) and `placesSkipped` (the state's), so they give no Shards and
+  no room records; the enemies scale as round 2's. With `buff_room` too, round 2's first room is the buff room.
+- **The Nightmare Ball outside the forest:** `PaperWhite2_ThrowBall_CanCatch` lets any ball catch in a wild battle
+  that isn't a run's (the Nightmare Ball was refused there), and `CheckBallCapture` takes the Master Ball's path for it
+  only in a run's battle; elsewhere `GetBallCaptureMod` gives it 1, a Poké Ball. Its description says so now.
+- **Text:** placeholders at the end of `entralink.txt`, `global_10490.txt` (`RunSkip*`) and `scrcmd_shop.txt`
+  (`Shard*`, `DreamShards`).
+- **The editor:** the Entree page's Run section, **Ranks' rewards** under Entree ranks: each reward's tree and rank,
+  the two bonuses, the skip's picks and Dust, and the item shop's goods (item and price, add and remove).
+
+### Memory
+
+ARM9 main +64 bytes (the hub's fog in `GetWeatherAll`), overlay 12 +1.6 KB (the ranks moved from overlay 143 0.4 KB,
+the hub NPCs, fog, form and skip actions, the run's hooks), overlay 36 +0.3 KB (the item shop), overlay 143 -0.4 KB.
+The DS arena left falls from 0x5320 to **0x4b60 (18.8 KB)**. Save: one byte of the progress block (0x620).
+
+### Tested (py-desmume, the user's save copy, scripts in the session's scratchpad `ranks/h/`)
+
+- **The trees** with the records poked to Black/White ranks 0/0, 1/1, 3/3, 5/5 (the models shown: stages 0, 0, 2, 4;
+  `ranks/shots/t1_trees_all.png`: the tree the same at 0 and 1, larger at 3, full with flowers at 5), 2/0 and 0/4
+  (each tree its own stage: 0 and 1, 3 and 0).
+- **The NPCs** deleted as the hub loads: all six at 0/0; fog, form, item shop and buff shop at 1/1; only the form NPC
+  at 3/3; none at 5/5 (`t1_npcs_b5_w5.png`); difficulty, fog, form and item shop at 2/0; form, Reserve Box and buff
+  shop at 0/4.
+- **Black:** the first room an enemy room at Black 0, the buff template at 3, 4 and 5; Shadow Lugia's raid at place 5
+  gave 80 Dust at Black 3 and 120 at 4 and 5; a warp away after it gave 5 Shards at Black 3 and 10 at 5.
+- **The fog NPC:** pink fog at once (`t2_fog_pink_none.png`), `hubFog` 1; No fog back to clear, 0.
+- **The item shop** with 100 Shards: a Nightmare Ball (85 left, the real bag's items pocket), a Shiny Candy (40 left,
+  medicine pocket); with 25, the candy refused.
+- **The Nightmare Ball outside a run:** a run's Ditto battle made a plain wild battle (the run's flag cleared as it is
+  set): four throws took the Poké Ball's path (`GetBallCaptureMod` with item 126), the fourth caught it with its ball
+  set to 126.
+- **The form NPC:** party slot 0 poked to Lugia: to form 1 (stats recalculated), then back to form 0.
+- **Skip round 1** at White 4: No started at place 1; Yes gave 6 picks through the chooser (6 buffs held), 250 Dust,
+  and started at place 8 (round 2's first room) with 7 places skipped; a warp away at once gave no Shards.
+- Not tested: the difficulty NPC beyond its line, touch input, the fog after a reboot (its byte is the saved block's).
 
 ## The re-entry question
 

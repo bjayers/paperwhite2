@@ -74,4 +74,7 @@ Global10490_Text_RunSwapNoDust = Calling on a Pokémon costs {0205:2} Dream Dust
 Global10490_Text_RunSwapAllFainted = Every Pokémon on your team has fainted.\nNo one can make way.
 Global10490_Text_RunSwapFailed = The swap couldn't be made.
 Global10490_Text_RunGainedShards = You gained {0205:1} Dream Shards!\n(total {0205:2})
+Global10490_Text_RunSkipAsk = Skip the forest's first round?\nStart the second with a head start.
+Global10490_Text_RunSkipPicks = Your head start: choose {0205:0} buffs\nfrom the first round's offers.
+Global10490_Text_RunSkipDust = You gained {0205:0} Dream Dust!
 \pad{d6}

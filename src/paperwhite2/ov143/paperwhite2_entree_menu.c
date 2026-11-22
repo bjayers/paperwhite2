@@ -154,17 +154,17 @@ static void EntreeStatus_DrawBar(u32 white, u32 black) {
 
 static void EntreeStatus_Draw(MonolithScreenParam *screen, MonolithWork *wk, EntreeStatusWork *sw) {
     EntralinkProgress *progress = Entree_GetProgress(screen);
-    u32 white = Entree_GetWhiteRank(progress);
-    u32 black = Entree_GetBlackRank(progress);
-    u32 next = Entree_GetNextBlackRank(progress);
+    u32 white = EntralinkRanks_GetWhite(progress);
+    u32 black = EntralinkRanks_GetBlack(progress);
+    u32 next = EntralinkRanks_GetNextBlack(progress);
 
     Entree_Print(wk, &sw->prints[STATUS_WINDOW_TITLE], BtlMainTitle_Text_Entree, 0, 4);
     Entree_SetNumber(wk, 0, white);
-    Entree_SetNumber(wk, 1, Entree_GetWhiteRankMax());
+    Entree_SetNumber(wk, 1, EntralinkRanks_GetWhiteMax());
     Entree_Print(wk, &sw->prints[STATUS_WINDOW_WHITE], BtlMainTitle_Text_EntreeWhiteRank, 0, 0);
     Entree_Print(wk, &sw->prints[STATUS_WINDOW_WHITE_PROGRESS], BtlMainTitle_Text_EntreeWhiteProgress, 8, 0);
     Entree_SetNumber(wk, 0, black);
-    Entree_SetNumber(wk, 1, Entree_GetBlackRankMax());
+    Entree_SetNumber(wk, 1, EntralinkRanks_GetBlackMax());
     Entree_Print(wk, &sw->prints[STATUS_WINDOW_BLACK], BtlMainTitle_Text_EntreeBlackRank, 0, 0);
     Entree_SetNumber(wk, 0, progress->records.shardsEarned);
     Entree_SetNumber(wk, 1, next);
@@ -558,8 +558,8 @@ static void EntreePages_AddCountRow(MonolithWork *wk, EntreePagesWork *pw, u32 l
 // The Status's rows: the White Tree's milestones that count, done or not, then the Black Tree's Shards
 static void EntreePages_AddStatusRows(MonolithScreenParam *screen, MonolithWork *wk, EntreePagesWork *pw) {
     EntralinkProgress *progress = Entree_GetProgress(screen);
-    u32 reached = Entree_GetMilestones(progress);
-    u32 next = Entree_GetNextBlackRank(progress);
+    u32 reached = EntralinkRanks_GetMilestones(progress);
+    u32 next = EntralinkRanks_GetNextBlack(progress);
     u32 i;
 
     EntreePages_AddRow(wk, pw, BtlMainTitle_Text_EntreeWhiteHeading, ENTREE_NO_VALUE);

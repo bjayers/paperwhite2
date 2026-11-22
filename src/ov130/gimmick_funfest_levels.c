@@ -11,6 +11,9 @@
 #include "system/game_comm.h"
 #include "system/game_data.h"
 #include "system/game_system.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/entralink_ranks.h"
+#endif
 
 #define GIMMICK_WORK_ID 0
 
@@ -276,8 +279,15 @@ static u8 GimmickFunfestLevels_ShowLevels(GameData *gameData, FieldExpObjSystem 
     } else {
         levels = GameData_GetPassPowerLevels(gameData, netId);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the two trees grow with the Entree's White and Black ranks, ranks 0 and 1 the first of their five
+    // models (paperwhite2/entralink_ranks.h); the Funfest's levels are gone with its missions
+    whiteSteps = EntralinkRanks_GetTreeStage(gameData, ENTRALINK_TREE_WHITE);
+    blackSteps = EntralinkRanks_GetTreeStage(gameData, ENTRALINK_TREE_BLACK);
+#else
     whiteSteps = GetLevelSteps(PassPowerLevel_GetWhite(levels));
     blackSteps = GetLevelSteps(PassPowerLevel_GetBlack(levels));
+#endif
     matrix = FieldExpObj_GetActorMatrixPtr(expObj, 0, MODEL_WHITE_LEVEL + whiteSteps);
     x = FX32_CONST(1024) * offset + TRIGGER_X;
     matrix->translation.x = x;

@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include "paperwhite2/entralink_buffs.h"
+#include "paperwhite2/entralink_progress.h"
 #include "struct_decls.h"
 
 // Paper White 2: the Entralink roguelike's records, saved in the progress block (paperwhite2/entralink_progress.h,
@@ -48,5 +49,9 @@ void EntralinkRecords_EndRun(GameData *gameData, u32 round, u32 shards);
 void EntralinkRecords_Clear(GameData *gameData);
 // The codex's species and forms (ENTRALINK_RECORDS_CODEX's), for the debug menu's readout
 u32 EntralinkRecords_GetCodexCount(void);
+// Whether every species and special form of the codex was met (the White Tree's fill_codex)
+BOOL EntralinkRecords_IsCodexFull(EntralinkProgress *progress);
+// A species' special form (records.json's special_forms; the form NPC), or 0 if it has none
+u32 EntralinkRecords_GetSpecialForm(u32 species);
 
 #endif // PAPERWHITE2_ENTRALINK_RECORDS_H

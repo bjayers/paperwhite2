@@ -11,5 +11,63 @@
             "species": "SPECIES_LUGIA",
             "form": 1
         }
+    ],
+    "rewards": {
+        "reserve_box": {
+            "tree": "black",
+            "rank": 1
+        },
+        "hub_shop": {
+            "tree": "black",
+            "rank": 2
+        },
+        "buff_room": {
+            "tree": "black",
+            "rank": 3
+        },
+        "dust_bonus": {
+            "tree": "black",
+            "rank": 4
+        },
+        "shard_bonus": {
+            "tree": "black",
+            "rank": 5
+        },
+        "difficulty": {
+            "tree": "white",
+            "rank": 1
+        },
+        "fog": {
+            "tree": "white",
+            "rank": 2
+        },
+        "shard_shop": {
+            "tree": "white",
+            "rank": 3
+        },
+        "skip_round": {
+            "tree": "white",
+            "rank": 4
+        },
+        "form_change": {
+            "tree": "white",
+            "rank": 5
+        }
+    },
+    "dust_bonus": 50,
+    "shard_multiplier": 2,
+    "skip_round": {
+        "picks": 6,
+        "dust": 250
+    },
+    "shard_shop": [
+        {
+            "item": "ITEM_NIGHTMARE_BALL",
+            "price": 15
+        },
+        {
+            "item": "ITEM_SHINY_CANDY",
+            "price": 60
+        }
     ]
 }

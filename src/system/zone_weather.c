@@ -15,6 +15,7 @@
 
 #ifdef PAPERWHITE2
 #include "paperwhite2/battle_weather.h"
+#include "paperwhite2/entralink_progress.h"
 #include "paperwhite2/entralink_run_state.h"
 #include "paperwhite2/season.h"
 #endif
@@ -66,6 +67,11 @@ u8 GetWeatherAll(GameSystem *gsys, u32 zoneId) {
 #ifdef PAPERWHITE2
     // Paper White 2: an Entralink run's room has its own weather (paperwhite2/entralink_run_state.h)
     weather = EntralinkRun_GetFieldWeather(zoneId);
+    if (weather != WEATHER_NONE) {
+        return weather;
+    }
+    // Paper White 2: the hub's fog, which its fog NPC sets (paperwhite2/entralink_ranks.h)
+    weather = EntralinkProgress_GetHubWeather(GameData_GetSaveControl(gameData), zoneId);
     if (weather != WEATHER_NONE) {
         return weather;
     }

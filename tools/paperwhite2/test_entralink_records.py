@@ -12,15 +12,19 @@ from tools.paperwhite2 import entralink_records  # noqa: E402
 
 
 def records_dir(tmp_path: Path, special: list[dict], black: list[int] | None = None,
-                white: list[str] | None = None) -> Path:
-    """The real schema with a records.json of the test's own."""
+                white: list[str] | None = None, rewards: dict | None = None, shop: list[dict] | None = None) -> Path:
+    """The real schema with a records.json of the test's own: every reward at Black rank 1 unless given."""
     directory = tmp_path / "entralink"
     directory.mkdir()
     shutil.copy(entralink_records.SOURCE / "records.schema.json", directory)
+    unlocks = {reward: {"tree": "black", "rank": 1} for reward in entralink_records.REWARDS}
+    unlocks.update(rewards or {})
     (directory / "records.json").write_text(json.dumps({
         "$schema": "records.schema.json", "special_forms": special,
         "black_ranks": black if black is not None else [1, 2, 3, 4, 5],
         "white_milestones": white if white is not None else ["beat_final"],
+        "rewards": unlocks, "dust_bonus": 25, "shard_multiplier": 3, "skip_round": {"picks": 4, "dust": 120},
+        "shard_shop": shop if shop is not None else [{"item": "ITEM_POKE_BALL", "price": 7}],
     }))
     return directory
 
@@ -31,6 +35,8 @@ def test_real_data_packs():
     assert "#define ENTRALINK_RECORDS_CODEX {" in text and "ENTRALINK_RECORDS_CODEX_COUNT" in text
     assert "#define ENTRALINK_RECORDS_BLACK_RANK_COUNT 5" in text
     assert "#define ENTRALINK_RECORDS_WHITE_MILESTONES 0x" in text
+    assert f"#define ENTRALINK_RECORDS_REWARD_COUNT {len(entralink_records.REWARDS)}" in text
+    assert "#define ENTRALINK_RECORDS_SHOP_ITEMS {" in text
 
 
 def test_the_entree_ranks(tmp_path):
@@ -101,3 +107,46 @@ def test_the_codex_is_at_most_the_saves(tmp_path):
     many += [{"species": "SPECIES_GASTRODON", "form": form} for form in range(2)]
     with pytest.raises(datajson.DataError, match="more than the save's 64"):
         entralink_records.codex(records_dir(tmp_path, many))
+
+
+def test_the_rewards_pack_as_tree_and_rank(tmp_path):
+    """Each reward packs as its tree << 4 | its rank, in REWARDS' order (include/paperwhite2/entralink_ranks.h's
+    ENTRALINK_REWARD_*), with the bonuses, the head start and the item shop's goods."""
+    directory = records_dir(tmp_path, [], white=["beat_final", "catch_all"],
+                            rewards={"fog": {"tree": "white", "rank": 2}, "dust_bonus": {"tree": "black", "rank": 0}},
+                            shop=[{"item": "ITEM_POKE_BALL", "price": 7}, {"item": "ITEM_POTION", "price": 3}])
+    text = entralink_records.header(directory)
+    rows = [line.split(",")[0].strip() for line in text.splitlines() if ": black " in line or ": white " in line]
+    assert len(rows) == len(entralink_records.REWARDS)
+    assert rows[entralink_records.REWARDS.index("fog")] == "0x12"
+    assert rows[entralink_records.REWARDS.index("dust_bonus")] == "0x00"
+    assert rows[entralink_records.REWARDS.index("reserve_box")] == "0x01"
+    assert "#define ENTRALINK_RECORDS_DUST_BONUS 25" in text
+    assert "#define ENTRALINK_RECORDS_SHARD_MULTIPLIER 3" in text
+    assert "#define ENTRALINK_RECORDS_SKIP_PICKS 4" in text and "#define ENTRALINK_RECORDS_SKIP_DUST 120" in text
+    constants = datajson.constants()
+    assert "#define ENTRALINK_RECORDS_SHOP_ITEM_COUNT 2" in text
+    assert f"{{ {constants['ITEM_POTION']}, 3 }}, /* ITEM_POTION */" in text
+    assert entralink_records.REWARDS[:5] == ["reserve_box", "hub_shop", "buff_room", "dust_bonus", "shard_bonus"]
+
+
+def test_a_white_rank_past_the_milestones_is_refused(tmp_path):
+    directory = records_dir(tmp_path, [], white=["beat_final"], rewards={"skip_round": {"tree": "white", "rank": 2}})
+    with pytest.raises(datajson.DataError, match="skip_round needs White Tree rank 2, but only 1 milestones count"):
+        entralink_records.header(directory)
+
+
+def test_an_item_sold_twice_is_refused(tmp_path):
+    directory = records_dir(tmp_path, [], shop=[{"item": "ITEM_POKE_BALL", "price": 7},
+                                                {"item": "ITEM_POKE_BALL", "price": 9}])
+    with pytest.raises(datajson.DataError, match="ITEM_POKE_BALL twice"):
+        entralink_records.header(directory)
+
+
+def test_every_reward_is_required(tmp_path):
+    directory = records_dir(tmp_path, [])
+    data = json.loads((directory / "records.json").read_text())
+    del data["rewards"]["form_change"]
+    (directory / "records.json").write_text(json.dumps(data))
+    with pytest.raises(datajson.DataError):
+        entralink_records.header(directory)

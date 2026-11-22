@@ -4,7 +4,7 @@
   "description": "The Entralink roguelike's records (docs/paperwhite2/design/entralink-roguelike-prototype.md, \"Records\"; tools/paperwhite2/entralink_records.py). The Nightmare codex records every species with \"pokedex\": false (the forest's Nightmares, in every form) and the special forms listed here, which the records also show in a list of their own.",
   "type": "object",
   "additionalProperties": false,
-  "required": [ "special_forms", "black_ranks", "white_milestones" ],
+  "required": [ "special_forms", "black_ranks", "white_milestones", "rewards", "dust_bonus", "shard_multiplier", "skip_round", "shard_shop" ],
   "properties": {
     "$schema": { "type": "string" },
     "black_ranks": {
@@ -28,6 +28,60 @@
           "species": { "type": "string", "x-constant": "SPECIES_", "description": "The species" },
           "form": { "type": "integer", "minimum": 0, "maximum": 31, "description": "Its form, below the species' form count" }
         }
+      }
+    },
+    "rewards": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "reserve_box", "hub_shop", "buff_room", "dust_bonus", "shard_bonus", "difficulty", "fog", "shard_shop", "skip_round", "form_change" ],
+      "description": "What the Entree's ranks unlock: each reward's tree and rank (1 to 5; 0 unlocks it from the start)",
+      "properties": {
+        "reserve_box": { "$ref": "#/$defs/unlock", "description": "The hub's Reserve Box NPC (the PC and the Reserve Box), hidden below its rank" },
+        "hub_shop": { "$ref": "#/$defs/unlock", "description": "The hub's buff shop NPC (blue and purple picks for Dream Shards), hidden below its rank" },
+        "buff_room": { "$ref": "#/$defs/unlock", "description": "Every run's first room is a buff room (the buff template)" },
+        "dust_bonus": { "$ref": "#/$defs/unlock", "description": "Battles give dust_bonus percent more Dream Dust" },
+        "shard_bonus": { "$ref": "#/$defs/unlock", "description": "A run's end gives shard_multiplier times its Dream Shards" },
+        "difficulty": { "$ref": "#/$defs/unlock", "description": "The hub's difficulty NPC (a placeholder: difficulty tiers are coming), hidden below its rank" },
+        "fog": { "$ref": "#/$defs/unlock", "description": "The hub's fog NPC, which sets the hub's fog (pink, purple, black or none), hidden below its rank" },
+        "shard_shop": { "$ref": "#/$defs/unlock", "description": "The hub's item shop NPC, selling shard_shop's items for Dream Shards into the real bag, hidden below its rank" },
+        "skip_round": { "$ref": "#/$defs/unlock", "description": "Starting a run asks whether to skip round 1: skip_round's buff picks and Dream Dust, then round 2's first room" },
+        "form_change": { "$ref": "#/$defs/unlock", "description": "The hub's form NPC, which changes a party Pokémon of a special form's species to that form and back, hidden below its rank" }
+      }
+    },
+    "dust_bonus": { "type": "integer", "minimum": 0, "maximum": 400, "description": "The dust_bonus reward: the percent more Dream Dust a battle gives" },
+    "shard_multiplier": { "type": "integer", "minimum": 1, "maximum": 10, "description": "The shard_bonus reward: how many times its Dream Shards a run's end gives" },
+    "skip_round": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "picks", "dust" ],
+      "description": "The skip_round reward's head start, in place of round 1",
+      "properties": {
+        "picks": { "type": "integer", "minimum": 0, "maximum": 20, "description": "The buff picks, each from an offer of round 1's, chosen as after a battle" },
+        "dust": { "type": "integer", "minimum": 0, "maximum": 9999, "description": "The Dream Dust it gives" }
+      }
+    },
+    "shard_shop": {
+      "type": "array", "minItems": 1, "maxItems": 16,
+      "description": "The shard_shop reward's goods: items for use outside the forest, sold for Dream Shards into the real bag (the Poké Mart's screen)",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [ "item", "price" ],
+        "properties": {
+          "item": { "type": "string", "x-constant": "ITEM_", "description": "The item" },
+          "price": { "type": "integer", "minimum": 1, "maximum": 9999, "description": "Its price in Dream Shards" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "unlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "tree", "rank" ],
+      "properties": {
+        "tree": { "enum": [ "black", "white" ], "description": "The tree whose rank unlocks it" },
+        "rank": { "type": "integer", "minimum": 0, "maximum": 5, "description": "The rank that unlocks it (0: from the start)" }
       }
     }
   }

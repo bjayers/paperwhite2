@@ -140,8 +140,12 @@ typedef struct {
     EntralinkShopPick shopPicks[ENTRALINK_SHOP_PICKS_MAX]; // 0x14c
     // The records (paperwhite2/entralink_records.h), zero in a block of before them: none
     EntralinkRecords records; // 0x1cc
+    // The hub's fog, which the fog NPC sets (ENTRALINK_HUB_FOG_*, paperwhite2/entralink_ranks.h); zero in a block of
+    // before it: none
+    u8 hubFog;       // 0x620
+    u8 unused621[3]; // 0x621
     // Free for the roguelike's later saves (unlocks), zero
-    u8 reserved[0x850 - 0x620]; // 0x620
+    u8 reserved[0x850 - 0x624]; // 0x624
 } EntralinkProgress;            // 0x850, the Symbol block's size
 
 // The save table's size and initial state of the block (save_table.c)
@@ -159,5 +163,7 @@ void EntralinkProgress_AddRunCompleted(EntralinkProgress *progress);
 // The block that the Entree Forest's original code (symbol_save.c, symbol_map.c, the Game Sync) reads and writes in
 // place of the save's: an empty forest in RAM, so none of it touches the progress
 AreaNPCSave *EntralinkProgress_GetOldForestBlock(void);
+// The hub's field weather, its fog (hubFog's tint), or WEATHER_NONE: none, or another zone (GetWeatherAll)
+u32 EntralinkProgress_GetHubWeather(SaveControl *save, u32 zoneId);
 
 #endif // PAPERWHITE2_ENTRALINK_PROGRESS_H

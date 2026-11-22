@@ -26,8 +26,13 @@ GUARD = "POKEBW2_PAPERWHITE2_ENTRALINK_RECORDS_CONFIG_H"
 CODEX_MAX = 64
 SPECIES_BITS = 10
 SPECIAL = 0x8000
-# The White Tree's milestones, in the order of their bits (ENTREE_MILESTONE_*, include/paperwhite2/entree_menu.h)
+# The White Tree's milestones, in the order of their bits (ENTREE_MILESTONE_*, include/paperwhite2/entralink_ranks.h)
 MILESTONES = ["beat_final", "catch_all", "fill_codex", "shop_cap", "all_rooms"]
+# The ranks' rewards, in ENTRALINK_REWARD_* order (include/paperwhite2/entralink_ranks.h), and the trees
+# (ENTRALINK_TREE_*): a reward packs as its tree << 4 | its rank
+REWARDS = ["reserve_box", "hub_shop", "buff_room", "dust_bonus", "shard_bonus",
+           "difficulty", "fog", "shard_shop", "skip_round", "form_change"]
+TREES = ["black", "white"]
 
 
 def nightmares(pokemon: Path = POKEMON) -> list[int]:
@@ -57,6 +62,31 @@ def black_ranks(records: dict) -> list[int]:
 def white_milestones(records: dict) -> int:
     """The White Tree's milestones that count, a bit each in MILESTONES' order."""
     return sum(1 << MILESTONES.index(milestone) for milestone in records["white_milestones"])
+
+
+def rewards(records: dict) -> list[tuple[str, int]]:
+    """Each reward's (name, tree << 4 | rank) in REWARDS' order, or a datajson.DataError for a White Tree rank past
+    the milestones that count (which the tree never reaches)."""
+    white = len(records["white_milestones"])
+    packed = []
+    for reward in REWARDS:
+        unlock = records["rewards"][reward]
+        if unlock["tree"] == "white" and unlock["rank"] > white:
+            raise datajson.DataError(f"records.json: {reward} needs White Tree rank {unlock['rank']}, but only {white} "
+                                     f"milestones count")
+        packed.append((reward, TREES.index(unlock["tree"]) << 4 | unlock["rank"]))
+    return packed
+
+
+def shard_shop(records: dict) -> list[tuple[str, int, int]]:
+    """The shard shop's goods: (item name, item, price), or a datajson.DataError for an item listed twice."""
+    constants = datajson.constants()
+    goods = []
+    for entry in records["shard_shop"]:
+        if any(name == entry["item"] for name, _, _ in goods):
+            raise datajson.DataError(f"records.json: shard_shop lists {entry['item']} twice")
+        goods.append((entry["item"], constants[entry["item"]], entry["price"]))
+    return goods
 
 
 def codex(directory: Path = SOURCE, pokemon: Path = POKEMON) -> list[tuple[str, int]]:
@@ -96,6 +126,23 @@ def header(directory: Path = SOURCE, pokemon: Path = POKEMON) -> str:
         "// The Entree's White Tree: the milestones that count, a bit each (ENTREE_MILESTONE_*)",
         f"#define ENTRALINK_RECORDS_WHITE_MILESTONES 0x{white_milestones(records):02x} "
         f"/* {', '.join(records['white_milestones']) or 'none'} */",
+        "",
+        "// The ranks' rewards (ENTRALINK_REWARD_* order): each one's tree (ENTRALINK_TREE_*) << 4 | its rank",
+        f"#define ENTRALINK_RECORDS_REWARD_COUNT {len(REWARDS)}",
+        "#define ENTRALINK_RECORDS_REWARDS { \\",
+        *[f"    0x{value:02x}, /* {name}: {TREES[value >> 4]} {value & 0xf} */ \\" for name, value in rewards(records)],
+        "}",
+        "// dust_bonus: the percent more Dream Dust a battle gives; shard_bonus: the run's Dream Shards times this",
+        f"#define ENTRALINK_RECORDS_DUST_BONUS {records['dust_bonus']}",
+        f"#define ENTRALINK_RECORDS_SHARD_MULTIPLIER {records['shard_multiplier']}",
+        "// skip_round: the head start's buff picks and Dream Dust",
+        f"#define ENTRALINK_RECORDS_SKIP_PICKS {records['skip_round']['picks']}",
+        f"#define ENTRALINK_RECORDS_SKIP_DUST {records['skip_round']['dust']}",
+        "// shard_shop: its goods, { item, price in Dream Shards }",
+        f"#define ENTRALINK_RECORDS_SHOP_ITEM_COUNT {len(records['shard_shop'])}",
+        "#define ENTRALINK_RECORDS_SHOP_ITEMS { \\",
+        *[f"    {{ {item}, {price} }}, /* {name} */ \\" for name, item, price in shard_shop(records)],
+        "}",
         "", f"#endif // {GUARD}", "",
     ])
 

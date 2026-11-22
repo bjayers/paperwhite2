@@ -452,7 +452,7 @@ export function EntreeEditor({ constants }: ToolProps) {
       {unsaved.filter((p) => docs.get(p)?.saveError).map((p) => <p key={p} className="ow-error ow-bar">{p}: {docs.get(p)?.saveError}</p>)}
       {view === "buffs" ? <BuffsPage constants={constants} /> : view === "items" ? <ItemsPage constants={constants} rooms={rooms} /> : <div className="en-body">
         <aside className="en-list">
-          <RunSection rooms={rooms} templates={templateIds} />
+          <RunSection rooms={rooms} templates={templateIds} constants={constants} />
           <div className="en-list-section">
             <h5>Rooms <span className="muted">{listed.length === rooms.length ? rooms.length : `${listed.length} of ${rooms.length}`}</span></h5>
             <div className="en-list-actions">
@@ -681,7 +681,7 @@ function RandomRoomsSettings({ run, setKey }: { run: RunLayout; setKey: (key: st
 /** run.json: the forest's field weather, the rounds (how many rooms each draws and whether a boss ends rounds 1 and
  * 2; the final room ends the last), with each round's pool and the draw's checks (model.ts, runProblems, as the build
  * makes them), and the maps the rooms are in, read only. */
-function RunSection({ rooms, templates }: { rooms: { id: string; room: Room }[]; templates: ReadonlySet<string> }) {
+function RunSection({ rooms, templates, constants }: { rooms: { id: string; room: Room }[]; templates: ReadonlySet<string>; constants: Constants }) {
   const { docs } = useDocuments();
   const [schema, setSchema] = useState<Schema | null>(null);
   const [open, setOpen] = useState(readRunOpen);
@@ -879,6 +879,7 @@ function RunSection({ rooms, templates }: { rooms: { id: string; room: Room }[];
         <span className="muted small">The hub's shop sells blue and purple cards (not type cards) a pick at a time, up to this many across every card; each bought pick is held from every run's start and counts toward the card's cap. A Reset in the shop gives every Shard spent back</span>
 
         <EntreeRanks />
+        <EntreeRewards constants={constants} />
 
         <h6 className="en-sub en-run-head">Enemy scaling <span className="muted">stats in percent, by depth</span></h6>
         <span className="muted small">A room (a raid in a room too) multiplies its enemies' stat by a curve of its depth across the whole run: First room, rising to Last room along the depth raised to Curve / 100 (so changing a round's rooms keeps the run's arc). A round's boss (round 3's: the final room) takes the curve at its round's last room times its Boss bonus; then each enemy's own Scale. tools/paperwhite2/entralink_sim.py simulates a run with them (and --fit proposes them)</span>
@@ -1077,6 +1078,119 @@ function EntreeRanks() {
         </div>
       ))}
       <span className="muted small">The milestones that count: each reached raises the White Tree's rank by one, in any order ({chosen.size} ranks)</span>
+    </>
+  );
+}
+
+/** The rewards by records.json's names (its schema's rewards gives the list, order and descriptions). */
+const REWARD_LABELS: Record<string, string> = {
+  reserve_box: "Reserve Box NPC", hub_shop: "Buff shop NPC", buff_room: "Buff room first", dust_bonus: "More Dream Dust",
+  shard_bonus: "More Dream Shards", difficulty: "Difficulty NPC", fog: "Fog NPC", shard_shop: "Item shop NPC",
+  skip_round: "Skip round 1", form_change: "Form NPC",
+};
+const TREES = ["black", "white"] as const;
+
+/** records.json's rewards (prototype doc, "The ranks' rewards"): which tree's rank unlocks each, the bonuses' sizes,
+ * the skip_round head start and the item shop's goods for Dream Shards. */
+function EntreeRewards({ constants }: { constants: Constants }) {
+  const { docs } = useDocuments();
+  const [schema, setSchema] = useState<Schema | null>(null);
+  useEffect(() => {
+    documents.hold(RECORDS).catch(() => undefined);
+    api.schema(RECORDS_SCHEMA).then(setSchema, () => undefined);
+  }, []);
+  const doc = docs.get(RECORDS);
+  const data = doc?.data instanceof Map ? doc.data : null;
+  const rewardsSchema = schema?.properties?.rewards;
+  const shopSchema = schema?.properties?.shard_shop;
+  if (!data || !rewardsSchema?.properties || !shopSchema) return null;
+  const order = Object.keys(schema?.properties ?? {});
+  const setKey = (key: string, v: JsonValue) => documents.replace(RECORDS, put(data, key, v, order));
+  const rewards = asMap(data.get("rewards"));
+  const names = Object.keys(rewardsSchema.properties);
+  const whiteMax = asList(data.get("white_milestones")).length;
+  const setReward = (name: string, field: "tree" | "rank", v: JsonValue) => {
+    const unlock = new Map(asMap(rewards.get(name)));
+    unlock.set(field, v);
+    setKey("rewards", new Map(names.map((n) => [n, n === name ? unlock : rewards.get(n) ?? new Map()])));
+  };
+  const skip = asMap(data.get("skip_round"));
+  const setSkip = (field: "picks" | "dust", n: number) => setKey("skip_round", new Map([...skip].map(([k, v]) => [k, k === field ? n : v])));
+  const goods = asList(data.get("shard_shop")).map(asMap);
+  const setGoods = (next: JsonMap[]) => setKey("shard_shop", next);
+  const items = constantOptions(constants, "ITEM_");
+  const maxGoods = shopSchema.maxItems ?? 16;
+  return (
+    <>
+      <h6 className="en-sub en-run-head">Ranks' rewards <span className="muted">records.json{doc?.dirty ? " •" : ""}</span></h6>
+      <div className="en-run"><span /><span className="muted small">Tree and rank</span></div>
+      {names.map((name) => {
+        const unlock = asMap(rewards.get(name));
+        const tree = String(unlock.get("tree") ?? "black") as (typeof TREES)[number];
+        const rank = Number(unlock.get("rank") ?? 0);
+        const unreachable = tree === "white" && rank > whiteMax;
+        return (
+          <div key={name} className="en-run">
+            <span className="small" title={rewardsSchema.properties?.[name]?.description}>{REWARD_LABELS[name] ?? cap(name)}</span>
+            <span className="en-run-controls" style={{ flexWrap: "nowrap" }}>
+              <select value={tree} onChange={(e) => setReward(name, "tree", e.target.value)} title="The tree whose rank unlocks it">
+                {TREES.map((t) => <option key={t} value={t}>{cap(t)} Tree</option>)}
+              </select>
+              <NumberBox value={rank} min={0} max={5} width={40} title="The rank that unlocks it (0: from the start)" onChange={(n) => setReward(name, "rank", n)} />
+              {unreachable && <span className="en-error small">only {whiteMax} milestones count</span>}
+            </span>
+          </div>
+        );
+      })}
+      <span className="muted small">Each reward comes with its tree's rank (0: from the start); the hub's NPCs of a locked reward aren't there</span>
+      <div className="en-run">
+        <span className="muted small">Dust bonus</span>
+        <span className="en-run-controls">
+          <span className="small">+</span>
+          <NumberBox value={Number(data.get("dust_bonus") ?? 0)} min={0} max={400} width={52} onChange={(n) => setKey("dust_bonus", n)} />
+          <span className="small">%</span>
+        </span>
+      </div>
+      <div className="en-run">
+        <span className="muted small">Shard bonus</span>
+        <span className="en-run-controls">
+          <span className="small">×</span>
+          <NumberBox value={Number(data.get("shard_multiplier") ?? 1)} min={1} max={10} width={44} onChange={(n) => setKey("shard_multiplier", n)} />
+        </span>
+      </div>
+      <div className="en-run">
+        <span className="muted small">Skip: picks</span>
+        <span className="en-run-controls">
+          <NumberBox value={Number(skip.get("picks") ?? 0)} min={0} max={20} width={44} onChange={(n) => setSkip("picks", n)} />
+        </span>
+      </div>
+      <div className="en-run">
+        <span className="muted small">Skip: Dust</span>
+        <span className="en-run-controls">
+          <NumberBox value={Number(skip.get("dust") ?? 0)} min={0} max={9999} width={60} onChange={(n) => setSkip("dust", n)} />
+        </span>
+      </div>
+      <span className="muted small">The head start in place of round 1: each pick an offer of round 1's, chosen as after a battle; then round 2's first room</span>
+      <div className="en-run">
+        <span className="muted small">Item shop</span>
+        <span className="en-run-controls" style={{ flexDirection: "column", alignItems: "stretch" }}>
+          {goods.map((g, i) => (
+            <span key={i} className="en-run-controls">
+              <SearchSelect value={String(g.get("item") ?? "")} options={items}
+                            onChange={(v) => v && setGoods(goods.map((x, k) => (k === i ? put(x, "item", v, ["item", "price"]) : x)))} />
+              <NumberBox value={Number(g.get("price") ?? 1)} min={1} max={9999} width={60} title="Its price in Dream Shards"
+                         onChange={(n) => setGoods(goods.map((x, k) => (k === i ? put(x, "price", n, ["item", "price"]) : x)))} />
+              <span className="small">Shards</span>
+              <button className="link" disabled={goods.length <= 1} title="Remove it" onClick={() => setGoods(goods.filter((_, k) => k !== i))}>✕</button>
+            </span>
+          ))}
+          {goods.length < maxGoods && (
+            <button className="link" style={{ alignSelf: "flex-start" }}
+                    onClick={() => setGoods([...goods, new Map<string, JsonValue>([["item", "ITEM_POKE_BALL"], ["price", 10]])])}>+ Add an item</button>
+          )}
+        </span>
+      </div>
+      <span className="muted small">What the hub's item shop sells for Dream Shards, into the real bag (up to {maxGoods} items)</span>
     </>
   );
 }

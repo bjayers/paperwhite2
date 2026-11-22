@@ -2,6 +2,22 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-21: Entralink records, step 3: the ranks' rewards (ROM session, on a branch)
+
+- **The trees grow:** the hub's two trees (the White and Black level models, overlay 130) show the ranks: stage =
+  rank - 1, ranks 0 and 1 the first, rank 5 the fifth. The ranks moved to overlay 12 (`entralink_ranks.h`).
+- **Rewards** (`records.json`'s `rewards`, each a tree and rank, editable): Black 1 the Reserve Box NPC, 2 the buff
+  shop NPC (both hidden below), 3 the first room a buff room, 4 +50% Dream Dust, 5 x2 Dream Shards; White 1 a
+  difficulty NPC (placeholder line), 2 a fog NPC (pink/purple/black/none, saved at 0x620 of the progress block),
+  3 an item shop for Shards into the real bag (Nightmare Ball 15, Shiny Candy 60; `shard_shop`), 4 "Skip the first
+  round?" at the forest entrance (6 picks from round 1's offers, 250 Dust, then round 2), 5 a form NPC (Lugia and
+  Dialga to their special forms and back). The Nightmare Ball works as a Poké Ball outside runs now.
+- **New NPCs** at placeholder places and sprites in `entralink.json` (ids 7-10 at (26,43), (36,43), (26,40), (36,40)).
+- **Editor:** Entree page, Run, **Ranks' rewards** (tree and rank each, bonuses, skip, item shop goods).
+- **Tested** in py-desmume: trees at 0/1/3/5, NPCs by rank, the buff room, Dust and Shards, fog, both purchases, a
+  Nightmare Ball catch in a plain wild battle, the form change, the skip. Arena 18.8 KB left (-2 KB). Prototype doc,
+  "The ranks' rewards".
+
 ## 2026-11-21: Entralink records, step 2: the Entree's menu (ROM session, on a branch)
 
 - **The Entree** in the hub opens its menu again (bg event, script 4): the monolith (overlay 143) repurposed. Top:

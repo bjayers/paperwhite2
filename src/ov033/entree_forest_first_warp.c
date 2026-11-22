@@ -8,6 +8,7 @@
 #include "struct_decls.h"
 #include "system/game_system.h"
 #ifdef PAPERWHITE2
+#include "paperwhite2/entralink_ranks.h"
 #include "paperwhite2/entralink_run.h"
 #endif
 
@@ -20,6 +21,9 @@ GameEvent *CheckEntralinkForestFirstWarpEvent(Field *field, GameSystem *gsys, Fi
     VecFx32 warpPos;
     s32 i;
     fx32 startX;
+#ifdef PAPERWHITE2
+    GameEvent *event;
+#endif
 
     zoneId = PlayerState_GetZoneID(GSYS_GetPlayerState(gsys));
     Intrude_GetCommWork(GSYS_GetGameCommSystem(gsys));
@@ -40,8 +44,13 @@ GameEvent *CheckEntralinkForestFirstWarpEvent(Field *field, GameSystem *gsys, Fi
             warpPos.x += playerPos.x - startX;
 #ifdef PAPERWHITE2
             // Paper White 2: the forest is the Entralink roguelike's run now, which starts here
-            // (paperwhite2/entralink_run.h)
-            EntralinkRun_Start(GSYS_GetGameData(gsys));
+            // (paperwhite2/entralink_run.h); with the skip_round reward a script asks whether to skip round 1 first,
+            // and warps (paperwhite2/entralink_ranks.h)
+            event = EntralinkRanks_CreateRunStartEvent(gsys, &warpPos, Field_GetHeapID(field));
+            if (event != NULL) {
+                return event;
+            }
+            EntralinkRun_Start(GSYS_GetGameData(gsys), FALSE);
 #endif
             return EventEntreeForestWarp_Create(gsys, 1, &warpPos, 0, 4);
         }

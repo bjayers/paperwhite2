@@ -6,6 +6,7 @@
 #include "gfl/proc.h"
 #include "paperwhite2/entralink_buffs.h"
 #include "paperwhite2/entralink_progress.h"
+#include "paperwhite2/entralink_ranks.h"
 #include "paperwhite2/entralink_run.h"
 #include "struct_decls.h"
 
@@ -36,18 +37,6 @@ enum {
     ENTREE_ITEM_COUNT,
 };
 
-// The White Tree's milestones, a bit each in records.json's white_milestones (ENTRALINK_RECORDS_WHITE_MILESTONES):
-// the final room beaten, every catchable enemy of the rooms caught, every Nightmare and special form of the codex met,
-// the hub shop's picks bought up to its cap, and every room of rooms/ entered
-enum {
-    ENTREE_MILESTONE_BEAT_FINAL,
-    ENTREE_MILESTONE_CATCH_ALL,
-    ENTREE_MILESTONE_FILL_CODEX,
-    ENTREE_MILESTONE_SHOP_CAP,
-    ENTREE_MILESTONE_ALL_ROOMS,
-    ENTREE_MILESTONE_COUNT,
-};
-
 // The procs of the screens (paperwhite2_entree_menu.c and paperwhite2_entree_lists.c)
 extern const GameProcFunctions ENTREE_STATUS_PROC_FUNCTIONS;
 extern const GameProcFunctions ENTREE_MENU_PROC_FUNCTIONS;
@@ -59,15 +48,6 @@ extern const GameProcFunctions ENTREE_LIST_PROC_FUNCTIONS;
 
 // The save's progress, with the records
 EntralinkProgress *Entree_GetProgress(MonolithScreenParam *screen);
-// The milestones reached, a bit each (ENTREE_MILESTONE_*), whether they count or not
-u32 Entree_GetMilestones(EntralinkProgress *progress);
-// The White Tree's rank: the milestones that count reached; and how many count
-u32 Entree_GetWhiteRank(EntralinkProgress *progress);
-u32 Entree_GetWhiteRankMax(void);
-// The Black Tree's rank by the Shards earned, and the Shards the next rank needs (0 at the highest)
-u32 Entree_GetBlackRank(EntralinkProgress *progress);
-u32 Entree_GetBlackRankMax(void);
-u32 Entree_GetNextBlackRank(EntralinkProgress *progress);
 // The rooms of rooms/ (those with a record id), and those of them entered and done
 u32 Entree_GetRoomCount(void);
 u32 Entree_CountRooms(const u8 *bits);

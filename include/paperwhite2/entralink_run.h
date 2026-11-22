@@ -4,6 +4,7 @@
 #include "types.h"
 #include "field/field_script.h"
 #include "nitro/fx.h"
+#include "paperwhite2/entralink_progress.h"
 #include "struct_decls.h"
 #include "system/vm.h"
 
@@ -289,10 +290,15 @@ typedef struct {
     u32 blocked[32];
 } EntralinkClearing;
 
-// Starts a run as the player walks into the forest from the hub (CheckEntralinkForestFirstWarpEvent)
-void EntralinkRun_Start(GameData *gameData);
+// Starts a run as the player walks into the forest from the hub (CheckEntralinkForestFirstWarpEvent), or at round 2's
+// first room to skip round 1 (the skip_round reward, paperwhite2/entralink_ranks.h)
+void EntralinkRun_Start(GameData *gameData, BOOL skipRound);
 // Whether a run is on
 BOOL EntralinkRun_IsActive(GameData *gameData);
+// The White Tree's milestones that read the rooms (paperwhite2/entralink_ranks.h): every catchable enemy of the rooms
+// of rooms/ caught, and every room of rooms/ entered
+BOOL EntralinkRun_IsAllCaught(EntralinkProgress *progress);
+BOOL EntralinkRun_IsEveryRoomFound(EntralinkProgress *progress);
 // Ends the run if one is on (the hub shop's ENTRALINK_RUN_ACTION_SHARDS, before the script's warp to the hub), which
 // gives its Dream Shards
 void EntralinkRun_EndHere(GameData *gameData);

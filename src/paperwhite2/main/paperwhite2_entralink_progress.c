@@ -1,8 +1,11 @@
 #include "types.h"
+#include "field/zone.h"
 #include "gfl/std.h"
 #include "paperwhite2/entralink_progress.h"
+#include "paperwhite2/entralink_run_actions.h"
 #include "save/save_control.h"
 #include "save/symbol_save.h"
+#include "system/zone_weather.h"
 
 // Paper White 2: the Entralink roguelike's progress in the Symbol block (paperwhite2/entralink_progress.h)
 
@@ -62,6 +65,19 @@ void EntralinkProgress_AddRunCompleted(EntralinkProgress *progress) {
     if (progress->runsCompleted != 0xffff) {
         progress->runsCompleted++;
     }
+}
+
+u32 EntralinkProgress_GetHubWeather(SaveControl *save, u32 zoneId) {
+    // The forest's rounds' tints, by ENTRALINK_HUB_FOG_*
+    static const u16 FOGS[ENTRALINK_HUB_FOG_COUNT] = { WEATHER_NONE, WEATHER_CUSTOM_TINT_9, WEATHER_CUSTOM_TINT_8,
+                                                       WEATHER_CUSTOM_TINT_7 };
+    u32 fog;
+
+    if (!IsZoneEntralinkHub(zoneId)) {
+        return WEATHER_NONE;
+    }
+    fog = EntralinkProgress_Get(save)->hubFog;
+    return fog < NELEMS(FOGS) ? FOGS[fog] : WEATHER_NONE;
 }
 
 AreaNPCSave *EntralinkProgress_GetOldForestBlock(void) {

@@ -33,8 +33,9 @@ u32 EntralinkHubShop_GetRunShards(void) {
     if (state->room == 0) {
         return 0;
     }
-    // The rooms left behind were done (their exits open only then), and the one the player is in if it is
-    rooms = state->room - 1 + (state->cleared ? 1 : 0);
+    // The rooms left behind were done (their exits open only then), and the one the player is in if it is; not the
+    // places a skipped round 1 passed
+    rooms = state->room - 1 - state->placesSkipped + (state->cleared ? 1 : 0);
     return rooms * ENTRALINK_RUN_ROOM_SHARDS + state->shardBonus;
 }
 
@@ -75,7 +76,7 @@ static u32 EntralinkHubShop_GetBought(EntralinkProgress *progress, u32 buff) {
 }
 
 // The picks bought in all, a gone card's among them
-static u32 EntralinkHubShop_CountBought(EntralinkProgress *progress) {
+u32 EntralinkHubShop_CountBought(EntralinkProgress *progress) {
     u32 count = 0;
     u32 i;
 

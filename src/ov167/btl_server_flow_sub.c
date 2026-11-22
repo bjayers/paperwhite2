@@ -908,14 +908,15 @@ u8 UseBagItem(BtlServerFlow *flow, BattleMon *mon, u16 item, u8 param, u8 slot) 
 }
 
 #ifdef PAPERWHITE2
-// Paper White 2: whether a ball can catch: in a wild battle, any but the Nightmare Ball, and in an Entralink run's only
-// the Nightmare Ball, on an enemy the run lets it catch (paperwhite2/entralink_run_state.h)
+// Paper White 2: whether a ball can catch: in a wild battle, any (the Nightmare Ball as a Poké Ball, the hub's item
+// shop sells it), and in an Entralink run's only the Nightmare Ball, on an enemy the run lets it catch
+// (paperwhite2/entralink_run_state.h)
 static BOOL PaperWhite2_ThrowBall_CanCatch(BtlServerFlow *flow, BattleMon *target, u8 targetPos, u16 item) {
     if (BtlSetup_GetBattleType(flow->mainModule) != 0) {
         return FALSE;
     }
     if (!BtlSetup_IsBattleType(flow->mainModule, ENTRALINK_RUN_BTL_SETUP_FLAG)) {
-        return item != ITEM_NIGHTMARE_BALL;
+        return TRUE;
     }
     return item == ITEM_NIGHTMARE_BALL && targetPos != 6 &&
            EntralinkRun_IsCatchable(PokeParty_GetParam(GetSrcData(target), PKM_PARAM_PID, NULL));
@@ -993,8 +994,10 @@ static BOOL CheckBallCapture(BtlServerFlow *flow, BattleMon *mon, BattleMon *tar
 
     *critical = FALSE;
 #ifdef PAPERWHITE2
-    // Paper White 2: the Nightmare Ball catches as the Master Ball does, where ThrowBall lets it
-    if (item == ITEM_MASTER_BALL || item == ITEM_NIGHTMARE_BALL) {
+    // Paper White 2: the Nightmare Ball catches as the Master Ball does in an Entralink run, where ThrowBall lets it;
+    // anywhere else it is a Poké Ball (GetBallCaptureMod's 1)
+    if (item == ITEM_MASTER_BALL ||
+        (item == ITEM_NIGHTMARE_BALL && BtlSetup_IsBattleType(flow->mainModule, ENTRALINK_RUN_BTL_SETUP_FLAG))) {
 #else
     if (item == ITEM_MASTER_BALL) {
 #endif

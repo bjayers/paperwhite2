@@ -17,6 +17,7 @@
     ScriptEntry Script_9
     ScriptEntry Script_10
     ScriptEntry Script_11
+    ScriptEntry Script_12
 #endif
     ScriptEntriesEnd
 
@@ -988,6 +989,52 @@ L_RunBuffsNone:
     SystemMsg Global10490_Text_RunBuffsNone, 2
     LastKeyWait
     SystemMsgClose
+    ActorsUnpauseAll
+    VMHalt
+
+Script_12:
+    // Paper White 2: a run's start at the hub's forest entrance with the skip_round reward (SCRID_ENTRALINK_RUN_START,
+    // paperwhite2/entralink_ranks.h): skip round 1? Yes starts at round 2's first room with a head start, records.json's
+    // picks each chosen from an offer of round 1's as after a battle, then its Dream Dust; either way into the forest
+    ActorsPauseAll
+    SystemMsg Global10490_Text_RunSkipAsk, 2
+    YesNoWin 0x8007
+    SystemMsgClose
+    WorkCmpConst 0x8007, 0
+    VMJumpIf CMP_EQ, L_RunSkipYes
+    EntralinkRun ENTRALINK_RUN_ACTION_SKIP_ROUND, 0, 0, 0x8007
+    VMJump L_RunSkipWarp
+
+L_RunSkipYes:
+    EntralinkRun ENTRALINK_RUN_ACTION_SKIP_ROUND, 0, 1, 0x8007
+    WorkCmpConst 0x8007, 0
+    VMJumpIf CMP_EQ, L_RunSkipWarp
+    WordSetNumber 0, 0x8007, 2
+    SystemMsg Global10490_Text_RunSkipPicks, 2
+    LastKeyWait
+    SystemMsgClose
+
+L_RunSkipPick:
+    EntralinkRun ENTRALINK_RUN_ACTION_SKIP_ROUND, 1, 0, 0x8000
+    WorkCmpConst 0x8000, 0
+    VMJumpIf CMP_EQ, L_RunSkipDust
+    VMCall L_RunBuffOfferMenu
+    VMJump L_RunSkipPick
+
+L_RunSkipDust:
+    EntralinkRun ENTRALINK_RUN_ACTION_SKIP_ROUND, 2, 0, 0x8007
+    WorkCmpConst 0x8007, 0
+    VMJumpIf CMP_EQ, L_RunSkipWarp
+    WordSetNumber 0, 0x8007, 4
+    MEPlay SEQ_ME_ITEM
+    SystemMsg Global10490_Text_RunSkipDust, 2
+    MEWait
+    LastKeyWait
+    SystemMsgClose
+
+L_RunSkipWarp:
+    EntralinkRun ENTRALINK_RUN_ACTION_SKIP_ROUND, 3, 0, 0x8000
+    FinishAllEvents
     ActorsUnpauseAll
     VMHalt
 #endif

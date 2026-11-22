@@ -218,3 +218,35 @@ u32 EntralinkRecords_GetCodexCount(void) {
     // An empty codex has a placeholder 0
     return sCodex[0] == 0 ? 0 : NELEMS(sCodex);
 }
+
+BOOL EntralinkRecords_IsCodexFull(EntralinkProgress *progress) {
+    const EntralinkRecordEntry *codex = progress->records.codex;
+    u32 key;
+    u32 i;
+    u32 j;
+
+    for (i = 0; i < EntralinkRecords_GetCodexCount(); i++) {
+        // A Nightmare species by its form 0's key, a special form by its own
+        key = sCodex[i] & ~ENTRALINK_RECORDS_CODEX_SPECIAL;
+        for (j = 0; j < ENTRALINK_RECORDS_CODEX_MAX; j++) {
+            if (codex[j].key == key) {
+                break;
+            }
+        }
+        if (j == ENTRALINK_RECORDS_CODEX_MAX || !(codex[j].flags & ENTRALINK_RECORD_SEEN)) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+u32 EntralinkRecords_GetSpecialForm(u32 species) {
+    u32 i;
+
+    for (i = 0; i < NELEMS(sCodex); i++) {
+        if ((sCodex[i] & ENTRALINK_RECORDS_CODEX_SPECIAL) && ENTRALINK_RECORDS_CODEX_SPECIES(sCodex[i]) == species) {
+            return ENTRALINK_RECORDS_CODEX_FORM(sCodex[i] & ~ENTRALINK_RECORDS_CODEX_SPECIAL);
+        }
+    }
+    return 0;
+}
