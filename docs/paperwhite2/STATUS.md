@@ -2,6 +2,33 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-23: Icons on their battle palettes, phase 2: the PC box (ROM session)
+
+- **The box's icons are 8bpp on OBJ extended palettes** (`src/paperwhite2/ov255/paperwhite2_box_icons.c`,
+  `include/paperwhite2/box_icons.h`, hooks in `box2_obj.c`/`box2_main.c`; icon-screens.md section 3):
+  - bank G is the main OBJ extended palette while the box is open; each of the 66 icon actors has its own band
+    (extended palettes 3-7), which travels with it when picked up, moved or scrolled;
+  - extended palette 0 copies the standard one for the box list's tray icons (8bpp already), 8 the outline's row;
+  - the palettes are kept in the box's work and copied to bank G in VBlank; icons made 8bpp when written, from the
+    battle member; the cells set to 8bpp once loaded;
+  - shiny-aware everywhere (tray, party side, held icon and range, every mode); eggs plain; a search greys the rest
+    from their own colours in the original grey row's range.
+- **API:** `PaperWhite2_ReadIconColoursOfPkm` added (ARM9 +36 bytes, DS arena 0x43c0 → 0x4380). Phase 1's
+  `LoadIconExtPalette` is proven by a test build (`02_pc_box_ext_api_proof`), but the box doesn't use it: it writes
+  bank G at once, mid-frame.
+- **Cost:** ov255 +0.6 KB (no arena cost), the box's heap +6.6 KB, OBJ VRAM +18 KB (34 KB left), bank G 8 KB.
+- **Tested** in py-desmume on a copy of the save, box 1 filled in RAM with 30 different icons (forms, female icons, an
+  egg), all normal, all shiny and mixed, plus a shiny party (RAM only). 17 icons compared pixel for pixel with
+  `icon_battle.png` on their palettes: exact. Also tested:
+  - the party side, grabbing and dropping, a picked-up range, scrolling boxes and back, a gender search, the summary
+    and back, leaving and reopening;
+  - after leaving, VRAMCNT and DISPCNT are exactly as before the box.
+
+  Screenshots are `02_pc_box_*` in `icon_screens/`.
+- Tests: hack build (no warnings), DSi check (intact), `test_poke_icons.py`, editor tsc and npm test, plain build's
+  modules.
+- **Next:** phase 3, the Pokédex (its list's bottom screen by the same route; `box_icons.c` is the model).
+
 ## 2026-11-23: Icons on their battle palettes, phase 1: the foundation and the party list (ROM session)
 
 - **Build:** `tools/paperwhite2/poke_icons.py` (configure.py's `HACK_ARCHIVE_MEMBERS`, `a/0/0/7`) reads

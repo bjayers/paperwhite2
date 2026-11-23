@@ -37,6 +37,8 @@ u32 PaperWhite2_GetIconBattleFileOfPkm(BoxPkm *pkm);
 
 // Reads an icon's 16 colours into colours, the shiny ones with shiny (never for an egg)
 void PaperWhite2_ReadIconColours(u16 *colours, u32 species, u32 form, u32 sex, BOOL egg, BOOL shiny);
+// The same for a Pokémon, with its own shininess: for a screen that keeps the colours and loads them itself
+void PaperWhite2_ReadIconColoursOfPkm(u16 *colours, BoxPkm *pkm);
 
 // Loads an icon's colours into an OBJ palette row (0-15) of the main engine, or the sub engine with sub
 void PaperWhite2_LoadIconPalette(u32 species, u32 form, u32 sex, BOOL egg, BOOL shiny, BOOL sub, u32 row);

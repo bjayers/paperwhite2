@@ -123,11 +123,21 @@ static void PokeDataRangeMoveBox(Box2SysWork *syswk, u32 getPos, u32 putPos);
 
 // MWCC sorts static data by size, unstably, so these are declared in the order that lays them out as the ROM has
 // them
+#ifdef PAPERWHITE2
+// Paper White 2: bank G is the main OBJ extended palettes, for the Pokémon icons on their own colours
+// (include/paperwhite2/box_icons.h)
+static const BGSysVRAMConfig sVramBanks = {
+    GX_VRAM_BG_128_A,  GX_VRAM_BGEXTPLTT_NONE, GX_VRAM_SUB_BG_128_C,        GX_VRAM_SUB_BGEXTPLTT_NONE,
+    GX_VRAM_OBJ_128_B, GX_VRAM_OBJEXTPLTT_0_G, GX_VRAM_SUB_OBJ_128_D,       GX_VRAM_SUB_OBJEXTPLTT_NONE,
+    GX_VRAM_TEX_NONE,  GX_VRAM_TEXPLTT_NONE,   GX_OBJVRAMMODE_CHAR_1D_128K, GX_OBJVRAMMODE_CHAR_1D_128K,
+};
+#else
 static const BGSysVRAMConfig sVramBanks = {
     GX_VRAM_BG_128_A,  GX_VRAM_BGEXTPLTT_NONE,  GX_VRAM_SUB_BG_128_C,        GX_VRAM_SUB_BGEXTPLTT_NONE,
     GX_VRAM_OBJ_128_B, GX_VRAM_OBJEXTPLTT_NONE, GX_VRAM_SUB_OBJ_128_D,       GX_VRAM_SUB_OBJEXTPLTT_NONE,
     GX_VRAM_TEX_NONE,  GX_VRAM_TEXPLTT_NONE,    GX_OBJVRAMMODE_CHAR_1D_128K, GX_OBJVRAMMODE_CHAR_1D_128K,
 };
+#endif
 
 // Where the party's Pokémon are, with the party's frame on the right and on the left
 static const Box2Area sPartyPokeAreaLeft[6] = {
@@ -156,6 +166,10 @@ static void Box2Main_VBlank(TCB *tcb, void *data) {
     Box2Bmp_FlushChars(syswk->app);
     GFL_BGSysUpdate();
     ClActSys_VBlank();
+#ifdef PAPERWHITE2
+    // Paper White 2: the icons' extended palettes, while the screen doesn't draw
+    PaperWhite2_BoxIcons_VBlank(&syswk->app->icons);
+#endif
     PaletteFade_Transfer(syswk->app->palFade);
     OS_SetIrqCheckFlag(OS_IE_V_BLANK);
 }

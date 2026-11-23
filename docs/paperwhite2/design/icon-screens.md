@@ -50,8 +50,8 @@ This file is the list of screens and how far each is. The research behind it is 
 | --- | --- |
 | `PaperWhite2_GetIconBattleFile(species, form, sex, egg)`, `…OfPkm(BoxPkm *)` | the member with the icon's pixels on its slots, in place of `PokeParty_GetIconIndex`/`PokeIcon_GetFileOfPkm`'s file |
 | `PaperWhite2_LoadIconPalette(species, form, sex, egg, shiny, sub, row)`, `…OfPkm(pkm, sub, row)` | the icon's 16 colours into OBJ palette row 0-15 of the main engine, or the sub engine with `sub` |
-| `PaperWhite2_LoadIconExtPalette(species, form, sex, egg, shiny, sub, extPalette, band)`, `…OfPkm(pkm, sub, extPalette, band)` | the same into band 0-15 of OBJ extended palette 0-15, for 8bpp icons (pixel = band × 16 + index); the bank must be mapped as OBJ extended palette. Written, but not yet used or tested: phase 2 (box) is its first user |
-| `PaperWhite2_ReadIconColours(colours, …, shiny)`, `PaperWhite2_GetIconEntry(…)` | the raw read, and the entry |
+| `PaperWhite2_LoadIconExtPalette(species, form, sex, egg, shiny, sub, extPalette, band)`, `…OfPkm(pkm, sub, extPalette, band)` | the same into band 0-15 of OBJ extended palette 0-15, for 8bpp icons (pixel = band × 16 + index); the bank must be mapped as OBJ extended palette. Proven in phase 2 (`02_pc_box_ext_api_proof`: a test build loaded only the box's party icons with it, and they came out right while the rest stayed black). The box itself doesn't call it (section 3) |
+| `PaperWhite2_ReadIconColours(colours, …, shiny)`, `…OfPkm(colours, pkm)`, `PaperWhite2_GetIconEntry(…)` | the raw read into a buffer of the caller's (`…OfPkm` added in phase 2, for screens that keep the colours and load them themselves), and the entry |
 
 - `…OfPkm` uses the Pokémon's own shininess (`PML_PkmIsRare`); an egg is never shiny.
 - The colours are read with `GFL_ArcSysReadRange` (no heap) into a 32-byte buffer in main RAM. It is not on the stack
@@ -73,7 +73,60 @@ Switch, and `PokeListPlate_SetPkm`, which the Shiny Candy also uses. Each plate 
 - Measured in the list: rows 0-2 are the UI, 3 the item icon, 4 the status icon, 5 the HP bar, 9-11 the touch bar. The
   OAM uses only those rows and the six icon rows.
 
-## 3. Every screen
+## 3. The PC box (phase 2)
+
+The box shows up to 66 icon actors at once (`BOX2_ACTOR_POKEICON`'s: the tray's 30, the party's 6, and 30 more for a
+picked-up range), far more than its free OBJ rows, so its icons became 8bpp OBJs on the main engine's OBJ extended
+palettes (shiny-icons.md 5.1). Code: `src/paperwhite2/ov255/paperwhite2_box_icons.c`, `include/paperwhite2/box_icons.h`,
+hooks in `ov255/box2_obj.c` and `box2_main.c`, and two fields at the end of `Box2AppWork` (`include/app/box2_main.h`).
+
+- **VRAM bank G** is mapped as main OBJ extended palette in the box's `sVramBanks` (16 KB, of which 8 KB is used;
+  G was unmapped there). DISPCNT's OBJ extended palette bit follows from `GX_SetBankForOBJExtPltt`. Every screen sets
+  its own banks with `GFL_BGSysSetVRAMBanks`, which resets that one, so nothing stays mapped: measured, VRAMCNT A-I
+  and both DISPCNTs after leaving the box are byte for byte what they were before it (`02_pc_box_left_field`). The box
+  search, the summary and the other screens the box calls set their own banks, and the box sets G again on return.
+- **Bands:** icon actor n (its ID − `BOX2_ACTOR_POKEICON`, 0-65) draws with band n % 16 of extended palette 3 + n / 16
+  (3-7). The actor's palette resource is the icon bank file at row 3 (still loaded, now unused for colours), so the
+  actor's palette is n / 16 in mode 1. Each pixel is band × 16 + its 4bpp index (0 stays clear). The actor keeps its
+  band wherever it goes: picking up, moving a range, putting down and scrolling swap actor IDs, never characters.
+- **Extended palette 0** is a copy of the standard OBJ palette: the box list's tray icons (`trayIconChar`) were 8bpp
+  already, on palette 0, and now read extended palette 0. **Extended palette 8** holds standard row 8 in every band:
+  the outline (the eight copies of an icon that outline the selected one, file 70 at row 7, palette 1) uses the icon
+  cells and characters, so it is 8bpp too.
+- **Characters:** the 66 icon actors' character resources are 1 KB each, allocated (`ClActSys_AllocChars`) in place of
+  file 75's 512-byte placeholders. The 30 more of file 75 that the original loaded (resources 66-95) were never used and
+  aren't loaded. Icons are read from `PaperWhite2_GetIconBattleFileOfPkm`'s member and made 8bpp when written
+  (`PaperWhite2_BoxIcons_Transfer`). The icon cells (`PokeIcon_GetCellFile_Main`'s, the box's own heap copy) are set to
+  8bpp once loaded: each OBJ's colour mode bit, and its character name doubled (the box shows only frame 0).
+- **Colours:** `PaperWhite2_ReadIconColoursOfPkm`, normal or shiny; an egg its bank colours. A Pokémon that a box
+  search leaves out (the original's grey row) is greyed from its own colours: each colour's brightness mapped into the
+  original grey row's range (8-14 of 31). The tray's colours are kept by position (`pokeIconColours`, as
+  `pokeIconPal` kept the banks) for the scroll, which rewrites wrapping icons from the cached characters.
+- **Uploads in VBlank:** the extended palettes are kept in `Box2AppWork` (4.5 KB) and copied to bank G in the box's
+  VBlank when they changed (`PaperWhite2_BoxIcons_VBlank`), with extended palettes 0 and 8 refreshed from the standard
+  palette. Writing an extended palette takes its bank away from the 2D engine for the copy, so it is done while the
+  screen doesn't draw. The phase-1 `LoadIconExtPalette`, which writes at once, works too (above), but would do that
+  mid-frame up to 66 times per box.
+- **Cost:** ov255 +0.6 KB of code (no arena cost: the DS arena moved only by ARM9 main's 64 bytes, 0x43c0 → 0x4380,
+  for `PaperWhite2_ReadIconColoursOfPkm`); `Box2AppWork` +6.6 KB of the box's own 512 KB heap (the 4.5 KB palettes,
+  the 1 KB conversion buffer, 960 bytes of tray colours); main OBJ VRAM +18 KB (66 KB of 1 KB icons in place of 48 KB
+  of placeholders): measured, the box's resources end at 0x176c0, 34 KB below the top of bank B; bank G 8 KB.
+
+**Tested** (py-desmume, a copy of the user's save; box 1 filled in RAM with 30 different icons: species, Arceus' and
+Deerling's palette and sprite forms, Shellos, Rotom, Giratina, female Frillish, Jellicent and Unfezant, an egg; the
+party's 0, 3 and 5 made shiny in RAM; nothing saved):
+- every icon of box 1 normal (`02_pc_box_normal`), all shiny (`02_pc_box_shiny`), mixed (`02_pc_box_mixed`): 17 of the
+  plain species' icons compared pixel for pixel with `icon_battle.png` on `normal.pal`/`shiny.pal`, all exact (two only
+  where a neighbour overlaps them);
+- the party side, normal and shiny (`02_pc_box_party_normal`, `_shiny`); grabbing a shiny and dropping it on another
+  (`02_pc_box_grab_held`, `_dropped`), with its outline; a picked-up range of 6 moved (`02_pc_box_multiselect_held`);
+  scrolling to the next boxes and back (`02_pc_box_scroll_back`, exact again); a gender search greying the rest
+  (`02_pc_box_search_grey`); the summary and back (`02_pc_box_after_summary`, exact); leaving to the field and opening
+  the box again (exact). The box list's tray icons draw as before, on extended palette 0. The only 8bpp OBJs on screen
+  are the icons (extended palettes 3-4 with a full box) and the tray icons (0).
+- Not seen: the Battle Box, Deposit/Withdraw and Move items modes, which use the same actors and functions.
+
+## 4. Every screen
 
 Columns: **#** is the screenshot prefix. **Icons** is the most shown at once, m main engine, s sub. **Route**: rows
 (standard rows, one per icon), ext (8bpp with an extended palette in the named bank), BG. **Kind**: shiny-aware or
@@ -83,7 +136,7 @@ species-only. **Tested**: emulator, with the screenshot in `icon_screens/` (Wind
 | # | Screen | How to reach it | Source | Icons | Route | Kind | Status | Tested | HW |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 01 | Party list | field menu > Pokémon; also from the bag, items, TMs | `ov165/plist_sys.c`, `plist_plate.c` | 6 m | rows 6-8, 12-14 | shiny | **converted** (phase 1) | yes: `01_party_list_normal`, `01_party_list_shiny`, `01_party_list_shiny_after_switch` | to test |
-| 02 | PC box (tray, party side, held icon, search, box list) | a Center's PC > Move Pokémon | `ov255/box2_obj.c`, `box2_seq.c` | 30 tray + 6 + held, m | ext G (shiny-icons.md 5.1) | shiny | pending (phase 2); fallback | fallback: `02_pc_box_fallback`, `02_pc_box_party_fallback` | |
+| 02 | PC box (tray, party side, held icon and range, search, every mode) | a Center's PC > Move Pokémon (also Deposit, Withdraw, Battle Box, Move items) | `ov255/box2_obj.c`, `paperwhite2_box_icons.c` | 66 m (30 tray + 6 party + 30 held) | ext G: palettes 3-7, a band per actor (section 3) | shiny | **converted** (phase 2) | yes: `02_pc_box_normal`, `_shiny`, `_mixed`, `_party_normal`, `_party_shiny`, `_grab_held`, `_grab_dropped`, `_multiselect_held`, `_scroll_back`, `_search_grey`, `_after_summary`, `_left_field` | to test |
 | 03 | Pokédex list (bottom) | field menu > Pokédex > National | `ov299/pokedex_list_obj.c` | 8 m (9 mid-scroll) | ext G | species | pending (phase 3); fallback | fallback: `03_pokedex_list_fallback` | |
 | 04 | Pokédex list (top) | the same, top screen | `ov299/pokedex_list_obj.c` | 7 s | rows (13 free) | species | pending (phase 3) | | |
 | 05 | Pokédex Info, Evo tab | Pokédex > a species > Info > Evo | `paperwhite2_pokedex_info_evo.c` | 8 s (Eevee) | rows with 0-4 borrowed, or ext I | species | pending (phase 3) | | |
@@ -127,10 +180,10 @@ the PC box) and follower menus. Files that only use the pack/unpack helpers: `ov
 party side) and the Pokédex's National list show every icon right in bank colours. Its Habitat list's icon and the
 party list's normal icons look as before too.
 
-## 4. Phases
+## 5. Phases
 
 1. Foundation and the party list (done, 2026-11-23).
-2. The box (ov255): 8bpp icons and extended palette G.
+2. The box (ov255): 8bpp icons and extended palette G (done, 2026-11-23).
 3. The Pokédex: list (ext G bottom, rows top), Info Evo, Area, Forms, habitats (species-only).
 4. The easy screens and those whose rows need checking (rows 12-24 above).
 5. The extended-palette rest (DexNav, trade, Unova Link, Battle Recorder), and the wireless-only shells.

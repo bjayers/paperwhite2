@@ -69,6 +69,13 @@ void PaperWhite2_ReadIconColours(u16 *colours, u32 species, u32 form, u32 sex, B
                         ICON_BATTLE_COLOURS * sizeof(u16));
 }
 
+void PaperWhite2_ReadIconColoursOfPkm(u16 *colours, BoxPkm *pkm) {
+    IconPkm icon;
+
+    IconPkm_Read(&icon, pkm);
+    PaperWhite2_ReadIconColours(colours, icon.species, icon.form, icon.sex, icon.egg, icon.shiny);
+}
+
 void PaperWhite2_LoadIconPalette(u32 species, u32 form, u32 sex, BOOL egg, BOOL shiny, BOOL sub, u32 row) {
     PaperWhite2_ReadIconColours(sColours, species, form, sex, egg, shiny);
     DC_FlushRange(sColours, sizeof(sColours));

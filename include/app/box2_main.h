@@ -15,6 +15,9 @@
 #include "system/app_taskmenu.h"
 #include "system/printsys.h"
 #include "system/wordset.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/box_icons.h"
+#endif
 
 // The PC box's work and the functions of box2_main.c, which the sequences in box2_seq.c call. Names are ours
 
@@ -352,6 +355,12 @@ struct Box2AppWork {
     Box2RangeSelect rangeSelect;
     BOOL unkA5B4;
     BOOL unkA5B8;
+#ifdef PAPERWHITE2
+    // Paper White 2: the tray's icon colours by position, kept with pokeIconChar as pokeIconPal keeps their banks,
+    // and the extended palettes the icons draw with (include/paperwhite2/box_icons.h)
+    u16 pokeIconColours[BOX2_TRAY_POKE_MAX][ICON_BATTLE_COLOURS];
+    PaperWhite2BoxIcons icons;
+#endif
 };
 
 void Box2Main_InitVBlank(Box2SysWork *syswk);

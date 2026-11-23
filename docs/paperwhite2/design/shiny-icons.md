@@ -993,4 +993,5 @@ the apply is byte-identical to the one before (`verify_dsi_rom.py`: intact).
 
 The in-game work has its own file, `icon-screens.md`: the build's packing, the runtime API, the fallback onto the
 banks, and every icon screen with its route and status. Phase 1 converted the party list and removed the editor's Icon
-review page (`icon_remap.py` and `res/paperwhite2/icon_remap_choices.json` stay as its record).
+review page (`icon_remap.py` and `res/paperwhite2/icon_remap_choices.json` stay as its record). Phase 2 converted the PC box
+with section 5.1's route: 8bpp icons on OBJ extended palettes in bank G (icon-screens.md section 3).

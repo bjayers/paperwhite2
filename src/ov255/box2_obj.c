@@ -22,6 +22,8 @@
 #include "system/app_menu_common.h"
 #ifdef PAPERWHITE2
 #include "constants/types.h"
+#include "paperwhite2/box_icons.h"
+#include "paperwhite2/icon_palettes.h"
 #endif
 #include "system/bgwinfrm.h"
 #include "system/bmp_oam.h"
@@ -69,8 +71,13 @@ static void LoadPokeIconResources(Box2AppWork *app);
 static void CreatePokeIconActors(Box2AppWork *app);
 static void *ReadPokeIconChar(Box2AppWork *app, BoxPkm *pkm, NNSG2dCharacterData **chr);
 static BOOL MatchesSearch(Box2SearchParam *search, BoxPkm *pkm);
+#ifdef PAPERWHITE2
+static void ReadPokeIconColours(Box2SysWork *syswk, BoxPkm *pkm, u16 *colours);
+static void TransferIconChar(Box2AppWork *app, void *chr, u32 id, const u16 *colours);
+#else
 static u32 GetPokeIconPalette(Box2SysWork *syswk, BoxPkm *pkm);
 static void TransferIconChar(Box2AppWork *app, void *chr, u32 id, u32 palette);
+#endif
 static void SetPokeIcon(Box2SysWork *syswk, BoxPkm *pkm, u32 id);
 static void SetIconsBlend(Box2SysWork *syswk, BOOL blend, u32 start, u32 end, BOOL check);
 static void SetIconBlendChecked(Box2SysWork *syswk, u32 pos);
@@ -360,7 +367,17 @@ static void LoadBoxResources(Box2AppWork *app) {
     app->palRes[5] = ClActSys_LoadPltt(arc, 72, CLACT_VRAM_MAIN, 0, HEAPID_BOX2_APP);
     app->cellRes[5] = ClActSys_LoadCellAnims(arc, 73, 74, HEAPID_BOX2_APP);
     for (j = 0; j < 96; j++) {
+#ifdef PAPERWHITE2
+        // Paper White 2: the icon actors' characters are 8bpp, 1 KB each (include/paperwhite2/box_icons.h); the 30
+        // past the 66 actors' were never used, so they aren't loaded
+        if (j < BOX_ICONS_ACTORS) {
+            app->chrRes[j] = ClActSys_AllocChars(BOX_ICONS_CHARS_8BPP, CLACT_VRAM_MAIN, HEAPID_BOX2_APP);
+        } else {
+            app->chrRes[j] = BOX2_RES_NONE;
+        }
+#else
         app->chrRes[j] = ClActSys_LoadChars(arc, 75, TRUE, CLACT_VRAM_MAIN, HEAPID_BOX2_APP);
+#endif
     }
     app->chrRes[122] = ClActSys_LoadChars(arc, 67, TRUE, CLACT_VRAM_MAIN, HEAPID_BOX2_APP);
     app->palRes[6] = ClActSys_LoadPltt(arc, 70, CLACT_VRAM_MAIN, 0xe0, HEAPID_BOX2_APP);
@@ -409,10 +426,20 @@ static void CreatePokeIconActors(Box2AppWork *app) {
         app->pokeIconId[i] = BOX2_ACTOR_POKEICON + i;
         Box2Obj_SetVisible(app, BOX2_ACTOR_POKEICON + i, FALSE);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the icon cells draw 8bpp, on the extended palettes (include/paperwhite2/box_icons.h)
+    PaperWhite2_BoxIcons_Init(&app->icons, app->actors[BOX2_ACTOR_POKEICON]->anim.cells);
+#endif
 }
 
 static void *ReadPokeIconChar(Box2AppWork *app, BoxPkm *pkm, NNSG2dCharacterData **chr) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the icon's pixels on its battle palette's slots, for its own colours
+    return GFL_G2DIOReadOBJNCGRArc(app->pokeIconArc, PaperWhite2_GetIconBattleFileOfPkm(pkm), FALSE, chr,
+                                   HEAPID_BOX2_APP);
+#else
     return GFL_G2DIOReadOBJNCGRArc(app->pokeIconArc, PokeIcon_GetFileOfPkm(pkm), FALSE, chr, HEAPID_BOX2_APP);
+#endif
 }
 
 void Box2Obj_LoadTrayPokeIcons(Box2SysWork *syswk, u32 tray) {
@@ -431,7 +458,11 @@ void Box2Obj_LoadTrayPokeIcons(Box2SysWork *syswk, u32 tray) {
             buf = ReadPokeIconChar(syswk->app, pkm, &chr);
             MIi_CpuCopy32(chr->pRawData, syswk->app->pokeIconChar[i], 0x200);
             GFL_HeapFree(buf);
+#ifdef PAPERWHITE2
+            ReadPokeIconColours(syswk, pkm, syswk->app->pokeIconColours[i]);
+#else
             syswk->app->pokeIconPal[i] = GetPokeIconPalette(syswk, pkm);
+#endif
             syswk->app->pokeIconExist[i] = TRUE;
         }
     }
@@ -486,6 +517,28 @@ static BOOL MatchesSearch(Box2SearchParam *search, BoxPkm *pkm) {
     return TRUE;
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: an icon's own colours, normal or shiny, in place of its bank, greyed where the bank was the search's
+// grey row
+static void ReadPokeIconColours(Box2SysWork *syswk, BoxPkm *pkm, u16 *colours) {
+    PaperWhite2_BoxIcons_ReadColours(colours, pkm, !MatchesSearch(&syswk->search, pkm));
+}
+
+// Paper White 2: the icon made 8bpp in its actor's band, with its colours (include/paperwhite2/box_icons.h)
+static void TransferIconChar(Box2AppWork *app, void *chr, u32 id, const u16 *colours) {
+    PaperWhite2_BoxIcons_Transfer(&app->icons, app->actors[id], id - BOX2_ACTOR_POKEICON, chr, colours);
+}
+
+static void SetPokeIcon(Box2SysWork *syswk, BoxPkm *pkm, u32 id) {
+    NNSG2dCharacterData *chr;
+    void *buf = ReadPokeIconChar(syswk->app, pkm, &chr);
+    u16 colours[ICON_BATTLE_COLOURS];
+
+    ReadPokeIconColours(syswk, pkm, colours);
+    TransferIconChar(syswk->app, chr->pRawData, id, colours);
+    GFL_HeapFree(buf);
+}
+#else
 static u32 GetPokeIconPalette(Box2SysWork *syswk, BoxPkm *pkm) {
     if (MatchesSearch(&syswk->search, pkm)) {
         return PokeIcon_GetPaletteOfPkm(pkm);
@@ -505,6 +558,7 @@ static void SetPokeIcon(Box2SysWork *syswk, BoxPkm *pkm, u32 id) {
     TransferIconChar(syswk->app, chr->pRawData, id, GetPokeIconPalette(syswk, pkm));
     GFL_HeapFree(buf);
 }
+#endif
 
 void Box2Obj_SetTrayPokeIcon(Box2SysWork *syswk, u32 tray, u32 pos, u32 id) {
     Box2AppWork *app = syswk->app;
@@ -687,7 +741,11 @@ void Box2Obj_ScrollTrayIcons(Box2SysWork *syswk, s32 mv) {
         x = x + mv;
         if (x == end) {
             x = start;
+#ifdef PAPERWHITE2
+            TransferIconChar(syswk->app, syswk->app->pokeIconChar[i], id, syswk->app->pokeIconColours[i]);
+#else
             TransferIconChar(syswk->app, syswk->app->pokeIconChar[i], id, syswk->app->pokeIconPal[i]);
+#endif
             Box2Obj_SetVisible(syswk->app, id, syswk->app->pokeIconExist[i]);
             if (syswk->app->unkA55A == 0 && (syswk->param->mode == 3 || syswk->param->mode == 5)) {
                 SetIconBlendChecked(syswk, i);
@@ -918,6 +976,19 @@ void Box2Obj_MoveHeldIcons(Box2SysWork *syswk) {
     }
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: the icon's own colours again, in its actor's band
+void Box2Obj_UpdatePokeIconPalette(Box2SysWork *syswk, u32 tray, u32 pos) {
+    u16 colours[ICON_BATTLE_COLOURS];
+    u32 id = syswk->app->pokeIconId[pos];
+
+    ReadPokeIconColours(syswk, Box2Main_GetBoxPkm(syswk, tray, pos), colours);
+    if (pos < BOX2_TRAY_POKE_MAX) {
+        MI_CpuCopy16(colours, syswk->app->pokeIconColours[pos], sizeof(colours));
+    }
+    PaperWhite2_BoxIcons_SetColours(&syswk->app->icons, syswk->app->actors[id], id - BOX2_ACTOR_POKEICON, colours);
+}
+#else
 void Box2Obj_UpdatePokeIconPalette(Box2SysWork *syswk, u32 tray, u32 pos) {
     u32 palette = GetPokeIconPalette(syswk, Box2Main_GetBoxPkm(syswk, tray, pos));
 
@@ -926,6 +997,7 @@ void Box2Obj_UpdatePokeIconPalette(Box2SysWork *syswk, u32 tray, u32 pos) {
     }
     SetPalette(syswk->app, syswk->app->pokeIconId[pos], palette);
 }
+#endif
 
 static void ClearPokeGraResources(Box2AppWork *app) {
     app->chrRes[96] = BOX2_RES_NONE;
