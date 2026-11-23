@@ -2,6 +2,26 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-23: Icons on their battle palettes, phase 5: the last screens and the wireless shells (ROM session)
+
+- **Converted** (icon-screens.md section 8):
+  - **the DexNav**: the grid's 18 icons 8bpp on a BG of their own with the sub engine's BG extended palettes (bank H),
+    the top icon on its own colours in a row; species-only;
+  - **the Xtransceiver's party pick** (Bianca's friendship check, Cheren's and the Professor's questions): rows,
+    shiny-aware;
+  - **the PWT's team choice** (party or Battle Box): rows, shiny-aware; not emulator-tested (needs a filled Battle Box).
+- **Left on the fallback:** the Battle Recorder's video screen (local, but 12 icons with no free rows in the Battle
+  Recorder's shared palette, and no saved video to test with); the Dream Radar (Unova Link is off the title menu).
+- **Wireless-only screens emptied as shells** (docs/paperwhite2/design/wireless-shells.md, with the proof for each):
+  the linked trades' box and offer, the Wi-Fi Club, the IR ranking, Game Sync, the GTS, the link multi battle's list,
+  the Battle Recorder's online rankings and the Battle Competition, whose title menu item is gone. Each process ends at
+  once and draws nothing; the in-game and Wonder Trades are untouched.
+- **Cost:** overlay 36 +0x20; the shells free 5 KB of the DS arena (overlay 290 was the highest): 0x4260 → 0x55e0.
+- **Tested** in py-desmume on a copy of the save: the DexNav (Route 6 and 7, a full grid forced in RAM, forms, all
+  exact; leaving), the Xtransceiver's pick (exact, normal and shiny), the title menu, boot to the field, the save
+  report, the party, the C-Gear and a Center's PC box. Screenshots `11_*`, `29_*` in `icon_screens/`.
+- **Next:** phase 6, the sweep.
+
 ## 2026-11-23: Icons on their battle palettes, phase 4: the row screens (ROM session)
 
 - **Converted** (icon-screens.md section 5), each icon on its own colours in a standard OBJ row of its own:

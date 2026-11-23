@@ -149,11 +149,26 @@ static u32 WifiBattleMatchSys_ChainGetResult(WifiBattleMatchChain *chain);
 static u8 WifiBattleMatchSys_ChainGetPrevious(WifiBattleMatchChain *chain);
 static void WifiBattleMatchSys_ChainSetNext(WifiBattleMatchChain *chain, u8 step);
 static void WifiBattleMatchSys_ChainEnd(WifiBattleMatchChain *chain);
+#ifdef PAPERWHITE2
+// Paper White 2: a wireless-only shell (docs/paperwhite2/design/wireless-shells.md): the Battle Competition needs Wi-Fi
+// or a live tournament's wireless, so it ends at once and draws nothing; the title menu no longer lists it
+// (startmenu.c) and the Global Terminal's counter is Training Services'
+static BOOL WifiBattleMatchSys_Shell(GameProc *proc, u32 *state, void *param, void *work) {
+    return TRUE;
+}
+
+const GameProcFunctions WIFIBATTLEMATCH_PROC_FUNCTIONS = {
+    WifiBattleMatchSys_Shell,
+    WifiBattleMatchSys_Shell,
+    WifiBattleMatchSys_Shell,
+};
+#else
 const GameProcFunctions WIFIBATTLEMATCH_PROC_FUNCTIONS = {
     WifiBattleMatchSys_Init,
     WifiBattleMatchSys_Main,
     WifiBattleMatchSys_Exit,
 };
+#endif
 
 // clang-format off
 static const WifiBattleMatchStep sWifiBattleMatchSysSteps[STEP_COUNT] = {

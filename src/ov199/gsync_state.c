@@ -277,11 +277,25 @@ static BOOL GSync_ProcInit(GameProc *proc, u32 *state, void *param, void *work);
 static BOOL GSync_ProcMain(GameProc *proc, u32 *state, void *param, void *work);
 static BOOL GSync_ProcExit(GameProc *proc, u32 *state, void *param, void *work);
 
+#ifdef PAPERWHITE2
+// Paper White 2: a wireless-only shell (docs/paperwhite2/design/wireless-shells.md): Game Sync needs Wi-Fi and its
+// C-Gear marker is gone, so it ends at once and draws nothing; the event's result stays none, leave
+static BOOL GSync_Shell(GameProc *proc, u32 *state, void *param, void *work) {
+    return TRUE;
+}
+
+const GameProcFunctions GSYNC_PROC_FUNCTIONS = {
+    GSync_Shell,
+    GSync_Shell,
+    GSync_Shell,
+};
+#else
 const GameProcFunctions GSYNC_PROC_FUNCTIONS = {
     GSync_ProcInit,
     GSync_ProcMain,
     GSync_ProcExit,
 };
+#endif
 
 // Returns whether the HTTP status is an error, and shows it
 static BOOL GSync_CheckHttpStatus(GSyncWork *wk, int status) {

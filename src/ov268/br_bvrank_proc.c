@@ -106,11 +106,26 @@ static void BrBvRankList_ScrollIcons(BrBvRankList *p_wk, u32 list, s8 slide, Hea
 static void BrBvRank_GetPokeData(BrOutline *outline, BrBvRankPokeData *poke);
 static BOOL BrBvRank_GetTrgList(u32 x, u32 y);
 
+#ifdef PAPERWHITE2
+// Paper White 2: a wireless-only shell (docs/paperwhite2/design/wireless-shells.md): the battle video rankings come
+// only from Global Link (the Global Terminal's counter, script 10105, is Training Services'), so the list ends at once
+// and draws nothing; the Battle Recorder goes back to its menu
+static BOOL BrBvRank_Shell(GameProc *proc, u32 *state, void *param, void *work) {
+    return TRUE;
+}
+
+const GameProcFunctions BR_BVRANK_PROC_FUNCTIONS = {
+    BrBvRank_Shell,
+    BrBvRank_Shell,
+    BrBvRank_Shell,
+};
+#else
 const GameProcFunctions BR_BVRANK_PROC_FUNCTIONS = {
     BrBvRank_ProcInit,
     BrBvRank_ProcMain,
     BrBvRank_ProcExit,
 };
+#endif
 
 // The list of the videos, whose items are bitmaps of three characters each
 static const BrListParam sBrBvRankListParam = {

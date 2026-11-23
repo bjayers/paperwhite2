@@ -1388,10 +1388,14 @@ static void StartMenu_InitItems(StartMenuWork *wk) {
     *(wk->items + n + 2) = ITEM_UNOVA_LINK;
     n += 3;
 #endif
+    // Paper White 2: no Battle Competition, which needs Wi-Fi or a live tournament's wireless: its process is a shell
+    // (docs/paperwhite2/design/wireless-shells.md)
+#ifndef PAPERWHITE2
     if (TrainerGameInfo_GetStartMenuItemFlags(wk->gameInfo, 1)) {
         wk->items[n] = ITEM_BATTLE_COMPETITION;
         n++;
     }
+#endif
     if (TrainerGameInfo_GetStartMenuItemFlags(wk->gameInfo, 2)) {
         wk->items[n] = ITEM_GAME_SYNC_SETTINGS;
         n++;

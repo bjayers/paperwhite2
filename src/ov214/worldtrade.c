@@ -55,11 +55,25 @@ static void WorldTrade_FreeCLACT(WorldTradeWork *wk);
 static void WorldTrade_ServerWaitTimeFunc(WorldTradeWork *wk);
 static void WorldTrade_SetPassive(BOOL main);
 
+#ifdef PAPERWHITE2
+// Paper White 2: a wireless-only shell (docs/paperwhite2/design/wireless-shells.md): the GTS needs Wi-Fi and its
+// counter (script 10105) is Training Services', so it ends at once and draws nothing
+static BOOL WorldTradeProc_Shell(GameProc *proc, u32 *state, void *param, void *work) {
+    return TRUE;
+}
+
+const GameProcFunctions WORLDTRADE_PROC_FUNCTIONS = {
+    WorldTradeProc_Shell,
+    WorldTradeProc_Shell,
+    WorldTradeProc_Shell,
+};
+#else
 const GameProcFunctions WORLDTRADE_PROC_FUNCTIONS = {
     WorldTradeProc_Init,
     WorldTradeProc_Main,
     WorldTradeProc_End,
 };
+#endif
 
 static WorldTradeWork *sWorldTradeWork;
 

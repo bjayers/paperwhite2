@@ -3082,11 +3082,27 @@ const GameProcFunctions data_ov194_021c6400 = {
     PokemonTrade_ProcExit,
 };
 
+#ifdef PAPERWHITE2
+// Paper White 2: the linked trades are wireless-only shells (docs/paperwhite2/design/wireless-shells.md): the GTS's
+// Negotiations, the Wi-Fi Club, the IR link and the Union Room all need wireless, and the hack reaches none of them, so
+// their processes end at once and draw nothing: the trade box and offer screens are never made. The in-game and Wonder
+// Trades (StartRequest4, the trade scene only) are kept
+static BOOL PokemonTrade_Shell(GameProc *proc, u32 *state, void *param, void *work) {
+    return TRUE;
+}
+
+const GameProcFunctions POKEMONTRADE_PROC_FUNCTIONS = {
+    PokemonTrade_Shell,
+    PokemonTrade_Shell,
+    PokemonTrade_Shell,
+};
+#else
 const GameProcFunctions POKEMONTRADE_PROC_FUNCTIONS = {
     PokemonTrade_ProcInitGtsNego,
     PokemonTrade_ProcMain,
     PokemonTrade_ProcExit,
 };
+#endif
 
 const GameProcFunctions data_ov194_021c63ac = {
     PokemonTrade_StartRequest4,
@@ -3094,6 +3110,19 @@ const GameProcFunctions data_ov194_021c63ac = {
     PokemonTrade_ProcExit,
 };
 
+#ifdef PAPERWHITE2
+const GameProcFunctions POKEMONTRADE_WIFICLUB_PROC_FUNCTIONS = {
+    PokemonTrade_Shell,
+    PokemonTrade_Shell,
+    PokemonTrade_Shell,
+};
+
+const GameProcFunctions data_ov194_021c63dc = {
+    PokemonTrade_Shell,
+    PokemonTrade_Shell,
+    PokemonTrade_Shell,
+};
+#else
 const GameProcFunctions POKEMONTRADE_WIFICLUB_PROC_FUNCTIONS = {
     PokemonTrade_ProcInitWifiClub,
     PokemonTrade_ProcMain,
@@ -3105,6 +3134,7 @@ const GameProcFunctions data_ov194_021c63dc = {
     PokemonTrade_ProcMain,
     PokemonTrade_ProcExit,
 };
+#endif
 
 const GameProcFunctions data_ov194_021c63b8 = {
     PokemonTrade_StartRequest7,
@@ -3112,8 +3142,16 @@ const GameProcFunctions data_ov194_021c63b8 = {
     PokemonTrade_ProcExit,
 };
 
+#ifdef PAPERWHITE2
+const GameProcFunctions data_ov194_021c640c = {
+    PokemonTrade_Shell,
+    PokemonTrade_Shell,
+    PokemonTrade_Shell,
+};
+#else
 const GameProcFunctions data_ov194_021c640c = {
     PokemonTrade_StartRequest1,
     PokemonTrade_ProcMain,
     PokemonTrade_ProcExit,
 };
+#endif

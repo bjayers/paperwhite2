@@ -7134,8 +7134,22 @@ static BOOL WifiP2PMatch_ProcExit(GameProc *proc, u32 *state, void *param, void 
     return TRUE;
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: a wireless-only shell (docs/paperwhite2/design/wireless-shells.md): the Wi-Fi Club needs Wi-Fi and its
+// counter (script 10100) is the Wonder Trade's, so it ends at once and draws nothing; the club's mode stays 0, leave
+static BOOL WifiP2PMatch_Shell(GameProc *proc, u32 *state, void *param, void *work) {
+    return TRUE;
+}
+
+const GameProcFunctions WIFICLUB_PROC_FUNCTIONS = {
+    WifiP2PMatch_Shell,
+    WifiP2PMatch_Shell,
+    WifiP2PMatch_Shell,
+};
+#else
 const GameProcFunctions WIFICLUB_PROC_FUNCTIONS = {
     WifiP2PMatch_ProcInit,
     WifiP2PMatch_ProcMain,
     WifiP2PMatch_ProcExit,
 };
+#endif

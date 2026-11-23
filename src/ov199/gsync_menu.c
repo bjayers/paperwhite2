@@ -993,8 +993,22 @@ static BOOL GSyncMenu_ProcExit(GameProc *proc, u32 *state, void *param, void *wo
     return TRUE;
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: a wireless-only shell (docs/paperwhite2/design/wireless-shells.md): Game Sync's menu, reached only
+// from the C-Gear's Game Sync marker, which is gone; it ends at once and draws nothing
+static BOOL GSyncMenu_Shell(GameProc *proc, u32 *state, void *param, void *work) {
+    return TRUE;
+}
+
+const GameProcFunctions GSYNC_MENU_PROC_FUNCTIONS = {
+    GSyncMenu_Shell,
+    GSyncMenu_Shell,
+    GSyncMenu_Shell,
+};
+#else
 const GameProcFunctions GSYNC_MENU_PROC_FUNCTIONS = {
     GSyncMenu_ProcInit,
     GSyncMenu_ProcMain,
     GSyncMenu_ProcExit,
 };
+#endif

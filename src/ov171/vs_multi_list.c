@@ -132,11 +132,25 @@ static void VsMultiList_FreeFrames(VsMultiListWork *wk);
 
 // Declared in an order that gives the original layout of the data (tools/decomp/rodata_order.py)
 
+#ifdef PAPERWHITE2
+// Paper White 2: a wireless-only shell (docs/paperwhite2/design/wireless-shells.md): the multi battle's list shows only
+// in a link battle (Union Room, IR), so it ends at once and draws nothing
+static BOOL VsMultiList_Shell(GameProc *proc, u32 *state, void *param, void *work) {
+    return TRUE;
+}
+
+const GameProcFunctions VS_MULTI_LIST_PROC_FUNCTIONS = {
+    VsMultiList_Shell,
+    VsMultiList_Shell,
+    VsMultiList_Shell,
+};
+#else
 const GameProcFunctions VS_MULTI_LIST_PROC_FUNCTIONS = {
     VsMultiList_Init,
     VsMultiList_Main,
     VsMultiList_Exit,
 };
+#endif
 
 static int (*const sVsMultiListStateFuncs[])(VsMultiListWork *wk) = {
     VsMultiList_StateSetup,      VsMultiList_StateTeardown, VsMultiList_StateWaitWipe,

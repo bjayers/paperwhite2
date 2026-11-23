@@ -321,11 +321,25 @@ static void IrcRankingLabel_SetPos(IrcRankingLabel *label, int x, int y, int ali
 static BOOL IrcRankingLabel_Update(IrcRankingLabel *label);
 static void IrcRankingLabel_GetPosition(IrcRankingLabel *label, Font *font, IrcRankingPoint *pos);
 
+#ifdef PAPERWHITE2
+// Paper White 2: a wireless-only shell (docs/paperwhite2/design/wireless-shells.md): the IR Feeling Check's ranking is
+// reached only through an infrared link from the C-Gear, so it ends at once and draws nothing
+static BOOL IrcRanking_Shell(GameProc *proc, u32 *state, void *param, void *work) {
+    return TRUE;
+}
+
+const GameProcFunctions IRC_RANKING_PROC_FUNCTIONS = {
+    IrcRanking_Shell,
+    IrcRanking_Shell,
+    IrcRanking_Shell,
+};
+#else
 const GameProcFunctions IRC_RANKING_PROC_FUNCTIONS = {
     IrcRanking_Init,
     IrcRanking_Main,
     IrcRanking_Exit,
 };
+#endif
 
 static const VecFx32 sIrcRankingUpVector = { 0, FX32_ONE, 0 };
 
