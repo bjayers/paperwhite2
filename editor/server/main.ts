@@ -994,7 +994,7 @@ const routes: Record<string, Handler> = {
   "PUT /api/icon-review/choice": async (req, res) => {
     const body = (await readJson(req)) as { key?: string; choice?: unknown };
     if (typeof body.key !== "string" || (body.choice !== null && !isChoice(body.choice)))
-      return error(res, 400, "Name an icon and a choice (ihm, j or null)");
+      return error(res, 400, "Name an icon and a choice (ihm, j, g2, h, ih, k or null)");
     try {
       json(res, await iconChoices.set(body.key, body.choice));
     } catch (e) {

@@ -2,6 +2,20 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-22: Flagged icons: patterns, method K and the Flagged review mode (ROM session)
+
+- **Patterns** of the 131 icons flagged to fix by hand (among the 416 reviewed): missing battle colour family (27),
+  grey where the art has a pale tint (22), wrong-twin swap involved (42), darker than vanilla (16), collapsed vanilla
+  shades (24); 21 show none (pose or design differences). Hydrapple's battle art is Budew's placeholder (not flagged);
+  Appletun's and Dipplin's art is still in progress. Shiny suspects, registration fit and IHM against J don't predict
+  the flag.
+- **Method K** (flagged icons only): the pick corrected for those classes, then the twin swap. It changes 94 of the
+  131; by eye about 11 are clearly better, about 4 worse, the rest marginal.
+- **Tool and page:** `icon_remap.py` also writes G2, H, IH and K for the flagged icons (G2 and H match the experiments
+  pixel for pixel). The Icon review page shows a flagged icon's pick, G2, H, IH and K on keys 1-5, with 0 for the
+  flag; the choices file takes those method ids for flagged icons.
+- **Tested:** Python tests (fixture), editor typecheck and tests, the hack build. Details: shiny-icons.md section 14.
+
 ## 2026-11-22: Icon review page (ROM session)
 
 - **Tool:** `tools/paperwhite2/icon_remap.py` (IHM and J of shiny-icons.md sections 7-12, ported from the

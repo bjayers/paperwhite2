@@ -791,3 +791,93 @@ The user picks, icon by icon, between IHM and J; nothing in `res/pokemon/` chang
   generator, the choices file's round trip, the page's filters).
 - **Next:** once every icon is decided, write the chosen icons into `res/pokemon/` (indexed on the battle palettes
   plus the two greys), fix the flagged ones by hand, then remove the page.
+
+## 14. Flagged icons (2026-11-22)
+
+The user reviewed the 416 icons where IHM and J differ. Picks are in `res/paperwhite2/icon_remap_choices.json`: 282 IHM,
+134 J. 131 icons are flagged to fix by hand, 86 on IHM and 45 on J. They range from tiny revisions to near-redraws.
+Scripts: `.../scratchpad/iconremap_k/` (`features.py`, `classes.py`, `render_flagged.py`).
+
+### 14.1 Patterns
+
+- **The labels cover the 416 only.** None of the 328 icons where IHM and J are the same is flagged, so they were not
+  under review. Every comparison below is within the 416: 131 flagged against 285 not, a base rate of 31%.
+- **Not predictive (flag rate about the base rate):**
+  - section 12's shiny suspects (30%);
+  - H's registration fit;
+  - how far F, IH and J disagree;
+  - IHM against J (30% against 34%);
+  - lightness range.
+- **By kind:** forms with their own icon 8 of 52, palette-only forms 0 of 17, the one female icon flagged.
+- **Weakly predictive:** more battle colours, ramps and vanilla colours (the top quarter 47-63% flagged against 15-23%
+  in the bottom), and larger icons.
+- **Error classes** (indicators on the user's pick, `classes.txt`). Count of flagged icons with the indicator / of
+  unflagged ones (flag rate among icons that have it); the first examples:
+  - **Missing battle colour family** (a family with 10% or more of the front + back art under 2% of the icon): 27 / 30
+    (47%). Braviary, Swampert, Snorlax, Lugia, Treecko, Venusaur, Wartortle, Nidorina, Crobat, Jellicent.
+  - **Grey where the battle art has a pale tint** (a pure grey/white battle index where the art uses a tinted colour
+    within 8 L at least twice as much, 10% or more of the icon): 22 / 26 (46%). Beartic, Snorlax, Kyurem, Snover,
+    Riolu, Patrat, Stoutland, Cottonee, Deino, Ponyta.
+  - **A wrong-twin swap** (the icon took a look-alike): 42 / 63 (40%). Charizard, Cloyster, Chansey, Treecko, Garbodor,
+    Braviary.
+  - **Darker than vanilla** by 10 L or more on average: 16 / 25 (39%). Arcanine, Cinccino, Emolga, Smeargle, Shaymin,
+    Serperior, Deino. Lighter than vanilla: Espeon only.
+  - **Two or more vanilla colours collapsed onto one battle colour:** 24 / 39 (38%). Pidgeot, Haunter, Mew, Darkrai,
+    Lilligant, Beartic, Braviary.
+  - **None of these:** 21. By eye they are pose or design differences between the icon and the battle art, which no
+    re-indexing fixes: Golduck, Hitmonlee, Kangaskhan, Magmar, Mantine, Lugia form 1, Makuhita, Nosepass, Torkoal,
+    Solrock, Whiscash, Castform form 2, Deoxys form 2, Burmy form 1, Vespiquen, Dusknoir, Darmanitan, Crustle,
+    Alomomola, Bouffalant, Sudowoodo.
+- **Placeholder art** (battle art not final; no method fixes these until it lands):
+  - Hydrapple's battle front is byte-identical to Budew's. It is not flagged.
+  - Appletun and Dipplin are flagged. They have new battle art of their own, but it is still in progress (front and
+    back rigs being reworked, uncommitted); their overworld sheets were on Budew's until recently. Redo them when
+    their art is final.
+
+### 14.2 Method K
+
+K runs only on the flagged icons and starts from the user's pick of IHM and J. It changes whole vanilla colours (one
+battle index each, so a connected group of one vanilla index stays one colour), one class at a time:
+
+1. **grey for tint:** a vanilla colour on a pure grey/white battle index takes the pale tinted battle colour within
+   8 L that the art uses at least twice as much;
+2. **missing family:** a battle colour family with 10% or more of the art and under 2% of the icon takes the vanilla
+   colour family closest to it in hue (within 60°, or a grey family for a weakly coloured ramp) and area, when the
+   family's old ramp stays represented; it is shaded in vanilla lightness order;
+3. **collapsed shades:** the colours of one vanilla family that share a battle index are spread over their ramp again;
+4. **too dark:** a colour 15 L or more darker than its vanilla colour takes a lighter shade of its ramp that is 8 L
+   closer, keeping the order of the ramp's other colours;
+
+then the most-used twin swap.
+
+- **Rules held throughout:** the G2 outline greys are kept, every slot is a battle index (so the shiny follows), and
+  no coloured pixel becomes transparent (asserted).
+- **Results:** K differs from the pick on 94 of the 131 icons: grey for tint 78 times, collapsed shades 27, too dark
+  35, missing family 10. By eye (`.../iconremap_k/k_1..4.png`):
+  - about 11 are clearly better: Snorlax and Swampert get their blue bodies; Beartic its pale blue; Arcanine, Haunter
+    and Shaymin are brighter; Emolga keeps black and white; Deino, Patrat, Seedot and Smeargle are closer;
+  - about 4 are worse: Bouffalant and Mightyena are too light, Stoutland loses its blue-grey cape, Drilbur goes grey;
+  - the rest change only a few shades.
+- **K is a fifth candidate, not a fix.** The flagged icons still need hand work.
+
+### 14.3 The Flagged review mode
+
+- **Tool:** `icon_remap.py generate` gives each flagged icon (`fix_by_hand` when it runs) four more candidates in
+  `icon.json`'s `candidates`: **G2**, **H**, **IH** (before the twin swap) and **K**. `index.json` lists them per icon.
+  - G2 is ported from the round 2 script: G's decisions on the shared registration stage (`registered_units`, which H
+    now uses too), with ramps built without H's pale-is-white rule (`build_ramps(pale=False)`).
+  - Checked on all 727 icons with their own pixels: G2 matches round 2's G2 pixel for pixel, and H matches round 3's
+    H. IHM and J are unchanged on all 744.
+  - Flagging another icon needs a new run before it gets its candidates.
+- **Page:** an icon flagged to fix by hand shows, in order:
+  - the user's pick of IHM and J (marked "your pick"; K starts from it);
+  - then G2, H, IH and K, each normal and shiny.
+
+  Number keys 1-5 pick them in that order, and **0** toggles the fix-by-hand flag (3 would pick H here). The buttons
+  show their keys. Other icons keep 1 IHM, 2 J, 3 the flag.
+- **Choices:** the choices file keeps its shape. `choices` values may now be `ihm`, `j`, `g2`, `h`, `ih` or `k`; the
+  last four only for an icon that has those candidates (the server checks). A filter "Kept another" lists those icons.
+  Once a pick is G2, H, IH or K, K is regenerated from IHM.
+- **Tests:** in `test_icon_remap.py`, a flagged fixture icon gets all four candidates under the rules, and K takes a
+  pale tint. In `icon-review.test.ts`, the generator writes the candidates, the display order, and the server takes K
+  only for a flagged icon.

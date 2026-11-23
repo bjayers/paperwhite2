@@ -1,10 +1,13 @@
-// The Icon review page (temporary): one icon at a time, its vanilla art above the two re-indexing methods' results
-// (IHM and J, each normal and shiny), and a click (or 1, 2) keeps one for it; 3 flags the icon to fix by hand. See model.ts and server/iconReview.ts.
+// The Icon review page (temporary): one icon at a time, its vanilla art above the re-indexing methods' results (IHM
+// and J, each normal and shiny), and a click (or 1, 2) keeps one for it; 3 flags the icon to fix by hand. An icon
+// flagged to fix by hand shows the Flagged mode instead: the pick of IHM and J it was flagged on, then G2, H, IH and K,
+// on number keys 1-5 in that order, and 0 for the flag. See model.ts and server/iconReview.ts.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../api.ts";
 import type { IconChoice, IconReviewDetail, IconReviewEntry, IconReviewState } from "../../../server/iconReview.ts";
-import { FILTERS, afterChoosing, candidateColours, choiceOf, filterEntries, pixelsOf, progress, step, type ReviewFilter } from "./model.ts";
+import { FILTERS, METHOD_LABEL, afterChoosing, candidateColours, candidateOf, choiceOf, filterEntries, flaggedOrder, pixelsOf, progress, step,
+  type ReviewFilter } from "./model.ts";
 
 /** The box tray's grey, behind every icon as in the PC. */
 const BOX = "#a8b8b0";
@@ -42,26 +45,42 @@ function Icon({ hex, colours, frame, caption }: { hex: string; colours: (string 
   );
 }
 
-const CHOICE_LABEL: Record<IconChoice, string> = { ihm: "IHM", j: "J" };
+const CHOICE_LABEL = METHOD_LABEL;
 
-function Candidate({ detail, which, frame, chosen, onChoose }: {
-  detail: IconReviewDetail; which: "ihm" | "j"; frame: number; chosen: boolean; onChoose: () => void;
+/** What each method is, for the candidates' tooltips. */
+const METHOD_HINT: Record<IconChoice, string> = {
+  ihm: "IH with the wrong twins swapped (sections 10-11)",
+  j: "IHM with the shiny palette as a second view (section 12)",
+  g2: "F kept unless the registered battle sprite clearly disagrees (section 8)",
+  h: "registration and colour shares must agree to leave F (section 9)",
+  ih: "H's ramps with I's shading, before the twin swap (section 10)",
+  k: "your pick corrected for the flagged icons' error classes (section 14)",
+};
+
+function Candidate({ detail, which, frame, chosen, shortcut, mark, onChoose }: {
+  detail: IconReviewDetail; which: IconChoice; frame: number; chosen: boolean; shortcut: string; mark?: string;
+  onChoose: () => void;
 }) {
   const normal = useMemo(() => candidateColours(detail, which, "normal"), [detail, which]);
   const shiny = useMemo(() => candidateColours(detail, which, "shiny"), [detail, which]);
-  const c = detail[which];
+  const c = candidateOf(detail, which);
+  if (!c) return null;
+  const swaps = c.swaps?.length ?? 0;
   return (
     <button className={`ir-candidate${chosen ? " chosen" : ""}`} onClick={onChoose}
-      title={`Keep ${CHOICE_LABEL[which]} for this icon (key ${which === "ihm" ? 1 : 2})`}>
+      title={`Keep ${CHOICE_LABEL[which]} for this icon (key ${shortcut}): ${METHOD_HINT[which]}`}>
       <span className="ir-candidate-head"><strong>{CHOICE_LABEL[which]}</strong>
-        <span className="muted small">{which === "ihm" ? "1" : "2"}{chosen ? " · kept" : ""}</span></span>
+        <span className="ir-key">{shortcut}</span>
+        {mark && <span className="ir-flag ir-hand">{mark}</span>}
+        {chosen && <span className="muted small">kept</span>}</span>
       <span className="ir-pair">
         <Icon hex={c.pixels} colours={normal} frame={frame} caption="normal" />
         <Icon hex={c.pixels} colours={shiny} frame={frame} caption="shiny" />
       </span>
       <span className="muted small ir-candidate-note">
-        {c.slots.length} battle colours{c.swaps.length ? `, ${c.swaps.length} twin swap${c.swaps.length > 1 ? "s" : ""}` : ""}
+        {c.slots.length} battle colours{swaps ? `, ${swaps} twin swap${swaps > 1 ? "s" : ""}` : ""}
         {which === "j" && c.moves?.length ? `, ${c.moves.length} family move${c.moves.length > 1 ? "s" : ""}` : ""}
+        {which === "k" ? (c.changes?.length ? `, ${c.changes.length} change${c.changes.length > 1 ? "s" : ""} to ${CHOICE_LABEL[c.base ?? "ihm"]}` : `, the same as ${CHOICE_LABEL[c.base ?? "ihm"]}`) : ""}
       </span>
     </button>
   );
@@ -108,6 +127,9 @@ export function IconReview() {
   const list = useMemo(() => filterEntries(entries, review, filter), [entries, review, filter]);
   const counts = useMemo(() => progress(entries, review), [entries, review]);
   const entry: IconReviewEntry | undefined = entries.find((e) => e.key === key);
+  // The Flagged mode's candidates (an icon flagged to fix by hand with its extra candidates generated)
+  const order = useMemo(() => (entry && detail && detail.key === entry.key && review.fixByHand.includes(entry.key)
+    ? flaggedOrder(detail) : []), [entry, detail, review.fixByHand]);
 
   // The first icon of the list when nothing (or nothing known) is shown
   useEffect(() => {
@@ -151,9 +173,11 @@ export function IconReview() {
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      if (e.key === "1") choose("ihm");
-      else if (e.key === "2") choose("j");
-      else if (e.key === "3") toggleFlag();
+      // The Flagged mode: 1-5 the candidates in display order, 0 the flag; otherwise 1 IHM, 2 J, 3 the flag
+      const keys: Record<string, () => void> = order.length
+        ? Object.fromEntries([["0", toggleFlag], ...order.map((m, i) => [String(i + 1), () => choose(m)])])
+        : { 1: () => choose("ihm"), 2: () => choose("j"), 3: toggleFlag };
+      if (keys[e.key]) keys[e.key]();
       else if (e.key === "ArrowRight" || e.key === "ArrowDown") setKey((k) => step(list, k, 1));
       else if (e.key === "ArrowLeft" || e.key === "ArrowUp") setKey((k) => step(list, k, -1));
       else return;
@@ -161,7 +185,7 @@ export function IconReview() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [choose, toggleFlag, list]);
+  }, [choose, toggleFlag, list, order]);
 
   const generate = async () => {
     const { started } = await api.iconReviewGenerate();
@@ -179,7 +203,8 @@ export function IconReview() {
   return (
     <div className="ir-page">
       <div className="ir-page-head"><strong>Icon review</strong> <span className="ir-temp">temporary</span>
-        <span className="muted small">Choose, per party/box icon, between two re-indexings onto its battle palettes (IHM and J).
+        <span className="muted small">Choose, per party/box icon, between two re-indexings onto its battle palettes (IHM and J);
+          an icon flagged to fix by hand also offers G2, H, IH and K.
           Choices go to res/paperwhite2/icon_remap_choices.json; no icon in res/pokemon/ changes yet.</span></div>
 
       <section className="ir-section">
@@ -198,7 +223,7 @@ export function IconReview() {
 
       {state.ready && (
         <section className="ir-section">
-          <h5>Review <span className="muted">{counts.decided} of {counts.needed} decided · IHM {counts.ihm} · J {counts.j} · fix by hand {counts.flagged}</span></h5>
+          <h5>Review <span className="muted">{counts.decided} of {counts.needed} decided · IHM {counts.ihm} · J {counts.j}{counts.other ? ` · other ${counts.other}` : ""} · fix by hand {counts.flagged}</span></h5>
           <div className="ir-grid">
             <span className="ir-label">Show</span>
             <span className="ir-row">
@@ -216,7 +241,9 @@ export function IconReview() {
                 ))}
               </select>
               <button onClick={() => setKey((k) => step(list, k, 1))} disabled={!list.length} title="The next one (→)">→</button>
-              <span className="hint">{at >= 0 ? `${at + 1} of ${list.length}` : "not in this list"}; ← → move, 1 IHM, 2 J, 3 fix by hand (a flag: stays on the icon)</span>
+              <span className="hint">{at >= 0 ? `${at + 1} of ${list.length}` : "not in this list"}; ← → move, {order.length
+                ? `${order.map((m, i) => `${i + 1} ${CHOICE_LABEL[m]}`).join(", ")}, 0 fix by hand (this flagged icon's candidates)`
+                : "1 IHM, 2 J, 3 fix by hand (a flag: stays on the icon)"}</span>
             </span>
             <span className="ir-label">Frames</span>
             <span className="ir-row">
@@ -239,7 +266,7 @@ export function IconReview() {
             {entry.suspects.length > 0 && <span className="ir-flag" title="On the suspects list: see Suspects below">⚑ suspect</span>}</h5>
           <div className="ir-actions">
             <button className={flagged ? "active" : ""} aria-pressed={flagged} onClick={toggleFlag}
-              title="Flag this icon to fix by hand later, on top of whichever of IHM and J you keep (3); it doesn't move on">Fix by hand <span className="muted">3</span></button>
+              title={`Flag this icon to fix by hand later, on top of whichever candidate you keep (${order.length ? 0 : 3}); it doesn't move on`}>Fix by hand <span className="ir-key">{order.length ? "0" : "3"}</span></button>
             {choices[entry.key] && <button onClick={() => choose(null)} title="Clear the choice">Clear the choice</button>}
           </div>
           <div className="ir-stage">
@@ -253,10 +280,19 @@ export function IconReview() {
                 <span className="ir-pair"><Front detail={detail} palette="normal" /><Front detail={detail} palette="shiny" /></span>
               </div>
             </div>
-            <div className="ir-candidates">
-              <Candidate detail={detail} which="ihm" frame={frame} chosen={chosen === "ihm"} onChoose={() => choose("ihm")} />
-              <Candidate detail={detail} which="j" frame={frame} chosen={chosen === "j"} onChoose={() => choose("j")} />
-            </div>
+            {order.length ? (
+              <div className="ir-candidates">
+                {order.map((m, i) => (
+                  <Candidate key={m} detail={detail} which={m} frame={frame} chosen={chosen === m} shortcut={String(i + 1)}
+                    mark={i === 0 ? "your pick" : undefined} onChoose={() => choose(m)} />
+                ))}
+              </div>
+            ) : (
+              <div className="ir-candidates">
+                <Candidate detail={detail} which="ihm" frame={frame} chosen={chosen === "ihm"} shortcut="1" onChoose={() => choose("ihm")} />
+                <Candidate detail={detail} which="j" frame={frame} chosen={chosen === "j"} shortcut="2" onChoose={() => choose("j")} />
+              </div>
+            )}
           </div>
           <div className="ir-grid">
             <span className="ir-label">Suspects</span>

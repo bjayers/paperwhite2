@@ -1,9 +1,25 @@
 // The Icon review page's logic (temporary): which icons a filter shows, how far the review is, and each candidate's
 // 16 colours (slot 0 transparent, slots 1-13 its battle indices through normal.pal or shiny.pal, 14-15 the greys).
 
-import type { IconChoice, IconReviewDetail, IconReviewEntry, ReviewChoices } from "../../../server/iconReview.ts";
+import type { IconCandidate, IconChoice, IconReviewDetail, IconReviewEntry, ReviewChoices } from "../../../server/iconReview.ts";
 
-export type ReviewFilter = "undecided" | "needs" | "all" | IconChoice | "flagged";
+export type ReviewFilter = "undecided" | "needs" | "all" | "ihm" | "j" | "other" | "flagged";
+
+export const METHOD_LABEL: Record<IconChoice, string> = { ihm: "IHM", j: "J", g2: "G2", h: "H", ih: "IH", k: "K" };
+
+/** The Flagged mode's candidates in display order (number keys 1, 2, … in this order): the user's pick of IHM and J
+ * (the one K started from), then G2, H, IH and K; only those the icon has. Empty for an icon without extra candidates. */
+export function flaggedOrder(detail: IconReviewDetail): IconChoice[] {
+  const extra = detail.candidates;
+  if (!extra) return [];
+  const base = extra.k?.base ?? "ihm";
+  return [base, ...(["g2", "h", "ih", "k"] as const).filter((m) => extra[m])];
+}
+
+/** A candidate of the icon: IHM and J for every icon, the others for a flagged one. */
+export function candidateOf(detail: IconReviewDetail, which: IconChoice): IconCandidate | undefined {
+  return which === "ihm" || which === "j" ? detail[which] : detail.candidates?.[which];
+}
 
 export const FILTERS: { id: ReviewFilter; label: string; hint: string }[] = [
   { id: "undecided", label: "Undecided", hint: "icons where IHM and J differ and nothing is chosen yet" },
@@ -11,7 +27,8 @@ export const FILTERS: { id: ReviewFilter; label: string; hint: string }[] = [
   { id: "all", label: "All", hint: "every icon, including those where IHM and J are the same (they keep IHM)" },
   { id: "ihm", label: "Kept IHM", hint: "icons you kept IHM for" },
   { id: "j", label: "Kept J", hint: "icons you kept J for" },
-  { id: "flagged", label: "Fix by hand", hint: "icons flagged to fix by hand, whatever their choice" },
+  { id: "other", label: "Kept another", hint: "flagged icons you kept G2, H, IH or K for" },
+  { id: "flagged", label: "Fix by hand", hint: "icons flagged to fix by hand, whatever their choice; with their extra candidates (G2, H, IH, K)" },
 ];
 
 /** The choice an icon ends with: its entry, or IHM where IHM and J are the same; null while undecided. */
@@ -26,23 +43,25 @@ export function filterEntries(entries: IconReviewEntry[], review: ReviewChoices,
     case "needs": return entries.filter((e) => e.differ);
     case "undecided": return entries.filter((e) => e.differ && !choices[e.key]);
     case "flagged": return entries.filter((e) => fixByHand.includes(e.key));
+    case "other": return entries.filter((e) => { const c = choices[e.key]; return !!c && c !== "ihm" && c !== "j"; });
     default: return entries.filter((e) => choices[e.key] === filter);
   }
 }
 
-/** decided counts the icons where IHM and J differ that have a choice (the flag doesn't decide); flagged counts every
- * flagged icon of the review. */
-export interface Progress { needed: number; decided: number; ihm: number; j: number; flagged: number }
+/** decided counts the icons where IHM and J differ that have a choice (the flag doesn't decide); other counts the
+ * choices of G2, H, IH or K; flagged counts every flagged icon of the review. */
+export interface Progress { needed: number; decided: number; ihm: number; j: number; other: number; flagged: number }
 
 export function progress(entries: IconReviewEntry[], review: ReviewChoices): Progress {
-  const out: Progress = { needed: 0, decided: 0, ihm: 0, j: 0, flagged: 0 };
+  const out: Progress = { needed: 0, decided: 0, ihm: 0, j: 0, other: 0, flagged: 0 };
   for (const e of entries) {
     if (e.differ) out.needed++;
     if (review.fixByHand.includes(e.key)) out.flagged++;
     const c = review.choices[e.key];
     if (!c) continue;
     if (e.differ) out.decided++;
-    out[c]++;
+    if (c === "ihm" || c === "j") out[c]++;
+    else out.other++;
   }
   return out;
 }
@@ -63,9 +82,9 @@ export function afterChoosing(list: IconReviewEntry[], key: string): string | nu
 }
 
 /** A candidate's 16 colours, null for transparency (and for slots it doesn't use). */
-export function candidateColours(detail: IconReviewDetail, which: "ihm" | "j", palette: "normal" | "shiny"): (string | null)[] {
+export function candidateColours(detail: IconReviewDetail, which: IconChoice, palette: "normal" | "shiny"): (string | null)[] {
   const pal = detail[palette];
-  const slots = detail[which].slots;
+  const slots = candidateOf(detail, which)?.slots ?? [];
   const out: (string | null)[] = [null];
   for (let s = 1; s <= 13; s++) out.push(s <= slots.length ? pal[slots[s - 1]] : null);
   return [...out, detail.greys[0], detail.greys[1]];

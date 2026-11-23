@@ -10,7 +10,7 @@ import { join, resolve } from "node:path";
 import { detectLayout, parseJson } from "../shared/json.ts";
 import { CHOICES_FILE, ChoiceWriter, REVIEW_DIR, ReviewGenerator, choicesText, readChoices, readDetail, readIndex,
   reviewState, type IconReviewEntry, type ReviewChoices } from "../server/iconReview.ts";
-import { afterChoosing, candidateColours, choiceOf, filterEntries, progress, step } from "../src/modules/iconreview/model.ts";
+import { afterChoosing, candidateColours, choiceOf, filterEntries, flaggedOrder, progress, step } from "../src/modules/iconreview/model.ts";
 
 const REPO = resolve(import.meta.dirname, "../..");
 const TOOL = join(REPO, "tools/paperwhite2/icon_remap.py");
@@ -131,7 +131,10 @@ test("the page's filters, progress and moves", () => {
   assert.deepEqual(filterEntries(entries, review, "j").map((x) => x.key), ["a"]);
   assert.deepEqual(filterEntries(entries, review, "ihm").map((x) => x.key), ["d"]);
   assert.deepEqual(filterEntries(entries, review, "flagged").map((x) => x.key), ["a", "b", "c"], "any icon, with or without a choice");
-  assert.deepEqual(progress(entries, review), { needed: 3, decided: 2, ihm: 1, j: 1, flagged: 3 });
+  assert.deepEqual(progress(entries, review), { needed: 3, decided: 2, ihm: 1, j: 1, other: 0, flagged: 3 });
+  const withK = { choices: { ...choices, c: "k" as const }, fixByHand: ["c"] };
+  assert.deepEqual(filterEntries(entries, withK, "other").map((x) => x.key), ["c"]);
+  assert.deepEqual(progress(entries, withK), { needed: 3, decided: 3, ihm: 1, j: 1, other: 1, flagged: 1 });
   assert.equal(choiceOf(entries[1], choices), "ihm");
   assert.equal(choiceOf(entries[2], choices), null);
   assert.equal(step(entries, "a", 1), "b");
@@ -141,4 +144,32 @@ test("the page's filters, progress and moves", () => {
   assert.equal(afterChoosing(entries, "c"), "d");
   assert.equal(afterChoosing(entries, "d"), "c");
   assert.equal(afterChoosing([entries[0]], "a"), null);
+});
+
+test("a flagged icon gets G2, H, IH and K, and only it takes them", async () => {
+  const root = fixture();
+  try {
+    // fakemon flagged on J before the candidates are generated
+    writeFileSync(join(root, CHOICES_FILE), choicesText({ choices: { fakemon: "j" }, fixByHand: ["fakemon"] }));
+    const generator = await generate(root);
+    assert.equal(generator.state.ok, true, generator.state.output);
+    const index = readIndex(root)!;
+    assert.deepEqual(index.entries.find((e) => e.key === "fakemon")!.candidates, ["g2", "h", "ih", "k"]);
+    assert.deepEqual(index.entries.find((e) => e.key === "fakemon_form_1")!.candidates, []);
+    const detail = readDetail(root, "fakemon")!;
+    for (const m of ["g2", "h", "ih", "k"] as const) assert.equal(detail.candidates![m]!.pixels.length, 4096, m);
+    assert.equal(detail.candidates!.k!.base, "j", "K starts from the pick");
+    assert.deepEqual(flaggedOrder(detail), ["j", "g2", "h", "ih", "k"], "the pick first, then G2, H, IH, K");
+    assert.deepEqual(flaggedOrder(readDetail(root, "fakemon_form_1")!), [], "no Flagged mode without candidates");
+    const k = candidateColours(detail, "k", "normal");
+    assert.equal(k.length, 16);
+    assert.equal(k[1], detail.normal[detail.candidates!.k!.slots[0]]);
+    const writer = new ChoiceWriter(root, write(root));
+    assert.deepEqual((await writer.set("fakemon", "k")).choices, { fakemon: "k" });
+    assert.deepEqual((await writer.set("fakemon", "g2")).choices, { fakemon: "g2" });
+    await assert.rejects(writer.set("fakemon_form_1", "k"), /no K candidate/);
+    assert.deepEqual(readChoices(root), { choices: { fakemon: "g2" }, fixByHand: ["fakemon"] });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

@@ -1,7 +1,8 @@
-// The Icon review page's server side (temporary, docs/paperwhite2/design/shiny-icons.md section 13): the candidates
+// The Icon review page's server side (temporary, docs/paperwhite2/design/shiny-icons.md sections 13-14): the candidates
 // tools/paperwhite2/icon_remap.py writes to build/icon_review/ (ignored, regenerable), and the user's choice per icon
-// in res/paperwhite2/icon_remap_choices.json ({"choices": {icon key: "ihm" | "j"}, "fix_by_hand": [icon keys]}; an icon
-// without a choice keeps IHM, and the fix-by-hand flag is separate: any icon can carry it, whatever its choice).
+// in res/paperwhite2/icon_remap_choices.json ({"choices": {icon key: method}, "fix_by_hand": [icon keys]}; an icon
+// without a choice keeps IHM, and the fix-by-hand flag is separate: any icon can carry it, whatever its choice). Every
+// icon offers IHM and J; an icon flagged to fix by hand when the candidates were generated also offers G2, H, IH and K.
 
 import { execFile } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -11,8 +12,10 @@ import { fileText, fromPlain, parseJson, toPlain } from "../shared/json.ts";
 export const REVIEW_DIR = "build/icon_review";
 export const CHOICES_FILE = "res/paperwhite2/icon_remap_choices.json";
 export const REMAP_TOOL = "tools/paperwhite2/icon_remap.py";
-export const CHOICES = ["ihm", "j"] as const;
+export const CHOICES = ["ihm", "j", "g2", "h", "ih", "k"] as const;
 export type IconChoice = (typeof CHOICES)[number];
+/** The methods every icon offers; the others only a flagged icon's candidates (IconReviewEntry.candidates). */
+export const BASE_CHOICES: readonly IconChoice[] = ["ihm", "j"];
 
 /** A suspect part (section 12): A, its shiny behaviour disagrees with its colour family's; B, the icon's share of
  * pixels that change when shiny is far from the battle sprite's. */
@@ -29,6 +32,8 @@ export interface IconReviewEntry {
   differ_px: { normal: number; shiny: number };
   suspects: IconSuspect[];
   suspect_px: number;
+  /** A flagged icon's extra candidates (g2, h, ih, k); empty or missing for the others. */
+  candidates?: IconChoice[];
 }
 
 export interface IconReviewIndex {
@@ -40,8 +45,11 @@ export interface IconReviewIndex {
   entries: IconReviewEntry[];
 }
 
-/** One candidate: its pixels (2048 bytes as hex: two 32x32 frames, frame 0 above), slots 1-13 as battle indices. */
-export interface IconCandidate { pixels: string; slots: number[]; swaps: number[][]; moves?: unknown[] }
+/** One candidate: its pixels (2048 bytes as hex: two 32x32 frames, frame 0 above), slots 1-13 as battle indices.
+ * swaps: the twin swaps (IHM, J, K); moves: J's family moves; K's changes and the pick it started from. */
+export interface IconCandidate {
+  pixels: string; slots: number[]; swaps?: number[][]; moves?: unknown[]; changes?: string[]; base?: "ihm" | "j";
+}
 
 /** icons/<key>/icon.json. */
 export interface IconReviewDetail {
@@ -59,6 +67,8 @@ export interface IconReviewDetail {
   greys: string[];
   ihm: IconCandidate;
   j: IconCandidate;
+  /** A flagged icon's extra candidates. */
+  candidates?: Partial<Record<IconChoice, IconCandidate>>;
   suspects: (IconSuspect & { index: number })[];
   front?: { width: number; height: number; pixels: string; path: string };
 }
@@ -131,6 +141,8 @@ export class ChoiceWriter {
     if (choice !== null && !isChoice(choice)) return Promise.reject(new Error(`Not a choice: ${String(choice)}`));
     const entry = this.entryOf(key);
     if (entry instanceof Error) return Promise.reject(entry);
+    if (choice !== null && !BASE_CHOICES.includes(choice) && entry && !(entry.candidates ?? []).includes(choice))
+      return Promise.reject(new Error(`${key} has no ${choice.toUpperCase()} candidate: only icons flagged to fix by hand get one (generate again after flagging)`));
     return this.change((file) => {
       if (choice === null || (choice === "ihm" && entry && !entry.differ)) delete file.choices[key];
       else file.choices[key] = choice;

@@ -25,3 +25,4 @@
 .ir-flag { font-family: var(--mono); font-size: 11px; padding: 0 4px; border-radius: 3px; background: var(--warning-soft); color: var(--warning); }
 .ir-message { color: var(--error); font-size: 12px; }
 .ir-hand { background: var(--accent-soft); color: var(--accent); }
+.ir-key { font-family: var(--mono); font-size: 11px; padding: 0 5px; border: 1px solid var(--border); border-radius: 3px; color: var(--muted); }

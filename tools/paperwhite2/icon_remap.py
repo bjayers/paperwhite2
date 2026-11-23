@@ -25,11 +25,21 @@ Two candidates per icon, built in stages (each section's script of the experimen
 
 And the suspects list of section 12 (parts whose shiny behaviour disagrees with the battle sprite's), on IHM.
 
+The icons the user flagged to fix by hand (fix_by_hand in res/paperwhite2/icon_remap_choices.json) also get four
+more candidates for the review page's Flagged mode (section 14):
+
+- **G2** (section 8): F kept unless the registered battle sprite clearly disagrees, the vanilla outline greys kept.
+- **H** and **IH** as above (H's own pixels; IH before the twin swap).
+- **K** (section 14): the user's pick of IHM and J corrected for the error classes measured on the flagged icons
+  (grey where the art has a pale tint, a missing battle colour family, collapsed shades, too dark), then the twin
+  swap.
+
     icon_remap.py generate [--res DIR] [--out DIR] [-j N] [KEY ...]
-        writes OUT (default build/icon_review/): index.json (every icon, whether IHM and J differ, its suspects),
-        differ.txt, and per icon icons/<key>/: icon.json (pixels, slots, palettes, battle front), vanilla.png,
-        ihm.png and j.png (index images with the normal colours through their slots). Regenerable; nothing in res/
-        changes. KEYs limit it to some icons (with their palette-only forms).
+        writes OUT (default build/icon_review/): index.json (every icon, whether IHM and J differ, its suspects,
+        the flagged icons' extra candidates), differ.txt, and per icon icons/<key>/: icon.json (pixels, slots,
+        palettes, battle front, and for a flagged icon its "candidates" g2, h, ih and k), vanilla.png, ihm.png and
+        j.png (index images with the normal colours through their slots). Regenerable; nothing in res/ changes.
+        KEYs limit it to some icons (with their palette-only forms).
 
 Standard library only (the build's python3).
 """
@@ -149,7 +159,9 @@ def method_f(px, ipal, battle) -> bytes:
 
 # ---------------------------------------------------------------- battle ramps (G, with H's pale-is-white rule)
 
-def build_ramps(battle):
+def build_ramps(battle, pale=True):
+    """The used battle indices grouped into hue ramps. pale: H's rule that pale colours (L 85+, chroma under 5.5)
+    read as white and join the neutral ramp (G, section 8, ran without it)."""
     lab = battle.normal_lab
     used = pr.candidates(battle)
     adj = battle.sprite.adj
@@ -163,7 +175,7 @@ def build_ramps(battle):
         return c / (min(adj_total[a], adj_total[b]) or 1)
 
     # Pale colours (L 85+, chroma under 5.5) read as white and join the neutral ramp
-    neutral = [i for i in used if chroma(lab[i]) < NEUTRAL_C or (lab[i][0] >= 85 and chroma(lab[i]) < 5.5)]
+    neutral = [i for i in used if chroma(lab[i]) < NEUTRAL_C or (pale and lab[i][0] >= 85 and chroma(lab[i]) < 5.5)]
     weak = [i for i in used if i not in neutral and (chroma(lab[i]) < 8 or (lab[i][0] < 35 and chroma(lab[i]) < 12))]
     strong = [i for i in used if i not in neutral and i not in weak]
     # Complete linkage on hue: every pair within 20 degrees, or 28 when the art puts the two clusters side by side
@@ -497,14 +509,174 @@ def merge_slots(grid, counts, live, lab, ramp_of, flat):
     return grid
 
 
+# ---------------------------------------------------------------- G2 (section 8)
+
+FIT_GATE = 0.50        # G: overrides need the icon's registration IoU (worse frame) at least this
+
+
+def method_g2(job, px, ipal, fpx, battle):
+    """G2's pixels and slots (section 8, the conservative version the user reviewed in round 2): F kept unless the
+    battle sprite under a part clearly disagrees, overridden parts shaded by vanilla lightness rank on the ramp's
+    colours under them, the vanilla outline greys in slots 14-15. Ramps without H's pale-is-white rule."""
+    ramps, ramp_of = build_ramps(battle, pale=False)
+    st = registered_units(job, px, ipal, fpx, battle, ramps, ramp_of)
+    rows, frows, lab, opx, parts = st["rows"], st["frows"], st["lab"], st["opx"], st["parts"]
+    vlab, pvote, ivote, pcover, rhc = st["vlab"], st["pvote"], st["ivote"], st["pcover"], st["rhc"]
+    units, regs = st["units"], st["regs"]
+    neutral_ramp = next((k for k, m in enumerate(ramps) if all(chroma(lab[i]) < NEUTRAL_C for i in m)), None)
+
+    # Family votes: small parts of one vanilla colour family (with the same F ramp) decide together
+    fam_votes = collections.defaultdict(collections.Counter)
+    fam_n = collections.Counter()
+    for u in units:
+        if not u["pix"]:
+            continue
+        fm = collections.Counter(ramp_of.get(frows[y][x], -1) for x, y in u["pix"]).most_common(1)[0][0]
+        key = (parts[u["g"]]["fam"], fm)
+        fam_n[key] += len(u["pix"])
+        for q in u["pix"]:
+            fam_votes[key].update(pvote[q])
+    fam_top = {k: v.most_common(1)[0][0] for k, v in fam_votes.items() if v and fam_n[k] >= 24}
+    icon_fit = min(r_["iou"] for r_ in regs if r_) if any(regs) else 0
+
+    for u in units:
+        pix = u["pix"]
+        if not pix:
+            continue
+        ivotes = collections.Counter()
+        for q in pix:
+            ivotes.update(ivote[q])
+        u["ivotes"] = ivotes
+        votes = collections.Counter()
+        for q in pix:
+            votes.update(pvote[q])
+        tot = sum(votes.values())
+        cov = sum(pcover[q] for q in pix) / len(pix)
+        fmaj = collections.Counter(ramp_of.get(frows[y][x], -1) for x, y in pix).most_common(1)[0][0]
+        top, topv = votes.most_common(1)[0] if votes else (None, 0)
+        purity = topv / tot if tot else 0
+        f_chroma = sum(chroma(lab[frows[y][x]]) for x, y in pix) / len(pix)
+        ub_chroma = sum(chroma(lab[i]) * c for i, c in ivotes.items()) / (sum(ivotes.values()) or 1)
+        if len(pix) < DETAIL_PX:
+            how = "detail"
+        elif top is None or cov < 0.6:
+            how = "keep-weak"
+        elif top == fmaj:
+            how = "agree"
+        else:
+            how = "keep-disagree"
+            ratio = topv / (votes.get(fmaj, 0) or 1e-9)
+            if icon_fit >= FIT_GATE and purity >= 0.6 and ratio >= 2.0:
+                if top != neutral_ramp and f_chroma < 5 and ub_chroma >= max(5.5, f_chroma + 3):
+                    how = "override"
+                elif top != neutral_ramp and f_chroma < 8 and ub_chroma >= f_chroma + 5:
+                    how = "override"
+                elif (ratio >= 2.5 and (len(pix) >= 24 or fam_top.get((parts[u["g"]]["fam"], fmaj)) == top)
+                      and top != neutral_ramp and fmaj >= 0 and fmaj != neutral_ramp
+                      and math.fabs(((rhc[top][0] - rhc[fmaj][0] + 180) % 360) - 180) >= 30):
+                    how = "override"
+                elif top == neutral_ramp and len(pix) >= 24 and purity >= 0.85 and f_chroma >= 12:
+                    how = "override"
+        u.update(how=how, ramp=top if how == "override" else fmaj, votes=votes, fmaj=fmaj, fam=parts[u["g"]]["fam"])
+
+    # Consensus: when most of a family's pixels (with the same F ramp) switch to one ramp, the rest follows where the
+    # battle art under it doesn't prefer F's ramp
+    fam_groups = collections.defaultdict(list)
+    for u in units:
+        if u["pix"] and "fmaj" in u and len(u["pix"]) >= DETAIL_PX:
+            fam_groups[(u["fam"], u["fmaj"])].append(u)
+    for us in fam_groups.values():
+        total = sum(len(u["pix"]) for u in us)
+        over = collections.Counter()
+        for u in us:
+            if u["how"] == "override":
+                over[u["ramp"]] += len(u["pix"])
+        if not over:
+            continue
+        R, n = over.most_common(1)[0]
+        if n < 0.5 * total:
+            continue
+        for u in us:
+            if u["how"] not in ("override", "detail") and u["votes"].get(R, 0) >= u["votes"].get(u["fmaj"], 0):
+                u.update(how="override", ramp=R)
+
+    # F's shading kept unless it inverts the vanilla lightness order or moves it by more than 18 L
+    for u in units:
+        pix = u["pix"]
+        if not pix or "fmaj" not in u:
+            continue
+        counts = collections.Counter(rows[y][x] for x, y in pix)
+        fl = collections.defaultdict(list)
+        for x, y in pix:
+            fl[rows[y][x]].append(lab[frows[y][x]][0])
+        levels = sorted(counts, key=lambda v: vlab[v][0])
+        fmean = [sum(fl[v]) / len(fl[v]) for v in levels]
+        inverted = any(fmean[i + 1] < fmean[i] - 5 for i in range(len(levels) - 1))
+        dev = sum(abs(sum(fl[v]) / len(fl[v]) - vlab[v][0]) * counts[v] for v in levels) / len(pix)
+        u["reshade"] = (u["how"] in ("agree", "keep-disagree", "keep-weak") and u["fmaj"] >= 0
+                        and len(pix) >= DETAIL_PX and (inverted or dev > 18))
+
+    def shade_part(u):
+        pix, ramp = u["pix"], u["ramp"]
+        counts = collections.Counter(rows[y][x] for x, y in pix)
+        levels = sorted(counts, key=lambda v: vlab[v][0])
+        if ramp is None or ramp < 0:
+            return None
+        iv = u["ivotes"]
+        tot = sum(iv.values()) or 1
+        shades = []
+        for i, c in iv.items():
+            if ramp_of.get(i) == ramp and c / tot >= 0.08:
+                shades.append(i)
+            elif (c / tot >= 0.15 and ramp_of.get(i) != neutral_ramp and ramp != neutral_ramp
+                  and math.fabs(((math.degrees(math.atan2(lab[i][2], lab[i][1])) - rhc[ramp][0] + 180) % 360) - 180) <= 40):
+                shades.append(i)
+        if len(shades) < min(2, len(levels)):
+            shades = list(ramps[ramp])
+        shades.sort(key=lambda i: lab[i][0])
+        mapped, _ = shade_dp([(vlab[v][0], counts[v]) for v in levels], shades, lab)
+        return dict(zip(levels, mapped))
+
+    grid = [[0] * 32 for _ in range(64)]
+    for u in units:
+        pix = u["pix"]
+        m = shade_part(u) if pix and (u["how"] == "override" or u["reshade"]) else None
+        for x, y in pix:
+            grid[y][x] = m[rows[y][x]] if m else frows[y][x]
+    for (x, y) in opx:
+        grid[y][x] = 0x100 + OUTLINE_GREYS.index(tuple(ipal[rows[y][x]]))
+    # Slots 1-13: the battle indices used (the closest same-ramp pair merged while there are too many)
+    counts = collections.Counter(v for r_ in grid for v in r_ if 0 < v < 0x100)
+    remap = {v: v for v in counts}
+    live = dict(counts)
+    while len(live) > BATTLE_SLOTS:
+        bestm = None
+        for a in live:
+            for b in live:
+                if a != b:
+                    cost = live[a] * pr.delta(lab[a], lab[b]) + (0 if ramp_of.get(a) == ramp_of.get(b) else 1000)
+                    if bestm is None or cost < bestm[0]:
+                        bestm = (cost, a, b)
+        _, a, b = bestm
+        live[b] += live.pop(a)
+        for k, v in remap.items():
+            if v == a:
+                remap[k] = b
+    slots = sorted(live)
+    slot_of = {v: 1 + n for n, v in enumerate(slots)}
+    out = bytes((14 + v - 0x100 if v >= 0x100 else slot_of[remap[v]]) if v else 0 for r_ in grid for v in r_)
+    return out, slots
+
+
 # ---------------------------------------------------------------- H (sections 8-9)
 
-def method_h(job, px, ipal, fpx, battle):
-    """H's pixels (slots 1-13 battle indices, 14-15 the greys) and slots."""
+def registered_units(job, px, ipal, fpx, battle, ramps, ramp_of) -> dict:
+    """G and H's first stage (sections 8-9): the battle front registered onto each icon frame, the icon cut into
+    parts of one vanilla colour family (linked across the frames), each pixel's votes from the battle pixels under
+    it, and the units (parts, split where the art under them clearly shows another ramp). Its local names."""
     rows = [list(px[y * 32:(y + 1) * 32]) for y in range(64)]
     frows = [list(fpx[y * 32:(y + 1) * 32]) for y in range(64)]
     lab = battle.normal_lab
-    ramps, ramp_of = build_ramps(battle)
     art = Path(job["art"])
     front = art / ("front_single_female.png" if job["kind"] == "female" and (art / "front_single_female.png").is_file()
                    else "front_single.png")
@@ -621,6 +793,17 @@ def method_h(job, px, ipal, fpx, battle):
             units.append(dict(g=g, pix=[q for q in pix if q in rest], sub=False))
         else:
             units.append(dict(g=g, pix=pix, sub=False))
+
+    return dict(locals())
+
+
+def method_h(job, px, ipal, fpx, battle):
+    """H's pixels (slots 1-13 battle indices, 14-15 the greys) and slots."""
+    ramps, ramp_of = build_ramps(battle)
+    st = registered_units(job, px, ipal, fpx, battle, ramps, ramp_of)
+    rows, frows, lab, art, boutline = st["rows"], st["frows"], st["lab"], st["art"], st["boutline"]
+    used, fam, vlab, opx, parts = st["used"], st["fam"], st["vlab"], st["opx"], st["parts"]
+    pvote, ivote, pcover, rhc, units = st["pvote"], st["ivote"], st["pcover"], st["rhc"], st["units"]
 
     # Each unit's registration evidence: its battle-index votes, F's ramp, the vote's top ramp, cover and purity
     for u in units:
@@ -1264,6 +1447,197 @@ def suspects(job, pixels, slots, ramps, battle) -> list[dict]:
     return found
 
 
+# ---------------------------------------------------------------- K (section 14), for the icons flagged to fix by hand
+
+K_TINT_L = 8.0         # a pale tinted battle colour within this lightness of a grey one may take its place
+K_MISSING = 0.10       # a battle colour family with this share of the art...
+K_ABSENT = 0.02        # ...and under this share of the icon is missing
+K_HUE = 60.0           # a family may only move to a missing ramp within this hue (both coloured)
+K_DARK = 15.0          # a colour this much darker than its vanilla colour...
+K_CLOSER = 8.0         # ...takes a lighter shade of its ramp that is this much closer
+
+
+def method_k(job, px, ipal, battle, base_px, base_slots):
+    """K: the user's pick (IHM or J) of a flagged icon, corrected for the four error classes measured on the flagged
+    icons (section 14), each a change of one vanilla colour's battle index, so a connected group of one vanilla index
+    stays one colour:
+
+    1. grey for tint: a vanilla colour on a grey/white battle index (chroma < 4) takes the pale tinted colour (chroma
+       4-12, within 8 L) the battle art uses at least twice as much;
+    2. missing family: a battle colour family with 10% or more of the art (front + back) and under 2% of the icon
+       takes the vanilla colour family closest to it in hue (within 60 degrees, or a grey family for a weakly coloured
+       ramp) and area, when its old family stays represented; its colours shaded in vanilla lightness order;
+    3. collapsed shades: colours of one vanilla family that share one battle index are spread over their ramp again;
+    4. too dark: a colour 15 L or more darker than its vanilla colour takes a lighter shade of its ramp 8 L closer,
+       keeping the lightness order of the ramp's other colours;
+
+    then the most-used twin swap. Returns the pixels, the slots, the swaps and the changes made."""
+    lab = battle.normal_lab
+    ramps, ramp_of = build_ramps(battle)
+    vlab = {v: oklab(ipal[v]) for v in range(16)}
+    used = sorted(set(px) - {0})
+    fam, _ = vanilla_families(ipal, used)
+    pairs = collections.Counter((px[i], base_slots[base_px[i] - 1]) for i in range(len(px))
+                                if 0 < base_px[i] <= len(base_slots))
+    total = sum(pairs.values()) or 1
+    vmap = {}
+    changes = []
+
+    def target(pair):
+        return vmap.get(pair, pair[1])
+
+    # 1. grey for tint
+    for (v, t), n in sorted(pairs.items()):
+        if chroma(lab[t]) >= NEUTRAL_C or n < 6:
+            continue
+        cands = [u for u in battle.used if 4 <= chroma(lab[u]) <= 12 and abs(lab[u][0] - lab[t][0]) <= K_TINT_L
+                 and battle.used[u] >= 2 * battle.used.get(t, 0)]
+        if cands:
+            u = max(cands, key=lambda k: (battle.used[k], -k))
+            vmap[(v, t)] = u
+            changes.append(f"grey for tint: vanilla {v} {t}->{u}")
+
+    # 2. missing family
+    bcount = collections.Counter()
+    for path in singles(job):
+        for v in read_indexed_png(path)[2]:
+            if v and v not in battle.sprite.outline and v in ramp_of:
+                bcount[ramp_of[v]] += 1
+    bt = sum(bcount.values()) or 1
+    bshare = {r: c / bt for r, c in bcount.items()}
+
+    def ishares():
+        out = collections.Counter()
+        for pair, n in pairs.items():
+            out[ramp_of.get(target(pair), -1)] += n / total
+        return out
+
+    def ramp_hue(r):
+        a = b = w = 0.0
+        for i in ramps[r]:
+            k = battle.used.get(i, 1)
+            a += lab[i][1] * k
+            b += lab[i][2] * k
+            w += k
+        return hue_of(a, b), math.hypot(a / w, b / w)
+
+    dark = {i for i in battle.used if lab[i][0] < DARK_L} | set(battle.sprite.outline)
+    for r in sorted(bshare, key=lambda r: -bshare[r]):
+        cur = ishares()
+        if bshare[r] < K_MISSING or cur[r] >= K_ABSENT:
+            continue
+        rh, rc = ramp_hue(r)
+        best = None
+        fams = collections.defaultdict(list)
+        for pair in pairs:
+            fams[fam[pair[0]]].append(pair)
+        for f, ps in fams.items():
+            area = sum(pairs[q] for q in ps) / total
+            olds = collections.Counter()
+            for q in ps:
+                olds[ramp_of.get(target(q), -1)] += pairs[q] / total
+            r0 = olds.most_common(1)[0][0]
+            if r0 == r or (r0 in bshare and bshare[r0] >= K_MISSING and cur[r0] - area < 0.5 * bshare[r0]):
+                continue
+            a = sum(vlab[q[0]][1] * pairs[q] for q in ps)
+            b = sum(vlab[q[0]][2] * pairs[q] for q in ps)
+            fc = math.hypot(a, b) / (sum(pairs[q] for q in ps) or 1)
+            if fc >= NEUTRAL_C and rc >= NEUTRAL_C:
+                h = hd(hue_of(a, b), rh) * 180
+                if h > K_HUE:
+                    continue
+                cost = h / 180 + abs(area - bshare[r])
+            elif fc < NEUTRAL_C and rc < 10:
+                cost = 0.3 + abs(area - bshare[r])
+            else:
+                continue
+            if best is None or cost < best[0]:
+                best = (cost, f, ps)
+        if best is None:
+            continue
+        _, f, ps = best
+        counts = collections.Counter()
+        for q in ps:
+            counts[q[0]] += pairs[q]
+        levels = sorted(counts, key=lambda v: vlab[v][0])
+        shades_ = sorted(ramps[r], key=lambda i: lab[i][0])
+        mapped, _ = shade([(vlab[v][0], counts[v], f) for v in levels], shades_, lab, dark, [None] * len(levels))
+        m = dict(zip(levels, mapped))
+        for q in ps:
+            vmap[q] = m[q[0]]
+        changes.append(f"missing family: vanilla family {f} onto ramp {ramps[r]} ({100 * bshare[r]:.0f}% of the art)")
+
+    # 3. collapsed shades within one family
+    groups = collections.defaultdict(set)
+    for pair in pairs:
+        groups[(fam[pair[0]], target(pair))].add(pair[0])
+    for (f, t), vs in sorted(groups.items(), key=lambda kv: str(kv[0])):
+        vs = sorted(vs, key=lambda v: vlab[v][0])
+        if len(vs) < 2 or vlab[vs[-1]][0] - vlab[vs[0]][0] < 6 or t not in ramp_of:
+            continue
+        r = ramp_of[t]
+        if len(ramps[r]) < len(vs):
+            continue
+        counts = collections.Counter()
+        for pair, n in pairs.items():
+            if fam[pair[0]] == f and target(pair) == t:
+                counts[pair[0]] += n
+        shades_ = sorted(ramps[r], key=lambda i: lab[i][0])
+        mapped, _ = shade([(vlab[v][0], counts[v], f) for v in vs], shades_, lab, dark, [None] * len(vs))
+        if len(set(mapped)) <= 1:
+            continue
+        m = dict(zip(vs, mapped))
+        for pair in pairs:
+            if fam[pair[0]] == f and target(pair) == t:
+                vmap[pair] = m[pair[0]]
+        changes.append(f"collapsed shades: vanilla {vs} {t}->{[m[v] for v in vs]}")
+
+    # 4. too dark
+    for pair in sorted(pairs, key=lambda q: -pairs[q]):
+        t = target(pair)
+        v = pair[0]
+        if t not in ramp_of:
+            continue
+        gap = vlab[v][0] - lab[t][0]
+        if gap < K_DARK:
+            continue
+        r = ramp_of[t]
+        others = [(vlab[q[0]][0], lab[target(q)][0]) for q in pairs if q != pair and ramp_of.get(target(q)) == r]
+        best = None
+        for u in ramps[r]:
+            if lab[u][0] <= lab[t][0] or (u in dark and vlab[v][0] >= DARK_FOR):
+                continue
+            d = abs(lab[u][0] - vlab[v][0])
+            if d > gap - K_CLOSER:
+                continue
+            if any((Lv > vlab[v][0] and Lt < lab[u][0]) or (Lv < vlab[v][0] and Lt > lab[u][0]) for Lv, Lt in others):
+                continue
+            if best is None or d < best[0]:
+                best = (d, u)
+        if best:
+            vmap[pair] = best[1]
+            changes.append(f"too dark: vanilla {v} {t}->{best[1]}")
+
+    grid = list(base_px)
+    for i in range(len(px)):
+        b = base_px[i]
+        if 0 < b <= len(base_slots):
+            grid[i] = 0x100 + target((px[i], base_slots[b - 1]))
+    counts = collections.Counter(v - 0x100 for v in grid if v >= 0x100)
+    live = sorted(counts)
+    while len(live) > BATTLE_SLOTS:  # merge the closest pair on one ramp (not reached so far)
+        a, b = min(((a, b) for a in live for b in live if a != b),
+                   key=lambda q: counts[q[0]] * pr.delta(lab[q[0]], lab[q[1]]) + (0 if ramp_of.get(q[0]) == ramp_of.get(q[1]) else 1000))
+        grid = [0x100 + b if v == 0x100 + a else v for v in grid]
+        counts[b] += counts.pop(a)
+        live.remove(a)
+    slot_of = {v: 1 + n for n, v in enumerate(live)}
+    out = bytes(slot_of[v - 0x100] if v >= 0x100 else v for v in grid)
+    assert all(o for v, o in zip(px, out) if v), "a coloured pixel became transparent"
+    slots, swaps = swap_most_used(battle, live)
+    return out, slots, swaps, changes
+
+
 # ---------------------------------------------------------------- one icon
 
 def run_base(job) -> dict:
@@ -1279,8 +1653,13 @@ def run_base(job) -> dict:
     hpx, hslots = method_h(job, px, ipal, fpx, battle)
     ih = method_i(job, px, ipal, fpx, hpx, hslots, battle, False)
     j = method_i(job, px, ipal, fpx, hpx, hslots, battle, True)
-    return dict(job, ih=dict(pixels=ih["pixels"].hex(), slots=ih["slots"], ramps=ih["ramps"]),
-                jr=dict(pixels=j["pixels"].hex(), slots=j["slots"], moves=j["moves"]))
+    out = dict(job, ih=dict(pixels=ih["pixels"].hex(), slots=ih["slots"], ramps=ih["ramps"]),
+               jr=dict(pixels=j["pixels"].hex(), slots=j["slots"], moves=j["moves"]))
+    if job.get("flagged"):
+        g2, g2slots = method_g2(job, px, ipal, fpx, battle)
+        out["extra"] = dict(g2=dict(pixels=g2.hex(), slots=g2slots), h=dict(pixels=hpx.hex(), slots=hslots),
+                            ih=dict(pixels=ih["pixels"].hex(), slots=ih["slots"]))
+    return out
 
 
 def finish(result) -> dict:
@@ -1294,6 +1673,15 @@ def finish(result) -> dict:
     out["ihm"] = dict(pixels=result["ih"]["pixels"], slots=ihm_slots, swaps=ihm_swaps)
     out["j"] = dict(pixels=result["jr"]["pixels"], slots=j_slots, swaps=j_swaps, moves=result["jr"]["moves"])
     out["suspects"] = suspects(result, ihm_px, ihm_slots, result["ih"]["ramps"], battle)
+    if result.get("flagged") and "extra" in result:
+        # K starts from the user's pick of IHM and J (from IHM once the pick is another method)
+        base = result.get("pick", "ihm") if result.get("pick", "ihm") in ("ihm", "j") else "ihm"
+        px, ipal = load_icon(Path(result["icon"]))
+        kpx, kslots, kswaps, kchanges = method_k(result, px, ipal, battle, bytes.fromhex(out[base]["pixels"]),
+                                                 out[base]["slots"])
+        out["candidates"] = dict(result["extra"], k=dict(pixels=kpx.hex(), slots=kslots, swaps=kswaps,
+                                                         changes=kchanges, base=base))
+        out.pop("extra", None)
     return out
 
 
@@ -1323,6 +1711,11 @@ def difference(r) -> dict:
 def generate(res: Path, names: list[str], out: Path, workers: int = 8, only: set[str] | None = None) -> dict:
     """Runs every icon (or the keys in only, with their palette-only forms) and writes out/."""
     all_jobs = jobs(res / "pokemon", names)
+    review = read_choices(res / CHOICES_FILE)
+    flagged = set(review["fix_by_hand"])
+    flagged_bases = flagged | {k.split("_form_")[0] for k in flagged}
+    for j in all_jobs:
+        j["flagged"] = j["key"] in flagged_bases
     base_jobs = [j for j in all_jobs if j["kind"] != "palette_form" and (not only or j["key"] in only)]
     if workers > 1 and len(base_jobs) > 1:
         with Pool(workers) as pool:
@@ -1346,6 +1739,9 @@ def generate(res: Path, names: list[str], out: Path, workers: int = 8, only: set
         if "error" in r:
             errors.append(dict(key=r["key"], error=r["error"]))
             continue
+        r = dict(r, flagged=r["key"] in flagged, pick=review["choices"].get(r["key"], "ihm"))
+        if not r["flagged"]:
+            r.pop("extra", None)
         results.append(r)
     if workers > 1 and len(results) > 1:
         with Pool(workers) as pool:
@@ -1364,7 +1760,8 @@ def generate(res: Path, names: list[str], out: Path, workers: int = 8, only: set
         index.append(dict(key=r["key"], label=r["label"], num=r["num"], kind=r["kind"], differ=d["differ"],
                           differ_frac=d["frac"], differ_px=dict(normal=d["normal"], shiny=d["shiny"]),
                           suspects=[dict(kind=s["kind"], px=s["px"], why=s["why"]) for s in r["suspects"]],
-                          suspect_px=sum({s["index"]: s["px"] for s in r["suspects"]}.values())))
+                          suspect_px=sum({s["index"]: s["px"] for s in r["suspects"]}.values()),
+                          candidates=sorted(r.get("candidates", {}))))
         if d["differ"]:
             differ_lines.append(f"{r['label']:<7} {r['key']:<24} {100 * d['frac']:5.1f}% of the inner pixels "
                                 f"(normal {d['normal']}, shiny {d['shiny']} px)")
@@ -1376,6 +1773,20 @@ def generate(res: Path, names: list[str], out: Path, workers: int = 8, only: set
                                     "(any pixel's normal or shiny colour), in dex order.\n\n"
                                     + "\n".join(differ_lines) + "\n")
     return summary
+
+
+CHOICES_FILE = Path("paperwhite2") / "icon_remap_choices.json"   # under res/
+METHODS = ("ihm", "j", "g2", "h", "ih", "k")
+
+
+def read_choices(path: Path) -> dict:
+    """The user's review: {"choices": {key: method}, "fix_by_hand": [keys]} (empty while the file is missing)."""
+    out = {"choices": {}, "fix_by_hand": []}
+    if path.is_file():
+        data = json.loads(path.read_text())
+        out["choices"] = {k: v for k, v in (data.get("choices") or {}).items() if v in METHODS}
+        out["fix_by_hand"] = [k for k in data.get("fix_by_hand") or [] if isinstance(k, str)]
+    return out
 
 
 def rel(res: Path, path) -> str:
@@ -1397,6 +1808,8 @@ def write_icon(res: Path, r, folder: Path):
                   vanilla=dict(pixels=vpx.hex(), palette=hexes(vpal[:16])),
                   normal=hexes(normal[:16]), shiny=hexes(shiny[:16]), greys=hexes(OUTLINE_GREYS),
                   ihm=r["ihm"], j=r["j"], suspects=r["suspects"])
+    if r.get("candidates"):
+        detail["candidates"] = r["candidates"]
     if front:
         w, h, bpx, _ = read_indexed_png(front)
         detail["front"] = dict(width=w, height=h, pixels=bpx.hex(), path=rel(res, front))
