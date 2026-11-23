@@ -34,6 +34,9 @@
 #include "system/game_data.h"
 #include "system/poke_icon.h"
 #include "system/rtc.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/icon_palettes.h"
+#endif
 
 // What the parts of the Xtransceiver's calls with the game's characters share: the backgrounds, the return button, the
 // sequences, the menu of topics, the list of the party and the input of the lists, named after the ROM's
@@ -189,6 +192,13 @@ static const TouchRect sLocalTvtMenuRects[] = {
 
 // The panels of the party, which are the touch rectangles as well
 // BUG: the table has no end, so the touch check reads on into the tables after it
+#ifdef PAPERWHITE2
+// Paper White 2: the sub OBJ palette row of each party slot's icon, its own colours, normal or shiny
+// (docs/paperwhite2/design/icon-screens.md): the banks' rows 8-10 and the call list's 4-6, which it frees before the
+// call (its rows 0-6 are left over; the return button is 11-13, the wireless icon's 14)
+static const u8 sPaperWhite2IconRows[PARTY_MAX] = { 8, 9, 10, 4, 5, 6 };
+
+#endif
 static const TouchRect sLocalTvtPokeSelectRects[] = {
     { 8, 48, 0, 120 },           { 24, 64, 128, 248 }, { 56, 96, 0, 120 },
     { 72, 112, 128, 248 },       { 104, 144, 0, 120 }, { 120, 160, 128, 248 },
@@ -637,8 +647,15 @@ LocalTvtPokeSelect *LocalTvtPokeSelect_Create(const LocalTvtPokeSelectSetup *set
     select->iconCellAnims = ClActSys_LoadCellAnims(arc, PokeIcon_GetCellFile_Sub(), getOBJTileMapping_SubEng(), heapId);
     for (i = 0; i < PokeParty_GetPkmCount(select->setup.party); i++) {
         PartyPkm *pkm = PokeParty_GetPkm(select->setup.party, i);
+#ifdef PAPERWHITE2
+        // Paper White 2: the icon on its battle palette's slots, its colours in the slot's row
+        u32 iconFile = PaperWhite2_GetIconBattleFileOfPkm(PokeParty_ToBoxPkm(pkm));
+        u32 iconPalette = sPaperWhite2IconRows[i];
+        NNSG2dImagePaletteProxy proxy;
+#else
         u32 iconFile = PokeIcon_GetFileOfPkm(PokeParty_ToBoxPkm(pkm));
         u32 iconPalette = PokeIcon_GetPaletteOfPkm(PokeParty_ToBoxPkm(pkm));
+#endif
         ClActorSetup actorSetup;
 
         MI_CpuFill8(&actorSetup, 0, sizeof(actorSetup));
@@ -648,7 +665,16 @@ LocalTvtPokeSelect *LocalTvtPokeSelect_Create(const LocalTvtPokeSelectSetup *set
         select->iconChars[i] = ClActSys_LoadChars(arc, iconFile, FALSE, 1, heapId);
         select->icons[i] = ClActor_Create(select->setup.unit, select->iconChars[i], select->iconPalette,
                                           select->iconCellAnims, &actorSetup, 1, heapId);
+#ifdef PAPERWHITE2
+        // Paper White 2: rows below the banks' too, so the actor's palette counts from row 0
+        PaperWhite2_LoadIconPaletteOfPkm(PokeParty_ToBoxPkm(pkm), TRUE, iconPalette);
+        ClActor_GetPlttProxy(select->icons[i], &proxy);
+        NNS_G2dSetImagePaletteLocation(&proxy, NNS_G2D_VRAM_TYPE_2DSUB, 0);
+        ClActor_SetPlttProxy(select->icons[i], &proxy);
         ClActor_SetPalette(select->icons[i], iconPalette, 1);
+#else
+        ClActor_SetPalette(select->icons[i], iconPalette, 1);
+#endif
         ClActor_SetVisible(select->icons[i], FALSE);
     }
     GFL_ArcToolFree(arc);

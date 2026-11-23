@@ -24,6 +24,9 @@
 #include "system/str_tool.h"
 #include "system/wordset.h"
 #include "text/system/0104.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/icon_palettes.h"
+#endif
 
 #define PARTY_SELECT_LIST_MAX 6
 
@@ -214,6 +217,49 @@ static int PartySelectList_GetResult(PartySelectList *psl, u32 *ineligible) {
     return psl->cursor;
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: each icon on its own battle palette, normal or shiny, in a main OBJ row of its slot. The party's and
+// the Battle Box's icons never show together, so slot i of either takes the same row, written when its side shows
+// (PartySelectList_ShowIcons): the banks' rows 6-8, where the icons' palette resource is and which the actors' palettes
+// count from, and 10-12 (9 is the item icons', the field's main OBJs leave 10-15 unused)
+#define PARTY_SELECT_ICON_PALETTE_ROW 6
+static const u8 sPaperWhite2IconRows[PARTY_SELECT_LIST_MAX] = { 6, 7, 8, 10, 11, 12 };
+
+static u32 PartySelectList_GetIconFile(PokeParty *party, int i) {
+    return PaperWhite2_GetIconBattleFileOfPkm(PokeParty_GetBoxPkm(PokeParty_GetPkm(party, i)));
+}
+
+static void PartySelectList_LoadIconColours(PokeParty *party) {
+    int count = PokeParty_GetPkmCount(party);
+    int i;
+
+    for (i = 0; i < count; i++) {
+        PaperWhite2_LoadIconPaletteOfPkm(PokeParty_GetBoxPkm(PokeParty_GetPkm(party, i)), FALSE,
+                                         sPaperWhite2IconRows[i]);
+    }
+}
+
+static void PartySelectList_LoadIconResources(PartySelectList *psl) {
+    ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_POKEICON, psl->heapId);
+    int count;
+    int i;
+
+    psl->iconPalette = ClActSys_LoadPlttEx(arc, PokeIcon_GetPaletteFile(), CLACT_VRAM_MAIN, 192, psl->heapId);
+    psl->iconCells = ClActSys_LoadCellAnims(arc, PokeIcon_GetCellFile_Main(), getOBJTileMapping_MainEng(), psl->heapId);
+    count = PokeParty_GetPkmCount(psl->playerParty);
+    for (i = 0; i < count; i++) {
+        psl->partyChars[i] =
+            ClActSys_LoadChars(arc, PartySelectList_GetIconFile(psl->playerParty, i), 0, 0, psl->heapId);
+    }
+    if (psl->bbox != NULL) {
+        count = PokeParty_GetPkmCount(psl->bbox);
+        for (i = 0; i < count; i++) {
+            psl->bboxChars[i] = ClActSys_LoadChars(arc, PartySelectList_GetIconFile(psl->bbox, i), 0, 0, psl->heapId);
+        }
+    }
+    GFL_ArcToolFree(arc);
+}
+#else
 static void PartySelectList_LoadIconResources(PartySelectList *psl) {
     ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_POKEICON, psl->heapId);
     int count;
@@ -235,6 +281,7 @@ static void PartySelectList_LoadIconResources(PartySelectList *psl) {
     }
     GFL_ArcToolFree(arc);
 }
+#endif
 
 static void PartySelectList_FreeIconResources(PartySelectList *psl) {
     int count;
@@ -282,7 +329,12 @@ static void PartySelectList_CreateIcons(PartySelectList *psl) {
             egg = FALSE;
         }
         sex = PokeParty_GetParam(pkm, PKM_PARAM_SEX, NULL);
+#ifdef PAPERWHITE2
+        // Paper White 2: its slot's row (sPaperWhite2IconRows)
+        palette = sPaperWhite2IconRows[i] - PARTY_SELECT_ICON_PALETTE_ROW;
+#else
         palette = PokeIcon_GetPalette(species, form, sex, egg);
+#endif
         ClActor_SetPalette(psl->partyIcons[i], (u8)palette, 1);
         ClActor_SetVisible(psl->partyIcons[i], FALSE);
     }
@@ -306,7 +358,11 @@ static void PartySelectList_CreateIcons(PartySelectList *psl) {
                 egg = FALSE;
             }
             sex = PokeParty_GetParam(pkm, PKM_PARAM_SEX, NULL);
+#ifdef PAPERWHITE2
+            palette = sPaperWhite2IconRows[i] - PARTY_SELECT_ICON_PALETTE_ROW;
+#else
             palette = PokeIcon_GetPalette(species2, form2, sex, egg);
+#endif
             ClActor_SetPalette(psl->bboxIcons[i], (u8)palette, 1);
             ClActor_SetVisible(psl->bboxIcons[i], FALSE);
         }
@@ -339,6 +395,14 @@ static void PartySelectList_ShowIcons(PartySelectList *psl, u32 mode) {
             ClActor_SetVisible(psl->bboxIcons[i], FALSE);
         }
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the shown side's colours in the slots' rows
+    if (mode == PARTY_SELECT_PARTY) {
+        PartySelectList_LoadIconColours(psl->playerParty);
+    } else if (mode == PARTY_SELECT_BATTLE_BOX && psl->bbox != NULL) {
+        PartySelectList_LoadIconColours(psl->bbox);
+    }
+#endif
     if (mode == PARTY_SELECT_PARTY) {
         for (i = 0; i < PARTY_SELECT_LIST_MAX; i++) {
             if (psl->partyIcons[i] != NULL) {
