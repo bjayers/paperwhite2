@@ -36,6 +36,8 @@
 #include "system/text_speed.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/habitat_dex.h"
+#include "paperwhite2/habitat_icons.h"
+#include "paperwhite2/icon_ext.h"
 
 // Paper White 2: the grid's colours of All and Dark Grass, rows 0-2 and 3-5 as file 50's for water and fishing, a
 // member that tools/paperwhite2/pokedex_evo.py adds (habitat_grid.py derives it from file 49's green)
@@ -87,11 +89,21 @@ static BmpWin *PokedexHabitatGraphic_GetWindow(PokedexHabitatGraphic *graphic, u
 static void PokedexHabitatGraphic_ReloadBlink(PokedexHabitatGraphic *graphic, u32 type);
 static void PokedexHabitatGraphic_CreatePlaces(PokedexHabitatGraphic *graphic);
 
+#ifdef PAPERWHITE2
+// Paper White 2: bank G, unused here, as the main OBJ extended palettes, for the grid's icons
+// (paperwhite2/habitat_icons.h)
+static const BGSysVRAMConfig sPokedexHabitatVRAMConfig = {
+    GX_VRAM_BG_128_A,  GX_VRAM_BGEXTPLTT_NONE, GX_VRAM_SUB_BG_128_C,        GX_VRAM_SUB_BGEXTPLTT_0123_H,
+    GX_VRAM_OBJ_128_B, GX_VRAM_OBJEXTPLTT_0_G, GX_VRAM_SUB_OBJ_128_D,       GX_VRAM_SUB_OBJEXTPLTT_NONE,
+    GX_VRAM_TEX_NONE,  GX_VRAM_TEXPLTT_NONE,   GX_OBJVRAMMODE_CHAR_1D_128K, GX_OBJVRAMMODE_CHAR_1D_128K,
+};
+#else
 static const BGSysVRAMConfig sPokedexHabitatVRAMConfig = {
     GX_VRAM_BG_128_A,  GX_VRAM_BGEXTPLTT_NONE,  GX_VRAM_SUB_BG_128_C,        GX_VRAM_SUB_BGEXTPLTT_0123_H,
     GX_VRAM_OBJ_128_B, GX_VRAM_OBJEXTPLTT_NONE, GX_VRAM_SUB_OBJ_128_D,       GX_VRAM_SUB_OBJEXTPLTT_NONE,
     GX_VRAM_TEX_NONE,  GX_VRAM_TEXPLTT_NONE,    GX_OBJVRAMMODE_CHAR_1D_128K, GX_OBJVRAMMODE_CHAR_1D_128K,
 };
+#endif
 
 void PokedexHabitatGraphic_Init(PokedexHabitatGraphic *graphic, GameData *gameData) {
     GFL_OvlLoad(OVERLAY_UI);
@@ -178,6 +190,9 @@ void PokedexHabitatGraphic_VBlank(PokedexHabitatGraphic *graphic) {
         graphic->paletteRequested = FALSE;
     }
     PaletteFade_Transfer(graphic->paletteFade);
+#ifdef PAPERWHITE2
+    PaperWhite2_HabitatIcons_VBlank(graphic);
+#endif
 }
 
 BOOL PokedexHabitatGraphic_AreIconsLoaded(PokedexHabitatGraphic *graphic) {
@@ -628,6 +643,10 @@ static void PokedexHabitatGraphic_CreateActors(PokedexHabitatGraphic *graphic) {
         PokedexHabitatGraphic_GetCellPos(i, &pos);
         ClActor_SetSurfacePos(icon, &pos, CLACT_SURFACE_MAIN);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the icons draw 8bpp, on extended palettes (paperwhite2/habitat_icons.h)
+    PaperWhite2_HabitatIcons_Init(graphic);
+#endif
 }
 
 static ClActor *PokedexHabitatGraphic_CreateIcon(PokedexHabitatGraphic *graphic, u32 species, u32 form, u32 sex,
@@ -645,6 +664,10 @@ static ClActor *PokedexHabitatGraphic_CreateIcon(PokedexHabitatGraphic *graphic,
     setup.paletteStart = 0;
     setup.paletteCount = 3;
     UIObjRes_Load(&graphic->iconRes[cell], &setup, graphic->unit, HEAPID_POKEDEX_HABITAT);
+#ifdef PAPERWHITE2
+    // Paper White 2: twice the room, for the icon drawn 8bpp (paperwhite2/habitat_icons.h)
+    PaperWhite2_HabitatIcons_InitRes(&graphic->iconRes[cell]);
+#endif
     graphic->icons[cell] =
         UIObjRes_CreateActor(&graphic->iconRes[cell], graphic->unit, 0, 0, 1, HEAPID_POKEDEX_HABITAT);
     ClActor_SetPriority(graphic->icons[cell], 2);
@@ -660,6 +683,11 @@ static void PokedexHabitatGraphic_InitPaletteFade(PokedexHabitatGraphic *graphic
     PaletteFade_AllocBuffer(graphic->paletteFade, PALFADE_BUFFER_SUB_BG, 0x200, HEAPID_POKEDEX_HABITAT);
     PaletteFade_AllocBuffer(graphic->paletteFade, PALFADE_BUFFER_MAIN_OBJ, 0x200, HEAPID_POKEDEX_HABITAT);
     PaletteFade_AllocBuffer(graphic->paletteFade, PALFADE_BUFFER_SUB_OBJ, 0x200, HEAPID_POKEDEX_HABITAT);
+#ifdef PAPERWHITE2
+    // Paper White 2: and the icons' extended palettes, so that they fade too (paperwhite2/habitat_icons.h)
+    PaletteFade_AllocBuffer(graphic->paletteFade, PALFADE_BUFFER_MAIN_OBJ_EX,
+                            HABITAT_ICONS_EXT_PALETTES * ICON_EXT_COLOURS * sizeof(u16), HEAPID_POKEDEX_HABITAT);
+#endif
     PaletteFade_LoadFromVRAM(graphic->paletteFade, PALFADE_BUFFER_MAIN_BG, 0, 0x200);
     PaletteFade_LoadFromVRAM(graphic->paletteFade, PALFADE_BUFFER_SUB_BG, 0, 0x200);
     PaletteFade_LoadFromVRAM(graphic->paletteFade, PALFADE_BUFFER_MAIN_OBJ, 0, 0x200);
@@ -703,6 +731,9 @@ static void PokedexHabitatGraphic_FreePaletteFade(PokedexHabitatGraphic *graphic
     PaletteFade_FreeBuffer(graphic->paletteFade, PALFADE_BUFFER_SUB_BG);
     PaletteFade_FreeBuffer(graphic->paletteFade, PALFADE_BUFFER_MAIN_OBJ);
     PaletteFade_FreeBuffer(graphic->paletteFade, PALFADE_BUFFER_SUB_OBJ);
+#ifdef PAPERWHITE2
+    PaletteFade_FreeBuffer(graphic->paletteFade, PALFADE_BUFFER_MAIN_OBJ_EX);
+#endif
     PaletteFade_Free(graphic->paletteFade);
 }
 
@@ -737,6 +768,11 @@ void PokedexHabitatGraphic_StartFade(PokedexHabitatGraphic *graphic, u8 start, u
 #endif
     PaletteFade_StartFade(graphic->paletteFade, 1 << PALFADE_BUFFER_SUB_OBJ, 0x3fff, -14, start, end, 0,
                           GFL_VBlankGetTCBMgr());
+#ifdef PAPERWHITE2
+    // Paper White 2: the icons' extended palettes with their old rows (paperwhite2/habitat_icons.h)
+    PaletteFade_StartFade(graphic->paletteFade, 1 << PALFADE_BUFFER_MAIN_OBJ_EX, (1 << HABITAT_ICONS_EXT_PALETTES) - 1,
+                          -14, start, end, 0, GFL_VBlankGetTCBMgr());
+#endif
 }
 
 u16 PokedexHabitatGraphic_IsFading(PokedexHabitatGraphic *graphic) {
@@ -846,6 +882,10 @@ static void PokedexHabitatGraphic_LoadIcon(PokedexHabitatGraphic *graphic, u8 ce
     u32 species = graphic->iconRequests[cell].species;
     u8 sex = graphic->iconRequests[cell].sex;
     u8 form = graphic->iconRequests[cell].form;
+#ifdef PAPERWHITE2
+    // Paper White 2: the icon on its own colours (paperwhite2/habitat_icons.h)
+    PaperWhite2_HabitatIcons_Load(graphic, cell, species, form, sex);
+#else
     NNSG2dCharacterData *character;
     void *file = GFL_G2DIOReadOBJNCGRArc(graphic->iconArc, PokeParty_GetIconIndex(species, form, sex, FALSE), FALSE,
                                          &character, HEAPID_POKEDEX_HABITAT);
@@ -854,6 +894,7 @@ static void PokedexHabitatGraphic_LoadIcon(PokedexHabitatGraphic *graphic, u8 ce
     ClActSys_ReplaceCharData(ClActor_GetCharIdx(graphic->icons[cell]), character);
     ClActor_SetPalette(graphic->icons[cell], PokeIcon_GetPalette(species, form, sex, FALSE), 1);
     GFL_HeapFree(file);
+#endif
     PokedexHabitatGraphic_SetIconVisible(graphic, cell, TRUE);
 }
 

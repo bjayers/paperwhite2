@@ -2,6 +2,34 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-23: Icons on their battle palettes, phase 3: the Pokédex (ROM session)
+
+- **Converted, species-only (normal colours, forms and sex as shown):** icon-screens.md section 4.
+  - **The list** (ov299): the touch screen's icons are 8bpp on main OBJ extended palette 0 in bank G (a band per icon
+    actor); the top screen's take standard rows, each shown icon its own (0-15 but 14), given as icons load.
+  - **The Info page** (ov298): Evo's strip on rows 5-7, 14, 15, and for Eevee's 8 the type icons' rows 0-2, borrowed
+    while Evo shows and given back in the VBlank as it hides; Area's box icon on its own colours in row 12. Flavour
+    unchanged (no Pokémon icon). The 32/32 ClAct slots aren't touched.
+  - **The Habitat list** (ov303): the hack's grid shows 30 icons (the survey said 1), so they're 8bpp on main OBJ
+    extended palettes 0-1 in bank G.
+  - The Forms page and the original habitat map are never started in the hack: not converted (fallback).
+- **New, shared:** `include/paperwhite2/icon_ext.h` (cells to 8bpp, 4bpp→8bpp in a band, the VBlank upload), now
+  used by the box too. Screens with a `PaletteFade` keep the icons' colours in the fade's main OBJ extended buffer, so
+  they fade with the rest. Icon actors' palette proxies point at row 0 where the row or extended palette isn't the
+  resource's.
+- **Cost:** ARM9 +0xe0 (DS arena 0x4380 → 0x42a0); ov299 +0.6 KB, ov303 +0.5 KB (no arena cost); the lists' heaps
+  +3.1 / +2 KB; main OBJ VRAM +16 KB (list, 71 KB left) and +30 KB (habitat grid, 35 KB left).
+- **Tested** in py-desmume on a copy of the save, the Pokédex filled with the debug menu (RAM only):
+  - the list on five pages and a scroll-bar jump (bottom icons pixel-exact, top by palette rows), with forms and a
+    palette-only Arceus form forced through the load;
+  - Evo for Tepig's family (exact), Eevee's 8, then Matchups (rows 0-2 back byte for byte); an unseen evolution's "?";
+    Area's box; Flavour; back to the list;
+  - a full Habitat grid of 30 (exact), forced forms and a female icon, page 2, the next area;
+  - leaving either list to the field: VRAMCNT and DISPCNT as before; the box retested after its refactor (exact).
+
+  Screenshots are `03_*`, `05_*`, `06_*`, `10_*` and `02_pc_box_mixed_after_phase3` in `icon_screens/`.
+- **Next:** phase 4, the easy screens and those whose rows need checking.
+
 ## 2026-11-23: Icons on their battle palettes, phase 2: the PC box (ROM session)
 
 - **The box's icons are 8bpp on OBJ extended palettes** (`src/paperwhite2/ov255/paperwhite2_box_icons.c`,

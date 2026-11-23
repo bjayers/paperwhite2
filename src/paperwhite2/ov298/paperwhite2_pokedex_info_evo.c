@@ -13,8 +13,10 @@
 #include "gfl/str.h"
 #include "gfl/touchpanel.h"
 #include "nitro/gx.h"
+#include "nitro/hw.h"
 #include "nitro/mi.h"
 #include "nnsys/g2d.h"
+#include "paperwhite2/icon_palettes.h"
 #include "paperwhite2/pokedex_info.h"
 #include "paperwhite2/pokemon_forms.h"
 #include "pml/evolution.h"
@@ -111,15 +113,24 @@ enum {
 // The stages a family has at most: a root, its evolutions and theirs
 #define EVO_DEPTH_COUNT 3
 
-// The party icons: the icons' three palettes in sub OBJ rows 5 to 7 (after Moves' cursor and knob, below the touch
-// bar's), and each icon's two frames of 32 by 32 pixels, all in one character resource, one after another. Their
+// The party icons: each icon's two frames of 32 by 32 pixels, all in one character resource, one after another, and
+// each icon's own colours, its species' normal ones (docs/paperwhite2/design/icon-screens.md), in a sub OBJ row of its
+// own (sEvoIconRows). The icons' palette resource is one row of the party icons' banks at EVO_ICON_PALETTE (after
+// Moves' cursor and knob, below the touch bar's), which the actors need; their colours are written over it. Their
 // animation is a healthy party Pokémon's
 #define EVO_ICON_PALETTE 5
-#define EVO_ICON_PALETTE_COUNT 3
 #define EVO_ICON_SIZE 0x400
+// Eevee's family of 8 takes the type icons' rows 0 to 2 for its last 3 icons: only Matchups shows the type icons
+#define EVO_BORROWED_ROW 0
+#define EVO_BORROWED_ROWS 3
+#define EVO_BORROWED_ICON 5
 #define EVO_ICON_SEQUENCE 1
 // What the ClAct system's loads give when no resource is left (clact.c's CLACT_RES_NONE)
 #define EVO_RES_NONE 0xffffffff
+
+// The icons' sub OBJ rows: EVO_ICON_PALETTE and the two after it, then 14 and 15, which the page never uses, then the
+// borrowed ones. Each icon's palette proxy points at row 0, so that its palette is its row
+static const u8 sEvoIconRows[POKEDEX_INFO_EVO_FAMILY_MAX] = { 5, 6, 7, 14, 15, 0, 1, 2 };
 
 // What an evolution's parameter is, for its text: a number (a level, a Beauty), an item, a move or a species; Shedinja
 // names its parent, and a trade for a species names the other of Karrablast and Shelmet
@@ -227,6 +238,13 @@ struct PokedexInfoEvo {
     u32 iconCellAnims;
     u32 iconChars;
     ClActor *icons[POKEDEX_INFO_EVO_FAMILY_MAX];
+    // The icons' colours, written into their rows in the next VBlank (PokedexInfoEvo_VBlank) with their characters'
+    // OAM, and the type icons' rows' colours while Eevee's family has them, which that VBlank puts back as Evo hides
+    u16 iconColours[POKEDEX_INFO_EVO_FAMILY_MAX][ICON_BATTLE_COLOURS];
+    u16 borrowedColours[EVO_BORROWED_ROWS][ICON_BATTLE_COLOURS];
+    BOOL iconColoursPending;
+    BOOL rowsBorrowed;
+    BOOL rowsReturnPending;
 };
 
 static void PokedexInfoEvo_LoadFamily(PokedexInfoEvo *evo, u16 species, u16 form);
@@ -334,6 +352,32 @@ void PokedexInfoEvo_Hide(PokedexInfoEvo *evo) {
     ClActSys_FreeCellAnims(evo->iconCellAnims);
     ClActSys_FreePltt(evo->iconPalette);
     evo->iconsLoaded = FALSE;
+    evo->iconColoursPending = FALSE;
+    evo->rowsReturnPending = evo->rowsBorrowed;
+}
+
+// The icons' colours into their rows, the type icons' rows' kept first if Eevee's family takes them, or those put back
+// once Evo hides; from the panels' VBlank, so that the icons and the type icons show with their colours as they show
+void PokedexInfoEvo_VBlank(PokedexInfoEvo *evo) {
+    u16 *rows = (u16 *)HW_DB_OBJ_PLTT;
+    u32 i;
+
+    if (evo->rowsReturnPending) {
+        MI_CpuCopy16(evo->borrowedColours, rows + EVO_BORROWED_ROW * ICON_BATTLE_COLOURS, sizeof(evo->borrowedColours));
+        evo->rowsBorrowed = FALSE;
+        evo->rowsReturnPending = FALSE;
+    }
+    if (!evo->iconColoursPending) {
+        return;
+    }
+    if (evo->count > EVO_BORROWED_ICON && !evo->rowsBorrowed) {
+        MI_CpuCopy16(rows + EVO_BORROWED_ROW * ICON_BATTLE_COLOURS, evo->borrowedColours, sizeof(evo->borrowedColours));
+        evo->rowsBorrowed = TRUE;
+    }
+    for (i = 0; i < evo->count; i++) {
+        MI_CpuCopy16(evo->iconColours[i], rows + sEvoIconRows[i] * ICON_BATTLE_COLOURS, sizeof(evo->iconColours[i]));
+    }
+    evo->iconColoursPending = FALSE;
 }
 
 // A touch on a species' icon's column of the strip, or across its row of the tree
@@ -662,7 +706,7 @@ static void PokedexInfoEvo_ShowIcons(PokedexInfoEvo *evo, u16 sex) {
             iconForm = 0;
             iconSex = 0;
         }
-        file = GFL_ArcToolReadHeapNew(arc, PokeParty_GetIconIndex(species, iconForm, iconSex, FALSE),
+        file = GFL_ArcToolReadHeapNew(arc, PaperWhite2_GetIconBattleFile(species, iconForm, iconSex, FALSE),
                                       HEAPID_TAIL(evo->heapId));
         NNS_G2dGetUnpackedCharacterData(file, &chars);
         ClActSys_WriteCharData(evo->iconChars, chars->pRawData, EVO_ICON_SIZE, i * EVO_ICON_SIZE, CLACT_VRAM_SUB);
@@ -670,21 +714,24 @@ static void PokedexInfoEvo_ShowIcons(PokedexInfoEvo *evo, u16 sex) {
         ClActSys_GetCharProxy(evo->iconChars, &proxy);
         proxy.vramLocation.baseAddrOfVram[NNS_G2D_VRAM_TYPE_2DSUB] += i * EVO_ICON_SIZE;
         ClActor_SetImageProxy(evo->icons[i], &proxy);
-        ClActor_SetPalette(evo->icons[i], PokeIcon_GetPalette(species, iconForm, iconSex, FALSE), TRUE);
+        PaperWhite2_ReadIconColours(evo->iconColours[i], species, iconForm, iconSex, FALSE, FALSE);
+        ClActor_SetPalette(evo->icons[i], sEvoIconRows[i], TRUE);
         pos.x = PokedexInfoEvo_GetIconX(evo, i);
         pos.y = EVO_STRIP_ICON_Y;
         ClActor_SetSurfacePos(evo->icons[i], &pos, CLACT_SURFACE_SUB);
         ClActor_SetVisible(evo->icons[i], TRUE);
     }
     GFL_ArcToolFree(arc);
+    evo->iconColoursPending = TRUE;
 }
 
-// The icons' palettes, cells and one character resource for all of them, with an actor for each, hidden, loaded as
+// The icons' palette, cells and one character resource for all of them, with an actor for each, hidden, loaded as
 // Evo shows and freed as it hides, so that they take three of the screen's OBJ resources only then. They are
 // semi-transparent, as the page's other OBJs are, so that the page's fades darken them
 static void PokedexInfoEvo_LoadIcons(PokedexInfoEvo *evo) {
     ArcTool *arc;
     ClActorSetup setup;
+    NNSG2dImagePaletteProxy proxy;
     u32 i;
 
     if (evo->iconsLoaded) {
@@ -692,7 +739,7 @@ static void PokedexInfoEvo_LoadIcons(PokedexInfoEvo *evo) {
     }
     arc = GFL_ArcSysCreateFileHandle(ARCID_POKEICON, evo->heapId);
     evo->iconPalette = ClActSys_LoadPlttRange(arc, PokeIcon_GetPaletteFile(), CLACT_VRAM_SUB, EVO_ICON_PALETTE * 0x20,
-                                              0, EVO_ICON_PALETTE_COUNT, evo->heapId);
+                                              0, 1, evo->heapId);
     evo->iconCellAnims =
         ClActSys_LoadCellAnims(arc, PokeIcon_GetCellFile_Sub(), getOBJTileMapping_SubEng(), evo->heapId);
     GFL_ArcToolFree(arc);
@@ -723,6 +770,9 @@ static void PokedexInfoEvo_LoadIcons(PokedexInfoEvo *evo) {
         ClActor_SetAutoAnim(evo->icons[i], TRUE);
         ClActor_SetObjMode(evo->icons[i], GX_OAM_MODE_XLU);
         ClActor_SetVisible(evo->icons[i], FALSE);
+        ClActor_GetPlttProxy(evo->icons[i], &proxy);
+        NNS_G2dSetImagePaletteLocation(&proxy, NNS_G2D_VRAM_TYPE_2DSUB, 0);
+        ClActor_SetPlttProxy(evo->icons[i], &proxy);
     }
     evo->iconsLoaded = TRUE;
 }

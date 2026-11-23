@@ -16,6 +16,9 @@
 #include "system/gf_font.h"
 #include "system/palanm.h"
 #include "system/printsys.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/icon_palettes.h"
+#endif
 
 // pokedex_habitat_graphic.c (a guess, the ROM has no name for it): what the Habitat List draws: its BGs, its actors and
 // the icons of an area's Pokémon on the main screen, the map of the region on the sub screen, its windows and its
@@ -136,6 +139,12 @@ typedef struct {
     BOOL paletteRequested;
     u32 paletteType;
     PokedexHabitatPlace places[TOWNMAP_PLACE_COUNT];
+#ifdef PAPERWHITE2
+    // Paper White 2: an icon's colours as it loads, and whether the icons' extended palettes changed since they went to
+    // VRAM (paperwhite2/habitat_icons.h)
+    u16 iconColours[ICON_BATTLE_COLOURS];
+    BOOL iconPaletteChanged;
+#endif
 } PokedexHabitatGraphic; // size: 0x85c
 
 void PokedexHabitatGraphic_Init(PokedexHabitatGraphic *graphic, GameData *gameData);

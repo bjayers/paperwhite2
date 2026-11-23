@@ -22,6 +22,9 @@
 #include "system/game_data.h"
 #include "system/palanm.h"
 #include "system/poke_icon.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/pokedex_list_icons.h"
+#endif
 
 // The actors of the Pokédex's list: the touch bar's buttons, the scroll bar, the buttons of the Pokédexes, the icons
 // of the rows and the picture of the species under the cursor. The ROM doesn't name this file; pokedex_list_obj.c is a
@@ -218,8 +221,13 @@ static void PokedexListObj_LoadResources(PokedexListWork *wk) {
     palette = &wk->paletteRes[RES_ICON];
     cells = &wk->cellRes[RES_ICON];
     for (i = 0; i < POKEDEX_LIST_ICON_COUNT; i++) {
+#ifdef PAPERWHITE2
+        // Paper White 2: twice the room, for the icons drawn 8bpp (paperwhite2/pokedex_list_icons.h)
+        chars[i] = ClActSys_AllocChars(POKEDEX_LIST_ICON_SIZE_8BPP, CLACT_VRAM_MAIN, HEAPID_POKEDEX_LIST);
+#else
         chars[i] = ClActSys_LoadChars(arc, PokeParty_GetIconIndex(0, 0, 0, FALSE), FALSE, CLACT_VRAM_MAIN,
                                       HEAPID_POKEDEX_LIST);
+#endif
     }
     *palette = ClActSys_LoadPlttEx(arc, PokeIcon_GetPaletteFile(), CLACT_VRAM_MAIN, 4 * 0x20, HEAPID_POKEDEX_LIST);
     *cells = ClActSys_LoadCellAnims(arc, PokeIcon_GetCellFile_Main(), getOBJTileMapping_MainEng(), HEAPID_POKEDEX_LIST);
@@ -479,10 +487,18 @@ static void PokedexListObj_CreateIcons(PokedexListWork *wk) {
         PokedexListObj_SetVisible(wk, POKEDEX_LIST_OBJ_ICON_SUB + i, FALSE);
         PokedexListObj_SetVisible(wk, POKEDEX_LIST_OBJ_ICON_WINDOW + i, FALSE);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the touch screen's icons draw 8bpp, on an extended palette (paperwhite2/pokedex_list_icons.h)
+    PaperWhite2_PokedexListIcons_Init(wk);
+#endif
 }
 
 // Loads a species' icon over an icon actor's characters
 static void PokedexListObj_LoadIcon(PokedexListWork *wk, u32 id, u16 species, u16 form, u16 sex, BOOL touchScreen) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the icon on its own colours (paperwhite2/pokedex_list_icons.h)
+    PaperWhite2_PokedexListIcons_Load(wk, id, species, form, sex, touchScreen);
+#else
     ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_POKEICON, HEAPID_POKEDEX_LIST | HEAPID_TAIL_BIT);
     NNSG2dCharacterData *chars;
     void *file = GFL_G2DIOReadOBJNCGRArc(arc, PokeParty_GetIconIndex(species, form, sex, FALSE), FALSE, &chars,
@@ -496,6 +512,7 @@ static void PokedexListObj_LoadIcon(PokedexListWork *wk, u32 id, u16 species, u1
     GFL_HeapFree(file);
     GFL_ArcToolFree(arc);
     ClActor_SetPalette(wk->actors[id], PokeIcon_GetPalette(species, form, sex, FALSE), 1);
+#endif
 }
 
 // An icon actor of a screen that isn't shown

@@ -143,6 +143,9 @@ void PokedexInfoEvo_Free(PokedexInfoEvo *evo);
 void PokedexInfoEvo_Show(PokedexInfoEvo *evo, GFLBitmap *bitmap, int top, u16 species, u16 form, u16 sex);
 // Frees the icons and their resources, while another sub-page shows
 void PokedexInfoEvo_Hide(PokedexInfoEvo *evo);
+// Writes the icons' colours into their sub OBJ rows, or gives the rows that Eevee's family borrowed back; the panels'
+// VBlank
+void PokedexInfoEvo_VBlank(PokedexInfoEvo *evo);
 u16 PokedexInfoEvo_GetTouchedSpecies(PokedexInfoEvo *evo);
 
 // Area (paperwhite2_pokedex_info_area.c): where the species is met in the wild, from the index that

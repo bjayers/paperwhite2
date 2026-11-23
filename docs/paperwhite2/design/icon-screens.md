@@ -126,7 +126,96 @@ party's 0, 3 and 5 made shiny in RAM; nothing saved):
   are the icons (extended palettes 3-4 with a full box) and the tray icons (0).
 - Not seen: the Battle Box, Deposit/Withdraw and Move items modes, which use the same actors and functions.
 
-## 4. Every screen
+## 4. The Pokédex (phase 3)
+
+Species-only screens: each icon on its species' (form's, sex's) **normal** colours, read with
+`PaperWhite2_ReadIconColours(..., shiny FALSE)`, pixels from `PaperWhite2_GetIconBattleFile`. The Bad Egg's "?" icon
+(Evo's unseen species) keeps its bank colours, as the egg does.
+
+**Shared extended-palette helpers** (`include/paperwhite2/icon_ext.h`, `src/paperwhite2/main/paperwhite2_icon_ext.c`,
+ARM9 main +0xe0 bytes with alignment): `PaperWhite2_IconExt_SetCells8bpp` (a screen's own copy of the icon cells to
+8bpp), `PaperWhite2_IconExt_Convert` (4bpp characters to 8bpp in a band) and `PaperWhite2_IconExt_Upload` (a VBlank
+copy into the OBJ extended palettes). The box's code (section 3) now calls them in place of its own copies, unchanged
+in behaviour (retested: a full mixed box, 12 icons exact, `02_pc_box_mixed_after_phase3`). Phase 5's extended-palette screens should use them too.
+
+**Fades with extended palettes.** The list and the Habitat list fade with `PaletteFade`, which only knew their
+standard rows. Their icons' colours live in the fade's own buffer of the main OBJ extended palettes
+(`PALFADE_BUFFER_MAIN_OBJ_EX`, which `palanm.c` already supports): each icon's colours go in with
+`PaletteFade_LoadData`, the screen's `StartFade` fades that buffer with the rest, and the screen's VBlank uploads the
+faded copy when an icon changed (`PaletteFade_Transfer` uploads it during fades). Any later screen with a palette
+fade and ext-palette icons should do the same.
+
+**Palette proxies.** An icon actor's palette is relative to its palette resource's row. Where the icons' row or
+extended palette doesn't match that row, each icon actor's palette proxy is moved to row 0
+(`NNS_G2dSetImagePaletteLocation(..., 0)`, as the Habitat Dex's bar already does), so its palette number is the row
+or extended palette itself. The bank palette resources stay loaded (the actors need one) but their colours are unused.
+
+### 4.1 The list (ov299)
+
+`src/paperwhite2/ov299/paperwhite2_pokedex_list_icons.c`, `include/paperwhite2/pokedex_list_icons.h`, hooks in
+`pokedex_list_obj.c` and `pokedex_list_main.c`, four fields at the end of `PokedexListWork`.
+- **Touch screen (main): 8bpp on OBJ extended palette 0 in bank G.** The list's pool of 16 icon actors; actor n draws in
+  band n. G is mapped in `sPokedexListVRAMConfig` (it was unused); no other main OBJ of the list is 8bpp (measured), so
+  nothing else needed an extended palette. Characters: 16 × 2 KB allocated (`ClActSys_AllocChars`) in place of the
+  species-0 icon file (16 × 1 KB): the selected row's icon animates, so both frames are 8bpp.
+- **Top screen (sub): standard rows.** Its OBJs used only the three bank rows, and it shows up to 8 icons. Each icon
+  takes, as it loads, the first row of 0-15 that no other shown top icon has, skipping 14 (which the list's fades leave
+  alone, so an icon there wouldn't fade). The row is written at once (the actor is hidden while it is refilled, and no
+  shown icon has that row) and into the fade's buffer. Measured after scrolling: rows 0-8 in use, each the right
+  species.
+- **Cost:** ov299 +0.6 KB (doesn't move the arena); the list's work +2.1 KB (an 8bpp conversion buffer, colours,
+  rows) and the fade's extended buffer 1 KB, both on the list's heap; main OBJ VRAM +16 KB (measured before: 40 KB used
+  of 127, so 71 KB stay free); bank G 512 bytes used.
+
+### 4.2 The Info page (ov298)
+
+- **Evo tab** (`paperwhite2_pokedex_info_evo.c`, sub engine): standard rows, route B of shiny-icons.md 6.2. Icon i
+  takes row 5, 6, 7, 14, 15, then 0, 1, 2 (`sEvoIconRows`). Only Eevee's family of 8 reaches rows 0-2, the type icons'
+  rows (only Matchups shows type icons): their colours are kept as Evo borrows them and put back as Evo hides. The
+  colours are written in the panels' VBlank (`PokedexInfoEvo_VBlank`), so the type icons and the icons never show a
+  frame in each other's colours. The palette resource is now one bank row (it was three). No VRAM and no ClAct
+  resource change: Evo still takes its 3 resources only while it shows (the 32/32 limit isn't touched). Route A
+  (bank I extended palette) wasn't needed.
+- **Area box** (`paperwhite2_pokedex_info_area.c`, main row 12): the icon's own colours, loaded in Area's VBlank as
+  before; the bank palette file Area kept in its heap to pick a row from is gone (−0.1 KB of heap).
+- **Flavour tab art:** unchanged. It uses the icon cells and one bank row as a palette resource only, with its own
+  colours loaded over it: no Pokémon icon is drawn (checked: `05_pokedex_info_flavour_unchanged`).
+- **Forms page and the original habitat map** (`ov298/pokedex_detail_form.c`, `pokedex_detail_map.c`): never started
+  in the hack (the Info page replaces them, `pokedex_detail.c`), so not converted; they stay on the fallback.
+
+### 4.3 The Habitat list (ov303)
+
+`src/paperwhite2/ov303/paperwhite2_habitat_icons.c`, `include/paperwhite2/habitat_icons.h`, hooks in
+`pokedex_habitat_graphic.c`, two fields at the end of `PokedexHabitatGraphic`. The survey counted 1 icon here, but the
+Habitat Dex's grid shows up to **30** (6 × 5) on the main engine, so it takes the extended route:
+- bank G (unused) mapped in `sPokedexHabitatVRAMConfig`; cell n's icon draws in band n % 16 of extended palette n / 16
+  (0-1); no other main OBJ of the screen is 8bpp (measured);
+- each cell's resources are their own `UIObjRes`: the character resource is replaced by a 2 KB one, and each cell's
+  own copy of the cells is set to 8bpp once (a copy shared by two cells would be set once);
+- icons load in the screen's VBlank as before (now 8bpp, converted in a 2 KB buffer from the heap's tail), their
+  colours into the fade's extended buffer, uploaded after the loads; `StartFade` fades extended palettes 0-1 with the
+  old icon rows.
+- **Cost:** ov303 +0.5 KB (doesn't move the arena); heap +2 KB of fade buffers, plus 2 KB while an icon converts; main
+  OBJ VRAM +30 KB (measured before: 62 KB used of 127, so 35 KB stay free).
+
+### 4.4 Tested
+
+py-desmume, a copy of the user's save, the Pokédex filled with the debug menu (RAM only, nothing saved); scripts in
+`.../scratchpad/dex3/` (`route.sh` boots, fills the Pokédex and opens the lists; `checks.py` compares drawn icons pixel
+for pixel; `rowcheck.py` finds which palette row holds each species' colours; `forms.py` hooks the icon loads to show
+chosen forms and sexes):
+- **List:** bottom icons pixel-exact (0 differing pixels) on four pages (Tepig-Patrat, Watchog page, Escavalier-Joltik,
+  Mr. Mime-Tauros), and forms forced through the load: Giratina Origin, Shaymin Sky, Arceus Fire (a palette-only form),
+  exact; top icons by palette rows (Rotom Frost and the rest), each species in its own row; jumping with the scroll bar,
+  paging up and down; the fade in. Leaving to the field: VRAMCNT A-I and both DISPCNTs exactly as before.
+- **Info:** Evo for Tepig's family (exact) and Eevee's 8 (rows 5-7, 14, 15, 0-2 each the right species), then Matchups:
+  the type icons' rows 0-2 byte for byte as before Evo; Evo with an unseen evolution (the user's own Pokédex: "?");
+  Area's box icon (row 12, Eevee's colours); Flavour unchanged; back to the list.
+- **Habitat list:** a full grid of 30 (both extended palettes), all compared, exact but where the cell frame or the
+  caught mark covers an icon; forced Deerling Autumn, Shellos East, female Frillish (exact) and Arceus Fire; page 2 and
+  the next area (exact); leaving to the field: registers as before.
+
+## 5. Every screen
 
 Columns: **#** is the screenshot prefix. **Icons** is the most shown at once, m main engine, s sub. **Route**: rows
 (standard rows, one per icon), ext (8bpp with an extended palette in the named bank), BG. **Kind**: shiny-aware or
@@ -137,14 +226,14 @@ species-only. **Tested**: emulator, with the screenshot in `icon_screens/` (Wind
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 01 | Party list | field menu > Pokémon; also from the bag, items, TMs | `ov165/plist_sys.c`, `plist_plate.c` | 6 m | rows 6-8, 12-14 | shiny | **converted** (phase 1) | yes: `01_party_list_normal`, `01_party_list_shiny`, `01_party_list_shiny_after_switch` | to test |
 | 02 | PC box (tray, party side, held icon and range, search, every mode) | a Center's PC > Move Pokémon (also Deposit, Withdraw, Battle Box, Move items) | `ov255/box2_obj.c`, `paperwhite2_box_icons.c` | 66 m (30 tray + 6 party + 30 held) | ext G: palettes 3-7, a band per actor (section 3) | shiny | **converted** (phase 2) | yes: `02_pc_box_normal`, `_shiny`, `_mixed`, `_party_normal`, `_party_shiny`, `_grab_held`, `_grab_dropped`, `_multiselect_held`, `_scroll_back`, `_search_grey`, `_after_summary`, `_left_field` | to test |
-| 03 | Pokédex list (bottom) | field menu > Pokédex > National | `ov299/pokedex_list_obj.c` | 8 m (9 mid-scroll) | ext G | species | pending (phase 3); fallback | fallback: `03_pokedex_list_fallback` | |
-| 04 | Pokédex list (top) | the same, top screen | `ov299/pokedex_list_obj.c` | 7 s | rows (13 free) | species | pending (phase 3) | | |
-| 05 | Pokédex Info, Evo tab | Pokédex > a species > Info > Evo | `paperwhite2_pokedex_info_evo.c` | 8 s (Eevee) | rows with 0-4 borrowed, or ext I | species | pending (phase 3) | | |
-| 06 | Pokédex Info, Area box | Info > Area | `paperwhite2_pokedex_info_area.c` | 1 m | row 12 | species | pending (phase 3) | | |
-| 07 | Pokédex Info, Flavour tab art | Info > Flavour | `paperwhite2_pokedex_info_flavour.c` | 0 (icon cells as tab art, one bank row) | keep a bank row | n/a | pending (phase 3): check | | |
-| 08 | Pokédex Forms | Info > Forms | `ov298/pokedex_detail_form.c` | 2 s | rows | species | pending (phase 3) | | |
-| 09 | Pokédex habitat map (original) | Info > Area (original map) | `ov298/pokedex_detail_map.c` | 2 s | rows | species | pending (phase 3) | | |
-| 10 | Habitat list | Pokédex > Habitat | `ov303/pokedex_habitat_graphic.c` | 1 m | rows | species | pending (phase 3) | | |
+| 03 | Pokédex list (bottom) | field menu > Pokédex > National | `ov299/pokedex_list_obj.c`, `paperwhite2_pokedex_list_icons.c` | 9 m (16 actors) | ext G: palette 0, a band per actor (4.1) | species | **converted** (phase 3) | yes: `03_pokedex_list_normal`, `03_pokedex_list_forms_normal`, `03_pokedex_list_scrolled_normal`, `03_pokedex_list_jump_normal`, `03_pokedex_list_left_field` | to test |
+| 04 | Pokédex list (top) | the same, top screen | `ov299/pokedex_list_obj.c`, `paperwhite2_pokedex_list_icons.c` | 8 s (16 actors) | rows 0-15 but 14, given as icons load (4.1) | species | **converted** (phase 3) | yes (rows by memory; blended): `03_pokedex_list_normal` | to test |
+| 05 | Pokédex Info, Evo tab | Pokédex > a species > Info > Evo | `paperwhite2_pokedex_info_evo.c` | 8 s (Eevee) | rows 5-7, 14, 15, then 0-2 borrowed (4.2) | species | **converted** (phase 3) | yes: `05_pokedex_info_evo_normal`, `05_pokedex_info_evo_eevee_normal`, `05_pokedex_info_matchups_after_eevee`, `05_pokedex_info_evo_unseen_normal` | to test |
+| 06 | Pokédex Info, Area box | Info > Area | `paperwhite2_pokedex_info_area.c` | 1 m | row 12 | species | **converted** (phase 3) | yes: `06_pokedex_info_area_normal` | to test |
+| 07 | Pokédex Info, Flavour tab art | Info > Flavour | `paperwhite2_pokedex_info_flavour.c` | 0 (icon cells as tab art, one bank row) | its own colours over a bank row | n/a | unchanged: no Pokémon icon | yes: `05_pokedex_info_flavour_unchanged` | |
+| 08 | Pokédex Forms | never started in the hack (the Info page replaces it) | `ov298/pokedex_detail_form.c` | 2 s | (rows) | species | not converted: unreachable, fallback | no: unreachable | |
+| 09 | Pokédex habitat map (original) | never started in the hack (Info's Area replaces it) | `ov298/pokedex_detail_map.c` | 2 s | (rows) | species | not converted: unreachable, fallback | no: unreachable | |
+| 10 | Habitat list (the Habitat Dex's grid) | Pokédex > Habitat > an area | `ov303/pokedex_habitat_graphic.c`, `paperwhite2_habitat_icons.c` | 30 m | ext G: palettes 0-1, a band per cell (4.3) | species | **converted** (phase 3) | yes: `10_habitat_list_normal`, `10_habitat_list_forms_normal`, `10_habitat_list_page2_normal`, `10_habitat_list_next_area_normal`, `10_habitat_list_left_field` | to test |
 | 11 | DexNav | C-Gear > DexNav | `paperwhite2_dexnav.c` | 18 grid + 1 big, BG | BG ext palettes, or the grid as OBJs on ext G | species (per area) | pending (phase 5) | | |
 | 12 | Party list, battle mode (multi partner) | a multi battle's party choice | `ov165/plist_battle.c` | up to 6 s | rows if 3 more free, else by species | shiny | pending (phase 4) | | |
 | 13 | Battle party list | in battle > Pokémon | `ov287/b_plist_obj.c` | 6 s (I 16 KB) | rows 6, 7, 10-15 | shiny | pending (phase 4) | | |
@@ -180,11 +269,11 @@ the PC box) and follower menus. Files that only use the pack/unpack helpers: `ov
 party side) and the Pokédex's National list show every icon right in bank colours. Its Habitat list's icon and the
 party list's normal icons look as before too.
 
-## 5. Phases
+## 6. Phases
 
 1. Foundation and the party list (done, 2026-11-23).
 2. The box (ov255): 8bpp icons and extended palette G (done, 2026-11-23).
-3. The Pokédex: list (ext G bottom, rows top), Info Evo, Area, Forms, habitats (species-only).
+3. The Pokédex: list (ext G bottom, rows top), Info Evo, Area, the Habitat list (ext G) (done, 2026-11-23).
 4. The easy screens and those whose rows need checking (rows 12-24 above).
 5. The extended-palette rest (DexNav, trade, Unova Link, Battle Recorder), and the wireless-only shells.
 6. Sweep: every loader of the icon archive accounted for here, the fallback reached by nothing tested, a last emulator

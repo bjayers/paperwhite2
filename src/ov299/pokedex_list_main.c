@@ -28,6 +28,10 @@
 #include "system/printsys.h"
 #include "system/wordset.h"
 #include "text/system/game_start_3.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/icon_ext.h"
+#include "paperwhite2/pokedex_list_icons.h"
+#endif
 
 // The Pokédex's list: its BGs and graphics, its fades, the touch bar that slides in and the list of the species. The
 // ROM doesn't name this file; pokedex_list_main.c is a guess after the search screen's pokedex_search_main.c
@@ -43,11 +47,21 @@ static void PokedexListMain_ListPrint(void *work, u32 index, PrintWindow *window
 static void PokedexListMain_ListSelect(void *work, u32 index, BOOL moved);
 static void PokedexListMain_ListScroll(void *work, s16 delta);
 
+#ifdef PAPERWHITE2
+// Paper White 2: bank G, unused here, as the main OBJ extended palettes, for the touch screen's icons
+// (paperwhite2/pokedex_list_icons.h)
+static const BGSysVRAMConfig sPokedexListVRAMConfig = {
+    GX_VRAM_BG_128_A,  GX_VRAM_BGEXTPLTT_NONE, GX_VRAM_SUB_BG_128_C,        GX_VRAM_SUB_BGEXTPLTT_NONE,
+    GX_VRAM_OBJ_128_B, GX_VRAM_OBJEXTPLTT_0_G, GX_VRAM_SUB_OBJ_128_D,       GX_VRAM_SUB_OBJEXTPLTT_NONE,
+    GX_VRAM_TEX_NONE,  GX_VRAM_TEXPLTT_NONE,   GX_OBJVRAMMODE_CHAR_1D_128K, GX_OBJVRAMMODE_CHAR_1D_128K,
+};
+#else
 static const BGSysVRAMConfig sPokedexListVRAMConfig = {
     GX_VRAM_BG_128_A,  GX_VRAM_BGEXTPLTT_NONE,  GX_VRAM_SUB_BG_128_C,        GX_VRAM_SUB_BGEXTPLTT_NONE,
     GX_VRAM_OBJ_128_B, GX_VRAM_OBJEXTPLTT_NONE, GX_VRAM_SUB_OBJ_128_D,       GX_VRAM_SUB_OBJEXTPLTT_NONE,
     GX_VRAM_TEX_NONE,  GX_VRAM_TEXPLTT_NONE,    GX_OBJVRAMMODE_CHAR_1D_128K, GX_OBJVRAMMODE_CHAR_1D_128K,
 };
+#endif
 
 static const FrameListCallbacks sPokedexListCallbacks = {
     PokedexListMain_ListPrint,
@@ -92,6 +106,9 @@ static void PokedexListMain_VBlankTask(TCB *tcb, void *data) {
     GFL_BGSysUpdate();
     ClActSys_VBlank();
     PaletteFade_Transfer(wk->paletteFade);
+#ifdef PAPERWHITE2
+    PaperWhite2_PokedexListIcons_VBlank(wk);
+#endif
     OS_SetIrqCheckFlag(OS_IE_V_BLANK);
 }
 
@@ -352,6 +369,11 @@ void PokedexListMain_InitPaletteFade(PokedexListWork *wk) {
     PaletteFade_AllocBuffer(wk->paletteFade, PALFADE_BUFFER_SUB_BG, 0x200, HEAPID_POKEDEX_LIST);
     PaletteFade_AllocBuffer(wk->paletteFade, PALFADE_BUFFER_MAIN_OBJ, 0x200, HEAPID_POKEDEX_LIST);
     PaletteFade_AllocBuffer(wk->paletteFade, PALFADE_BUFFER_SUB_OBJ, 0x200, HEAPID_POKEDEX_LIST);
+#ifdef PAPERWHITE2
+    // Paper White 2: and the touch screen icons' extended palette, so that they fade too
+    PaletteFade_AllocBuffer(wk->paletteFade, PALFADE_BUFFER_MAIN_OBJ_EX, ICON_EXT_COLOURS * sizeof(u16),
+                            HEAPID_POKEDEX_LIST);
+#endif
 }
 
 void PokedexListMain_ExitPaletteFade(PokedexListWork *wk) {
@@ -359,6 +381,9 @@ void PokedexListMain_ExitPaletteFade(PokedexListWork *wk) {
     PaletteFade_FreeBuffer(wk->paletteFade, PALFADE_BUFFER_SUB_BG);
     PaletteFade_FreeBuffer(wk->paletteFade, PALFADE_BUFFER_MAIN_OBJ);
     PaletteFade_FreeBuffer(wk->paletteFade, PALFADE_BUFFER_SUB_OBJ);
+#ifdef PAPERWHITE2
+    PaletteFade_FreeBuffer(wk->paletteFade, PALFADE_BUFFER_MAIN_OBJ_EX);
+#endif
     PaletteFade_Free(wk->paletteFade);
 }
 
@@ -371,6 +396,11 @@ void PokedexListMain_StartFade(PokedexListWork *wk, u8 start, u8 end) {
                           GFL_VBlankGetTCBMgr());
     PaletteFade_StartFade(wk->paletteFade, 1 << PALFADE_BUFFER_SUB_OBJ, 0xbfff, -14, start, end, GX_RGB(0, 0, 0),
                           GFL_VBlankGetTCBMgr());
+#ifdef PAPERWHITE2
+    // Paper White 2: the touch screen icons' extended palette with the rest
+    PaletteFade_StartFade(wk->paletteFade, 1 << PALFADE_BUFFER_MAIN_OBJ_EX, 1 << POKEDEX_LIST_ICON_EXT_PALETTE, -14,
+                          start, end, GX_RGB(0, 0, 0), GFL_VBlankGetTCBMgr());
+#endif
 }
 
 void PokedexListMain_SetBlend(void) {

@@ -4,9 +4,9 @@
 #include "nitro/gx.h"
 #include "nitro/hw.h"
 #include "nitro/mi.h"
-#include "nitro/os.h"
 #include "nnsys/g2d.h"
 #include "paperwhite2/box_icons.h"
+#include "paperwhite2/icon_ext.h"
 #include "paperwhite2/icon_palettes.h"
 
 // Paper White 2: the PC box's Pokémon icons as 8bpp OBJs on extended palettes, each with its own battle colours. See
@@ -27,21 +27,7 @@
 #define BLUE(colour) (((colour) >> 10) & 0x1f)
 
 void PaperWhite2_BoxIcons_Init(PaperWhite2BoxIcons *icons, NNSG2dCellDataBank *cells) {
-    u16 i;
-    u16 j;
-
-    for (i = 0; i < cells->numCells; i++) {
-        // The bank is the box's own copy, loaded on the heap, which the renderer reads through const pointers
-        NNSG2dCellData *cell = (NNSG2dCellData *)NNS_G2dGetCellDataByIdx(cells, i);
-
-        for (j = 0; j < cell->numOAMAttrs; j++) {
-            NNSG2dCellOAMAttrData *oam = &cell->pOamAttrArray[j];
-            u16 name = (oam->attr2 & GX_OAM_ATTR2_NAME_MASK) * 2;
-
-            oam->attr0 |= GX_OAM_ATTR01_CM_MASK;
-            oam->attr2 = (oam->attr2 & ~GX_OAM_ATTR2_NAME_MASK) | (name & GX_OAM_ATTR2_NAME_MASK);
-        }
-    }
+    PaperWhite2_IconExt_SetCells8bpp(cells);
     icons->changed = TRUE;
 }
 
@@ -62,16 +48,7 @@ void PaperWhite2_BoxIcons_ReadColours(u16 *colours, BoxPkm *pkm, BOOL grey) {
 
 void PaperWhite2_BoxIcons_Transfer(PaperWhite2BoxIcons *icons, ClActor *actor, u32 n, const u8 *chars,
                                    const u16 *colours) {
-    u32 band = (n % BANDS) * ICON_BATTLE_COLOURS;
-    u32 i;
-
-    for (i = 0; i < BOX_ICONS_CHARS_4BPP; i++) {
-        u32 left = chars[i] & 0xf;
-        u32 right = chars[i] >> 4;
-
-        icons->chars[i * 2] = left != 0 ? band + left : 0;
-        icons->chars[i * 2 + 1] = right != 0 ? band + right : 0;
-    }
+    PaperWhite2_IconExt_Convert(icons->chars, chars, BOX_ICONS_CHARS_4BPP, n % BANDS);
     ClActSys_WriteCharData(ClActor_GetCharIdx(actor), icons->chars, BOX_ICONS_CHARS_8BPP, 0, CLACT_VRAM_MAIN);
     PaperWhite2_BoxIcons_SetColours(icons, actor, n, colours);
 }
@@ -96,9 +73,6 @@ void PaperWhite2_BoxIcons_VBlank(PaperWhite2BoxIcons *icons) {
                          &icons->extPalettes[BOX_ICONS_OUTLINE_EXT_PALETTE][i * ICON_BATTLE_COLOURS],
                          ICON_BATTLE_COLOURS * sizeof(u16));
         }
-        DC_FlushRange(icons->extPalettes, sizeof(icons->extPalettes));
-        GX_BeginLoadOBJExtPltt();
-        GX_LoadOBJExtPltt(icons->extPalettes, 0, sizeof(icons->extPalettes));
-        GX_EndLoadOBJExtPltt();
+        PaperWhite2_IconExt_Upload(icons->extPalettes[0], 0, sizeof(icons->extPalettes), FALSE);
     }
 }

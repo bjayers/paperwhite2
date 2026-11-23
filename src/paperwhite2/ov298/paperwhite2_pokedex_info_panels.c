@@ -624,10 +624,11 @@ PokedexInfoPanels *PokedexInfoPanels_Create(HeapID heapId, Font *font, ClActUnit
     panels->contentWindow = BmpWin_CreateDynamic(BG_PANELS, CONTENT_WINDOW_X, CONTENT_WINDOW_Y, CONTENT_WINDOW_WIDTH,
                                                  CONTENT_WINDOW_HEIGHT, PALETTE_PANELS, FALSE);
     PokedexInfoPanels_CreateArt(panels);
+    // Evo first, as the VBlank writes its icons' colours
+    panels->evo = PokedexInfoEvo_Create(heapId, font, panels->smallFont, unit, pokedex);
     panels->vblankTcb = GFL_VBlankTCBAdd(PokedexInfoPanels_VBlank, panels, 0);
     PokedexInfoPanels_CreateTypeIcons(panels, unit);
     PokedexInfoPanels_CreateMoveActors(panels, unit);
-    panels->evo = PokedexInfoEvo_Create(heapId, font, panels->smallFont, unit, pokedex);
     panels->area = PokedexInfoArea_Create(heapId, font, panels->smallFont, unit);
     panels->subpage = POKEDEX_INFO_SUBPAGE_COUNT;
     GFL_BGSysSetBGEnabled(BG_GRID, TRUE);
@@ -1011,6 +1012,7 @@ static void PokedexInfoPanels_VBlank(TCB *tcb, void *data) {
         GXS_LoadBGPltt(panels->pendingPalette, PALETTE_CONTENT * PALETTE_SIZE, PALETTE_SIZE);
         panels->pendingPalette = NULL;
     }
+    PokedexInfoEvo_VBlank(panels->evo);
     if (panels->pendingWindows & PENDING_BAR) {
         BmpWin_FlushChar(panels->barWindow);
     }

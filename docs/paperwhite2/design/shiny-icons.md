@@ -319,7 +319,7 @@ s sub. Counts are the most icons visible at once (code; measured where noted).
 | Pokédex Info Flavour tab (`paperwhite2_pokedex_info_flavour.c`) | 0: uses the icon cells for its tab art, one bank row | | | keep a row of the old palette or own palette | easy |
 | Pokédex Forms (`ov298/pokedex_detail_form.c`) | 2, s | banks | | Rows | easy |
 | Pokédex habitat map, original (`ov298/pokedex_detail_map.c`) | 2, s | banks | | Rows | easy |
-| Habitat list (`ov303/pokedex_habitat_graphic.c`) | 1, m | banks | | Rows | easy |
+| Habitat list (`ov303/pokedex_habitat_graphic.c`) | 1, m (30 in the hack's 6 by 5 grid: icon-screens.md 4.3) | banks | | Rows (ext G in the hack) | easy |
 | DexNav (`paperwhite2_dexnav.c`) | 18 grid (touch) + 1 big (top), **BG**, 3 BG rows (5-7) | BG rows: 16 per screen, font 4, chosen 8, the grid art's | BG ext palettes (E/F/G free in habitat's table; sub BG ext is H, already mapped) | 8bpp BG layer with ext palettes, or the grid as OBJs on main ext G | needs work (1 day) |
 | Name input (`ov280/name_input.c`) | 1, m | banks | | Rows | easy |
 | Battle video select (`ov306/btl_rec_sel.c`) | 2, m | banks | | Rows | easy |

@@ -11,6 +11,7 @@
 #include "struct_decls.h"
 #include "system/printsys.h"
 #ifdef PAPERWHITE2
+#include "paperwhite2/icon_palettes.h"
 #include "paperwhite2/pokemon_forms_config.h"
 #endif
 
@@ -32,6 +33,12 @@
 
 // The icons of the rows that a screen can show while the list scrolls
 #define POKEDEX_LIST_ICON_COUNT 16
+#ifdef PAPERWHITE2
+// Paper White 2: an icon's two frames of 32 by 32 pixels, 4bpp as the icon archive has them and 8bpp as the touch
+// screen draws them (paperwhite2/pokedex_list_icons.h)
+#define POKEDEX_LIST_ICON_SIZE 0x400
+#define POKEDEX_LIST_ICON_SIZE_8BPP 0x800
+#endif
 
 // A list item's value: the species, and above it whether it is seen or caught
 #define POKEDEX_LIST_ITEM_SPECIES_MASK 0x0fffffff
@@ -126,6 +133,15 @@ typedef struct {
     s16 frameMoveSpeed;
     BlinkPalAnm *blinkAnm;
     BOOL blinkStopped;
+#ifdef PAPERWHITE2
+    // Paper White 2: the icons on their own colours (paperwhite2/pokedex_list_icons.h): an icon's characters made 8bpp
+    // and its colours, being written, in the heap for the loads' DMA; each top screen icon's palette row; and whether
+    // the touch screen icons' extended palette changed since the last VBlank
+    u8 iconChars[POKEDEX_LIST_ICON_SIZE_8BPP];
+    u16 iconColours[ICON_BATTLE_COLOURS];
+    u8 iconRowsSub[POKEDEX_LIST_ICON_COUNT];
+    BOOL iconPaletteChanged;
+#endif
 } PokedexListWork;
 
 void PokedexListMain_InitVBlank(PokedexListWork *wk);
