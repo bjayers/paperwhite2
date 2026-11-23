@@ -32,6 +32,10 @@
 #include "system/printsys.h"
 #include "system/wordset.h"
 
+#ifdef PAPERWHITE2
+#include "paperwhite2/br_record_icons.h"
+#endif
+
 // The buttons on the sub screen
 enum {
     BTN_RETURN,
@@ -1147,8 +1151,13 @@ static void BrRecord_CreateIcons(BrRecordWork *p_wk, ClActUnit *unit, BattleRecH
         if (species[i] != 0) {
             ClActorSetup setup;
 
+#ifdef PAPERWHITE2
+            // Paper White 2: each icon 8bpp in its own band of OBJ extended palette 0, on its own colours
+            p_wk->iconChr[i] = PaperWhite2_BrRecordIcons_LoadChars(handle, species[i], form[i], gender[i], cnt, heapId);
+#else
             p_wk->iconChr[i] = ClActSys_LoadChars(handle, PokeParty_GetIconIndex(species[i], form[i], gender[i], FALSE),
                                                   FALSE, CLACT_SURFACE_MAIN, heapId);
+#endif
             MI_CpuFill8(&setup, 0, sizeof(ClActorSetup));
             setup.x = sBrRecordIconPos[layout][i].x + 8;
             setup.y = sBrRecordIconPos[layout][i].y - 12;
@@ -1156,11 +1165,18 @@ static void BrRecord_CreateIcons(BrRecordWork *p_wk, ClActUnit *unit, BattleRecH
             setup.priority = BATTLE_REC_HEADER_PKM_MAX - cnt;
             p_wk->icon[cnt] = ClActor_Create(unit, p_wk->iconChr[i], p_wk->iconPlt, p_wk->iconCell, &setup, 0, heapId);
             ClActor_SetObjMode(p_wk->icon[cnt], 1);
+#ifdef PAPERWHITE2
+            PaperWhite2_BrRecordIcons_InitActor(p_wk->icon[cnt]);
+#else
             ClActor_SetPalette(p_wk->icon[cnt], PokeIcon_GetPalette(species[i], form[i], gender[i], FALSE), 0);
+#endif
             cnt++;
         }
     }
 
+#ifdef PAPERWHITE2
+    PaperWhite2_BrRecordIcons_Start(p_wk->icon[0]);
+#endif
     GFL_ArcToolFree(handle);
 }
 
@@ -1209,6 +1225,10 @@ static void BrRecord_DeleteInfo(BrRecordWork *p_wk, BrRecordProcParam *p_param) 
             ClActSys_FreeCellAnims(p_wk->iconCell);
             p_wk->iconCell = -1;
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: the icons' extended palette goes with them
+        PaperWhite2_BrRecordIcons_End();
+#endif
         for (i = 0; i < MSGWIN_MAX; i++) {
             if (p_wk->msgWin[i] != NULL) {
                 BrMsgWin_Exit(p_wk->msgWin[i]);

@@ -758,7 +758,10 @@ void KeySystem_Setup(KeySystemWork *wk, HeapID heapId) {
     wk->scene = KeySystemScene_Create(wk, heapId);
     KeySystemFlow_Init(wk, HEAPID_KEY_SYSTEM);
     DataConvert_Init(wk, HEAPID_KEY_SYSTEM);
+    // Paper White 2: the Dream Radar is a shell, with no work to make (docs/paperwhite2/design/wireless-shells.md)
+#ifndef PAPERWHITE2
     CygnusFlow_Init(wk, HEAPID_KEY_SYSTEM);
+#endif
     KeySystem_CreateDefaultTitleWin(wk, heapId);
     if (wk->preloadedSeqs == 0) {
         wk->preloadedSeqs = GFL_SndBGMStack_Preload(sPreloadedSeqs, NELEMS(sPreloadedSeqs));
@@ -772,7 +775,9 @@ void KeySystem_Teardown(KeySystemWork *wk, BOOL keepSounds) {
         GFL_SndBGMStack_Unload(wk->preloadedSeqs);
         wk->preloadedSeqs = 0;
     }
+#ifndef PAPERWHITE2
     CygnusFlow_Exit(wk);
+#endif
     KeySystemFlow_Exit(wk);
     KeySystemScene_Abort(wk->scene);
     if (wk->titleWin != NULL) {
@@ -986,8 +991,14 @@ static void KeySystem_SeqTopMenu(KeySystemSeq *seq, int *state, void *work) {
             KeySystemSeq_Push(seq, DataConvert_SeqMenu);
             break;
         case TOP_MENU_DREAM_RADAR:
+#ifdef PAPERWHITE2
+            // Paper White 2: the Dream Radar is a shell: it only receives what the 3DS app Pokémon Dream Radar wrote
+            // to the card, which a hack's card never gets, so the item goes back to the top menu
+            // (docs/paperwhite2/design/wireless-shells.md)
+#else
             KeySystemBG_StartFade(wk->bg, KEY_SYSTEM_BG_FADE_3_TO_0, 30);
             KeySystemSeq_Push(seq, CygnusFlow_SeqMenu);
+#endif
             break;
         }
         *state = 0;
