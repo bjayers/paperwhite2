@@ -1,0 +1,218 @@
+{
+  "$schema": "../battle_sprite_rig_v2.schema.json",
+  "format": 2,
+  "side": "back",
+  "step": 6,
+  "box": { "width": 32, "height": 45, "x": -1, "y": 4 },
+  "stop_flags": 0,
+  "pause": true,
+  "keeps_moving": [],
+  "pieces": [
+    { "name": "pie_1", "rectangles": [ { "sheet": [ 32, 0 ], "size": [ 32, 48 ], "at": [ -26, 47 ] } ] },
+    { "name": "pie_2", "rectangles": [ { "sheet": [ 64, 0 ], "size": [ 32, 48 ], "at": [ -6, 47 ] } ] },
+    { "name": "leg_back", "rectangles": [ { "sheet": [ 32, 48 ], "size": [ 32, 32 ], "at": [ -14, 11 ] } ] },
+    { "name": "leg_front", "rectangles": [ { "sheet": [ 16, 48 ], "size": [ 16, 32 ], "at": [ -7, 11 ] } ] },
+    { "name": "head_cap", "rectangles": [ { "sheet": [ 0, 16 ], "size": [ 32, 16 ], "at": [ -17, 13 ] } ] },
+    { "name": "tail", "rectangles": [ { "sheet": [ 16, 80 ], "size": [ 32, 16 ], "at": [ -22, 7 ] } ] },
+    { "name": "leaf_r", "rectangles": [ { "sheet": [ 96, 0 ], "size": [ 16, 16 ], "at": [ -11, 14 ] } ] },
+    { "name": "leaf_l", "rectangles": [ { "sheet": [ 112, 0 ], "size": [ 16, 16 ], "at": [ -3, 14 ] } ] },
+    { "name": "body", "rectangles": [ { "sheet": [ 96, 16 ], "size": [ 48, 16 ], "at": [ -23, 16 ] } ] },
+    { "name": "mouth", "rectangles": [ { "sheet": [ 96, 32 ], "size": [ 32, 16 ], "at": [ -12, 6 ] } ] },
+    { "name": "head", "rectangles": [ { "sheet": [ 80, 48 ], "size": [ 32, 16 ], "at": [ -10, 6 ] } ] },
+    { "name": "neck", "rectangles": [ { "sheet": [ 112, 48 ], "size": [ 16, 16 ], "at": [ -2, 8 ] } ] },
+    { "name": "eye_b_o", "rectangles": [ { "sheet": [ 80, 80 ], "size": [ 16, 16 ], "at": [ -5, 15 ] } ] },
+    { "name": "eye_f_0", "rectangles": [ { "sheet": [ 112, 64 ], "size": [ 16, 32 ], "at": [ -5, 21 ] } ] },
+    { "name": "eye_f_droop", "rectangles": [ { "sheet": [ 128, 64 ], "size": [ 16, 32 ], "at": [ -5, 21 ] } ] },
+    { "name": "eye_back_none", "rectangles": [ { "sheet": [ 64, 80 ], "size": [ 16, 16 ], "at": [ -5, 15 ] } ] }
+  ],
+  "bones": [
+    { "name": "pie", "head": [ 0, -16 ], "tail": [ 0, -56 ], "parent": 1, "default": { "piece": 0 } },
+    {
+      "name": "body",
+      "head": [ 4, -5 ],
+      "tail": [ 4, -21 ],
+      "parent": null,
+      "default": { "piece": 8, "move": [ -14, 1 ] }
+    },
+    {
+      "name": "leg_front",
+      "head": [ 20, -15 ],
+      "tail": [ 23, -3 ],
+      "parent": 1,
+      "default": { "piece": 3, "move": [ -1, 0 ] }
+    },
+    { "name": "leg_back", "head": [ 0, -16 ], "tail": [ 4, -2 ], "parent": 1, "default": { "piece": 2 } },
+    { "name": "pie_2", "head": [ 12, -16 ], "tail": [ 12, -56 ], "parent": 1, "default": { "piece": 1 } },
+    {
+      "name": "tail",
+      "head": [ 56, -12 ],
+      "tail": [ 43, -9 ],
+      "parent": 1,
+      "default": { "piece": 5, "move": [ -65, -2 ] }
+    },
+    {
+      "name": "neck",
+      "head": [ -58, 13 ],
+      "tail": [ -45, 12 ],
+      "parent": 1,
+      "default": { "piece": 11, "move": [ 82, -28 ] }
+    },
+    { "name": "head", "head": [ -50, 10 ], "tail": [ -34, 12 ], "parent": 6, "default": { "piece": 10 } },
+    { "name": "eye_f_droop", "head": [ -44, 10 ], "tail": [ -40, 20 ], "parent": 7, "default": { "piece": 14 } },
+    { "name": "head_cap", "head": [ -43, 9 ], "tail": [ -43, -1 ], "parent": 7, "default": { "piece": 4 } },
+    { "name": "leaf_r", "head": [ 2, -56 ], "tail": [ -7, -69 ], "parent": 1, "default": { "piece": 6 } },
+    { "name": "leaf_l", "head": [ 3, -56 ], "tail": [ 13, -68 ], "parent": 1, "default": { "piece": 7 } },
+    { "name": "mouth", "head": [ -52, 13 ], "tail": [ -45, 17 ], "parent": 6, "default": { "piece": 9 } },
+    { "name": "eye_back_none", "head": [ -43, 11 ], "tail": [ -46, 0 ], "parent": 7, "default": { "piece": 15 } }
+  ],
+  "layers": [ 11, 10, 0, 4, 8, 3, 2, 9, 5, 7, 12, 6, 1, 13 ],
+  "sequences": [
+    {
+      "name": "Idle",
+      "frames": 60,
+      "parts": [
+        { "bone": 0, "keys": [ { "frame": 30, "move": [ 0, 1 ] } ] },
+        { "bone": 1, "keys": [ { "frame": 30, "scale": [ 1, 0.930419921875 ] } ] },
+        {
+          "bone": 2,
+          "keys": [
+            { "frame": 18, "move": [ -0.845, -0.412 ], "rotation": 7.7 },
+            { "frame": 36, "move": [ -1.085, 0.357 ], "rotation": -6.3 }
+          ]
+        },
+        { "bone": 3, "keys": [ { "frame": 18, "move": [ -0.032, 0.074 ], "rotation": -2 } ] },
+        { "bone": 4, "keys": [ { "frame": 30, "move": [ 0, 1 ] } ] },
+        { "bone": 5, "keys": [ { "frame": 18, "rotation": 17.8 }, { "frame": 42, "rotation": -11.2 } ] },
+        {
+          "bone": 6,
+          "keys": [ { "frame": 0, "hidden": true }, { "frame": 60, "move": [ 82.082, -27.609 ], "rotation": -2 } ]
+        },
+        { "bone": 7, "keys": [ { "frame": 30, "move": [ 0, 1 ] } ] },
+        { "bone": 8, "keys": [ { "frame": 24, "rotation": -11.8 } ] },
+        { "bone": 9, "keys": [ { "frame": 24 }, { "frame": 30 }, { "frame": 42, "move": [ 0, -2 ] } ] },
+        { "bone": 10, "keys": [ { "frame": 30, "rotation": -12.7, "scale": [ 1.1787109375, 1 ] } ] },
+        { "bone": 11, "keys": [ { "frame": 30, "rotation": 15.9, "scale": [ 1.17822265625, 1 ] } ] }
+      ]
+    },
+    {
+      "name": "Jump",
+      "frames": 144,
+      "root": { "keys": [ { "frame": 60 } ] },
+      "parts": [
+        {
+          "bone": 0,
+          "keys": [
+            { "frame": 30, "move": [ 0, 1 ] },
+            { "frame": 60, "scale": [ 1, 1.0859375 ] },
+            { "frame": 114, "move": [ 0, 1 ] }
+          ]
+        },
+        {
+          "bone": 1,
+          "keys": [
+            { "frame": 30, "scale": [ 1, 0.930419921875 ] },
+            { "frame": 60 },
+            { "frame": 114, "scale": [ 1, 0.930419921875 ] }
+          ]
+        },
+        {
+          "bone": 2,
+          "keys": [
+            { "frame": 18, "move": [ -0.845, -0.412 ], "rotation": 7.7 },
+            { "frame": 60 },
+            { "frame": 102, "move": [ -0.847, -0.419 ], "rotation": 7.7 }
+          ]
+        },
+        {
+          "bone": 3,
+          "keys": [
+            { "frame": 18, "move": [ -0.032, 0.074 ], "rotation": -2 },
+            { "frame": 60 },
+            { "frame": 102, "move": [ -0.032, 0.075 ], "rotation": -2 }
+          ]
+        },
+        {
+          "bone": 4,
+          "keys": [
+            { "frame": 30, "move": [ 0, 1 ] },
+            { "frame": 60, "scale": [ 1, 1.0859375 ] },
+            { "frame": 114, "move": [ 0, 1 ] }
+          ]
+        },
+        {
+          "bone": 5,
+          "keys": [ { "frame": 30, "rotation": 11.9 }, { "frame": 60, "rotation": -1.6 }, { "frame": 96, "rotation": 10.7 } ]
+        },
+        {
+          "bone": 6,
+          "keys": [
+            { "frame": 24, "move": [ 81.875, -29.072 ], "rotation": 5.2 },
+            { "frame": 60 },
+            { "frame": 108, "move": [ 81.876, -29.077 ], "rotation": 5.2 }
+          ]
+        },
+        {
+          "bone": 7,
+          "keys": [
+            { "frame": 24, "move": [ 0.233, -1.109 ], "rotation": 4 },
+            { "frame": 60, "move": [ 1.071, -3.322 ], "rotation": 13.1 },
+            { "frame": 108, "move": [ 0.232, -1.115 ], "rotation": 4 }
+          ]
+        },
+        {
+          "bone": 8,
+          "keys": [
+            { "frame": 24, "move": [ 0, 1 ], "rotation": -10.1 },
+            { "frame": 48, "piece": 13, "move": [ 1, -1 ], "rotation": -9.206069 },
+            { "frame": 60, "piece": 13, "move": [ 1, -1 ], "rotation": -9.206069 },
+            { "frame": 72, "piece": 13, "move": [ 0, -1 ], "rotation": -1.784717, "scale": [ 1, 1.16259765625 ] },
+            { "frame": 96, "piece": 14, "move": [ 0, 0 ], "rotation": -8.535956 },
+            { "frame": 108, "move": [ 1, 1 ], "rotation": -10.1 }
+          ]
+        },
+        {
+          "bone": 9,
+          "keys": [
+            { "frame": 24 },
+            { "frame": 30 },
+            { "frame": 54, "move": [ -2, -17 ] },
+            { "frame": 84, "move": [ -2, -17 ] },
+            { "frame": 108 },
+            { "frame": 114 }
+          ]
+        },
+        {
+          "bone": 10,
+          "keys": [
+            { "frame": 30, "rotation": -12.7, "scale": [ 1.1787109375, 1 ] },
+            { "frame": 60, "move": [ 0, -3 ], "scale": [ 1, 1.2529296875 ] },
+            { "frame": 114, "rotation": -12.7, "scale": [ 1.1787109375, 1 ] }
+          ]
+        },
+        {
+          "bone": 11,
+          "keys": [
+            { "frame": 30, "rotation": 15.9, "scale": [ 1.17822265625, 1 ] },
+            { "frame": 60, "move": [ 0, -3 ], "scale": [ 1, 1.2529296875 ] },
+            { "frame": 114, "rotation": 15.9, "scale": [ 1.17822265625, 1 ] }
+          ]
+        },
+        { "bone": 12, "keys": [ { "frame": 48, "rotation": 16 }, { "frame": 78, "rotation": -1.7 } ] },
+        {
+          "bone": 13,
+          "keys": [
+            { "frame": 48, "piece": 12, "move": [ -8, -1 ] },
+            { "frame": 60, "piece": 12, "move": [ -8, -1 ] },
+            { "frame": 72, "piece": 12, "move": [ -8, 0 ], "rotation": -8.210512, "scale": [ 1, 1.18896484375 ] },
+            { "frame": 96, "piece": 15, "move": [ -6, 0 ] }
+          ]
+        }
+      ]
+    }
+  ],
+  "loop_clips": [],
+  "timeline": {
+    "name": "stay",
+    "blocks": [ { "sequence": 0 }, { "sequence": 0 }, { "sequence": 0 }, { "sequence": 0 }, { "sequence": 1 } ]
+  }
+}
