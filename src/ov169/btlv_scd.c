@@ -721,6 +721,10 @@ static BOOL BtlvScd_CommandInit(s32 *seq, void *arg) {
                     param.species[0] = GetBattleMonSpecies(mon);
                     param.forms[0] = PokeParty_GetParam(BattleMon_GetViewSrcData(mon), PKM_PARAM_FORM, NULL);
                     param.sexes[0] = GetBattleMonStat(mon, BATTLEMON_GENDER);
+#ifdef PAPERWHITE2
+                    // Paper White 2: the icon's shininess, as the Pokémon shows (an Illusion's included)
+                    param.shiny[0] = PML_PkmIsRare(PokeParty_ToBoxPkm(BattleMon_GetViewSrcData(mon)));
+#endif
                 }
                 break;
             case BTL_STYLE_TRIPLE:
@@ -729,6 +733,10 @@ static BOOL BtlvScd_CommandInit(s32 *seq, void *arg) {
                     param.species[2] = GetBattleMonSpecies(mon);
                     param.forms[2] = PokeParty_GetParam(BattleMon_GetViewSrcData(mon), PKM_PARAM_FORM, NULL);
                     param.sexes[2] = GetBattleMonStat(mon, BATTLEMON_GENDER);
+#ifdef PAPERWHITE2
+                    // Paper White 2: the icon's shininess, as the Pokémon shows (an Illusion's included)
+                    param.shiny[2] = PML_PkmIsRare(PokeParty_ToBoxPkm(BattleMon_GetViewSrcData(mon)));
+#endif
                 }
                 // fall through
             case BTL_STYLE_DOUBLE:
@@ -738,12 +746,20 @@ static BOOL BtlvScd_CommandInit(s32 *seq, void *arg) {
                     param.species[0] = GetBattleMonSpecies(mon);
                     param.forms[0] = PokeParty_GetParam(BattleMon_GetViewSrcData(mon), PKM_PARAM_FORM, NULL);
                     param.sexes[0] = GetBattleMonStat(mon, BATTLEMON_GENDER);
+#ifdef PAPERWHITE2
+                    // Paper White 2: the icon's shininess, as the Pokémon shows (an Illusion's included)
+                    param.shiny[0] = PML_PkmIsRare(PokeParty_ToBoxPkm(BattleMon_GetViewSrcData(mon)));
+#endif
                 }
                 mon = PokeCon_GetPosMonInner(scd->pokeCon, ViewPosToBattlePos(scd->mainModule, 4));
                 if (!IsFainted(mon)) {
                     param.species[1] = GetBattleMonSpecies(mon);
                     param.forms[1] = PokeParty_GetParam(BattleMon_GetViewSrcData(mon), PKM_PARAM_FORM, NULL);
                     param.sexes[1] = GetBattleMonStat(mon, BATTLEMON_GENDER);
+#ifdef PAPERWHITE2
+                    // Paper White 2: the icon's shininess, as the Pokémon shows (an Illusion's included)
+                    param.shiny[1] = PML_PkmIsRare(PokeParty_ToBoxPkm(BattleMon_GetViewSrcData(mon)));
+#endif
                 }
                 break;
             }

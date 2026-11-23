@@ -47,6 +47,9 @@
 #include "system/text_speed.h"
 #include "system/wordset.h"
 #include "text/system/ability_handlers_btl_main.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/icon_palettes.h"
+#endif
 
 // The name entry screen: a name field along the top, a keyboard of keys that the keys or the touch screen pick, and the
 // icon of whatever is being named. Overlay 280, with the graphics of name_input_graphic.c and the tables of
@@ -561,6 +564,13 @@ BOOL NameEntry_ProcInit(GameProc *proc, u32 *state, void *arg, void *unused) {
     species = param->gender;
     NameEntryIcon_Init(&work->icon, NameEntry_GetIconType(param->mode, species), species, param->unk6, unit, work->font,
                        work->queue, work->msgData, work->bmpOam, HEAPID_NAME_INPUT);
+#ifdef PAPERWHITE2
+    // Paper White 2: a Pokémon being named shows its own colours, shiny if it is
+    if (param->pkm != NULL && (NameEntry_GetIconType(param->mode, species) == ICON_TYPE_POKEMON ||
+                               NameEntry_GetIconType(param->mode, species) == ICON_TYPE_POKEMON_NO_LABEL)) {
+        PaperWhite2_LoadIconPaletteOfPkm(PokeParty_ToBoxPkm(param->pkm), FALSE, 4);
+    }
+#endif
     work->keyboards = NameInputData_LoadKeyboards(HEAPID_NAME_INPUT);
     work->name = GFL_StrBufClone(param->name, HEAPID_NAME_INPUT);
     if (GFL_StrBufGetCharCount(work->name) != 0) {
@@ -2841,7 +2851,12 @@ static void NameEntryIcon_Init(NameEntryIcon *icon, u32 type, u32 species, u32 f
         }
         arcId = ARCID_POKEICON;
         paletteFile = PokeIcon_GetPaletteFile();
+#ifdef PAPERWHITE2
+        // Paper White 2: the icon on its own battle palette slots, its colours below
+        charsFile = PaperWhite2_GetIconBattleFile(species, (u8)form, sex, FALSE);
+#else
         charsFile = PokeParty_GetIconIndex(species, (u8)form, sex, FALSE);
+#endif
         cellFile = PokeIcon_GetCellFile_Main();
         animFile = getOBJTileMapping_MainEng();
         x = 30;
@@ -2900,7 +2915,14 @@ static void NameEntryIcon_Init(NameEntryIcon *icon, u32 type, u32 species, u32 f
     case ICON_TYPE_POKEMON:
     case ICON_TYPE_POKEMON_NO_LABEL:
         ClActor_SetSequence(icon->actor, 1);
+#ifdef PAPERWHITE2
+        // Paper White 2: the icon's own normal colours in the banks' first row (4, the palette resource's); the screen
+        // loads a named Pokémon's shiny ones after this (docs/paperwhite2/design/icon-screens.md)
+        PaperWhite2_LoadIconPalette(species, (u8)form, (form & 0xff00) >> 8, FALSE, FALSE, FALSE, 4);
+        ClActor_SetPalette(icon->actor, 0, FALSE);
+#else
         ClActor_SetPalette(icon->actor, PokeIcon_GetPalette(species, (u8)form, (form & 0xff00) >> 8, FALSE), FALSE);
+#endif
         break;
     case ICON_TYPE_KEY:
         ClActor_SetSequence(icon->actor, 5);

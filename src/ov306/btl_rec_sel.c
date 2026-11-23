@@ -45,6 +45,9 @@
 #include "system/time_icon.h"
 #include "system/wordset.h"
 #include "text/system/title.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/icon_palettes.h"
+#endif
 
 // The screen that asks whether to save the last battle as the Battle Video, named after the ROM's "btl_rec_sel.c".
 // With a video saved already it shows that one's battle mode and parties before asking whether to overwrite it.
@@ -1242,6 +1245,28 @@ static void BtlRecSel_CreateIcons(BtlRecSelParam *param, BtlRecSelWork *work) {
             }
         }
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: each icon's own colours in a main OBJ row of its own, 0-11 (side * 6 + slot): the screen's only
+    // other OBJ is the wireless icon, in row 14. Each icon's palette resource loads the banks into rows 0-2, so the
+    // rows are written once every icon is made, into VRAM and into the palette fade's copy, which the fade in starts
+    // from. The video's header keeps no shininess: normal colours (docs/paperwhite2/design/icon-screens.md)
+    for (side = 0; side < SIDE_COUNT; side++) {
+        for (i = 0; i < PARTY_SIZE; i++) {
+            if (work->icons[side][i].species != 0) {
+                u32 row = side * PARTY_SIZE + i;
+                u16 colours[ICON_BATTLE_COLOURS];
+
+                PaperWhite2_ReadIconColours(colours, work->icons[side][i].species, work->icons[side][i].form,
+                                            work->icons[side][i].sex, work->icons[side][i].egg, FALSE);
+                PaletteFade_LoadData(work->fade, colours, PALFADE_BUFFER_MAIN_OBJ, row * ICON_BATTLE_COLOURS,
+                                     sizeof(colours));
+                PaperWhite2_LoadIconPalette(work->icons[side][i].species, work->icons[side][i].form,
+                                            work->icons[side][i].sex, work->icons[side][i].egg, FALSE, FALSE, row);
+                ClActor_SetPalette(work->icons[side][i].actor, row, 0);
+            }
+        }
+    }
+#endif
 }
 
 static void BtlRecSel_FreeIcons(BtlRecSelParam *param, BtlRecSelWork *work) {
@@ -1268,7 +1293,12 @@ static ClActor *BtlRecSel_CreateIcon(ClActUnit *unit, HeapID heapId, u32 vramTyp
     setup.flags = 1;
     setup.arcId = ARCID_POKEICON;
     setup.paletteFile = PokeIcon_GetPaletteFile();
+#ifdef PAPERWHITE2
+    // Paper White 2: the icon on its own battle palette slots, its colours given by BtlRecSel_CreateIcons
+    setup.charFile = PaperWhite2_GetIconBattleFile(species, form, sex, egg);
+#else
     setup.charFile = PokeParty_GetIconIndex(species, form, sex, egg);
+#endif
     setup.cellFile = PokeIcon_GetCellFile_Main();
     setup.animFile = getOBJTileMapping_MainEng();
     setup.paletteOffset = paletteOffset;

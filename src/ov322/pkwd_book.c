@@ -49,6 +49,9 @@
 #include "system/wordset.h"
 #include "text/system/event_pass_power_startmenu.h"
 #include "text/system/pokewood_lines.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/icon_palettes.h"
+#endif
 
 // Pokéstar Studios' scenario book: the list of the movies that the player can film on the lower screen, and the
 // poster, the title, the plot and the mission of the one under the cursor on the upper screen. Picking a movie asks
@@ -1217,13 +1220,32 @@ static void PkwdBook_LoadPokeIconRes(PkwdBookWork *wk) {
     GFL_ArcToolFree(arc);
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: the sub OBJ palette row of each cast icon (docs/paperwhite2/design/icon-screens.md): the banks' rows,
+// row 3, the touch bar file's fourth row 7, which its cells don't use, and row 15. The others are the touch bar's
+// (4-6), the type icons' (8-10), the trainer's (11), the font's (12) and the marks' (13-14)
+static const u8 sPaperWhite2IconRows[CAST_COUNT] = { 0, 1, 2, 3, 7, 15 };
+
+#endif
 // Gives an icon the graphics of a species
 static void PkwdBook_SetPokeIcon(PkwdBookWork *wk, u32 slot, u32 species, u32 sex) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the icon on its own battle palette slots, with its normal colours (a movie's cast are species) in
+    // its slot's row; the Pokémon page's icon is the current cast member's, so it shares that one's row
+    u32 palette = sPaperWhite2IconRows[slot < CAST_COUNT ? slot : wk->castIdx];
+    ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_POKEICON, HEAPID_TAIL(wk->heapId));
+    NNSG2dCharacterData *charData;
+    void *file = GFL_G2DIOReadOBJNCGRArc(arc, PaperWhite2_GetIconBattleFile(species, 1, sex, FALSE), FALSE, &charData,
+                                         HEAPID_TAIL(wk->heapId));
+
+    PaperWhite2_LoadIconPalette(species, 1, sex, FALSE, FALSE, TRUE, palette);
+#else
     u32 palette = PokeIcon_GetPalette(species, 0, sex, FALSE);
     ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_POKEICON, HEAPID_TAIL(wk->heapId));
     NNSG2dCharacterData *charData;
     void *file = GFL_G2DIOReadOBJNCGRArc(arc, PokeParty_GetIconIndex(species, 1, sex, FALSE), FALSE, &charData,
                                          HEAPID_TAIL(wk->heapId));
+#endif
 
     ClActSys_ReplaceCharData(wk->resources.named.pokeIconChars[slot], charData);
     GFL_HeapFree(file);

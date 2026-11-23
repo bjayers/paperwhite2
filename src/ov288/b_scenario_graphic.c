@@ -19,6 +19,10 @@
 #include "system/poke_icon.h"
 #include "system/printsys.h"
 #include "system/str_tool.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/icon_palettes.h"
+#include "system/palanm.h"
+#endif
 
 // The scenario screen's graphics (b_scenario_graphic.c, a guessed name; the ROM names only b_scenario_main.c, and
 // this file's data is laid out apart from that one's): the BG's files, the windows and their printing, the touch
@@ -430,9 +434,16 @@ static void BScenarioGraphic_LoadIconResources(BScenarioWork *work) {
     for (i = 0; i < 6; i++) {
         if (i < work->castCount) {
             PokeParty_GetPkm(work->param->party, i);
+#ifdef PAPERWHITE2
+            // Paper White 2: the icon on its own battle palette slots, its colours loaded as it shows
+            work->chars[BSCENARIO_CHARS_ICON + i] = ClActSys_LoadChars(
+                arc, PaperWhite2_GetIconBattleFile(work->mons[i].species, 1, work->mons[i].sex, FALSE), FALSE, 1,
+                work->param->heapId);
+#else
             work->chars[BSCENARIO_CHARS_ICON + i] =
                 ClActSys_LoadChars(arc, PokeParty_GetIconIndex(work->mons[i].species, 1, work->mons[i].sex, FALSE),
                                    FALSE, 1, work->param->heapId);
+#endif
         } else {
             work->chars[BSCENARIO_CHARS_ICON + i] =
                 ClActSys_LoadChars(arc, PokeParty_GetIconIndex(0, 0, 0, FALSE), FALSE, 1, work->param->heapId);
@@ -477,7 +488,19 @@ void BScenarioGraphic_SetTypeIcon(BScenarioWork *work, int index, u32 unused, u3
 }
 
 void BScenarioGraphic_SetIconPalette(BScenarioWork *work, int index, u32 species, u32 sex) {
+#ifdef PAPERWHITE2
+    // Paper White 2: only the shown cast member's icon is visible, so its own normal colours (a movie's cast are
+    // species, docs/paperwhite2/design/icon-screens.md) go into row 0, the banks' first, and into the palette fade's
+    // copy, which the screen's fades start from
+    u16 colours[ICON_BATTLE_COLOURS];
+
+    PaperWhite2_ReadIconColours(colours, species, 1, sex, FALSE, FALSE);
+    PaletteFade_LoadData(work->paletteFade, colours, PALFADE_BUFFER_SUB_OBJ, 0, sizeof(colours));
+    PaperWhite2_LoadIconPalette(species, 1, sex, FALSE, FALSE, TRUE, 0);
+    ClActor_SetPalette(work->iconActors[index], 0, 0);
+#else
     ClActor_SetPalette(work->iconActors[index], PokeIcon_GetPalette(species, 0, sex, FALSE), 0);
+#endif
 }
 
 static void BScenarioGraphic_CreateActors(BScenarioWork *work, u32 surface, const BScenarioActorSetup *setups,

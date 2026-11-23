@@ -2,6 +2,26 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-23: Icons on their battle palettes, phase 4: the row screens (ROM session)
+
+- **Converted** (icon-screens.md section 5), each icon on its own colours in a standard OBJ row of its own:
+  - shiny-aware: the save report, the battle party list, the battle command screen's icons (double, triple, rotation;
+    the battle now passes each icon's shininess, an Illusion's as shown), the name input when it names a Pokémon;
+  - the Mystery Gift album: shiny when the gift always is;
+  - normal colours, since their data keeps only species: the battle video select (it shows up to 12, not 2), the
+    Battle Recorder profile, the Trial House award, and Pokéstar Studios' scenario screen, script book and record
+    monitor.
+- **Found:** the Mailbox draws no Pokémon icon (item icons only). **Moved to phase 5, wireless-only:** the party
+  list's partner parties (Union Room and Battle Competition only) and the link multi battle's list.
+- **Cost:** no ARM9 main code; overlays 168 and 169 +0x20 each, in the battle's chain, so the DS arena goes
+  0x42a0 → 0x4260 (16.6 KB); no heap or VRAM change.
+- **Tested** in py-desmume on a copy of the save (party slots 0, 2, 4 shiny in RAM): the save report (6 icons exact,
+  normal and shiny; the field menu's rows as before after cancelling), the battle party list (exact, normal and shiny;
+  back to the battle with registers as before), a triple battle's command screen (rows), the name input after a catch
+  (Hoothoot exact, a shiny winter Deerling exact). Screenshots `13_*`, `14_*`, `16_*`, `17_*` in `icon_screens/`.
+- **Not emulator-tested** (need a saved battle video, a Trial House challenge, a Wonder Card or Pokéstar Studios):
+  the other seven; icon-screens.md's table says how to reach each for a 3DS test.
+
 ## 2026-11-23: Icons on their battle palettes, phase 3: the Pokédex (ROM session)
 
 - **Converted, species-only (normal colours, forms and sex as shown):** icon-screens.md section 4.

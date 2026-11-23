@@ -31,6 +31,9 @@
 #include "system/printsys.h"
 #include "system/wordset.h"
 #include "text/script/global_10440.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/icon_palettes.h"
+#endif
 
 // The Trial House's results screen: the rank that the points of a challenge earn, the points, the kind of battle and
 // the team's Pokémon, with a jingle for the rank. A, B or a touch closes it. Named after the ROM's "th_award_graphic.c"
@@ -392,8 +395,17 @@ static void ThAward_InitIcons(ThAwardWork *wk) {
         if (i == 0) {
             wk->icons[i].palette = ClActSys_LoadPlttEx(arc, PokeIcon_GetPaletteFile(), 0, 0x20, wk->heapId);
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: the icon on its own battle palette slots, with its normal colours in a row of its own: the
+        // banks' rows 1-3 and row 4, which nothing else of the screen uses (its OBJs are the rank, row 0, and the
+        // icons). The record keeps no shininess (docs/paperwhite2/design/icon-screens.md)
+        wk->icons[i].chars =
+            ClActSys_LoadChars(arc, PaperWhite2_GetIconBattleFile(species, form, sex, FALSE), FALSE, 0, wk->heapId);
+        PaperWhite2_LoadIconPalette(species, form, sex, FALSE, FALSE, FALSE, 1 + i);
+#else
         wk->icons[i].chars =
             ClActSys_LoadChars(arc, PokeParty_GetIconIndex(species, form, sex, FALSE), FALSE, 0, wk->heapId);
+#endif
         wk->icons[i].cellAnims =
             ClActSys_LoadCellAnims(arc, PokeIcon_GetCellFile_Main(), getOBJTileMapping_MainEng(), wk->heapId);
         MI_CpuFill8(&setup, 0, sizeof(setup));
@@ -403,7 +415,12 @@ static void ThAward_InitIcons(ThAwardWork *wk) {
                                            wk->icons[0].palette, wk->icons[i].cellAnims, &setup, 0, wk->heapId);
         ClActor_SetSequence(wk->iconActors[i], 1);
         ClActor_SetAutoAnim(wk->iconActors[i], FALSE);
+#ifdef PAPERWHITE2
+        // Paper White 2: the row loaded above, counted from the palette resource's row 1
+        ClActor_SetPalette(wk->iconActors[i], i, 0);
+#else
         ClActor_SetPalette(wk->iconActors[i], PokeIcon_GetPalette(species, form, sex, FALSE), 0);
+#endif
     }
     GFL_ArcToolFree(arc);
 }

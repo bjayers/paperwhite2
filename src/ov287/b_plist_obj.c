@@ -16,6 +16,9 @@
 #include "system/app_menu_common.h"
 #include "system/hp_gauge.h"
 #include "system/palanm.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/icon_palettes.h"
+#endif
 
 // The battle party list's OBJ resources and cell actors: the Pokémon icons with their status and item icons, the
 // type and category icons of the summary pages, and overlay 285's cursor. The file name is our guess, after the
@@ -130,6 +133,12 @@ static void BPlistObj_ClearResources(BPlistWork *wk) {
     }
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: the sub OBJ palette row of each icon (docs/paperwhite2/design/icon-screens.md): the banks' rows and
+// three of 10-14, which nothing else of the list uses (measured: its OBJs use 0-9) and its fade includes
+static const u8 sPaperWhite2IconRows[] = { 0, 1, 2, 10, 11, 12 };
+
+#endif
 static void BPlistObj_LoadPokeIconRes(BPlistWork *wk) {
     ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_POKEICON, HEAPID_TAIL(wk->param->heapId));
     u32 *res = wk->charRes;
@@ -137,8 +146,14 @@ static void BPlistObj_LoadPokeIconRes(BPlistWork *wk) {
 
     for (i = 0; i < 6; i++) {
         if (wk->pokemon[i].species != 0) {
+#ifdef PAPERWHITE2
+            // Paper White 2: the icon on its own battle palette slots
+            res[i] = ClActSys_LoadChars(arc, PaperWhite2_GetIconBattleFileOfPkm(PokeParty_ToBoxPkm(wk->pokemon[i].pkm)),
+                                        FALSE, CLACT_VRAM_SUB, wk->param->heapId);
+#else
             res[i] = ClActSys_LoadChars(arc, PokeIcon_GetFileOfPkm(PokeParty_ToBoxPkm(wk->pokemon[i].pkm)), FALSE,
                                         CLACT_VRAM_SUB, wk->param->heapId);
+#endif
         } else {
             res[i] = ClActSys_LoadChars(arc, PokeParty_GetIconIndex(0, 0, 0, FALSE), FALSE, CLACT_VRAM_SUB,
                                         wk->param->heapId);
@@ -226,6 +241,15 @@ static void BPlistObj_CreateActors(BPlistWork *wk) {
         wk->actors[i] = BPlistObj_CreateActor(wk, &data_ov287_021fb134[i]);
     }
     GFL_NetSetIconScreen(FALSE, wk->param->heapId);
+#ifdef PAPERWHITE2
+    // Paper White 2: each icon's own colours, normal or shiny, once every palette resource is loaded (the HP bar's file
+    // clears the rows after its own) and before the palette fade's buffer is taken from VRAM
+    for (i = 0; i < 6; i++) {
+        if (wk->pokemon[i].species != 0) {
+            PaperWhite2_LoadIconPaletteOfPkm(PokeParty_ToBoxPkm(wk->pokemon[i].pkm), TRUE, sPaperWhite2IconRows[i]);
+        }
+    }
+#endif
     PaletteFade_LoadFromVRAM(wk->paletteFade, PALFADE_VRAM_SUB_OBJ, 0, 0x1e0);
     BPlistObj_SetPokeIconPalettes(wk);
 }
@@ -259,10 +283,15 @@ static void BPlistObj_SetPokeIconPalettes(BPlistWork *wk) {
 
     for (i = 0; i < 6; i++) {
         if (wk->pokemon[i].species != 0) {
+#ifdef PAPERWHITE2
+            // Paper White 2: the icon's own row, loaded with its resources
+            ClActor_SetPalette(wk->pokeIcons[i], sPaperWhite2IconRows[i], 1);
+#else
             ClActor_SetPalette(wk->pokeIcons[i],
                                PokeIcon_GetPalette(wk->pokemon[i].species, wk->pokemon[i].form, wk->pokemon[i].sex,
                                                    wk->pokemon[i].isEgg),
                                1);
+#endif
         }
     }
 }

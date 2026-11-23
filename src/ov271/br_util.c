@@ -22,6 +22,9 @@
 #include "system/pms_data.h"
 #include "system/pms_draw.h"
 #include "system/wordset.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/icon_palettes.h"
+#endif
 
 struct BrMsgWin {
     PrintWindow print;
@@ -785,8 +788,16 @@ BrProfile *BrProfile_Init(GdsProfile *cp_profile, BrRes *res, ClActUnit *unit, P
                 ClActSys_LoadPlttEx(handle, PokeIcon_GetPaletteFile(), CLACT_VRAM_MAIN, 0x80, HEAPID_TAIL(heapId));
             p_wk->pokeIconCel = ClActSys_LoadCellAnims(handle, PokeIcon_GetCellFile_Main(), getOBJTileMapping_MainEng(),
                                                        HEAPID_TAIL(heapId));
+#ifdef PAPERWHITE2
+            // Paper White 2: the icon on its own battle palette slots, with its normal colours (a profile keeps a
+            // species) in the banks' first row, 4 (docs/paperwhite2/design/icon-screens.md)
+            p_wk->pokeIconChr = ClActSys_LoadChars(handle, PaperWhite2_GetIconBattleFile(species, form, gender, egg),
+                                                   FALSE, CLACT_VRAM_MAIN, HEAPID_TAIL(heapId));
+            PaperWhite2_LoadIconPalette(species, form, gender, egg, FALSE, FALSE, 4);
+#else
             p_wk->pokeIconChr = ClActSys_LoadChars(handle, PokeParty_GetIconIndex(species, form, gender, egg), FALSE,
                                                    CLACT_VRAM_MAIN, HEAPID_TAIL(heapId));
+#endif
             GFL_ArcToolFree(handle);
 
             MI_CpuFill8(&setup, 0, sizeof(ClActorSetup));
@@ -795,7 +806,11 @@ BrProfile *BrProfile_Init(GdsProfile *cp_profile, BrRes *res, ClActUnit *unit, P
             setup.sequence = 1;
             p_wk->pokeIcon = ClActor_Create(unit, p_wk->pokeIconChr, p_wk->pokeIconPlt, p_wk->pokeIconCel, &setup,
                                             CLACT_SURFACE_MAIN, heapId);
+#ifdef PAPERWHITE2
+            ClActor_SetPalette(p_wk->pokeIcon, 0, 0);
+#else
             ClActor_SetPalette(p_wk->pokeIcon, PokeIcon_GetPalette(species, form, gender, egg), 0);
+#endif
             ClActor_SetObjMode(p_wk->pokeIcon, TRUE);
         }
     }

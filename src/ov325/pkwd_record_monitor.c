@@ -37,6 +37,10 @@
 #include "system/wipe.h"
 #include "system/wordset.h"
 #include "text/system/pokewood_lines.h"
+#ifdef PAPERWHITE2
+#include "nnsys/g2d.h"
+#include "paperwhite2/icon_palettes.h"
+#endif
 
 // Pokéstar Studios' record monitor: the list of the movies the player has filmed on the lower screen and, on the
 // upper one, the box office record of the movie under the cursor, its cast and its stars. The file has no name
@@ -870,6 +874,26 @@ static void PkwdRecordMonitor_LoadIconRes(PkwdRecordMonitorWork *wk) {
 
 // Gives an icon of the cast the characters and the palette of a Pokémon
 static void PkwdRecordMonitor_SetIcon(PkwdRecordMonitorWork *wk, u32 index, u32 species, u32 sex, const u32 form) {
+#ifdef PAPERWHITE2
+    // Paper White 2: the icon on its own battle palette slots, with its normal colours (a record keeps the cast as
+    // species) in main OBJ row index (0-5): the screen's main OBJs are the icons (the banks at 5-7) and the marks
+    // (8-13), so rows 0-4 are free. The palette is then that row itself rather than one counted from the banks' row 5
+    // (docs/paperwhite2/design/icon-screens.md)
+    ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_POKEICON, HEAPID_TAIL(wk->heapId));
+    NNSG2dCharacterData *character;
+    void *buffer = GFL_G2DIOReadOBJNCGRArc(arc, PaperWhite2_GetIconBattleFile(species, form, sex, FALSE), FALSE,
+                                           &character, HEAPID_TAIL(wk->heapId));
+    NNSG2dImagePaletteProxy proxy;
+
+    ClActSys_ReplaceCharData(wk->res.of.iconChars[index], character);
+    GFL_HeapFree(buffer);
+    GFL_ArcToolFree(arc);
+    PaperWhite2_LoadIconPalette(species, form, sex, FALSE, FALSE, FALSE, index);
+    ClActor_GetPlttProxy(wk->icons[index], &proxy);
+    NNS_G2dSetImagePaletteLocation(&proxy, NNS_G2D_VRAM_TYPE_2DMAIN, 0);
+    ClActor_SetPlttProxy(wk->icons[index], &proxy);
+    ClActor_SetPalette(wk->icons[index], index, 1);
+#else
     u32 palette = PokeIcon_GetPalette(species, form, sex, FALSE);
     ArcTool *arc = GFL_ArcSysCreateFileHandle(ARCID_POKEICON, HEAPID_TAIL(wk->heapId));
     NNSG2dCharacterData *character;
@@ -880,6 +904,7 @@ static void PkwdRecordMonitor_SetIcon(PkwdRecordMonitorWork *wk, u32 index, u32 
     GFL_HeapFree(buffer);
     GFL_ArcToolFree(arc);
     ClActor_SetPalette(wk->icons[index], palette, 1);
+#endif
 }
 
 static void PkwdRecordMonitor_LoadRes(PkwdRecordMonitorWork *wk, u32 vramType, const PkwdRecordMonitorResSetup *setup) {

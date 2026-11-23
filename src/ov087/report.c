@@ -30,6 +30,9 @@
 #include "system/rtc.h"
 #include "system/str_tool.h"
 #include "system/wordset.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/icon_palettes.h"
+#endif
 
 // The windows, in the order of the lines of message file 359
 enum {
@@ -463,6 +466,13 @@ static const ClActorSetup sReportActorSetups[2] = {
     { 74, 180, 0, 0, 0 },
 };
 
+#ifdef PAPERWHITE2
+// Paper White 2: the sub OBJ palette row of each party icon (docs/paperwhite2/design/icon-screens.md). The icons'
+// palette resource is the banks' file at row 0 and the bar's is row 3; the field menu under the report reloads its
+// rows when it comes back (measured), so 4-6 are free while the report shows
+static const u8 sPaperWhite2IconRows[] = { 0, 1, 2, 4, 5, 6 };
+
+#endif
 static void Report_CreateActors(ReportScreen *wk) {
     PokeParty *party = GameData_GetParty(GSYS_GetGameData(wk->gsys));
     u32 count = PokeParty_GetPkmCount(party);
@@ -474,8 +484,15 @@ static void Report_CreateActors(ReportScreen *wk) {
 
     arc = GFL_ArcSysCreateFileHandle(ARCID_POKEICON, wk->heapId);
     for (i = 0; i < count; i++) {
+#ifdef PAPERWHITE2
+        // Paper White 2: the icon on its own battle palette slots, its colours loaded below
+        wk->chars[i] =
+            ClActSys_LoadChars(arc, PaperWhite2_GetIconBattleFileOfPkm(PokeParty_ToBoxPkm(PokeParty_GetPkm(party, i))),
+                               FALSE, CLACT_VRAM_SUB, wk->heapId);
+#else
         wk->chars[i] = ClActSys_LoadChars(arc, PokeIcon_GetFileOfPkm(PokeParty_ToBoxPkm(PokeParty_GetPkm(party, i))),
                                           FALSE, CLACT_VRAM_SUB, wk->heapId);
+#endif
     }
     wk->palettes[0] = ClActSys_LoadPlttEx(arc, PokeIcon_GetPaletteFile(), CLACT_VRAM_SUB, 0, wk->heapId);
     wk->cellAnims[0] =
@@ -496,7 +513,13 @@ static void Report_CreateActors(ReportScreen *wk) {
                                        CLACT_SURFACE_SUB, wk->heapId);
         ClActor_SetVisible(wk->actors[i], FALSE);
         setup.x += 32;
+#ifdef PAPERWHITE2
+        // Paper White 2: each icon's own colours, normal or shiny, in a row of its own
+        PaperWhite2_LoadIconPaletteOfPkm(PokeParty_ToBoxPkm(pkm), TRUE, sPaperWhite2IconRows[i]);
+        ClActor_SetPalette(wk->actors[i], sPaperWhite2IconRows[i], TRUE);
+#else
         ClActor_SetPalette(wk->actors[i], PokeIcon_GetPaletteOfPkm(PokeParty_ToBoxPkm(pkm)), TRUE);
+#endif
     }
 
     setup = sReportActorSetups[1];

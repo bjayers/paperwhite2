@@ -30,6 +30,13 @@
 #include "system/game_data.h"
 #include "system/printsys.h"
 #include "system/wordset.h"
+#ifdef PAPERWHITE2
+#include "nnsys/g2d.h"
+#include "paperwhite2/icon_palettes.h"
+
+// Paper White 2: a Pokémon gift's shininess that makes it always shiny (MysteryGiftPokemon)
+#define MYSTERY_GIFT_SHINY_ALWAYS 1
+#endif
 
 // Mystery Gift's cards: the album of saved cards, where they are looked at, moved and thrown away, and the card shown
 // on the top screen, with the Pokémon of a Pokémon gift coming out of it. Our names; swan has none for this overlay
@@ -647,7 +654,27 @@ static void MysteryCardView_DrawCard(MysteryCardView *view, BOOL shown, BOOL lef
     }
     view->icons[win] = ClActor_Create(view->setup.unit, view->iconChars[win], palette, view->iconCellAnims[win],
                                       &actorSetup, 0, view->heapId);
+#ifdef PAPERWHITE2
+    if (MysteryCard_GetKind(card) == 1) {
+        // Paper White 2: a Pokémon gift's icon on its own colours, shiny if the gift always is, in the row an item
+        // card's icon of the same window would take (4 + the window), which no resource holds for a Pokémon card. The
+        // palette is then that row itself rather than one counted from the banks' row 12
+        // (docs/paperwhite2/design/icon-screens.md)
+        MysteryGiftPokemon *poke = (MysteryGiftPokemon *)MysteryCard_GetGift(card);
+        NNSG2dImagePaletteProxy proxy;
+
+        PaperWhite2_LoadIconPalette(poke->species, poke->form, poke->gender, poke->isEgg,
+                                    poke->shininess == MYSTERY_GIFT_SHINY_ALWAYS, FALSE, win + 4);
+        ClActor_GetPlttProxy(view->icons[win], &proxy);
+        NNS_G2dSetImagePaletteLocation(&proxy, NNS_G2D_VRAM_TYPE_2DMAIN, 0);
+        ClActor_SetPlttProxy(view->icons[win], &proxy);
+        ClActor_SetPalette(view->icons[win], win + 4, 0);
+    } else {
+        ClActor_SetPalette(view->icons[win], (u8)MysteryCard_GetPokeIconPalette(card), 0);
+    }
+#else
     ClActor_SetPalette(view->icons[win], (u8)MysteryCard_GetPokeIconPalette(card), 0);
+#endif
     ClActor_SetVisible(view->icons[win], TRUE);
     if (view->moving && view->moveSlot == index + page * 4) {
         cursorPos.x = sCardPositions[index].x * 8 - 24;
@@ -904,7 +931,12 @@ static u32 MysteryCard_GetIconCharFile(MysteryCard *card) {
     switch (MysteryCard_GetKind(card)) {
     case 1:
         poke = (MysteryGiftPokemon *)MysteryCard_GetGift(card);
+#ifdef PAPERWHITE2
+        // Paper White 2: the icon on its own battle palette slots, its colours loaded by MysteryCardView_DrawCard
+        return PaperWhite2_GetIconBattleFile(poke->species, poke->form, poke->gender, poke->isEgg);
+#else
         return PokeParty_GetIconIndex(poke->species, poke->form, poke->gender, poke->isEgg);
+#endif
     case 2:
         return GetItemGraphicsDatID(MysteryCard_GetGift(card)->value, ITEM_FILE_ICON_CHAR);
     default:

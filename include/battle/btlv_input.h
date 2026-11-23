@@ -56,6 +56,10 @@ typedef struct {
     u32 scdState;                     // 0xc0  the creator's scdState, which nothing reads
     u8 launcherPoints;                // 0xc4  the Wonder Launcher's points
     u8 ballSlide;                     // 0xc5  the ball count's slide, 0 for none
+#ifdef PAPERWHITE2
+    // Paper White 2: whether each party icon's Pokémon is shiny, for its icon's colours
+    BOOL shiny[3];
+#endif
 } BtlvInputCommandParam;
 
 // Screen 2, the move screen

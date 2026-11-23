@@ -215,7 +215,95 @@ chosen forms and sexes):
   caught mark covers an icon; forced Deerling Autumn, Shellos East, female Frillish (exact) and Arceus Fire; page 2 and
   the next area (exact); leaving to the field: registers as before.
 
-## 5. Every screen
+## 5. The row screens (phase 4)
+
+Each of these shows few enough icons for standard OBJ rows: the icon's pixels come from
+`PaperWhite2_GetIconBattleFile[OfPkm]`, its 16 colours go into a row of its own with `PaperWhite2_LoadIconPalette[OfPkm]`,
+and its actor's palette points at that row (counted from the palette resource's row, or, where the row comes before
+it, with the actor's palette proxy moved to row 0 as in section 4). Where the screen has a `PaletteFade`, the colours
+are written before the fade's buffer is read from VRAM, or into the buffer as well (`PaletteFade_LoadData`). No ARM9
+main code is added: every screen uses the phase 1-2 API.
+
+**Shininess.** Shiny-aware where the screen has the Pokémon itself (`…OfPkm`, or its PID); normal colours where the
+data it shows keeps only species, form and sex (decided 2026-11-23, the user's defaults: such a screen can't know):
+
+| Screen | Data | Colours |
+| --- | --- | --- |
+| Save report, battle party list, name input | the party / the Pokémon being named | normal or shiny |
+| Battle command screen | the battle Pokémon as shown (an Illusion's disguise included) | normal or shiny |
+| Mystery Gift album | the gift's Pokémon | shiny when the gift is always shiny (its `shininess` 1), else normal |
+| Battle video select, Battle Recorder profile, Trial House award | a video header's, a GDS profile's, the Trial House record's species | normal |
+| Pokéstar Studios book, scenario screen, record monitor | a movie's cast (species) | normal |
+
+### 5.1 The screens
+
+- **Save report** (`ov087/report.c`, sub engine, 6 icons). Rows 0-2 (the banks') and 4-6. The report draws over the
+  field menu on the bottom screen; its own OBJs are the icons and the bar (row 3). The field menu reloads its rows 0-12
+  when it comes back (measured: rows 0-13 identical before the report and after cancelling it, but for row 10's
+  colour 15, which the menu animates), so 4-6 are free while the report shows. No palette fade.
+- **Battle party list** (`ov287/b_plist_obj.c`, sub, 6). Rows 0-2 and 10-12. Measured: the list's OBJs use rows 0-9
+  (3-9: status, item and type icons, cursor, HP bar), 14 is the wireless icon's, and the battle's palette fade
+  (shared with the list) covers rows 0-14. The HP bar's palette file clears the rows after its own as it loads, so the
+  colours are written once every resource is loaded, just before the list's fade takes its buffer from VRAM (the
+  first try wrote them with the icons' resources and they came out black).
+- **Battle command screen** (`ov168/btlv_input.c`, sub, 2-3 in double, triple and rotation battles). The banks' rows
+  11-13, slot i in row 11 + i, written before the screen's fade takes those rows. The battle passes each icon's
+  shininess in a new `BtlvInputCommandParam.shiny[3]` (`include/battle/btlv_input.h`), set with the species in
+  `ov169/btlv_scd.c`.
+- **Name input** (`ov280/name_input.c`, main, 1). The banks' first row, 4. The icon's normal colours load with it; when
+  the screen names a Pokémon (`NameEntryParam.pkm`, which `setupPokemonNameEntry` sets for every Pokémon naming)
+  its own colours follow, shiny if it is.
+- **Pokéstar Studios scenario screen** (`ov288/b_scenario_graphic.c`, sub, 1 of 6 at a time: the cast member shown).
+  Row 0, written as each cast member shows, into VRAM and the battle fade's copy. The screen's other rows: 4-6 type
+  icons, 7 cursor, 8-12 buttons.
+- **Pokéstar Studios book** (`ov322/pkwd_book.c`, sub, 6 on the cast page, 1 on a Pokémon's page). Cast slot i in row
+  0, 1, 2, 3, 7, 15; the Pokémon page's icon is the current cast member's and takes its row. The others: touch bar
+  4-6 (its file's fourth row, 7, isn't used by its cells, as in the Pokédex list), types 8-10, trainer 11, font 12,
+  marks 13-14. No palette fade.
+- **Pokéstar Studios record monitor** (`ov325/pkwd_record_monitor.c`, main, 6). Cast slot i in main row i (0-5): the
+  screen's main OBJs are the icons (banks at 5-7) and the marks (8-13), so 0-4 are free; the actors' palette proxies
+  are moved to row 0.
+- **Battle video select** (`ov306/btl_rec_sel.c`, main, up to 12: both sides of the saved video; the survey said 2).
+  Icon side × 6 + slot in main row 0-11. Each icon loads its own copy of the banks into rows 0-2, so the rows are
+  written once all are made, into VRAM and the screen's fade buffer (rows 0-13), which the fade in starts from. Its
+  only other OBJ is the wireless icon (row 14, outside the fade).
+- **Trial House award** (`ov313/th_award.c`, main, 3 or 4). Rows 1-4 (the banks' and the next): its OBJs are the rank
+  (row 0) and the icons.
+- **Mystery Gift album** (`ov197/mystery_album.c`, main, up to 8 cards: 4 shown, 4 more while a page slides). A
+  Pokémon card's icon takes the row an item card in the same window would (4 + the window), which nothing holds for a
+  Pokémon card; the actor's palette proxy is moved to row 0. No palette fade.
+- **Battle Recorder profile** (`ov271/br_util.c`, main, 1). The banks' first row, 4.
+
+**Not icon screens after all:** the Mailbox (`ov215/mb_obj.c`) opens the icon archive but loads nothing from it: its
+OBJs are item icons, and its palette resource is file `PokeIcon_GetPaletteFile()` of the UI archive, not the icons'.
+
+**Moved to phase 5 (wireless-only):**
+- **Party list, battle mode with partners** (`ov165/plist_battle.c`): only `showPartners` lists draw the partners'
+  icons, and only the Union Room (`ov034/union_oneself.c`) and the Wi-Fi/live Battle Competition
+  (`ov263/wifibattlematch_subproc.c`, the regulation's `showPartners`) set it. With two partners it would be 18 icons.
+- **Multi battle list** (`ov171/vs_multi_list.c`): started only by the link battle's event (`ov010/event_make.c`, after
+  the network timing sync and the comm battle intro).
+
+### 5.2 Tested
+
+py-desmume, a copy of the user's save (nothing saved); party slots 0, 2 and 4 (Pignite, Keldeo Resolute, Zekrom) made
+shiny in RAM; wild battles on Route 6 with encounters forced, triple battles with the debug menu's Triple battles;
+catches with debug-given Master Balls, the shiny one with the debug menu's Always shiny. Scripts in
+`.../scratchpad/p4/` (`route.sh`, `route2.sh` and `route3.sh` boot and reach every screen; `rowcheck.py`, `checks.py`,
+`checks2.py` (either frame) compare; `oamrows.py` lists each screen's OBJs by row):
+- **Save report:** all six icons pixel-exact, normal and shiny; cancelling it: the field menu's rows as before.
+- **Battle party list:** all six exact, normal and shiny (rows 0-2, 10-12); back to the battle: the command screen's
+  rows 0-10 and 14-15 as before, VRAMCNT and DISPCNT identical (rows 11-13, unused in a single battle, go from leftover
+  bytes to zero).
+- **Battle command screen** in a triple battle: each icon's row holds its own colours, normal and shiny (pixels can't
+  be compared: the screen darkens the icons not choosing).
+- **Name input** after a catch: a Hoothoot (exact) and a shiny winter Deerling (exact, its form's shiny colours).
+- **Not emulator-tested** (converted by reading the code; each row's reasons in the table below): the Pokéstar Studios
+  screens, the battle video select and the Battle Recorder profile (need a saved battle video: the Vs. Recorder says
+  "There is nothing saved"), the Trial House award (needs a finished challenge) and the Mystery Gift album (needs a
+  received card).
+
+## 6. Every screen
 
 Columns: **#** is the screenshot prefix. **Icons** is the most shown at once, m main engine, s sub. **Route**: rows
 (standard rows, one per icon), ext (8bpp with an extended palette in the named bank), BG. **Kind**: shiny-aware or
@@ -235,19 +323,19 @@ species-only. **Tested**: emulator, with the screenshot in `icon_screens/` (Wind
 | 09 | Pokédex habitat map (original) | never started in the hack (Info's Area replaces it) | `ov298/pokedex_detail_map.c` | 2 s | (rows) | species | not converted: unreachable, fallback | no: unreachable | |
 | 10 | Habitat list (the Habitat Dex's grid) | Pokédex > Habitat > an area | `ov303/pokedex_habitat_graphic.c`, `paperwhite2_habitat_icons.c` | 30 m | ext G: palettes 0-1, a band per cell (4.3) | species | **converted** (phase 3) | yes: `10_habitat_list_normal`, `10_habitat_list_forms_normal`, `10_habitat_list_page2_normal`, `10_habitat_list_next_area_normal`, `10_habitat_list_left_field` | to test |
 | 11 | DexNav | C-Gear > DexNav | `paperwhite2_dexnav.c` | 18 grid + 1 big, BG | BG ext palettes, or the grid as OBJs on ext G | species (per area) | pending (phase 5) | | |
-| 12 | Party list, battle mode (multi partner) | a multi battle's party choice | `ov165/plist_battle.c` | up to 6 s | rows if 3 more free, else by species | shiny | pending (phase 4) | | |
-| 13 | Battle party list | in battle > Pokémon | `ov287/b_plist_obj.c` | 6 s (I 16 KB) | rows 6, 7, 10-15 | shiny | pending (phase 4) | | |
-| 14 | Battle lower screen | in battle, the command screen | `ov168/btlv_input.c` | 3 s | rows (≤ 3) | shiny | pending (phase 4) | | |
-| 15 | Battle scenario team | battle institutions' team view | `ov288/b_scenario_graphic.c` | 6 s | rows (audit) | shiny | pending (phase 4) | | |
-| 16 | Save report | field menu > Save | `ov087/report.c` | 6 s | rows (audit vs C-Gear rows) | shiny | pending (phase 4) | | |
-| 17 | Name input | naming a caught Pokémon or nickname | `ov280/name_input.c` | 1 m | rows | shiny | pending (phase 4) | | |
-| 18 | Battle video select | Battle Recorder > a local video | `ov306/btl_rec_sel.c` | 2 m | rows | shiny | pending (phase 4) | | |
-| 19 | Trial House award | Trial House, the result | `ov313/th_award.c` | 4 m | rows | shiny | pending (phase 4) | | |
-| 20 | Mystery Gift album | title > Mystery Gift > cards | `ov197/mystery_album.c` | up to 4 m | rows | shiny | pending (phase 4) | | |
-| 21 | Mailbox | a Center's PC > mail | `ov215/mb_obj.c` | 3 s | rows (≤ 3) | shiny | pending (phase 4) | | |
-| 22 | Multi battle list | a multi battle's team list | `ov171/vs_multi_list.c` | 6 m | rows (audit) | shiny | pending (phase 4) | | |
-| 23 | Pokéstar Studios book / record | Pokéstar Studios | `ov322/pkwd_book.c`, `ov325/pkwd_record_monitor.c` | 7 s / 6 m | rows (audit) | shiny | pending (phase 4) | | |
-| 24 | Battle Recorder profile | Battle Recorder > profile | `ov271/br_util.c` | 1 m | rows | shiny | pending (phase 4) | | |
+| 12 | Party list, battle mode (partners' parties) | Union Room multi battle, Battle Competition: the party choice | `ov165/plist_battle.c` | 6 or 18 s | (rows / share) | shiny | pending (phase 5): wireless-only (5.1) | no: wireless | |
+| 13 | Battle party list | in battle > Pokémon | `ov287/b_plist_obj.c` | 6 s | rows 0-2, 10-12 (5.1) | shiny | **converted** (phase 4) | yes: `13_battle_party_list_normal`, `_shiny`, `_left_battle` | to test |
+| 14 | Battle command screen | in a double, triple or rotation battle, the command screen's icons | `ov168/btlv_input.c` | 3 s | rows 11-13 | shiny | **converted** (phase 4) | yes (rows by memory; the screen darkens icons): `14_battle_command_icons_normal`, `_shiny` | to test |
+| 15 | Pokéstar Studios scenario screen | Pokéstar Studios, filming a movie: the lower screen's cast page | `ov288/b_scenario_graphic.c` | 1 s (of 6) | row 0 (5.1) | species | **converted** (phase 4) | no: Pokéstar Studios not reached | to test |
+| 16 | Save report | field menu > Save | `ov087/report.c` | 6 s | rows 0-2, 4-6 (5.1) | shiny | **converted** (phase 4) | yes: `16_save_report_normal`, `_shiny`, `_left_menu` | to test |
+| 17 | Name input | catching a Pokémon > give a nickname: yes (also the name rater) | `ov280/name_input.c` | 1 m | row 4 | shiny | **converted** (phase 4) | yes: `17_name_input_normal`, `_shiny` | to test |
+| 18 | Battle video select | after a recordable battle (Battle Subway, PWT...) with a video saved already: "save over it?" shows both parties | `ov306/btl_rec_sel.c` | 12 m | rows 0-11 (5.1) | species (header) | **converted** (phase 4) | no: needs a saved battle video | to test |
+| 19 | Trial House award | Trial House (Striaton City), the rank card after a challenge | `ov313/th_award.c` | 4 m | rows 1-4 | species (record) | **converted** (phase 4) | no: needs a finished challenge | to test |
+| 20 | Mystery Gift album | title menu > Mystery Gift > Wonder Cards | `ov197/mystery_album.c` | 4 m (8 while sliding) | row 4 + its window, proxy at 0 | gift's | **converted** (phase 4) | no: no card in the save | to test (with a Pokémon card) |
+| 21 | Mailbox | a Center's PC > mail | `ov215/mb_obj.c` | 0 (item icons only) | | n/a | not an icon screen (5.1) | | |
+| 22 | Multi battle list | a link multi battle, before it starts | `ov171/vs_multi_list.c` | 6 m | (rows) | shiny | pending (phase 5): wireless-only (5.1) | no: wireless | |
+| 23 | Pokéstar Studios book / record monitor | Pokéstar Studios: the script book (choosing a movie) / the records of filmed movies | `ov322/pkwd_book.c`, `ov325/pkwd_record_monitor.c` | 6 s / 6 m | rows 0-3, 7, 15 / rows 0-5, proxy at 0 (5.1) | species | **converted** (phase 4) | no: Pokéstar Studios not reached | to test |
+| 24 | Battle Recorder profile | Bag > Key Items > Vs. Recorder > Battle Videos > My Video (with a saved video) | `ov271/br_util.c` | 1 m | row 4 | species (profile) | **converted** (phase 4) | no: needs a saved battle video | to test |
 | 25 | Trade box | link trade (local) | `ov194/pokemontrade_2d.c` | about 30 of 60 s | ext I | shiny | pending (phase 5) | needs a link harness | |
 | 26 | Trade offer | link trade (local), the offer | `ov194/pokemontrade_nego.c` | 6 + 6 | rows if 9 free, else ext I | shiny | pending (phase 5) | | |
 | 27 | Unova Link | title > Unova Link | `ov332/cygnus_flow.c` | 12 m | ext G or a row per visible entry | shiny | pending (phase 5) | | |
@@ -269,12 +357,13 @@ the PC box) and follower menus. Files that only use the pack/unpack helpers: `ov
 party side) and the Pokédex's National list show every icon right in bank colours. Its Habitat list's icon and the
 party list's normal icons look as before too.
 
-## 6. Phases
+## 7. Phases
 
 1. Foundation and the party list (done, 2026-11-23).
 2. The box (ov255): 8bpp icons and extended palette G (done, 2026-11-23).
 3. The Pokédex: list (ext G bottom, rows top), Info Evo, Area, the Habitat list (ext G) (done, 2026-11-23).
-4. The easy screens and those whose rows need checking (rows 12-24 above).
+4. The row screens (section 5): 11 converted, the Mailbox found not to be one, two moved to phase 5 (done,
+   2026-11-23).
 5. The extended-palette rest (DexNav, trade, Unova Link, Battle Recorder), and the wireless-only shells.
 6. Sweep: every loader of the icon archive accounted for here, the fallback reached by nothing tested, a last emulator
    pass. Then the banks and the fallback redraw can go (not before every screen is confirmed).

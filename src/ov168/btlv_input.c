@@ -49,6 +49,7 @@
 #ifdef PAPERWHITE2
 #include "constants/types.h"
 #include "paperwhite2/battle_move_preview.h"
+#include "paperwhite2/icon_palettes.h"
 #endif
 
 #define BTLV_INPUT_TYPE_COUNT 22
@@ -2738,6 +2739,16 @@ static void BtlvInput_CreatePartyIcons(BtlvInput *work, const BtlvInputCommandPa
     work->iconCellAnims =
         ClActSys_LoadCellAnims(arc, PokeIcon_GetCellFile_Sub(), getOBJTileMapping_SubEng(), work->heapId);
     work->iconPalette = ClActSys_LoadPlttEx(arc, PokeIcon_GetPaletteFile(), 1, 0x160, work->heapId);
+#ifdef PAPERWHITE2
+    // Paper White 2: each icon's own colours, normal or shiny, in the bank row of its slot (11-13, at most 3 icons),
+    // before the fade's buffer takes the rows (docs/paperwhite2/design/icon-screens.md)
+    for (i = 0; i < count; i++) {
+        if (param->species[i] != 0) {
+            PaperWhite2_LoadIconPalette(param->species[i], param->forms[i], param->sexes[i], FALSE, param->shiny[i],
+                                        TRUE, 11 + i);
+        }
+    }
+#endif
     PaletteFade_LoadFromVRAM(work->paletteFade, 3, (u16)(ClActSys_GetPlttVramAddr(work->iconPalette, TRUE) >> 1), 0x60);
     G2S_SetWnd0Position(1, 0, 0, 0);
     G2S_SetWnd1Position(1, 0, 0, 0);
@@ -2751,9 +2762,16 @@ static void BtlvInput_CreatePartyIcons(BtlvInput *work, const BtlvInputCommandPa
         if (param->species[i] == 0) {
             continue;
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: the icon on its own battle palette slots
+        work->iconChars[i] = ClActSys_LoadChars(
+            arc, PaperWhite2_GetIconBattleFile(param->species[i], param->forms[i], param->sexes[i], FALSE), FALSE, 1,
+            work->heapId);
+#else
         work->iconChars[i] =
             ClActSys_LoadChars(arc, PokeParty_GetIconIndex(param->species[i], param->forms[i], param->sexes[i], FALSE),
                                FALSE, 1, work->heapId);
+#endif
         work->iconActors[i].actor = ClActor_Create(work->iconUnit, work->iconChars[i], work->iconPalette,
                                                    work->iconCellAnims, &data_ov168_021f35f2, 1, work->heapId);
         ClActor_SetSurfacePos(work->iconActors[i].actor, &data_ov168_021f3780[work->rule][i], 1);
@@ -2770,8 +2788,13 @@ static void BtlvInput_CreatePartyIcons(BtlvInput *work, const BtlvInputCommandPa
             y = data_ov168_021f3780[work->rule][i].y;
             G2S_SetWnd1Position(x - 16, y - 16, x + 16, y + 16);
         }
+#ifdef PAPERWHITE2
+        // Paper White 2: the row loaded above, counted from the bank's row 11
+        ClActor_SetPalette(work->iconActors[i].actor, i, 0);
+#else
         ClActor_SetPalette(work->iconActors[i].actor,
                            PokeIcon_GetPalette(param->species[i], param->forms[i], param->sexes[i], FALSE), 0);
+#endif
     }
     GFL_ArcToolFree(arc);
 }
