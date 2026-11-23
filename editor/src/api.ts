@@ -4,6 +4,7 @@ import { WRITE_HEADER, type BuildState, type DataFile, type Entry, type ScanMatc
   type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
 import { schemaPart, splitSchemaId, type Schema } from "../shared/schema.ts";
 import type { Usage, UsageKind } from "../server/usage.ts";
+import type { IconChoice, IconReviewDetail, IconReviewState } from "../server/iconReview.ts";
 import type { ArtReport, ItemIconCheck, ItemIcons, SpriteSheet, SpriteSheetCheck, TypeIconCheck, TypeIcons } from "../shared/api.ts";
 
 /** Whether a request failed because what it asked for isn't there (the server's 404: a file deleted on disk). */
@@ -527,6 +528,14 @@ export const api = {
   /** Every flag or variable with its name, status, uses and documentation; again runs the usage tools again. */
   usage: (kind: UsageKind, again = false) => request<Usage>("GET", `/api/usage?kind=${kind}${again ? "&again=1" : ""}`),
   save: (save: SaveRequest) => request<SaveResult>("PUT", "/api/file", save),
+  /** The temporary Icon review page: its candidates' index, the choices and the generator's state. */
+  iconReview: () => request<IconReviewState>("GET", "/api/icon-review"),
+  iconReviewIcon: (key: string) => request<IconReviewDetail>("GET", `/api/icon-review/icon?key=${encodeURIComponent(key)}`),
+  /** Keeps a candidate for an icon (null clears it); the choices after. */
+  iconReviewChoose: (key: string, choice: IconChoice | null) =>
+    request<{ choices: Record<string, IconChoice> }>("PUT", "/api/icon-review/choice", { key, choice }),
+  /** Runs tools/paperwhite2/icon_remap.py generate in the background. */
+  iconReviewGenerate: () => request<{ started: boolean }>("POST", "/api/icon-review/generate"),
   /** Removes a species' encounter file (the only kind the server lets go). */
   /** How many zones the weather calendar holds, and where that limit was read. */
   weatherCalendarLimit: () => request<{ max: number; source: string }>("GET", "/api/weather-calendar/limit"),

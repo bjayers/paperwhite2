@@ -1,0 +1,25 @@
+/* The Icon review page (temporary): headed sections, a label column beside the controls, the icons large. */
+.ir-page { padding: 12px 16px; overflow: auto; height: 100%; box-sizing: border-box; }
+.ir-page-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; margin-bottom: 6px; }
+.ir-temp { font-size: 11px; padding: 1px 6px; border-radius: 4px; background: var(--warning-soft); color: var(--warning); }
+.ir-section { border: 1px solid var(--border); border-radius: 6px; margin: 10px 0; padding: 10px 12px; }
+.ir-section h5 { margin: 0 0 8px; font-size: 13px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.ir-section h5 .muted { font-weight: normal; }
+.ir-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 12px; }
+.ir-grid { display: grid; grid-template-columns: 72px 1fr; column-gap: 10px; row-gap: 12px; align-items: center; margin: 4px 0 8px; }
+.ir-label { color: var(--muted); font-size: 12px; text-align: right; }
+.ir-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.ir-output { font-family: var(--mono); font-size: 12px; white-space: pre-wrap; max-height: 200px; overflow: auto; background: var(--panel-2); padding: 6px; }
+.ir-stage { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 6px 0 12px; }
+.ir-caption { display: block; font-size: 12px; margin-bottom: 4px; }
+.ir-candidates { display: flex; flex-wrap: wrap; gap: 12px; }
+.ir-candidate { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border: 2px solid var(--border); border-radius: 8px; text-align: left; }
+.ir-candidate.chosen { border-color: var(--accent); background: var(--accent-soft); }
+.ir-candidate-head { display: flex; gap: 8px; align-items: baseline; }
+.ir-candidate-note { max-width: 280px; }
+.ir-pair { display: flex; gap: 8px; align-items: flex-end; }
+.ir-icon { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.ir-pixels { image-rendering: pixelated; border-radius: 4px; display: block; }
+.ir-suspects { margin: 0; padding-left: 16px; font-size: 12px; }
+.ir-flag { font-family: var(--mono); font-size: 11px; padding: 0 4px; border-radius: 3px; background: var(--warning-soft); color: var(--warning); }
+.ir-message { color: var(--error); font-size: 12px; }

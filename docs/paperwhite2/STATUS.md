@@ -2,6 +2,14 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-22: Icon review page (ROM session)
+
+- **Tool:** `tools/paperwhite2/icon_remap.py` (IHM and J of shiny-icons.md sections 7-12, ported from the
+  experiments) writes `build/icon_review/`; it reproduces the experiments' IHM and J pixel for pixel on all 744 icons.
+- **Editor:** Tools, **Icon review (temporary)**: per icon, keep IHM (1), J (2) or neither (3, fix by hand); choices in
+  `res/paperwhite2/icon_remap_choices.json`. 416 icons need a choice; the rest keep IHM.
+- **Tested:** Python tests (fixture), editor typecheck and tests. Details and next steps: shiny-icons.md section 13.
+
 ## 2026-11-22: Follower card: shiny previews and one row for both sexes (ROM session, on a branch)
 
 - **Shiny preview:** the Pokémon Editor's Follower card shows each row's sheet normal and shiny (the row's battle
