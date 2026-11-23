@@ -303,59 +303,59 @@ catches with debug-given Master Balls, the shiny one with the debug menu's Alway
   "There is nothing saved"), the Trial House award (needs a finished challenge) and the Mystery Gift album (needs a
   received card).
 
-## 6. Every screen
+## 6. Every screen: the 3DS test checklist
 
-Columns: **#** is the screenshot prefix. **Icons** is the most shown at once, m main engine, s sub. **Route**: rows
-(standard rows, one per icon), ext (8bpp with an extended palette in the named bank), BG. **Kind**: shiny-aware or
-species-only. **Tested**: emulator, with the screenshot in `icon_screens/` (Windows: Pokemon Paper White\icon_screens).
-**HW**: for the user's 3DS test.
+One row per screen, the easiest to reach in play first. **#** is the screenshot prefix in `icon_screens/` (Windows:
+Pokemon Paper White\icon_screens; the final pass's are `*_final.png`). **Kind**: shiny-aware (the Pokémon's own
+shininess) or species-only (normal colours). **Emulator**: py-desmume on a copy of the save; "exact" means every
+opaque pixel of each checked icon is its `icon_battle.png` through its `normal.pal`/`shiny.pal`. **3DS result** is for
+the user: fill in what the 3DS shows (right colours, shiny right, nothing broken when leaving the screen). Route and
+source for each are in sections 3-5, 8 and 9.
 
-| # | Screen | How to reach it | Source | Icons | Route | Kind | Status | Tested | HW |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 01 | Party list | field menu > Pokémon; also from the bag, items, TMs | `ov165/plist_sys.c`, `plist_plate.c` | 6 m | rows 6-8, 12-14 | shiny | **converted** (phase 1) | yes: `01_party_list_normal`, `01_party_list_shiny`, `01_party_list_shiny_after_switch` | to test |
-| 02 | PC box (tray, party side, held icon and range, search, every mode) | a Center's PC > Move Pokémon (also Deposit, Withdraw, Battle Box, Move items) | `ov255/box2_obj.c`, `paperwhite2_box_icons.c` | 66 m (30 tray + 6 party + 30 held) | ext G: palettes 3-7, a band per actor (section 3) | shiny | **converted** (phase 2) | yes: `02_pc_box_normal`, `_shiny`, `_mixed`, `_party_normal`, `_party_shiny`, `_grab_held`, `_grab_dropped`, `_multiselect_held`, `_scroll_back`, `_search_grey`, `_after_summary`, `_left_field` | to test |
-| 03 | Pokédex list (bottom) | field menu > Pokédex > National | `ov299/pokedex_list_obj.c`, `paperwhite2_pokedex_list_icons.c` | 9 m (16 actors) | ext G: palette 0, a band per actor (4.1) | species | **converted** (phase 3) | yes: `03_pokedex_list_normal`, `03_pokedex_list_forms_normal`, `03_pokedex_list_scrolled_normal`, `03_pokedex_list_jump_normal`, `03_pokedex_list_left_field` | to test |
-| 04 | Pokédex list (top) | the same, top screen | `ov299/pokedex_list_obj.c`, `paperwhite2_pokedex_list_icons.c` | 8 s (16 actors) | rows 0-15 but 14, given as icons load (4.1) | species | **converted** (phase 3) | yes (rows by memory; blended): `03_pokedex_list_normal` | to test |
-| 05 | Pokédex Info, Evo tab | Pokédex > a species > Info > Evo | `paperwhite2_pokedex_info_evo.c` | 8 s (Eevee) | rows 5-7, 14, 15, then 0-2 borrowed (4.2) | species | **converted** (phase 3) | yes: `05_pokedex_info_evo_normal`, `05_pokedex_info_evo_eevee_normal`, `05_pokedex_info_matchups_after_eevee`, `05_pokedex_info_evo_unseen_normal` | to test |
-| 06 | Pokédex Info, Area box | Info > Area | `paperwhite2_pokedex_info_area.c` | 1 m | row 12 | species | **converted** (phase 3) | yes: `06_pokedex_info_area_normal` | to test |
-| 07 | Pokédex Info, Flavour tab art | Info > Flavour | `paperwhite2_pokedex_info_flavour.c` | 0 (icon cells as tab art, one bank row) | its own colours over a bank row | n/a | unchanged: no Pokémon icon | yes: `05_pokedex_info_flavour_unchanged` | |
-| 08 | Pokédex Forms | never started in the hack (the Info page replaces it) | `ov298/pokedex_detail_form.c` | 2 s | (rows) | species | not converted: unreachable, fallback | no: unreachable | |
-| 09 | Pokédex habitat map (original) | never started in the hack (Info's Area replaces it) | `ov298/pokedex_detail_map.c` | 2 s | (rows) | species | not converted: unreachable, fallback | no: unreachable | |
-| 10 | Habitat list (the Habitat Dex's grid) | Pokédex > Habitat > an area | `ov303/pokedex_habitat_graphic.c`, `paperwhite2_habitat_icons.c` | 30 m | ext G: palettes 0-1, a band per cell (4.3) | species | **converted** (phase 3) | yes: `10_habitat_list_normal`, `10_habitat_list_forms_normal`, `10_habitat_list_page2_normal`, `10_habitat_list_next_area_normal`, `10_habitat_list_left_field` | to test |
-| 11 | DexNav | C-Gear > DexNav | `paperwhite2_dexnav.c` | 18 grid + 1 big, BG | grid: 8bpp BG on sub BG ext palettes in H; big icon: main BG row 5 (8.1) | species (per area) | **converted** (phase 5) | yes: `11_dexnav_normal`, `_full_grid_normal`, `_scrolled_forms_normal`, `_route7_dark_grass_normal`, `_left_field` | to test |
-| 12 | Party list, battle mode (partners' parties) | Union Room multi battle, Battle Competition, Wi-Fi Club battles: the party choice | `ov165/plist_battle.c` | 6 or 18 s | (rows / share) | shiny | not converted: wireless-only mode, every setter a shell or unreachable (8.4) | no: wireless | |
-| 13 | Battle party list | in battle > Pokémon | `ov287/b_plist_obj.c` | 6 s | rows 0-2, 10-12 (5.1) | shiny | **converted** (phase 4) | yes: `13_battle_party_list_normal`, `_shiny`, `_left_battle` | to test |
-| 14 | Battle command screen | in a double, triple or rotation battle, the command screen's icons | `ov168/btlv_input.c` | 3 s | rows 11-13 | shiny | **converted** (phase 4) | yes (rows by memory; the screen darkens icons): `14_battle_command_icons_normal`, `_shiny` | to test |
-| 15 | Pokéstar Studios scenario screen | Pokéstar Studios, filming a movie: the lower screen's cast page | `ov288/b_scenario_graphic.c` | 1 s (of 6) | row 0 (5.1) | species | **converted** (phase 4) | no: Pokéstar Studios not reached | to test |
-| 16 | Save report | field menu > Save | `ov087/report.c` | 6 s | rows 0-2, 4-6 (5.1) | shiny | **converted** (phase 4) | yes: `16_save_report_normal`, `_shiny`, `_left_menu` | to test |
-| 17 | Name input | catching a Pokémon > give a nickname: yes (also the name rater) | `ov280/name_input.c` | 1 m | row 4 | shiny | **converted** (phase 4) | yes: `17_name_input_normal`, `_shiny` | to test |
-| 18 | Battle video select | after a recordable battle (Battle Subway, PWT...) with a video saved already: "save over it?" shows both parties | `ov306/btl_rec_sel.c` | 12 m | rows 0-11 (5.1) | species (header) | **converted** (phase 4) | no: needs a saved battle video | to test |
-| 19 | Trial House award | Trial House (Striaton City), the rank card after a challenge | `ov313/th_award.c` | 4 m | rows 1-4 | species (record) | **converted** (phase 4) | no: needs a finished challenge | to test |
-| 20 | Mystery Gift album | title menu > Mystery Gift > Wonder Cards | `ov197/mystery_album.c` | 4 m (8 while sliding) | row 4 + its window, proxy at 0 | gift's | **converted** (phase 4) | no: no card in the save | to test (with a Pokémon card) |
-| 21 | Mailbox | a Center's PC > mail | `ov215/mb_obj.c` | 0 (item icons only) | | n/a | not an icon screen (5.1) | | |
-| 22 | Multi battle list | a link multi battle, before it starts | `ov171/vs_multi_list.c` | 6 m | | shiny | **shell** (wireless-shells.md) | no: wireless | |
-| 23 | Pokéstar Studios book / record monitor | Pokéstar Studios: the script book (choosing a movie) / the records of filmed movies | `ov322/pkwd_book.c`, `ov325/pkwd_record_monitor.c` | 6 s / 6 m | rows 0-3, 7, 15 / rows 0-5, proxy at 0 (5.1) | species | **converted** (phase 4) | no: Pokéstar Studios not reached | to test |
-| 24 | Battle Recorder profile | Bag > Key Items > Vs. Recorder > Battle Videos > My Video (with a saved video) | `ov271/br_util.c` | 1 m | row 4 | species (profile) | **converted** (phase 4) | no: needs a saved battle video | to test |
-| 25 | Trade box | linked trades (IR, Union Room, Wi-Fi Club, GTS Negotiations) | `ov194/pokemontrade_2d.c` | about 30 of 60 s | | shiny | **shell**: the four linked trades' processes (wireless-shells.md); in-game and Wonder Trades never show it | no: wireless | |
-| 26 | Trade offer | the same, the offer | `ov194/pokemontrade_nego.c` | 6 + 6 | | shiny | **shell** (with 25) | no: wireless | |
-| 27 | Dream Radar (Unova Link) | unreachable in the hack: Unova Link is off the title menu | `ov332/cygnus_flow.c` | 12 m | | shiny | not converted: unreachable, fallback (8.3) | no: unreachable | |
-| 28 | Battle Recorder video (My Video's battle info) / ranking list | Bag > Key Items > Vs. Recorder > Battle Videos > My Video (with a saved video) / the ranking list only online | `ov268/br_record_proc.c` / `br_bvrank_proc.c` | 12 m / 5 rows | (rows taken: the BR's common palette fills main rows 0-13) | species (header) | video: **left on the fallback** (8.3); ranking list: **shell** (wireless-only, 8.4) | no: no saved video in the save; ranking needs Global Link | |
-| 29 | Xtransceiver party pick | Bag > Key Items > Xtransceiver > call Bianca > "Please look at friendship" (also Cheren's and the Professor's questions) | `ov259/local_tvt_util.c` | 6 s | rows 8-10, 4-6, proxy at 0 (8.2) | shiny | **converted** (phase 5) | yes: `29_xtransceiver_party_normal`, `_shiny`, `_shiny_after_pick` | to test |
-| 30 | IR ranking | C-Gear IR > Feeling Check > ranking (the marker is gone) | `ov180/irc_ranking.c` | a few per list, m + s | | shiny | **shell** (wireless-shells.md) | no: wireless | |
-| 31 | PWT team choice (party or Battle Box) | Pokémon World Tournament reception, entering a tournament with Pokémon in the Battle Box | `ov036/party_select_list.c` | 6 m (party or Battle Box) | rows 6-8, 10-12, written as each side shows (8.2) | shiny | **converted** (phase 5) | no: needs a filled Battle Box and the PWT; converted by reading the code | to test (Battle Box filled, PWT) |
-| 32 | GTS box | Global Terminal > GTS (the counter is Training Services') | `ov214/worldtrade_box.c` | 30 m | | shiny | **shell**: `worldtrade.c`'s process (wireless-shells.md) | no: wireless | |
-| 33 | Wi-Fi Club | Wi-Fi Club counter (now the Wonder Trade's) | `ov173/wifi_p2pmatch.c` | 12 m | | shiny | **shell** (wireless-shells.md) | no: wireless | |
-| 34 | Battle Competition cards and teams | title menu > Battle Competition (removed), Global Terminal | `ov262/wifibattlematch_view.c` | 6 per card + list | | shiny | **shell**: `ov290/wifibattlematch_sys.c`'s process, the title item removed (wireless-shells.md) | no: wireless | |
-| 35 | Game Sync | C-Gear > Game Sync (the marker is gone) | `ov199/gsync_disp.c` | 1, m + s | | shiny | **shell**: `gsync_state.c`'s and `gsync_menu.c`'s processes (wireless-shells.md) | no: wireless | |
+| # | Screen | How to reach it | Kind | Status | Emulator result | 3DS result |
+| --- | --- | --- | --- | --- | --- | --- |
+| 01 | Party list | field menu or C-Gear > Pokémon (also from the bag, an item, a TM) | shiny | converted (phase 1) | exact, normal and shiny (party slots 0, 2, 4 shiny in RAM), final pass | |
+| 16 | Save report | field menu > Save | shiny | converted (phase 4) | exact, normal and shiny, final pass | |
+| 03 | Pokédex list, touch screen | C-Gear or field menu > Pokédex > National | species | converted (phase 3) | exact (the six row icons; the big icon of the chosen row is drawn enlarged), final pass | |
+| 04 | Pokédex list, top screen | the same, top screen | species | converted (phase 3) | rows checked in memory (phase 3); the screen blends them; final-pass screenshot | |
+| 05 | Pokédex Info, Evo tab | Pokédex > a species > Info > Evo (try Eevee: 8 evolutions) | species | converted (phase 3) | exact (Tepig, Pignite, Emboar), final pass; Eevee's 8 in phase 3 | |
+| 06 | Pokédex Info, Area | Info > Area | species | converted (phase 3) | exact, final pass | |
+| 07 | Pokédex Info, Flavour | Info > Flavour | n/a | no Pokémon icon (tab art) | unchanged | |
+| 10 | Habitat list | Pokédex > Habitat > an area (A, then A past the message) | species | converted (phase 3) | 24 checked: exact but for the pixels under each cell's Poké Ball mark, final pass | |
+| 11 | DexNav | C-Gear > DexNav, on a route | species | converted (phase 5) | exact (8 grid icons and the big one, Route 6, winter Deerling), final pass | |
+| 02 | PC box (tray, party side, held, search) | a Pokémon Center's PC > Move Pokémon | shiny | converted (phase 2) | exact, box filled in RAM normal and shiny, final pass (two icons partly under a neighbour, as in phase 2) | |
+| 17 | Name input | catch a Pokémon, give it a nickname (also the Name Rater) | shiny | converted (phase 4) | exact: a Hoothoot, and a shiny Emolga (debug Always shiny), final pass | |
+| 13 | Battle party list | in battle > Pokémon | shiny | converted (phase 4) | exact, normal and shiny, final pass | |
+| 14 | Battle command icons | a double, triple or rotation battle (debug: Triple battles ON), the command screen's small icons | shiny | converted (phase 4) | palette rows exact in memory, normal and shiny, final pass (the screen darkens the icons) | |
+| 29 | Xtransceiver party pick | Bag > Key Items > Xtransceiver > call Bianca > "Please look at friendship" | shiny | converted (phase 5) | exact, normal and shiny, final pass | |
+| 28 | Battle Recorder video | record a battle (Battle Subway: lose or win, "save the battle video"), then Bag > Key Items > Vs. Recorder > Battle Videos > My Video | species | converted (phase 6) | exact, all six of a recorded Subway battle (a female Frillish too), after the profile and after playback, final pass | |
+| 24 | Battle Recorder profile | My Video > View Profile | species | converted (phase 4) | not shown: the save's profile has no favourite Pokémon (9.4) | |
+| 31 | PWT team choice | Pokémon World Tournament reception with Pokémon in the Battle Box | shiny | converted (phase 5) | not tested: needs a filled Battle Box and the PWT | |
+| 19 | Trial House award | Trial House (Striaton City), the rank card after a challenge | species | converted (phase 4) | not tested: needs a finished challenge | |
+| 15 | Pokéstar Studios scenario screen | Pokéstar Studios, filming: the lower screen's cast page | species | converted (phase 4) | not tested: Pokéstar Studios not reached | |
+| 23 | Pokéstar Studios script book / record monitor | Pokéstar Studios: choosing a movie / the records | species | converted (phase 4) | not tested: Pokéstar Studios not reached | |
+| 20 | Mystery Gift album, and an opened card | title menu > Mystery Gift > Wonder Cards | the gift's | converted (phase 4; the opened card's icon phase 6) | not tested: no card in the save, and cards come only from wireless receiving | |
+| 18 | Battle video select | after link battles only (9.4): not reachable in the hack | species | converted (phase 4) | not reachable | |
+| 08 | Pokédex Forms page | not reachable (the Info page replaces it) | species | fallback | not reachable | |
+| 09 | Pokédex habitat map (original) | not reachable (Info > Area replaces it) | species | fallback | not reachable | |
+| 12 | Party list's partner parties | Union Room, Battle Competition, Wi-Fi Club battles | shiny | mode of 01 left as is: every setter is a shell or unreachable | wireless | |
+| 21 | Mailbox | a Center's PC > mail | n/a | no Pokémon icon | | |
+| 22 | Multi battle list | a link multi battle | shiny | shell | wireless | |
+| 25, 26 | Trade box and offer | linked trades | shiny | shell (in-game and Wonder Trades never show them) | wireless | |
+| 27 | Dream Radar | Unova Link > Dream Radar (not on the hack's title menu) | shiny | shell (phase 6) | only a 3DS app's data | |
+| 28 | Battle Recorder online rankings | Global Link only | species | shell | wireless | |
+| 30 | IR ranking | C-Gear IR (the marker is gone) | shiny | shell | wireless | |
+| 32 | GTS box | Global Terminal (now Training Services) | shiny | shell | wireless | |
+| 33 | Wi-Fi Club | Wi-Fi Club counter (now the Wonder Trade's) | shiny | shell | wireless | |
+| 34 | Battle Competition | title menu (removed), Global Terminal | shiny | shell | wireless | |
+| 35 | Game Sync | C-Gear (the marker is gone) | shiny | shell | wireless | |
 
 **Not icon screens** (checked in the survey, shiny-icons.md 6.3): the bag (no party bar), the summary (`ov207`), Day
 Care (no screen), the Hall of Fame and the evolution scene (battle sprites), the hack's Entree, Wonder Trade (it picks in
 the PC box) and follower menus. Files that only use the pack/unpack helpers: `ov033/event_chatot.c`,
 `ov062/pokewood_system.c`, `ov199/gsync_state.c`, `ov255/box2_main.c`, `ov287/b_plist_main.c`.
 
-**Fallback spot-checks (phase 1, py-desmume, a copy of the user's save):** the PC box (Castelia Center, box 1 and the
-party side) and the Pokédex's National list show every icon right in bank colours. Its Habitat list's icon and the
-party list's normal icons look as before too.
+**Eggs** keep the egg icon on its bank colours on every screen, by design (section 1).
 
 ## 7. Phases
 
@@ -365,8 +365,10 @@ party list's normal icons look as before too.
 4. The row screens (section 5): 11 converted, the Mailbox found not to be one, two moved to phase 5 (done,
    2026-11-23).
 5. The extended-palette rest and the wireless-only shells (section 8; done, 2026-11-23).
-6. Sweep: every loader of the icon archive accounted for here, the fallback reached by nothing tested, a last emulator
-   pass. Then the banks and the fallback redraw can go (not before every screen is confirmed).
+6. The sweep (section 9; done, 2026-11-23): the Battle Recorder's video screen converted, the Dream Radar a shell,
+   every icon loader accounted for (one more fix, the opened Wonder Card's icon), a final emulator pass.
+7. Next, when the user has checked the screens on the 3DS (section 6's last column): the banks and the fallback redraw
+   can go.
 
 ## 8. The extended-palette rest and the wireless shells (phase 5)
 
@@ -422,7 +424,7 @@ Neither shows more than 6 icons at once, so each icon takes a standard row (no e
 
 ### 8.3 Left on the fallback, local
 
-- **The Battle Recorder's video screen** (`ov268/br_record_proc.c`, `BrRecord_CreateIcons`, main, up to 12: both
+- **The Battle Recorder's video screen** (converted after all in phase 6, section 9.1) (`ov268/br_record_proc.c`, `BrRecord_CreateIcons`, main, up to 12: both
   teams of the video, species, form and sex from the video's header): local (My Video, a battle recorded in the
   Subway, PWT and so on). Not converted: 12 icons, and the Battle Recorder's common OBJ palette fills main rows 0-13
   (`br_res.c`, through its palette fade `BrFade`) with the trainer at 13, so only 4-6 and 14-15 are left; the extended
@@ -430,7 +432,7 @@ Neither shows more than 6 icons at once, so each icon takes a standard row (no e
   every Battle Recorder screen) and the icons' colours in `BrFade`'s buffers. That isn't worth doing blind: the user's
   save has no video, and the screen can't be reached without one. It stays on the fallback (the icons in bank colours,
   drawn from `icon_battle.png`), for phase 6 or when a video can be recorded for the test.
-- **The Dream Radar's screen** (`ov332/cygnus_flow.c`, Unova Link, 12 icons): local in the original (it reads what the
+- **The Dream Radar's screen** (a shell since phase 6, section 9.2) (`ov332/cygnus_flow.c`, Unova Link, 12 icons): local in the original (it reads what the
   3DS app wrote to the card), but Unova Link is gone from the hack's title menu (`startmenu.c`) and the game-clear
   and key events start it only in its key mode, which never reaches the menu. Unreachable: fallback, like the
   Pokédex's Forms page.
@@ -451,3 +453,124 @@ Left on the fallback: the Battle Recorder's video screen (local, 12 icons, no fr
 the Dream Radar (unreachable). Shells: 8 processes, plus the Battle Competition's title item. The hack's own other
 screens (the Entree's menu and records, the Wonder Trade, the follower menus, the Season app) draw no party icons
 (`src/paperwhite2/` uses the icon archive only in the screens above and phases 1-4's).
+
+## 9. The sweep (phase 6)
+
+### 9.1 The Battle Recorder's video screen (`src/paperwhite2/ov268/paperwhite2_br_record_icons.c`)
+
+My Video's battle info (`ov268/br_record_proc.c`, `BrRecord_CreateIcons`, main engine) shows up to 12 icons, both
+teams of the video, from its header's species, form and sex: species-only, normal colours. The Battle Recorder's
+common palette fills main OBJ rows 0-13, so the icons are 8bpp OBJs on the main engine's OBJ extended palette 0:
+- **Bank G**, which no Battle Recorder screen maps (its VRAM table is A, B, C, D; the musical photos' table uses F and
+  G, but that mode is Global Link's only), is mapped as main OBJ extended palette when the icons are made
+  (`GX_SetBankForOBJExtPltt`) and disabled again when they are freed (`GX_DisableBankForOBJExtPltt`), so every other
+  Battle Recorder screen, and the profile page of the same screen, keeps DISPCNT's OBJ extended palette bit off. The
+  screen has no other 8bpp OBJ (measured: VRAMCNT G 0x85 and the bit on only while the video's info shows).
+- Icon n (the n-th shown, 0-11) draws in band n of extended palette 0: each icon's character resource is
+  `ClActSys_AllocChars(0x800)` with its battle file's two frames made 8bpp (`PaperWhite2_IconExt_Convert`), the shared
+  cell copy is set to 8bpp once (`PaperWhite2_IconExt_SetCells8bpp`), and each actor's palette proxy is moved to 0 with
+  palette 0.
+- The colours (12 × 32 bytes) are kept in the overlay's BSS and copied in a VBlank task. The screen fades its BGs only
+  (BrFade's alpha fade, `BR_FADE_TYPE_ALPHA_BG012`), so no palette fade buffer is involved.
+- **Cost:** overlay 268 +0.4 KB of code and data and 392 bytes of BSS (not in the arena's chain); main OBJ VRAM +1 KB
+  per icon; bank G while the icons show.
+- **Tested** (py-desmume, a copy of the save, `.../scratchpad/p6/`): a Battle Subway Single Train battle lost on
+  purpose (`lose.py` sets the team's HP to 1 in RAM) and saved as the video in the emulator; the copy with the video is
+  exported to the worktree's `build/save_video.sav` (`route_br.sh` boots it, gives the key items and opens Bag > Key
+  Items > Vs. Recorder > Battle Videos > My Video). All six icons pixel-exact (Pignite, Klink, Swinub; Joltik,
+  Pawniard, Frillish ♀ with its female icon), again after the profile page and back, after playing the video to its
+  end, and the registers back to the menu's on Quit. Screenshots `28_battle_recorder_video_*`.
+
+### 9.2 The Dream Radar: a shell
+
+Unova Link's Dream Radar (`ov332/cygnus_flow.c`) only receives what the 3DS app Pokémon Dream Radar writes to a retail
+card, which a hack's card never gets, and only Unova Link's top menu opens it, which only the title menu's Unova Link
+(gone from the hack) shows. In hack builds its top menu item goes straight back to the menu and its work is never
+made: wireless-shells.md has the row.
+
+### 9.3 Every icon loader, accounted for
+
+`.../scratchpad/p6/sweep.py` lists every call a hack build compiles (PAPERWHITE2 defined) of the icon archive
+(`ARCID_POKEICON`, archive 7 by number) and its loaders: `PokeParty_GetIconIndex`, `PokeIcon_GetFileOfPkm`,
+`PokeIcon_GetPalette`, `PokeIcon_GetPaletteOfPkm`, `PokeIcon_GetPaletteFile`, `PokeIcon_GetAltPaletteFile`, the cell
+files, and the hack's `PaperWhite2_GetIconBattleFile`/`LoadIcon…`/`ReadIconColours…`. What each file's live calls are:
+
+| File | Screen (section 6 #) | Live calls in a hack build | Accounted |
+| --- | --- | --- | --- |
+| `ov165/plist_plate.c`, `plist_sys.c` | 01 party list | battle files, own rows; the banks' palette file as the actors' palette resource | converted |
+| `ov255/box2_obj.c`, `box2_seq.c`, `paperwhite2_box_icons.c` | 02 box | battle files, ext G; `box2_seq.c` only opens the archive | converted |
+| `ov299/pokedex_list_obj.c`, `paperwhite2_pokedex_list_icons.c` | 03, 04 | `PokeParty_GetIconIndex(0, 0, 0)` placeholders, replaced as icons load | converted |
+| `paperwhite2_pokedex_info_evo.c`, `_area.c` | 05, 06 | battle files, own rows | converted |
+| `paperwhite2_pokedex_info_flavour.c` | 07 | the cells and palette file only (tab art) | not a Pokémon icon |
+| `ov298/pokedex_detail_form.c`, `pokedex_detail_map.c` | 08, 09 | bank path | unreachable (the Info page replaces both) |
+| `ov303/pokedex_habitat_graphic.c`, `paperwhite2_habitat_icons.c` | 10 | `PokeParty_GetIconIndex` and the bank palette at creation, both replaced by `PaperWhite2_HabitatIcons_Init`/`_Load` | converted |
+| `paperwhite2_dexnav.c` | 11 | battle files, BG ext H | converted |
+| `ov165/plist_battle.c` | 12 | bank path in `PokeListBattle_CreatePartnerPkm` | partner parties only: every setter is a shell or unreachable |
+| `ov287/b_plist_obj.c` | 13 | `PokeParty_GetIconIndex(0, 0, 0)` for an empty slot | converted |
+| `ov168/btlv_input.c` | 14 | battle files, own rows | converted |
+| `ov288/b_scenario_graphic.c` | 15 | the empty slot's placeholder | converted |
+| `ov087/report.c` | 16 | battle files, own rows | converted |
+| `ov280/name_input.c` | 17 | battle files, own rows | converted |
+| `ov306/btl_rec_sel.c` | 18 | battle files; `PokeIcon_GetPalette` set at creation, replaced by the rows written once all are made | converted, but no longer reachable (9.4) |
+| `ov313/th_award.c` | 19 | battle files, own rows | converted |
+| `ov197/mystery_album.c` | 20 | the album page: battle files, own rows; **the opened card's icon (`MysteryAlbum_LoadIcon`) drew the battle file on the banks' colours: fixed in this phase** (its own colours in the first of its three rows) | converted |
+| `ov215/mb_obj.c` | 21 | the palette file only (no Pokémon icon) | not an icon screen |
+| `ov171/vs_multi_list.c` | 22 | bank path | shell |
+| `ov322/pkwd_book.c`, `ov325/pkwd_record_monitor.c` | 23 | placeholders, replaced | converted |
+| `ov271/br_util.c` | 24 | battle file, own row | converted |
+| `ov194/pokemontrade_2d.c`, `pokemontrade_nego.c` | 25, 26 | bank path | shell (the four linked trades) |
+| `ov332/cygnus_flow.c` | 27 | bank path | shell (9.2) |
+| `ov268/br_record_proc.c` | 28 video | battle files, ext G | converted (9.1) |
+| `ov268/br_bvrank_proc.c` | 28 rankings | bank path | shell |
+| `ov259/local_tvt_util.c` | 29 | battle files, own rows | converted |
+| `ov180/irc_ranking.c` | 30 | bank path | shell |
+| `ov036/party_select_list.c` | 31 | battle files, own rows | converted |
+| `ov214/worldtrade.c`, `worldtrade_box.c` | 32 | bank path | shell |
+| `ov173/wifi_p2pmatch.c` | 33 | bank path | shell |
+| `ov262/wifibattlematch_view.c` | 34 | bank path | shell (`ov290`'s process) |
+| `ov199/gsync_disp.c` | 35 | bank path | shell |
+| `ov062/pokewood_system.c`, `ov325/pkwd_record_monitor.c` | | `PokeIcon_PackSpecies`/`_UnpackSpecies` only | helpers, no drawing |
+
+Nothing else in `src/` or `lib/` touches the archive or the banks. So every reachable screen draws its icons on their
+own colours; the bank path is left only in unreachable screens and shells, and the egg (which keeps its bank colours by
+design). **The fallback** (the banks and the per-icon bank redraw, section 2) stays in the build as agreed, as a
+safety net until the user has checked the screens on the 3DS; nothing tested reaches it.
+
+### 9.4 Found on the way
+
+- **The battle video select** (`ov306/btl_rec_sel.c`, #18) is opened only by the link battles' event
+  (`ov010/event_make.c`: IR and the Union Room's colosseum) and the Battle Competition (a shell); the Battle Subway's
+  script command for it (`Tool 348`) is in no script: the Subway asks "Delete your existing Battle Video and save the
+  last battle?" with a plain Yes/No and saves at once (seen in the emulator). It stays converted, but can't be reached
+  in the hack.
+- **The Battle Recorder profile** (#24) shows a Pokémon only when the profile has one (`GdsProfile_GetSpecies`, the
+  save's favourite from `GetFavePokemonData`); the user's save has none, so the profile page shows the trainer only.
+- **The opened Wonder Card's icon** (`MysteryAlbum_LoadIcon`): phase 4 converted the album page's icons but not the
+  icon of a card opened full-screen, which drew the battle file through the banks' colours (wrong colours). Fixed
+  (`ov197/mystery_album.c`); not testable without a Pokémon Wonder Card.
+
+### 9.5 The final pass
+
+After all six phases merged (the build of this phase's commits), on a copy of the save, scripts in
+`.../scratchpad/p6/` (`final1.sh`: boot, party slots 0, 2, 4 made shiny in RAM, party list, save report, Xtransceiver
+pick, PC box filled normal and shiny; `final2.sh`: phase 4's battle and catch routes, phase 3's Pokédex route, phase 5's
+DexNav route; `route_br.sh`: the Battle Recorder; `checkset.py` compares icons pixel for pixel, `rowcmp.py` palette
+rows in memory):
+
+| Screen | Normal | Shiny |
+| --- | --- | --- |
+| Party list | 6/6 exact (Pignite, Klink, Keldeo Resolute, Swinub, Zekrom, Flaaffy) | 6/6 exact (slots 0, 2, 4 shiny) |
+| Save report | 6/6 exact | 6/6 exact |
+| Xtransceiver pick | 6/6 exact | 6/6 exact |
+| PC box (box 1 filled in RAM) | 17/17 plain species exact (Charizard and Zekrom but for the pixels a neighbour covers, as in phase 2) | the same, all shiny |
+| Battle party list | 6/6 exact | 6/6 exact |
+| Battle command icons (triple battle) | rows 11-13 exact | rows 11-13 exact |
+| Name input after a catch | Hoothoot exact | a shiny Emolga exact |
+| Pokédex list (touch screen) | 6/6 row icons exact | |
+| Pokédex Info Evo, Area | Tepig, Pignite, Emboar exact; Area's Tepig exact | |
+| Habitat list (Route 20, winter) | 24 icons exact but for the pixels under the cells' Poké Ball marks | |
+| DexNav (Route 6) | 8 grid icons and the big one exact | |
+| Battle Recorder video | 6/6 exact (Pignite, Klink, Swinub; Joltik, Pawniard, Frillish ♀) | |
+
+Sanity: boot, the title menu (no Battle Competition, no Unova Link), the field, the save, the C-Gear, the party and
+the Pokédex opened and closed, a Center's PC menu and box. Nothing tested reaches the banks' colours.

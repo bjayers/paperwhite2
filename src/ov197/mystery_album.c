@@ -2016,6 +2016,19 @@ static void MysteryAlbum_LoadIcon(MysteryAlbum *album, MysteryCardRes *res, Heap
         dst += HW_DB_OBJ_PLTT;
     }
     MI_CpuCopy8(pal->pRawData, (void *)dst, 0x60);
+#ifdef PAPERWHITE2
+    // Paper White 2: an opened Pokémon card's icon is drawn on its own battle palette slots
+    // (MysteryCard_GetIconCharFile), so its own colours go in the first of its three rows, shiny when the gift always
+    // is (docs/paperwhite2/design/icon-screens.md)
+    if (MysteryCard_GetKind(&album->card) == 1) {
+        MysteryGiftPokemon *poke = (MysteryGiftPokemon *)MysteryCard_GetGift(&album->card);
+        u16 colours[ICON_BATTLE_COLOURS];
+
+        PaperWhite2_ReadIconColours(colours, poke->species, poke->form, poke->gender, poke->isEgg,
+                                    poke->shininess == MYSTERY_GIFT_SHINY_ALWAYS);
+        MI_CpuCopy16(colours, (void *)dst, sizeof(colours));
+    }
+#endif
     GFL_HeapFree(buf);
     buf = GFL_G2DIOReadOBJNCGRArc(arc, MysteryCard_GetIconCharFile(&album->card), FALSE, &chars, album->heapId);
     ClActSys_WriteCharData(res->chars, chars->pRawData, 0x200, 0, res->vramType);
@@ -2027,7 +2040,12 @@ static void MysteryAlbum_LoadIcon(MysteryAlbum *album, MysteryCardRes *res, Heap
         pos.x += 4;
         pos.y += 8;
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: a Pokémon card's icon colours are in its first row, as an item's or a mark's are
+    ClActor_SetPalette(res->icon, 0, 0);
+#else
     ClActor_SetPalette(res->icon, (u8)MysteryCard_GetPokeIconPalette(&album->card), 0);
+#endif
     ClActor_SetSurfacePos(res->icon, &pos, res->vramType);
     ClActor_SetVisible(res->icon, TRUE);
     if (MysteryCard_GetKind(&album->card) == 1) {

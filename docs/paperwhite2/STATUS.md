@@ -2,6 +2,31 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-23: Icons on their battle palettes, phase 6: the sweep (ROM session)
+
+- **The Battle Recorder's video screen** (My Video's battle info, up to 12 icons) is converted after all: 8bpp icons
+  on the main engine's OBJ extended palette 0 in VRAM bank G, mapped only while the icons show; species-only
+  (icon-screens.md section 9.1).
+- **The Dream Radar is a shell:** it only receives what the 3DS app wrote to a retail card, and only Unova Link's top
+  menu (gone from the title menu) opens it; its menu item goes straight back (wireless-shells.md).
+- **The sweep** (section 9.3): every call of the icon archive and its loaders that a hack build compiles is listed
+  with its screen. Every reachable screen draws its icons on their own colours; the banks' path is left only in
+  unreachable screens and shells (and the egg, by design). One more fix: an opened Wonder Card's icon drew the battle
+  file on the banks' colours (`ov197/mystery_album.c`). Found: the battle video select is reachable only after link
+  battles (the Subway saves with a plain Yes/No), so it can't be reached in the hack. The fallback stays in the build
+  until the user has checked on the 3DS.
+- **icon-screens.md section 6 is now the 3DS test checklist**: one row per screen, easiest first, with how to reach
+  it, its status, the emulator result and an empty "3DS result" column for the user.
+- **Cost:** overlay 268 +0.4 KB and 392 bytes of BSS, overlay 197 a few dozen bytes, overlay 332 −32 bytes; none in
+  the arena's chain (DS arena 0x55e0, unchanged); main OBJ VRAM +1 KB per video icon and bank G while they show.
+- **Tested** in py-desmume on a copy of the save: a Battle Subway battle recorded and saved as a video in the
+  emulator (the copy is the worktree's `build/save_video.sav`), its six icons exact in My Video, after the profile and
+  after playback, registers back on leaving; the final pass over every reachable converted screen after all phases
+  (section 9.5: party list, save report, Xtransceiver pick, box, battle party list and command icons, name input,
+  normal and shiny; Pokédex list, Evo, Area, Habitat list, DexNav), all exact; boot, title, field, save, C-Gear, PC.
+  Screenshots `*_final.png` in `icon_screens/`.
+- **Next:** the user's 3DS pass with the checklist; then the banks and the fallback redraw can go.
+
 ## 2026-11-23: Icons on their battle palettes, phase 5: the last screens and the wireless shells (ROM session)
 
 - **Converted** (icon-screens.md section 8):
