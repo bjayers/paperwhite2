@@ -393,7 +393,8 @@ HACK_MEMBER_EXTRA_SOURCES = {"a/1/2/7": ["res/paperwhite2/conditions", "res/poke
                                          "res/paperwhite2/level_scaling.json", "res/town_map", "res/field/zones/*.json",
                                          "include/system/zone_weather.h", "include/paperwhite2/weather_groups.h"],
                              "a/1/2/6": ["res/paperwhite2/conditions", "res/field/events"],
-                             "a/0/0/7": ["res/pokemon/**/icon*", "res/pokemon/**/*.pal", "res/pokemon/*/data.json"],
+                             "a/0/0/7": ["res/pokemon/**/icon*", "res/pokemon/**/*.pal", "res/pokemon/*/data.json",
+                                         "res/paperwhite2/icon_tone.json"],
                              # The digits' member's number (DAMAGE_DIGITS_MEMBER) and the tiers' colours
                              # (buffs.json's settings.damage_numbers)
                              "a/0/1/1": ["include/paperwhite2/damage_numbers.h",

@@ -2,6 +2,25 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-23: Icon tone (ROM session)
+
+- **Measured** (shiny-icons.md section 17, OKLCh):
+  - The vanilla banks' muting is lightness. No body colour is darker than the light outline grey (battle palettes:
+    18% of pixels are). Each icon's lightness spread is about 0.7x the battle palettes'.
+  - Chroma is not lower in the banks, but it is capped at 0.22; the battle palettes reach 0.27.
+- **The tone** (`tools/paperwhite2/icon_tone.py`, parameters in `res/paperwhite2/icon_tone.json`):
+  - per icon and per palette, hue kept;
+  - the darks are pulled toward the icon's lightest colour until its spread nears vanilla's (0.12, never under half
+    its own);
+  - chroma above 0.18 is halved;
+  - `strength` 0..1, default 0.5. Normal and shiny stay apart: median distance 0.099 becomes 0.097.
+- **Off in the build:** `"enabled": false`, so the hack ROM is byte-identical. To turn it on, set `"enabled": true`
+  and rebuild; with it enabled the ROM was verified intact.
+- **The editor:** the Sprite Editor's icon view has a **Game tone** toggle, on by default. It shows the in-game colours
+  through `tone.ts`, which a test keeps equal to the Python.
+- **Previews:** `C:\Modding\Pokemon ROM Hack Workspace\Pokemon Paper White\icon_tone\`.
+- **Next:** the user looks at the previews and picks a strength, then enables it.
+
 ## 2026-11-23: Sprite Editor: review marks, Replace, stepping (ROM session)
 
 - **The hand fixes are done**, so the hand-fix list (`icon_fix_list.json`, its tab and Done) is gone. In its place,

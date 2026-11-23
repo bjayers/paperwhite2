@@ -19,6 +19,10 @@ An entry is an icon file from the archive's 8th (its shared files come first), t
 forms.sprite_offset + form - 1 order. Eggs, the egg species' placeholder, and icons without icon_battle.png keep their
 vanilla pixels, with their bank's colours for normal and shiny alike; an empty member (no female icon) has an empty
 entry and zero colours.
+
+When res/paperwhite2/icon_tone.json says "enabled": true, each battle-palette icon's normal and shiny colours are
+toned toward the vanilla banks' lightness and chroma (tools/paperwhite2/icon_tone.py; the greys and transparency
+untouched). The fallback pixels are picked from the untoned colours either way.
 """
 import json
 import struct
@@ -33,6 +37,7 @@ from tools.data.form_groups import ORIGINAL_FORM_GROUPS, palette_form_groups  # 
 from tools.data.narc import read_narc, write_narc  # noqa: E402
 from tools.data.nitro_2d import (character_pixels, color5, patch_characters, read_indexed_png,  # noqa: E402
                                  read_palette)
+from tools.paperwhite2 import icon_tone  # noqa: E402
 
 POKEMON = ROOT / "res" / "pokemon"
 FIRST_FILE = len(graphics.ICON_FILES)
@@ -129,8 +134,19 @@ def icon_count() -> int:
             len(graphics.added_species()) * 2)
 
 
-def archive(source: Path, output: Path, root: Path = POKEMON):
+def toned_colours(pixels, normal_colours, shiny_colours, tone):
+    """An icon's 64 bytes of normal and shiny colours, toned when tone (icon_tone.json's parameters) is given."""
+    if tone is not None:
+        counts = icon_tone.pixel_counts(pixels)
+        normal_colours = icon_tone.tone(normal_colours, counts, tone)
+        shiny_colours = icon_tone.tone(shiny_colours, counts, tone)
+    return rgb555(normal_colours) + rgb555(shiny_colours)
+
+
+def archive(source: Path, output: Path, root: Path = POKEMON, tone_file: Path = icon_tone.TONE_FILE):
     graphics.EXTRACTED = ROOT / "extract" / "w2_us" / "files"
+    tone = icon_tone.load(tone_file)
+    tone = tone if tone["enabled"] else None
     files = read_narc(source.read_bytes())
     if len(files) != icon_count():
         raise ValueError(f"{source}: {len(files)} members, not the {icon_count()} that icon_palettes.h's "
@@ -159,7 +175,7 @@ def archive(source: Path, output: Path, root: Path = POKEMON):
         except (ValueError, KeyError, IndexError) as error:
             raise ValueError(f"{png}: {error}") from error
         files[index] = blob if fallback == vanilla else patch_characters(blob, *SIZE, fallback)
-        palettes.append(rgb555(normal_colours) + rgb555(shiny_colours))
+        palettes.append(toned_colours(battle, normal_colours, shiny_colours, tone))
         chars.append(patch_characters(blob, *SIZE, battle))
     # The palette-only forms: their own pixels and colours, in the format of their species' icon
     names = graphics.species_names()
@@ -176,7 +192,8 @@ def archive(source: Path, output: Path, root: Path = POKEMON):
             normal, shiny = battle_palettes(folder)
         except (ValueError, KeyError, IndexError) as error:
             raise ValueError(f"{png}: {error}") from error
-        palettes.append(rgb555(icon_colours(slots, greys, normal)) + rgb555(icon_colours(slots, greys, shiny)))
+        palettes.append(toned_colours(battle, icon_colours(slots, greys, normal), icon_colours(slots, greys, shiny),
+                                      tone))
         chars.append(patch_characters(files[base], *SIZE, battle))
     files += [b"".join(palettes), *chars]
     output.parent.mkdir(parents=True, exist_ok=True)

@@ -21,6 +21,7 @@ import { GREYS, History, ICON_SLOTS, REVIEW_FILE, REVIEW_FILTERS, SHEET_FRAME_NA
   iconFiles, iconKeyOf, indexColour, linePixels, markSets, matchesFilter, paint, paintIndex, readReview, replaceIndex, sameSnapshot, sameSwatch,
   sheetKey, spriteColours, stepKey, swatchOfIndex, toHex, viewPalettes,
   type Binding, type Review, type ReviewFilter, type ReviewKind, type Rgb, type Snapshot, type Sprite, type Swatch, type View } from "./model.ts";
+import { TONE_FILE, readTone, tonedColours, type ToneParams } from "./tone.ts";
 
 const SPECIES_SCHEMA = "res/pokemon/species.schema.json";
 const ICON_GLOBS = ["res/pokemon/*/icon_battle.png", "res/pokemon/*/icon_female_battle.png", "res/pokemon/*/form_*/icon_battle.png"];
@@ -155,6 +156,9 @@ export function SpriteEditor({ constants }: ToolProps) {
   const [saving, setSaving] = useState(false);
   const [editColour, setEditColour] = useState<string | null>(null);
   const [epoch, setEpoch] = useState(0);
+  // The Game tone view of an icon (icon_tone.json's tone, as the build applies it when enabled)
+  const [gameTone, setGameTone] = useState(true);
+  const [toneParams, setToneParams] = useState<ToneParams | null>(null);
   const history = useRef(new History());
   const stroke = useRef<{ before: Snapshot; index: number; last: [number, number] } | null>(null);
   const [, setTick] = useState(0);
@@ -190,6 +194,8 @@ export function SpriteEditor({ constants }: ToolProps) {
 
   const loadReview = useCallback(() => api.file(REVIEW_FILE).then((f) => setReview(readReview(f.text)), () => setReview(readReview(null))), []);
   useEffect(() => { loadReview(); }, [loadReview]);
+  const loadTone = useCallback(() => api.file(TONE_FILE).then((f) => setToneParams(readTone(f.text)), () => setToneParams(null)), []);
+  useEffect(() => { loadTone(); }, [loadTone]);
 
   // Each species' sheets: those whose "palette" names its group, and the opted-out ones under its species' name
   const sheetsByKey = useMemo(() => {
@@ -281,8 +287,9 @@ export function SpriteEditor({ constants }: ToolProps) {
   // The files changed on disk (a save here or elsewhere): read again when nothing is unsaved
   useEffect(() => documents.onFiles((paths) => {
     if (paths.includes(REVIEW_FILE)) loadReview();
+    if (paths.includes(TONE_FILE)) loadTone();
     if (loaded && paths.some((p) => p.endsWith(".pal") && Object.values(loaded.palettes).includes(p))) setEpoch((n) => n + 1);
-  }), [loaded, loadReview]);
+  }), [loaded, loadReview, loadTone]);
 
   const binding: Binding = loaded?.layout === "icon" && current ? { kind: "icon", slots: current.slots } : { kind: "sheet" };
   const { main, other } = viewPalettes(view);
@@ -292,6 +299,18 @@ export function SpriteEditor({ constants }: ToolProps) {
   const area = frames[frame] ?? frames[0];
   const battle = art.find((a) => a.name === artName) ?? art[0] ?? null;
   const hasShiny = !!loaded?.shiny;
+  // The edited icon's views (big, the other palette, the frames) in the game tone when it is on; the battle sprite,
+  // the swatches and the vanilla reference keep their own colours
+  const toned = loaded?.layout === "icon" && gameTone && !!toneParams && !!current;
+  const viewColours = (v: View): (Rgb | null)[] => {
+    const colours = spriteColours(binding, paletteOfView(v));
+    return toned && current && toneParams ? tonedColours(colours, current.pixels, toneParams) : colours;
+  };
+  const toneNote = toneParams
+    ? `Game tone: the icon as the game shows it with res/paperwhite2/icon_tone.json's tone (strength ${toneParams.strength}), `
+      + `${toneParams.enabled ? "which the build applies (enabled)" : "which the build doesn't apply yet (\"enabled\": false)"}. `
+      + "Only a view: editing stays on the same indices, and the battle sprite and swatches show the battle palette's own colours."
+    : "Game tone: res/paperwhite2/icon_tone.json is missing or invalid.";
 
   // The latest state for the pointer's events, which can come faster than renders
   const live = useRef<Snapshot | null>(null);
@@ -380,7 +399,9 @@ export function SpriteEditor({ constants }: ToolProps) {
     }
     const r = paintIndex(binding, swatch, current.pixels);
     if (!r || "error" in r) return null;
-    const colour = indexColour({ ...binding, ...(binding.kind === "icon" ? { slots: r.slots } : {}) } as Binding, paletteOfView(main), r.index);
+    // An index the icon already has shows in the view's colours (toned or not); a new slot in the battle colour
+    const colour = binding.kind === "icon" && r.slots === binding.slots ? viewColours(main)[r.index]
+      : indexColour({ ...binding, ...(binding.kind === "icon" ? { slots: r.slots } : {}) } as Binding, paletteOfView(main), r.index);
     return { points: tool === "fill" ? [[x, y] as [number, number]] : brushPixels(x, y, brush, area), colour };
   };
 
@@ -664,16 +685,16 @@ export function SpriteEditor({ constants }: ToolProps) {
                   ) : <span className="muted small">{loaded.vanillaNote}</span>}
                   {hasShiny && (
                     <figure className="se-ref" onClick={swap} title={swapTitle}>
-                      <SpriteCanvas sprite={sprite} frame={area} colours={spriteColours(binding, paletteOfView(other))} scale={REF_SCALE} backdrop={backdrop} />
-                      <figcaption className="muted small">{other === "shiny" ? "Shiny" : "Normal"}: click to swap</figcaption>
+                      <SpriteCanvas sprite={sprite} frame={area} colours={viewColours(other)} scale={REF_SCALE} backdrop={backdrop} />
+                      <figcaption className="muted small">{other === "shiny" ? "Shiny" : "Normal"}{toned ? " (game tone)" : ""}: click to swap</figcaption>
                     </figure>
                   )}
                   {!hasShiny && <span className="muted small">No shiny: an opted-out sheet keeps its own colours.</span>}
                 </div>
                 <figure className="se-big">
-                  <SpriteCanvas sprite={sprite} frame={area} colours={spriteColours(binding, paletteOfView(main))} scale={zoom} grid={grid} backdrop={backdrop}
+                  <SpriteCanvas sprite={sprite} frame={area} colours={viewColours(main)} scale={zoom} grid={grid} backdrop={backdrop}
                                 pointer={{ onStroke, preview, cursor: tool === "eyedropper" ? "crosshair" : "cell" }} />
-                  <figcaption className="muted small">{main === "shiny" ? "Shiny colours" : "Normal colours"} · {loaded.layout === "sheet" ? SHEET_FRAME_NAMES[frame] ?? `frame ${frame + 1}` : `frame ${frame + 1}`}</figcaption>
+                  <figcaption className="muted small">{main === "shiny" ? "Shiny colours" : "Normal colours"}{toned ? ", game tone (in-game view)" : ""} · {loaded.layout === "sheet" ? SHEET_FRAME_NAMES[frame] ?? `frame ${frame + 1}` : `frame ${frame + 1}`}</figcaption>
                 </figure>
               </div>
             )}
@@ -687,6 +708,12 @@ export function SpriteEditor({ constants }: ToolProps) {
               <div className="se-row">
                 <div className="view-switch">{ZOOMS.map((z) => <button key={z} className={zoom === z ? "active" : ""} onClick={() => setZoom(z)}>{z}×</button>)}</div>
                 <label className="se-inline"><input type="checkbox" checked={grid} onChange={(e) => setGrid(e.target.checked)} /> Grid</label>
+                {loaded?.layout === "icon" && (
+                  <label className="se-inline" title={toneNote}>
+                    <input type="checkbox" checked={gameTone} disabled={!toneParams} onChange={(e) => setGameTone(e.target.checked)} />
+                    {" "}Game tone <span className="muted small">(view of the in-game colours{toneParams && !toneParams.enabled ? "; not in the build yet" : ""})</span>
+                  </label>
+                )}
                 <div className="view-switch">
                   <button className={backdrop === "checker" ? "active" : ""} onClick={() => setBackdrop("checker")}>Checker</button>
                   <button className={backdrop === "box" ? "active" : ""} onClick={() => setBackdrop("box")}>Box grey</button>
@@ -697,7 +724,7 @@ export function SpriteEditor({ constants }: ToolProps) {
                 {sprite && frames.map((f, i) => (
                   <button key={i} className={`se-frame${i === frame ? " active" : ""}`} onClick={() => setFrame(i)}
                           title={loaded?.layout === "sheet" ? SHEET_FRAME_NAMES[i] ?? `Frame ${i + 1}` : `Frame ${i + 1}`}>
-                    <SpriteCanvas sprite={sprite} frame={f} colours={spriteColours(binding, paletteOfView(main))} scale={2} backdrop={backdrop} />
+                    <SpriteCanvas sprite={sprite} frame={f} colours={viewColours(main)} scale={2} backdrop={backdrop} />
                     <span className="small muted">{loaded?.layout === "sheet" ? SHEET_FRAME_NAMES[i] ?? i + 1 : `Frame ${i + 1}`}</span>
                   </button>
                 ))}

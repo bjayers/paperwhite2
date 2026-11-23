@@ -1036,3 +1036,96 @@ The in-game work has its own file, `icon-screens.md`: the build's packing, the r
 banks, and every icon screen with its route and status. Phase 1 converted the party list and removed the editor's Icon
 review page (`icon_remap.py` and `res/paperwhite2/icon_remap_choices.json` stay as its record). Phase 2 converted the PC box
 with section 5.1's route: 8bpp icons on OBJ extended palettes in bank G (icon-screens.md section 3).
+
+## 17. Icon tone (2026-11-23)
+
+The icons now show their battle palettes' colours. The vanilla banks (`res/pokemon/shared/icon_palettes.pal`) were
+deliberately even across icons and screens, so the icon tone moves each icon's palette part of the way toward the
+banks' look. It keeps the battle-palette basis, its hue and the shinies. Only colours change, never pixels or
+indices, and the two outline greys stay exactly vanilla. (The request called this section 16; 16 was taken.)
+
+### 17.1 Measurements (OKLab/OKLCh, 743 icons, pixel-weighted, outline greys and transparency left out)
+
+| | vanilla (banks) | battle normal | battle shiny |
+| --- | --- | --- | --- |
+| lightness p5 / p50 / p95 | 0.58 / 0.75 / 1.00 | 0.36 / 0.70 / 1.00 | 0.36 / 0.73 / 1.00 |
+| share of pixels darker than L 0.5 | 0% | 18% | 17% |
+| per icon: lightness range (p5-p95), median | 0.35 | 0.51 | 0.50 |
+| per icon: lightness standard deviation, median | 0.116 | 0.163 | n/a |
+| per icon: mean lightness, median | 0.76 | 0.69 | 0.72 |
+| chroma p50 / p95 / max | 0.098 / 0.198 / 0.222 | 0.082 / 0.186 / 0.273 | 0.099 / 0.191 / 0.273 |
+| per icon: mean chroma, median | 0.104 | 0.085 | 0.097 |
+
+The outline greys' lightness is 0.494 (`#62625a`) and 0.375 (`#414141`).
+
+**What this shows.** The banks' muting is almost all lightness. No body colour is darker than the light outline grey,
+and each icon spans a narrow, high band. Chroma is not lower in the banks: overall it is slightly higher, and it is
+capped (nothing above 0.222). The battle palettes bring deep shading (a fifth of the pixels below L 0.5), about 1.4x
+the lightness spread, and a few colours more vivid than any bank colour.
+
+### 17.2 The transform (`tools/paperwhite2/icon_tone.py`)
+
+It works per icon and per palette (normal and shiny each on their own), in OKLCh, and keeps the hue:
+
+- **Lightness:**
+  - `spread` is the pixel-weighted standard deviation of lightness over the icon's used slots, and `top` its lightest
+    used colour.
+  - `k = clamp(lightness_spread / spread, min_contrast, 1)`, then `k = 1 - strength * (1 - k)`.
+  - Each colour gets `L' = top - (top - L) * k`.
+  - The result: an icon's darks come up toward its lightest colour, and that colour (often white) stays put. An icon
+    already as flat as vanilla's is left alone.
+- **Chroma:** above `chroma_knee`, chroma is cut by `strength * (C - knee) * (1 - chroma_above_knee)`. This brings
+  the few colours that are more vivid than the banks back toward the banks' maximum.
+- **Gamut:** a colour outside sRGB keeps its L and h and loses chroma (by bisection) until it fits. It is then rounded
+  to 8 bits, and the build converts it to RGB555 as before.
+- **Never changed:** index 0 and indices 14-15.
+
+`res/paperwhite2/icon_tone.json` (written by `datajson`):
+`{"enabled": false, "strength": 0.5, "lightness_spread": 0.12, "min_contrast": 0.5, "chroma_knee": 0.18,
+"chroma_above_knee": 0.5}`.
+- `lightness_spread` 0.12 is the vanilla median. At strength 1 the toned normals measure lightness p5/p50 0.51/0.76,
+  a range of 0.37 and a mean of 0.77, close to vanilla's.
+- The default strength 0.5 is the middle ground.
+
+**Shinies stay apart.** Normal-to-shiny distance (pixel-weighted ΔE in OKLab), median 0.099 untoned:
+
+| strength | median | median ratio | 5th-percentile ratio | icons that fall under 0.03 |
+| --- | --- | --- | --- | --- |
+| 0.5 | 0.097 | 0.97 | 0.80 | 3 (Drilbur, Swanna, Vanilluxe) |
+| 1 | 0.092 | 0.93 | 0.64 | 11 |
+
+Each of those icons was already close (its shiny differs mainly in lightness). The worst hue drift on a coloured slot
+is 2°, from 8-bit rounding.
+
+### 17.3 The build, the preview and the editor
+
+- **The build:**
+  - `poke_icons.py archive` applies the tone to each battle-palette icon's normal and shiny colours (the 64-byte
+    entries, palette-only forms included), only when `icon_tone.json` says `"enabled": true`. The pixel counts come
+    from `icon_battle.png`.
+  - The fallback pixels on the banks are still chosen from the untoned colours.
+  - `icon_tone.json` is an input of the `a/0/0/7` member (`configure.py`).
+  - It ships `"enabled": false`: the hack ROM is byte-identical to the build before the tone. With it enabled, the ROM
+    differs only in the icon colours, `verify_dsi_rom.py` reports it intact, and Charizard's packed entry equals
+    `icon_tone.tone`'s.
+- **To turn it on:** set `"enabled": true` in `res/paperwhite2/icon_tone.json` (by hand or in the editor's data
+  files), and tune `strength` there. Then run `python3 configure.py w2_us --hack && ninja`.
+- **The previews** are in `C:\Modding\Pokemon ROM Hack Workspace\Pokemon Paper White\icon_tone\`:
+  - `all_icons_{normal,shiny}_{000,050,100}.png`: every icon in box trays at strengths 0, 0.5 and 1;
+  - `all_icons_vanilla.png`: the banks, for comparison;
+  - `before_after.png`: 40 varied species, vanilla then normal and shiny at the three strengths;
+  - `editor_tone_{on,off}.png`: the Sprite Editor with the view on and off.
+
+  The scripts are in the ROM session's scratchpad (`icontone/measure.py`, `proto.py`, `preview.py`).
+- **The Sprite Editor's Game tone** (View row, icons only, on by default; the label says it shows the in-game colours
+  and whether the build applies them yet):
+  - It tones the edited icon's big view, its other-palette reference, the frame thumbnails and the pencil's hover
+    colours.
+  - The battle sprite, the swatches and the vanilla reference keep their own colours, and editing stays on indices.
+  - It re-reads `icon_tone.json` when the file changes.
+  - `editor/src/modules/spriteeditor/tone.ts` mirrors the Python. `editor/tests/icon-tone.test.ts` checks that they
+    give equal colours on fixtures at strengths 0-1. During development the mirror was also checked equal on all
+    4,470 real icon palettes (745 icons x normal/shiny x 3 strengths).
+- **Tests** (fixtures; the real file is checked for validity only): `tools/paperwhite2/test_icon_tone.py` (strength 0
+  is the identity; outlines and transparency are untouched; hue is kept; spread falls with the top colour fixed; a
+  flat icon is unchanged; the chroma knee; `load`'s checks; the command) and `editor/tests/icon-tone.test.ts`.
