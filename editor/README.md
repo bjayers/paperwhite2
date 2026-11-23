@@ -792,7 +792,7 @@ the game doesn't build from yet), or of one of its walking or follower sheets, b
 - **Review marks** (`res/paperwhite2/sprite_review.json`, kept apart for icons and for walking/follower sheets):
   hand-edited, set by any save that changes a sprite, and checked, the **Mark checked** toggle (C) for a pass over
   every sprite, with each kind's progress. The species picker shows them, **Show** filters by them (All, Not checked,
-  Checked, Hand-edited, Generated only), and ◀ ▶ (`[` `]`) step through the filter, keeping the kind and frame.
+  Checked, Hand-edited, Generated only), and ◀ ▶ (A, D) step through the filter, keeping the kind and frame.
 - **Saving:** through `tools/paperwhite2/sprite_edit.py`, which checks and writes the files.
 
 ## The Move Editor and the Ability Editor

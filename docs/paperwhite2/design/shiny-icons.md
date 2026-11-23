@@ -978,7 +978,7 @@ the apply is byte-identical to the one before (`verify_dsi_rom.py`: intact).
     battle sprite is off for them.
 - **Navigation:**
   - The species in dex order, with a search picker whose entries show their marks (✎ hand-edited, ✓ checked) for the
-    kind shown, and ◀ ▶ beside it (keys `[` and `]`) to step through the species the filter shows.
+    kind shown, and ◀ ▶ beside it (keys A and D) to step through the species the filter shows.
   - **Show** filters by the marks of the kind shown (an icon, or the walking and follower sheets): All, Not checked,
     Checked, Hand-edited, Generated only, each with its count. For sheets a species counts as checked when all its
     sheets are, hand-edited when any is, and species without sheets (and a female icon, which shares its species'

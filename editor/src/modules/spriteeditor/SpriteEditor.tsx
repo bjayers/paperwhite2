@@ -34,7 +34,7 @@ const TOOLS: { id: Tool; label: string; key: string; note: string }[] = [
   { id: "pencil", label: "Pencil", key: "S", note: "Paints the brush's pixels; the hover shows them first." },
   { id: "fill", label: "Fill", key: "Z", note: "Fills the pixels of one index joined to the clicked one (4-connected), in this frame." },
   { id: "replace", label: "Replace", key: "R", note: "Every pixel of the clicked index becomes the swatch's, in this frame or all frames; the hover shows them." },
-  { id: "eyedropper", label: "Eyedropper", key: "Q", note: "Picks the colour under the pointer, on either side (Alt+click with any tool)." },
+  { id: "eyedropper", label: "Eyedropper", key: "Q", note: "Picks the colour under the pointer, on either side, then goes back to the last tool (Alt+click with any tool)." },
 ];
 const TOOL_KEYS: Record<string, Tool> = { s: "pencil", z: "fill", r: "replace", q: "eyedropper" };
 
@@ -146,6 +146,10 @@ export function SpriteEditor({ constants }: ToolProps) {
   const [artName, setArtName] = useState("front_single");
   const [view, setView] = useState<View>("normal");
   const [tool, setTool] = useState<Tool>("pencil");
+  // The tool the eyedropper goes back to after a pick
+  const lastTool = useRef<Tool>("pencil");
+  useEffect(() => { if (tool !== "eyedropper") lastTool.current = tool; }, [tool]);
+  const afterPick = () => { if (tool === "eyedropper") setTool(lastTool.current); };
   const [brush, setBrush] = useState(1);
   const [zoom, setZoom] = useState(12);
   const [grid, setGrid] = useState(true);
@@ -348,6 +352,7 @@ export function SpriteEditor({ constants }: ToolProps) {
     if (phase === "start" && (alt || tool === "eyedropper")) {
       const s = swatchOfIndex(binding, sprite.pixels[y * sprite.width + x]);
       if (s) setSwatch(s);
+      afterPick();
       return;
     }
     if (phase === "start" && tool === "replace") {
@@ -479,8 +484,8 @@ export function SpriteEditor({ constants }: ToolProps) {
       }
       if (e.altKey) return;
       if (TOOL_KEYS[k]) setTool(TOOL_KEYS[k]);
-      else if (k === "[") step(-1);
-      else if (k === "]") step(1);
+      else if (k === "a") step(-1);
+      else if (k === "d") step(1);
       else if (k === "c") toggleChecked();
       else if (k === "+" || k === "=") setZoom((z) => ZOOMS[Math.min(ZOOMS.length - 1, ZOOMS.indexOf(z) + 1)] ?? z);
       else if (k === "-") setZoom((z) => ZOOMS[Math.max(0, ZOOMS.indexOf(z) - 1)] ?? z);
@@ -555,9 +560,9 @@ export function SpriteEditor({ constants }: ToolProps) {
           </div>
           <span className="se-label">Species</span>
           <div className="se-row">
-            <button onClick={() => step(-1)} disabled={!prev} title="The previous species the filter shows ([)">◀ <span className="se-key">[</span></button>
+            <button onClick={() => step(-1)} disabled={!prev} title="The previous species the filter shows (A)">◀ <span className="se-key">A</span></button>
             <div className="se-picker"><SearchSelect value={key ?? ""} options={options} onChange={choose} placeholder="Find a Pokémon…" /></div>
-            <button onClick={() => step(1)} disabled={!next} title="The next species the filter shows (])"><span className="se-key">]</span> ▶</button>
+            <button onClick={() => step(1)} disabled={!next} title="The next species the filter shows (D)"><span className="se-key">D</span> ▶</button>
             <span className="muted small">{shownAt >= 0 ? `${shownAt + 1} of ${shown.length}` : `not in this filter · ${shown.length} shown`}</span>
           </div>
           <span className="se-label">Sprite</span>
@@ -618,7 +623,7 @@ export function SpriteEditor({ constants }: ToolProps) {
                   <SpriteCanvas sprite={battle.sprite} colours={[null, ...paletteOfView(main).slice(1)]} scale={battle.sprite.width > 128 ? 2 : 3} backdrop={backdrop}
                                 pointer={loaded.linked ? {
                                   cursor: "crosshair",
-                                  onStroke: (x, y, phase) => { if (phase === "start") { const i = battle.sprite.pixels[y * battle.sprite.width + x]; if (i) setSwatch({ kind: "palette", index: i }); } },
+                                  onStroke: (x, y, phase) => { if (phase === "start") { const i = battle.sprite.pixels[y * battle.sprite.width + x]; if (i) setSwatch({ kind: "palette", index: i }); afterPick(); } },
                                 } : undefined} />
                   <figcaption className="muted small">{main === "shiny" ? "Shiny (shiny.pal)" : "Normal (normal.pal)"}{loaded.linked ? "" : " · an opted-out sheet has no battle link: sampling here is off"}</figcaption>
                 </figure>
