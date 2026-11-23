@@ -322,7 +322,7 @@ species-only. **Tested**: emulator, with the screenshot in `icon_screens/` (Wind
 | 08 | Pokédex Forms | never started in the hack (the Info page replaces it) | `ov298/pokedex_detail_form.c` | 2 s | (rows) | species | not converted: unreachable, fallback | no: unreachable | |
 | 09 | Pokédex habitat map (original) | never started in the hack (Info's Area replaces it) | `ov298/pokedex_detail_map.c` | 2 s | (rows) | species | not converted: unreachable, fallback | no: unreachable | |
 | 10 | Habitat list (the Habitat Dex's grid) | Pokédex > Habitat > an area | `ov303/pokedex_habitat_graphic.c`, `paperwhite2_habitat_icons.c` | 30 m | ext G: palettes 0-1, a band per cell (4.3) | species | **converted** (phase 3) | yes: `10_habitat_list_normal`, `10_habitat_list_forms_normal`, `10_habitat_list_page2_normal`, `10_habitat_list_next_area_normal`, `10_habitat_list_left_field` | to test |
-| 11 | DexNav | C-Gear > DexNav | `paperwhite2_dexnav.c` | 18 grid + 1 big, BG | BG ext palettes, or the grid as OBJs on ext G | species (per area) | pending (phase 5) | | |
+| 11 | DexNav | C-Gear > DexNav | `paperwhite2_dexnav.c` | 18 grid + 1 big, BG | grid: 8bpp BG on sub BG ext palettes in H; big icon: main BG row 5 (8.1) | species (per area) | **converted** (phase 5) | yes: `11_dexnav_normal`, `_full_grid_normal`, `_scrolled_forms_normal`, `_route7_dark_grass_normal`, `_left_field` | to test |
 | 12 | Party list, battle mode (partners' parties) | Union Room multi battle, Battle Competition: the party choice | `ov165/plist_battle.c` | 6 or 18 s | (rows / share) | shiny | pending (phase 5): wireless-only (5.1) | no: wireless | |
 | 13 | Battle party list | in battle > Pokémon | `ov287/b_plist_obj.c` | 6 s | rows 0-2, 10-12 (5.1) | shiny | **converted** (phase 4) | yes: `13_battle_party_list_normal`, `_shiny`, `_left_battle` | to test |
 | 14 | Battle command screen | in a double, triple or rotation battle, the command screen's icons | `ov168/btlv_input.c` | 3 s | rows 11-13 | shiny | **converted** (phase 4) | yes (rows by memory; the screen darkens icons): `14_battle_command_icons_normal`, `_shiny` | to test |
@@ -364,6 +364,39 @@ party list's normal icons look as before too.
 3. The Pokédex: list (ext G bottom, rows top), Info Evo, Area, the Habitat list (ext G) (done, 2026-11-23).
 4. The row screens (section 5): 11 converted, the Mailbox found not to be one, two moved to phase 5 (done,
    2026-11-23).
-5. The extended-palette rest (DexNav, trade, Unova Link, Battle Recorder), and the wireless-only shells.
+5. The extended-palette rest and the wireless-only shells (section 8).
 6. Sweep: every loader of the icon archive accounted for here, the fallback reached by nothing tested, a last emulator
    pass. Then the banks and the fallback redraw can go (not before every screen is confirmed).
+
+## 8. The extended-palette rest and the wireless shells (phase 5)
+
+Which screens are left, and why, was settled by the callers of each screen in the hack build (the field's wireless
+script commands sit in the `#else` branches of the Pokémon Center counters' scripts 2101, 10100 and 10105; the C-Gear's
+IR, Xtransceiver and Game Sync markers are gone, `src/ov079/c_gear_sw.c`'s `sMarkerActions`). Screens with a local
+path are converted; screens every path of which needs wireless are shells (`wireless-shells.md`).
+
+### 8.1 The DexNav (`src/paperwhite2/ov303/paperwhite2_dexnav.c`)
+
+Species-only, normal colours, forms as listed. The DexNav draws on BGs, not OBJs:
+- **The grid** (touch screen, sub engine, 18 cells): the cells' icons moved from the 4bpp text BG to a BG of their own,
+  sub BG 0 (`BG_TOUCH_ICONS`), 256 colours, priority 1 (over the grid, under nothing it overlaps), its screen at
+  0x2000 and characters at 0x18000 of bank C (18 icons × 1 KB). Bank H is the sub engine's BG extended palette while
+  the DexNav is open (`GX_VRAM_SUB_BGEXTPLTT_0123_H` in its VRAM table, which sets DISPCNT's BG extended palette bit;
+  the field's banks clear it). The icon BG is the sub engine's only 256-colour BG, so nothing else reads the extended
+  palettes. Cell i draws 8bpp in band i % 16 of extended palette i / 16 (slot 0; its window's palette number names the
+  extended palette), `PaperWhite2_IconExt_Convert` from the icon's battle file.
+- **The big icon** (top screen, main engine, 1): its own colours in row 5 (`PALETTE_ICONS`), 4bpp as before.
+- The three banks' rows are no longer loaded. The colours live in the DexNav's work (main RAM) and a VBlank task copies
+  what changed: row 5, and the 1 KB of extended palettes 0-1 (`GXS_BeginLoadBGExtPltt` takes bank H from the engine
+  while it writes). The screen fades with the master brightness (`GFL_WipeSet`), so no palette fade is involved.
+- **Cost:** overlay 303 +320 bytes (no arena cost: it isn't in the arena's chain); the DexNav's work +1.1 KB of its
+  own 192 KB heap; sub BG VRAM +18 KB in bank C's unused top; bank H (unused by the DexNav before) as sub BG extended
+  palette.
+- **Tested** (py-desmume, a copy of the save, the Pokédex filled with the debug menu, RAM only; scripts in
+  `.../scratchpad/p5/`: `route.sh` boots, fills, warps to Route 6 and opens the DexNav from the C-Gear;
+  `route_r7.sh` Route 7's methods; `dnforce.py` fills the Grass list in RAM with 20 Pokémon, forms included;
+  `findicons.py` finds which icon a screenshot shows and how exactly): Route 6's grass (8 icons and the big one,
+  exact, winter Deerling included), unseen Pokémon's "?" icons, Route 7's methods with R, a full grid of 18 (all exact,
+  cells 16-17 on extended palette 1), scrolled to the forms (Deerling Summer, Shellos East: exact), leaving to the
+  field (sub DISPCNT's BG extended palette bit off again; bank F is left in LCDC as before this change, the DexNav's
+  texture palette bank, harmless). Screenshots `11_dexnav_*`.

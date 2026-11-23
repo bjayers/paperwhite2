@@ -17,6 +17,7 @@
 #include "gfl/proc.h"
 #include "gfl/sound.h"
 #include "gfl/str.h"
+#include "gfl/tcb.h"
 #include "gfl/touchpanel.h"
 #include "gfl/ui.h"
 #include "nitro/gx.h"
@@ -24,11 +25,12 @@
 #include "nitro/mi.h"
 #include "nnsys/g2d.h"
 #include "paperwhite2/dexnav.h"
+#include "paperwhite2/icon_ext.h"
+#include "paperwhite2/icon_palettes.h"
 #include "paperwhite2/weather_groups.h"
 #include "pml/personal.h"
 #include "system/game_data.h"
 #include "system/gf_font.h"
-#include "system/poke_icon.h"
 #include "system/printsys.h"
 #include "system/wipe.h"
 #include "system/wordset.h"
@@ -50,18 +52,19 @@
 #define NARC_GEONET_BG_NCLR 6
 #define NARC_GEONET_BG_NSCR 7
 
-// The BGs: the text over the grid on each screen
+// The BGs: the text over the grid on each screen, and on the touch screen the cells' icons, 8bpp, between them
 enum {
     BG_TOP_TEXT = 1,
     BG_TOP_GRID = 3,
+    BG_TOUCH_ICONS = 4,
     BG_TOUCH_TEXT = 5,
     BG_TOUCH_GRID = 7,
 };
 
-// The palettes: the grid's 0 to 3, the font's, the Pokémon icons' three, and the font's with the chosen cell's color
+// The palettes: the grid's 0 to 3, the font's, the top screen's icon's own colours, and the font's with the chosen
+// cell's color
 #define PALETTE_FONT 4
 #define PALETTE_ICONS 5
-#define PALETTE_ICON_COUNT 3
 #define PALETTE_CHOSEN 8
 #define CHOSEN_COLOR GX_RGB(18, 24, 31)
 
@@ -74,6 +77,10 @@ enum {
 // An icon: 4 by 4 tiles, the first frame of the icon's file
 #define ICON_TILES 4
 #define ICON_BYTES 0x200
+
+// The cells' icons are 8bpp on the touch screen's BG extended palettes (bank H, the icon BG's slot 0), each on its own
+// colours in a band of its own: cell i in band i % 16 of extended palette i / 16 (icon_ext.h's scheme, for a BG)
+#define CELL_EXT_PALETTES 2
 
 // The grid: columns and rows of cells, each an icon over its share, and where it starts, in tiles. A cell's share is
 // under its icon, as wide, so the cells' labels stay apart
@@ -141,6 +148,13 @@ typedef struct {
     BmpWin *tabs;
     BmpWin *cellIcons[GRID_CELLS];
     BmpWin *cellLabels[GRID_CELLS];
+    // The icons' colours, kept in main RAM for the VBlank's copies (DMA can't read the stack): the top screen's icon's
+    // row and the cells' extended palettes, each copied when it changed
+    TCB *vblankTask;
+    BOOL bigIconColoursChanged;
+    BOOL cellColoursChanged;
+    u16 bigIconColours[ICON_BATTLE_COLOURS];
+    u16 cellColours[CELL_EXT_PALETTES * ICON_EXT_COLOURS];
 } DexnavWork;
 
 static BOOL DexnavProc_Init(GameProc *proc, u32 *state, void *param, void *procWork);
@@ -148,7 +162,7 @@ static BOOL DexnavProc_Main(GameProc *proc, u32 *state, void *param, void *procW
 static BOOL DexnavProc_End(GameProc *proc, u32 *state, void *param, void *procWork);
 
 static const BGSysVRAMConfig sDexnavVRAMConfig = {
-    GX_VRAM_BG_128_B, GX_VRAM_BGEXTPLTT_NONE,  GX_VRAM_SUB_BG_128_C,       GX_VRAM_SUB_BGEXTPLTT_NONE,
+    GX_VRAM_BG_128_B, GX_VRAM_BGEXTPLTT_NONE,  GX_VRAM_SUB_BG_128_C,       GX_VRAM_SUB_BGEXTPLTT_0123_H,
     GX_VRAM_OBJ_64_E, GX_VRAM_OBJEXTPLTT_NONE, GX_VRAM_SUB_OBJ_16_I,       GX_VRAM_SUB_OBJEXTPLTT_NONE,
     GX_VRAM_TEX_0_A,  GX_VRAM_TEXPLTT_0_F,     GX_OBJVRAMMODE_CHAR_1D_32K, GX_OBJVRAMMODE_CHAR_1D_32K,
 };
@@ -183,6 +197,23 @@ static const BGSetup sDexnavGridBGSetup = {
     0x4000,
     GX_BG_EXTPLTT_01,
     3,
+    GX_BG_AREAOVER_XLU,
+    FALSE,
+};
+
+// The cells' icons: 256 colours, their screen after the others' and their characters after the grid's
+static const BGSetup sDexnavIconBGSetup = {
+    0,
+    0,
+    0x800,
+    0,
+    BGRES_256x256,
+    GX_BG_COLORMODE_256,
+    GX_BG_SCRBASE(0x2000),
+    GX_BG_CHARBASE(0x18000),
+    0x8000,
+    GX_BG_EXTPLTT_01,
+    1,
     GX_BG_AREAOVER_XLU,
     FALSE,
 };
@@ -269,25 +300,50 @@ static void Dexnav_Clear(BmpWin *window) {
     GFL_BitmapFill(BmpWin_GetBitmap(window), FILL_COLOR);
 }
 
-// A Pokémon's icon, the "?" one for an unseen Pokémon, into a window of the icons' palettes
-static void Dexnav_DrawIcon(DexnavWork *work, BmpWin *window, const DexnavEntry *entry) {
-    GFLBitmap *bitmap = BmpWin_GetBitmap(window);
+// A Pokémon's icon, the "?" one for an unseen Pokémon, on its battle palette's slots (icon_palettes.h), and its own
+// normal colours into colours: the DexNav shows species. Returns the file to free, or NULL for a cell without an icon
+static void *Dexnav_LoadIcon(DexnavWork *work, const DexnavEntry *entry, NNSG2dCharacterData **chars, u16 *colours) {
     u32 species = entry != NULL && entry->seen ? entry->species : 0;
     u32 form = entry != NULL && entry->seen ? entry->form : 0;
+
+    if (entry == NULL || entry->from == DEXNAV_FROM_ITEMS) {
+        return NULL;
+    }
+    PaperWhite2_ReadIconColours(colours, species, form, 0, FALSE, FALSE);
+    return GFL_G2DIOReadBGNCGRArc(work->icons, PaperWhite2_GetIconBattleFile(species, form, 0, FALSE), FALSE, chars,
+                                  work->heapId);
+}
+
+// The chosen Pokémon's icon on the top screen, on its colours in PALETTE_ICONS
+static void Dexnav_DrawBigIcon(DexnavWork *work, const DexnavEntry *entry) {
+    GFLBitmap *bitmap = BmpWin_GetBitmap(work->bigIcon);
     NNSG2dCharacterData *chars;
-    void *file;
+    void *file = Dexnav_LoadIcon(work, entry, &chars, work->bigIconColours);
 
     GFL_BitmapFill(bitmap, 0);
-    if (entry != NULL && entry->from != DEXNAV_FROM_ITEMS) {
-        file = GFL_G2DIOReadBGNCGRArc(work->icons, PokeParty_GetIconIndex(species, form, 0, FALSE), FALSE, &chars,
-                                      work->heapId);
+    if (file != NULL) {
         MI_CpuCopy8(chars->pRawData, GFL_BitmapGetPixelData(bitmap), ICON_BYTES);
         GFL_HeapFree(file);
-        BmpWin_SetPalette(window, PALETTE_ICONS + PokeIcon_GetPalette(species, form, 0, FALSE));
+        work->bigIconColoursChanged = TRUE;
     }
-    BmpWin_FlushChar(window);
-    BmpWin_FlushMap(window);
-    work->screensChanged = TRUE;
+    BmpWin_FlushChar(work->bigIcon);
+}
+
+// A cell's icon, 8bpp in its band of the cells' extended palettes, the one its window's palette names
+static void Dexnav_DrawCellIcon(DexnavWork *work, u32 cell, const DexnavEntry *entry) {
+    GFLBitmap *bitmap = BmpWin_GetBitmap(work->cellIcons[cell]);
+    u32 band = cell % ICON_EXT_BANDS;
+    u16 *colours = &work->cellColours[(cell / ICON_EXT_BANDS) * ICON_EXT_COLOURS + band * ICON_BATTLE_COLOURS];
+    NNSG2dCharacterData *chars;
+    void *file = Dexnav_LoadIcon(work, entry, &chars, colours);
+
+    GFL_BitmapFill(bitmap, 0);
+    if (file != NULL) {
+        PaperWhite2_IconExt_Convert(GFL_BitmapGetPixelData(bitmap), chars->pRawData, ICON_BYTES, band);
+        GFL_HeapFree(file);
+        work->cellColoursChanged = TRUE;
+    }
+    BmpWin_FlushChar(work->cellIcons[cell]);
 }
 
 // ------------------------------------------------------------------------------------------------ The lists
@@ -383,7 +439,7 @@ static void Dexnav_DrawInfo(DexnavWork *work) {
     u32 type1, type2;
 
     Dexnav_Clear(info);
-    Dexnav_DrawIcon(work, work->bigIcon, entry);
+    Dexnav_DrawBigIcon(work, entry);
     if (!work->data->active) {
         Dexnav_Print(work, info, Dexnav_Text_NoData, 0, 0);
     } else if (entry == NULL) {
@@ -478,7 +534,7 @@ static void Dexnav_DrawGrid(DexnavWork *work) {
         const DexnavEntry *entry = index < method->count ? &method->entries[index] : NULL;
         BmpWin *label = work->cellLabels[i];
 
-        Dexnav_DrawIcon(work, work->cellIcons[i], entry);
+        Dexnav_DrawCellIcon(work, i, entry);
         // An empty cell's label is clear, so the grid shows through
         GFL_BitmapFill(BmpWin_GetBitmap(label), entry != NULL ? FILL_COLOR : 0);
         BmpWin_SetPalette(label, index == work->chosen[work->method] && entry != NULL ? PALETTE_CHOSEN : PALETTE_FONT);
@@ -508,6 +564,26 @@ static void Dexnav_LoadScreens(DexnavWork *work) {
         work->screensChanged = FALSE;
         GFL_BGSysLoadScr(BG_TOP_TEXT);
         GFL_BGSysLoadScr(BG_TOUCH_TEXT);
+        GFL_BGSysLoadScr(BG_TOUCH_ICONS);
+    }
+}
+
+// Copies the icons' colours that changed: the top screen's row, and the cells' extended palettes, which take bank H
+// from the 2D engine while they are written
+static void Dexnav_VBlank(TCB *tcb, void *data) {
+    DexnavWork *work = data;
+
+    if (work->bigIconColoursChanged) {
+        work->bigIconColoursChanged = FALSE;
+        GFL_BGSysUploadStdPalette(BG_TOP_TEXT, work->bigIconColours, sizeof(work->bigIconColours),
+                                  PALETTE_ICONS * sizeof(work->bigIconColours));
+    }
+    if (work->cellColoursChanged) {
+        work->cellColoursChanged = FALSE;
+        DC_FlushRange(work->cellColours, sizeof(work->cellColours));
+        GXS_BeginLoadBGExtPltt();
+        GXS_LoadBGExtPltt(work->cellColours, 0, sizeof(work->cellColours));
+        GXS_EndLoadBGExtPltt();
     }
 }
 
@@ -639,8 +715,6 @@ static void Dexnav_LoadScreen(DexnavWork *work, ArcTool *geonet, u8 textBG, u8 g
     // The chosen cell's palette is the font's with another fill color
     GFL_BGSysLoadNCLRDefault(ARCID_FONT, 5, palType, PALETTE_CHOSEN * 0x20, 0x20, work->heapId);
     GFL_BGSysUploadStdPalette(textBG, &chosen, sizeof(chosen), (PALETTE_CHOSEN * 16 + FILL_COLOR) * sizeof(GXRgb));
-    GFL_G2DIOLoadArcNCLR(work->icons, PokeIcon_GetPaletteFile(), palType, 0, PALETTE_ICONS * 0x20,
-                         PALETTE_ICON_COUNT * 0x20, work->heapId);
     GFL_BGSysClearCharCore(textBG, 0x20, 0, work->heapId);
     GFL_BGSysResetStdPalette(textBG, GX_RGB(0, 0, 0));
 }
@@ -655,6 +729,8 @@ static void Dexnav_LoadGraphics(DexnavWork *work) {
     Dexnav_LoadScreen(work, geonet, BG_TOP_TEXT, BG_TOP_GRID, PALTYPE_MAIN_BG);
     Dexnav_LoadScreen(work, geonet, BG_TOUCH_TEXT, BG_TOUCH_GRID, PALTYPE_SUB_BG);
     GFL_ArcToolFree(geonet);
+    GFL_BGSysCreateBG(BG_TOUCH_ICONS, &sDexnavIconBGSetup, BGMODE_TEXT);
+    GFL_BGSysClearScr(BG_TOUCH_ICONS);
 
     work->title = Dexnav_CreateWindow(&sTitleWindow);
     work->bigIcon = Dexnav_CreateWindow(&sBigIconWindow);
@@ -666,7 +742,7 @@ static void Dexnav_LoadGraphics(DexnavWork *work) {
         u8 x = GRID_X + (i % GRID_COLUMNS) * CELL_WIDTH;
         u8 y = GRID_Y + (i / GRID_COLUMNS) * CELL_HEIGHT;
 
-        work->cellIcons[i] = Dexnav_CreateWindowAt(BG_TOUCH_TEXT, x, y, ICON_TILES, ICON_TILES, PALETTE_ICONS);
+        work->cellIcons[i] = Dexnav_CreateWindowAt(BG_TOUCH_ICONS, x, y, ICON_TILES, ICON_TILES, i / ICON_EXT_BANDS);
         work->cellLabels[i] =
             Dexnav_CreateWindowAt(BG_TOUCH_TEXT, x, y + ICON_TILES, LABEL_WIDTH, LABEL_HEIGHT, PALETTE_FONT);
     }
@@ -685,6 +761,7 @@ static void Dexnav_FreeGraphics(DexnavWork *work) {
     BmpWin_Free(work->info);
     BmpWin_Free(work->bigIcon);
     BmpWin_Free(work->title);
+    GFL_BGSysReleaseBG(BG_TOUCH_ICONS);
     GFL_BGSysReleaseBG(BG_TOUCH_TEXT);
     GFL_BGSysReleaseBG(BG_TOUCH_GRID);
     GFL_BGSysReleaseBG(BG_TOP_TEXT);
@@ -696,6 +773,7 @@ static void Dexnav_FreeGraphics(DexnavWork *work) {
 static void Dexnav_SetBGsEnabled(BOOL enabled) {
     GFL_BGSysSetBGEnabled(BG_TOP_TEXT, enabled);
     GFL_BGSysSetBGEnabled(BG_TOP_GRID, enabled);
+    GFL_BGSysSetBGEnabled(BG_TOUCH_ICONS, enabled);
     GFL_BGSysSetBGEnabled(BG_TOUCH_TEXT, enabled);
     GFL_BGSysSetBGEnabled(BG_TOUCH_GRID, enabled);
 }
@@ -732,6 +810,7 @@ static BOOL DexnavProc_Main(GameProc *proc, u32 *state, void *param, void *procW
     switch (*state) {
     case SEQ_INIT:
         Dexnav_LoadGraphics(work);
+        work->vblankTask = GFL_VBlankTCBAdd(Dexnav_VBlank, work, 0);
         Dexnav_LayOutTabs(work);
         Dexnav_DrawTitle(work);
         Dexnav_DrawConditions(work);
@@ -770,6 +849,7 @@ static BOOL DexnavProc_End(GameProc *proc, u32 *state, void *param, void *procWo
     DexnavWork *work = procWork;
     HeapID heapId = work->heapId;
 
+    GFL_TCBRemove(work->vblankTask);
     Dexnav_SetBGsEnabled(FALSE);
     Dexnav_FreeGraphics(work);
     GFL_ArcToolFree(work->icons);
