@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Paper White 2: the party/box icons re-indexed onto their battle palettes, by two methods, for the editor's Icon
-review page (docs/paperwhite2/design/shiny-icons.md, sections 7-13).
+review page (docs/paperwhite2/design/shiny-icons.md, sections 7-13; the page was removed once the review was applied,
+and this tool and res/paperwhite2/icon_remap_choices.json stay as its record).
 
 One icon per species-form: its pixels become indices of the group's battle palette (normal.pal; a shiny is the same
 pixels through shiny.pal) plus the two vanilla outline greys. The icon's own 16-colour palette is

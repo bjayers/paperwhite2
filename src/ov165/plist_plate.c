@@ -19,6 +19,7 @@
 #include "system/printsys.h"
 #include "system/wordset.h"
 #ifdef PAPERWHITE2
+#include "paperwhite2/icon_palettes.h"
 #include "paperwhite2/prestige.h"
 #endif
 
@@ -227,12 +228,33 @@ static void PokeListPlate_CreateActors(PokeListWork *wk, PokeListPlate *plate) {
     ClActor_SetVisible(plate->statusIcon, FALSE);
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: the main OBJ palette row of each plate's icon. The icons' palette resource is at row 6
+// (PokeList_LoadResources), which the actor's palette counts from; 9-11 are the touch bar's, 12-15 unused
+#define PLIST_ICON_PALETTE_ROW 6
+static const u8 sPaperWhite2IconRows[] = { 6, 7, 8, 12, 13, 14 };
+
+#endif
 static void PokeListPlate_CreateIcon(PokeListWork *wk, PokeListPlate *plate) {
     ArcTool *arc = GFL_ArcSysCreateFileHandle(7, HEAPID_TAIL(wk->heapId));
     u32 file;
     u8 palette;
     ClActorSetup setup;
 
+#ifdef PAPERWHITE2
+    // Paper White 2: the icon on its own battle palette, normal or shiny, in a row of the plate's own: the three banks'
+    // rows and three free ones (docs/paperwhite2/design/icon-screens.md)
+    if (plate->pkm != NULL) {
+        BoxPkm *pkm = PokeParty_ToBoxPkm(plate->pkm);
+
+        file = PaperWhite2_GetIconBattleFileOfPkm(pkm);
+        PaperWhite2_LoadIconPaletteOfPkm(pkm, FALSE, sPaperWhite2IconRows[plate->index]);
+    } else {
+        file = PaperWhite2_GetIconBattleFile(1, 0, 0, TRUE);
+        PaperWhite2_LoadIconPalette(1, 0, 0, TRUE, FALSE, FALSE, sPaperWhite2IconRows[plate->index]);
+    }
+    palette = sPaperWhite2IconRows[plate->index] - PLIST_ICON_PALETTE_ROW;
+#else
     if (plate->pkm != NULL) {
         BoxPkm *pkm = PokeParty_ToBoxPkm(plate->pkm);
 
@@ -242,6 +264,7 @@ static void PokeListPlate_CreateIcon(PokeListWork *wk, PokeListPlate *plate) {
         file = PokeParty_GetIconIndex(1, 0, 0, TRUE);
         palette = PokeIcon_GetPalette(1, 0, 0, TRUE);
     }
+#endif
     plate->iconChars = ClActSys_LoadChars(arc, file, FALSE, 0, wk->heapId);
     GFL_ArcToolFree(arc);
     setup.x = 24;

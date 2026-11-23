@@ -2,6 +2,31 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-23: Icons on their battle palettes, phase 1: the foundation and the party list (ROM session)
+
+- **Build:** `tools/paperwhite2/poke_icons.py` (configure.py's `HACK_ARCHIVE_MEMBERS`, `a/0/0/7`) reads
+  `icon_battle.png`/`.json` and the battle palettes at build time. It writes:
+  - each icon's own file redrawn in its shared bank, as the fallback for screens not yet converted;
+  - a member of 64-byte entries, the normal and the shiny colours of each icon;
+  - one member per entry with the icon's pixels on its slots, Arceus' palette-only forms included.
+
+  Eggs keep their art and bank colours, never shiny. ROM +0.95 MB.
+- **API** (`include/paperwhite2/icon_palettes.h`, ARM9 main, +576 bytes, DS arena 0x4600 → 0x43c0):
+  - `PaperWhite2_GetIconBattleFile[OfPkm]` gives the member to load in place of the icon's file;
+  - `PaperWhite2_LoadIconPalette[OfPkm]` loads the colours into an OBJ row (main or sub);
+  - `PaperWhite2_LoadIconExtPalette[OfPkm]` loads them into an extended-palette band (untested until the box).
+- **Party list converted** (`plist_plate.c`): each plate's icon in a row of its own (6-8, 12-14), normal or shiny.
+  - Tested in py-desmume on a copy of the save: the list normal, all six made shiny in RAM, and after a Switch.
+  - The box (tray and party side) and the Pokédex's National list were spot-checked on the fallback: right in bank
+    colours.
+  - Screenshots are in `icon_screens/`, named `01_*`, `02_*` and `03_*`.
+- **The editor's Icon review page is removed** (module, server routes, test). `icon_remap.py` and the choices file
+  stay as the record.
+- `docs/paperwhite2/design/icon-screens.md` lists all 35 icon screens with their routes and status (1 converted).
+- **Next:** phase 2, the box, with 8bpp icons on extended palette G, the API's first ext-palette user.
+- Tests: `test_poke_icons.py` (new), test_icon_remap and test_sprite_edit, editor tsc and npm test (282), the hack
+  build, and the DSi check (intact).
+
 ## 2026-11-22: Icons applied to res/, and the Sprite Editor (ROM session)
 
 - **Applied:** `icon_remap.py apply` wrote all 744 reviewed icons as `icon_battle.png` and `icon_battle.json` (female:

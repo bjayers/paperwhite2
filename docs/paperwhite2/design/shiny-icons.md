@@ -988,3 +988,9 @@ the apply is byte-identical to the one before (`verify_dsi_rom.py`: intact).
     lines and fill, `canonicalIcon` against Python's, and the server's save round trip. All on fixtures.
 - **Next:** the in-game work: icons drawn from `icon_battle.png` with their slots coloured from the battle palettes
   (section 6). Then retire the vanilla banks and the review page.
+
+## 16. In game (2026-11-23)
+
+The in-game work has its own file, `icon-screens.md`: the build's packing, the runtime API, the fallback onto the
+banks, and every icon screen with its route and status. Phase 1 converted the party list and removed the editor's Icon
+review page (`icon_remap.py` and `res/paperwhite2/icon_remap_choices.json` stay as its record).

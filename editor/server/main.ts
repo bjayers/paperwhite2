@@ -18,7 +18,6 @@ import { Python, pythonFor } from "./python.ts";
 import { loadSettings } from "./settings.ts";
 import { UsageCache } from "./usage.ts";
 import { removable, weatherCalendarLimit } from "./weather.ts";
-import { ChoiceWriter, ReviewGenerator, isChoice, readDetail, reviewState } from "./iconReview.ts";
 import { BEFORE_REMAP, beforeRemapPaths, saveSprite } from "./spriteEditor.ts";
 
 // The checkout this folder is in; PAPERWHITE_ROOT points it at another, as the tests do with a scratch copy.
@@ -34,9 +33,6 @@ const python = new Python(ROOT);
 const usage = new UsageCache(ROOT);
 const git = new Git(ROOT);
 const clients = new Set<ServerResponse>();
-// The temporary Icon review page (server/iconReview.ts)
-const iconChoices = new ChoiceWriter(ROOT, (path, text) => project.writeAtomic(path, text));
-const iconReview = new ReviewGenerator(ROOT, pythonFor(ROOT));
 const builder = new Builder(ROOT, (line) => send({ type: "build-line", line }), (state) => {
   send({ type: "build", state: { ...state, lines: [] } });
   if (!state.running) send({ type: "git" });
@@ -985,36 +981,6 @@ const routes: Record<string, Handler> = {
     res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
     res.end(line);
   },
-  // The temporary Icon review page: the candidates in build/icon_review/ and the choices file
-  "GET /api/icon-review": (_req, res) => json(res, reviewState(ROOT, iconReview)),
-  "GET /api/icon-review/icon": (_req, res, url) => {
-    const detail = readDetail(ROOT, url.searchParams.get("key") ?? "");
-    if (!detail) return error(res, 404, "No such icon in build/icon_review/");
-    json(res, detail);
-  },
-  "PUT /api/icon-review/choice": async (req, res) => {
-    // unflag: also clears the fix-by-hand flag (the page's "Keep and unflag")
-    const body = (await readJson(req)) as { key?: string; choice?: unknown; unflag?: unknown };
-    if (typeof body.key !== "string" || (body.choice !== null && !isChoice(body.choice)))
-      return error(res, 400, "Name an icon and a choice (ihm, j, g2, h, ih, k or null)");
-    if (body.unflag !== undefined && typeof body.unflag !== "boolean") return error(res, 400, "unflag is true or false");
-    try {
-      json(res, await iconChoices.set(body.key, body.choice, body.unflag ?? false));
-    } catch (e) {
-      error(res, 400, (e as Error).message);
-    }
-  },
-  // The fix-by-hand flag, separate from the choice: any icon can carry it
-  "PUT /api/icon-review/flag": async (req, res) => {
-    const body = (await readJson(req)) as { key?: string; flag?: unknown };
-    if (typeof body.key !== "string" || typeof body.flag !== "boolean") return error(res, 400, "Name an icon and a flag (true or false)");
-    try {
-      json(res, await iconChoices.flag(body.key, body.flag));
-    } catch (e) {
-      error(res, 400, (e as Error).message);
-    }
-  },
-  "POST /api/icon-review/generate": (_req, res) => json(res, { started: iconReview.start() }),
   // The Sprite Editor (server/spriteEditor.ts): an icon on its battle palettes or a walking/follower sheet saved through
   // sprite_edit.py, and a sheet as it was before the battle-palette remap (git, read only)
   "POST /api/sprite-editor/save": async (req, res) => {

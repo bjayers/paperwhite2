@@ -19,6 +19,7 @@ is a byte less of arena, whether or not the Entralink run is being played. Overl
 | Fair discovery and debug ranks (prototype doc): overlay 12 +384 bytes (the undiscovered weighting, the debug ranks); the Records page's counts in overlay 143 | 0x49e0, 18,912 bytes (18.5 KB) | 0x2b8e0 (+384) |
 | Difficulty tiers (prototype doc, "Difficulty tiers"): overlay 12 +704 bytes (the tiers' tables, the tier NPC's words, the modifiers); ARM9 main unchanged (the run state's tier in its padding); overlay 143 +320 bytes | 0x4720, 18,208 bytes (17.8 KB) | 0x2bba0 (+704) |
 | Overworld sheets on the battle palettes (follower-palette-remap.md section 9): overlay 36 +288 bytes (the slots read their battle palette, normal or shiny); no BSS | 0x4600, 17,920 bytes (17.5 KB) | 0x2bba0, unchanged |
+| Icons on their battle palettes, phase 1 (icon-screens.md): ARM9 main +576 bytes (the icon palette API, `paperwhite2_icon_palettes.o`, with a 32-byte colour buffer in BSS); overlay 165 +32 bytes; ROM +0.95 MB in `a/0/0/7` (no RAM: the colours are read 32 bytes at a time) | 0x43c0, 17,344 bytes (16.9 KB) | 0x2bba0, unchanged |
 
 The species' table also grew (the follower sprites let 597 species in instead of 523, and each row has a byte for the
 female's sprite): kept in overlay 12 it would have cost 7.2 KB there, 2 KB more than before, so the arena would have

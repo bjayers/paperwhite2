@@ -2,8 +2,9 @@
 """Paper White 2: the sprites drawn on the battle palettes, as files, and the editor's Sprite Editor saves
 (docs/paperwhite2/design/shiny-icons.md section 15).
 
-**Battle-palette icons.** A party/box icon re-indexed onto its battle palettes lives next to the vanilla art, which the
-game still builds from (icon.png and the three shared banks) until the in-game work lands:
+**Battle-palette icons.** A party/box icon re-indexed onto its battle palettes lives next to the vanilla art. The hack
+build packs it (tools/paperwhite2/poke_icons.py, docs/paperwhite2/design/icon-screens.md): converted screens draw it on
+its own colours, the others in its vanilla bank:
 
     res/pokemon/<species>[/form_<n>]/icon_battle.png        (icon_female_battle.png for an icon_female.png)
     res/pokemon/<species>[/form_<n>]/icon_battle.json

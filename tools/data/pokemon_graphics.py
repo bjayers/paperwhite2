@@ -443,7 +443,9 @@ def pack_file(root, archive_name, archive, index, original, path, kind, options)
 
 
 def pack(root, game, output):
-    archive_name = Path(output).as_posix().split("/files/", 1)[-1]
+    # The archive's path in the file system, after the build's files/ (or, for Paper White 2's build, packed/, where an
+    # archive that the hack gives members goes first: configure.py's HACK_ARCHIVE_MEMBERS)
+    archive_name = re.split("/files/|/packed/", Path(output).as_posix(), maxsplit=1)[-1]
     if archive_name not in ARCHIVES:
         raise ValueError(f"unexpected Pokémon graphics archive {archive_name}")
     global EXTRACTED

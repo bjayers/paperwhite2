@@ -379,7 +379,11 @@ HACK_ARCHIVE_MEMBERS = {"a/0/9/6": ("tools/paperwhite2/conditions.py", "res/pape
                         "a/1/5/7": ("tools/paperwhite2/pokedex_evo.py", "res/paperwhite2/pokedex_art"),
                         # The battle view's: the damage numbers' digits and a foe's HP line's cell
                         # (tools/paperwhite2/damage_digits.py, paperwhite2_damage_numbers.c)
-                        "a/0/1/1": ("tools/paperwhite2/damage_digits.py", "res/paperwhite2/battle")}
+                        "a/0/1/1": ("tools/paperwhite2/damage_digits.py", "res/paperwhite2/battle"),
+                        # The icons' battle palettes: each icon redrawn in its bank from icon_battle.png, then its
+                        # normal and shiny colours and its pixels on its slots (tools/paperwhite2/poke_icons.py,
+                        # docs/paperwhite2/design/icon-screens.md)
+                        "a/0/0/7": ("tools/paperwhite2/poke_icons.py", "res/pokemon/shared")}
 HACK_MEMBER_EXTRA_SOURCES = {"a/1/2/7": ["res/paperwhite2/conditions", "res/pokemon/*/data.json"],
                              "a/0/4/7": ["res/pokemon/*/data.json", "res/moves/*/data.json",
                                          "res/field/actors/followers/*/data.json",
@@ -389,6 +393,7 @@ HACK_MEMBER_EXTRA_SOURCES = {"a/1/2/7": ["res/paperwhite2/conditions", "res/poke
                                          "res/paperwhite2/level_scaling.json", "res/town_map", "res/field/zones/*.json",
                                          "include/system/zone_weather.h", "include/paperwhite2/weather_groups.h"],
                              "a/1/2/6": ["res/paperwhite2/conditions", "res/field/events"],
+                             "a/0/0/7": ["res/pokemon/**/icon*", "res/pokemon/**/*.pal", "res/pokemon/*/data.json"],
                              # The digits' member's number (DAMAGE_DIGITS_MEMBER) and the tiers' colours
                              # (buffs.json's settings.damage_numbers)
                              "a/0/1/1": ["include/paperwhite2/damage_numbers.h",
