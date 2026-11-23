@@ -106,11 +106,56 @@ def test_save_icon_command(tmp_path):
     data.write_text(json.dumps({"pixels": icon_pixels([4, 1]).hex(), "slots": [4, 1]}))
     code, out = run(["save-icon", "fakemon", str(data), "--res", str(root / "res")])
     assert code == 0
-    assert out == {"ok": True, "written": ["res/pokemon/fakemon/icon_battle.png", "res/pokemon/fakemon/icon_battle.json"]}
+    assert out == {"ok": True, "written": ["res/pokemon/fakemon/icon_battle.png", "res/pokemon/fakemon/icon_battle.json"],
+                   "hand_edited": True}
     data.write_text(json.dumps({"pixels": icon_pixels([4, 1]).hex(), "slots": [4]}))
     code, out = run(["save-icon", "fakemon", str(data), "--res", str(root / "res")])
     assert code == 1 and "only 1 slots" in out["error"]
     assert sprite_edit.read_icon(root / "res" / "pokemon", "fakemon")[1] == [4, 1], "a refused save writes nothing"
+
+
+def test_review_marks(tmp_path):
+    """The marks file: empty while missing, round-trips as the data tools write it, icons and sheets apart."""
+    root = fixture(tmp_path)
+    res = root / "res"
+    assert sprite_edit.read_review(res) == {k: {"hand_edited": [], "checked": []} for k in ("icons", "followers")}
+    code, out = run(["mark", "icons", "fakemon", "checked", "on", "--res", str(res)])
+    assert code == 0 and out["review"]["icons"]["checked"] == ["fakemon"]
+    run(["mark", "followers", "pokemon/fakemon", "checked", "on", "--res", str(res)])
+    run(["mark", "icons", "abra", "checked", "on", "--res", str(res)])
+    text = (res / sprite_edit.REVIEW_FILE).read_text()
+    review = sprite_edit.read_review(res)
+    assert review["icons"]["checked"] == ["abra", "fakemon"] and review["followers"]["checked"] == ["pokemon/fakemon"]
+    assert text == dumps(json.loads(text)) + "\n", "written as the data tools write JSON"
+    assert list(json.loads(text)) == ["icons", "followers"]
+    run(["mark", "icons", "abra", "checked", "off", "--res", str(res)])
+    assert sprite_edit.read_review(res)["icons"]["checked"] == ["fakemon"]
+    code, out = run(["mark", "icons", "../x", "checked", "on", "--res", str(res)])
+    assert code == 1 and not out["ok"]
+
+
+def test_saves_mark_hand_edited(tmp_path):
+    """A save that changes a sprite's pixels or slots marks it hand-edited, in its own kind; one that changes nothing
+    doesn't."""
+    root = fixture(tmp_path)
+    res = root / "res"
+    data = tmp_path / "data.json"
+    px = icon_pixels([4, 1])
+    sprite_edit.write_files(sprite_edit.icon_files(res / "pokemon", "fakemon", px, [4, 1]))
+    data.write_text(json.dumps({"pixels": px.hex(), "slots": [4, 1]}))
+    assert run(["save-icon", "fakemon", str(data), "--res", str(res)])[1]["hand_edited"] is False
+    assert not (res / sprite_edit.REVIEW_FILE).exists(), "saving the same icon marks nothing"
+    data.write_text(json.dumps({"pixels": px.hex(), "slots": [4, 2]}))
+    assert run(["save-icon", "fakemon", str(data), "--res", str(res)])[1]["hand_edited"] is True
+    review = sprite_edit.read_review(res)
+    assert review["icons"]["hand_edited"] == ["fakemon"] and review["followers"]["hand_edited"] == []
+    sheet = bytes(64 * 32)
+    data.write_text(json.dumps({"pixels": sheet.hex()}))
+    assert run(["save-sheet", "field/actors/pokemon/fakemon", str(data), "--res", str(res)])[1]["hand_edited"] is False
+    data.write_text(json.dumps({"pixels": (b"\x01" + sheet[1:]).hex()}))
+    assert run(["save-sheet", "field/actors/pokemon/fakemon", str(data), "--res", str(res)])[1]["hand_edited"] is True
+    review = sprite_edit.read_review(res)
+    assert review["followers"]["hand_edited"] == ["pokemon/fakemon"] and review["icons"]["hand_edited"] == ["fakemon"]
 
 
 def test_sheets(tmp_path):

@@ -3,12 +3,12 @@
 // sampling (docs/paperwhite2/design/shiny-icons.md section 15). Left: the battle sprite, the other palette above it,
 // the palette's swatches below. Right: the sprite being edited, large, with the vanilla art and the other palette
 // above it. Clicking either reference in the other palette swaps the page's palette: editing stays on the same
-// indices. The "Hand-fix list" steps through res/paperwhite2/icon_fix_list.json. The logic is model.ts's.
+// indices. The review marks (res/paperwhite2/sprite_review.json: hand-edited, set by a save that changes the sprite, and
+// checked, the user's pass), kept apart for icons and sheets, filter the species navigation. The logic is model.ts's.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../api.ts";
 import { documents } from "../../documents.ts";
-import { fileText, fromPlain } from "../../../shared/json.ts";
 import { SearchSelect, type Option } from "../../shell/SearchSelect.tsx";
 import { useToolActive } from "../active.ts";
 import { FIELD_ACTOR_SCHEMA } from "../followers/data.ts";
@@ -17,9 +17,10 @@ import { readIndexedPng } from "../palettes/png.ts";
 import { paletteOf } from "../palettes/sheetColors.ts";
 import type { ToolProps } from "../types.ts";
 import { SpriteCanvas, type Backdrop } from "./SpriteCanvas.tsx";
-import { FIX_LIST, GREYS, History, ICON_SLOTS, SHEET_FRAME_NAMES, brushPixels, canonicalIcon, fill, framesOf, iconFiles, iconKeyOf,
-  indexColour, linePixels, paint, paintIndex, readFixList, sameSnapshot, sameSwatch, spriteColours, swatchOfIndex, toHex, viewPalettes,
-  type Binding, type Rgb, type Snapshot, type Sprite, type Swatch, type View } from "./model.ts";
+import { GREYS, History, ICON_SLOTS, REVIEW_FILE, REVIEW_FILTERS, SHEET_FRAME_NAMES, brushPixels, canonicalIcon, emptyReview, fill, framesOf,
+  iconFiles, iconKeyOf, indexColour, linePixels, markSets, matchesFilter, paint, paintIndex, readReview, replaceIndex, sameSnapshot, sameSwatch,
+  sheetKey, spriteColours, stepKey, swatchOfIndex, toHex, viewPalettes,
+  type Binding, type Review, type ReviewFilter, type ReviewKind, type Rgb, type Snapshot, type Sprite, type Swatch, type View } from "./model.ts";
 
 const SPECIES_SCHEMA = "res/pokemon/species.schema.json";
 const ICON_GLOBS = ["res/pokemon/*/icon_battle.png", "res/pokemon/*/icon_female_battle.png", "res/pokemon/*/form_*/icon_battle.png"];
@@ -27,12 +28,14 @@ const ART_NAMES: [string, string][] = [["front_single", "Front"], ["back_single"
 const REF_SCALE = 3;
 const ZOOMS = [6, 8, 10, 12, 16, 20, 24];
 
-type Tool = "pencil" | "fill" | "eyedropper";
+type Tool = "pencil" | "fill" | "replace" | "eyedropper";
 const TOOLS: { id: Tool; label: string; key: string; note: string }[] = [
-  { id: "pencil", label: "Pencil", key: "B", note: "Paints the brush's pixels; the hover shows them first." },
-  { id: "fill", label: "Fill", key: "G", note: "Fills the pixels of one index joined to the clicked one (4-connected), in this frame." },
-  { id: "eyedropper", label: "Eyedropper", key: "I", note: "Picks the colour under the pointer, on either side (Alt+click with any tool)." },
+  { id: "pencil", label: "Pencil", key: "S", note: "Paints the brush's pixels; the hover shows them first." },
+  { id: "fill", label: "Fill", key: "Z", note: "Fills the pixels of one index joined to the clicked one (4-connected), in this frame." },
+  { id: "replace", label: "Replace", key: "R", note: "Every pixel of the clicked index becomes the swatch's, in this frame or all frames; the hover shows them." },
+  { id: "eyedropper", label: "Eyedropper", key: "Q", note: "Picks the colour under the pointer, on either side (Alt+click with any tool)." },
 ];
+const TOOL_KEYS: Record<string, Tool> = { s: "pencil", z: "fill", r: "replace", q: "eyedropper" };
 
 interface Subject {
   key: string;
@@ -130,8 +133,9 @@ export function SpriteEditor({ constants }: ToolProps) {
   const toolActive = useToolActive();
   const [subjects, setSubjects] = useState<Subject[] | null>(null);
   const [actorSheets, setActorSheets] = useState<{ folder: string; pokemon: string | null; optOut: string | null }[]>([]);
-  const [fixList, setFixList] = useState<{ keys: string[]; version: string | null }>({ keys: [], version: null });
-  const [mode, setMode] = useState<"all" | "fix">("fix");
+  const [review, setReview] = useState<Review>(emptyReview);
+  const [filter, setFilter] = useState<ReviewFilter>("all");
+  const [replaceAll, setReplaceAll] = useState(false);
   const [key, setKey] = useState<string | null>(null);
   const [target, setTarget] = useState<Target>({ kind: "icon" });
   const [loaded, setLoaded] = useState<Loaded | null>(null);
@@ -155,7 +159,7 @@ export function SpriteEditor({ constants }: ToolProps) {
   const stroke = useRef<{ before: Snapshot; index: number; last: [number, number] } | null>(null);
   const [, setTick] = useState(0);
 
-  // The icons and sheets there are, and the hand-fix list
+  // The icons and sheets there are, and the review marks
   useEffect(() => {
     let live = true;
     Promise.all([Promise.all(ICON_GLOBS.map((g) => api.list(g))).then((l) => l.flat()), api.data(SPECIES_SCHEMA, ["name"]),
@@ -184,27 +188,57 @@ export function SpriteEditor({ constants }: ToolProps) {
     return () => { live = false; };
   }, [constants]);
 
-  const loadFixList = useCallback(() => api.file(FIX_LIST).then((f) => setFixList({ keys: readFixList(f.text), version: f.version }),
-    () => setFixList({ keys: [], version: null })), []);
-  useEffect(() => { loadFixList(); }, [loadFixList]);
+  const loadReview = useCallback(() => api.file(REVIEW_FILE).then((f) => setReview(readReview(f.text)), () => setReview(readReview(null))), []);
+  useEffect(() => { loadReview(); }, [loadReview]);
 
-  const shown = useMemo(() => {
+  // Each species' sheets: those whose "palette" names its group, and the opted-out ones under its species' name
+  const sheetsByKey = useMemo(() => {
+    const out = new Map<string, SheetInfo[]>();
+    for (const subject of subjects ?? []) {
+      const group = subject.group.slice("res/pokemon/".length);
+      out.set(subject.key, actorSheets.filter((s) => s.pokemon === group || (s.optOut && (s.folder.endsWith(`/${subject.species}`) || s.folder.split("/").pop()!.startsWith(`${subject.species}_`))))
+        .map((s) => ({ folder: s.folder, optOut: s.optOut,
+          label: `${s.folder.includes("/followers/") ? "Follower" : "Walking"}: ${words(s.folder.split("/").pop()!)}` }))
+        .sort((a, b) => a.label.localeCompare(b.label)));
+    }
+    return out;
+  }, [subjects, actorSheets]);
+
+  // The kind shown (an icon, or a walking/follower sheet), whose marks the navigation filters on
+  const kind: ReviewKind = target.kind === "icon" ? "icons" : "followers";
+  const marks = useMemo(() => ({ icons: markSets(review, "icons"), followers: markSets(review, "followers") }), [review]);
+  const keysOf = useCallback((k: string, of: ReviewKind) => (of === "icons" ? [k] : (sheetsByKey.get(k) ?? []).map((s) => sheetKey(s.folder))), [sheetsByKey]);
+  // The species in order for this kind: for sheets, those with any, once each (a female icon shares its species' sheets)
+  const order = useMemo(() => {
     if (!subjects) return [];
-    return mode === "fix" ? subjects.filter((s) => fixList.keys.includes(s.key)) : subjects;
-  }, [subjects, mode, fixList]);
+    if (kind === "icons") return subjects.map((s) => s.key);
+    const seen = new Set<string>();
+    return subjects.flatMap((s) => {
+      const keys = keysOf(s.key, "followers");
+      const id = keys.join(" ");
+      if (!keys.length || seen.has(id)) return [];
+      seen.add(id);
+      return [s.key];
+    });
+  }, [subjects, kind, keysOf]);
+  const counts = useMemo(() => new Map(REVIEW_FILTERS.map((f) => [f.id, order.filter((k) => matchesFilter(keysOf(k, kind), marks[kind], f.id)).length])),
+    [order, keysOf, kind, marks]);
+  const shown = useMemo(() => order.filter((k) => matchesFilter(keysOf(k, kind), marks[kind], filter)), [order, keysOf, kind, marks, filter]);
+  const shownSet = useMemo(() => new Set(shown), [shown]);
   useEffect(() => {
-    if (shown.length && (!key || !subjects?.some((s) => s.key === key))) setKey(shown[0].key);
+    if (subjects?.length && (!key || !subjects.some((s) => s.key === key))) setKey(shown[0] ?? subjects[0].key);
   }, [shown, key, subjects]);
   const subject = subjects?.find((s) => s.key === key) ?? null;
-
-  const sheets = useMemo((): SheetInfo[] => {
-    if (!subject) return [];
-    const group = subject.group.slice("res/pokemon/".length);
-    return actorSheets.filter((s) => s.pokemon === group || (s.optOut && (s.folder.endsWith(`/${subject.species}`) || s.folder.split("/").pop()!.startsWith(`${subject.species}_`))))
-      .map((s) => ({ folder: s.folder, optOut: s.optOut,
-        label: `${s.folder.includes("/followers/") ? "Follower" : "Walking"}: ${words(s.folder.split("/").pop()!)}` }))
-      .sort((a, b) => a.label.localeCompare(b.label));
-  }, [subject, actorSheets]);
+  const sheets = useMemo(() => (key ? sheetsByKey.get(key) ?? [] : []), [key, sheetsByKey]);
+  // Progress of the pass: each kind's sprites checked
+  const progress = useMemo(() => {
+    const icons = subjects?.map((s) => s.key) ?? [];
+    const sheetKeys = [...new Set([...sheetsByKey.values()].flat().map((s) => sheetKey(s.folder)))];
+    return {
+      icons: { checked: icons.filter((k) => marks.icons.checked.has(k)).length, total: icons.length },
+      followers: { checked: sheetKeys.filter((k) => marks.followers.checked.has(k)).length, total: sheetKeys.length },
+    };
+  }, [subjects, sheetsByKey, marks]);
 
   const dirty = !!current && !!savedState && !sameSnapshot(current, savedState);
 
@@ -246,9 +280,9 @@ export function SpriteEditor({ constants }: ToolProps) {
 
   // The files changed on disk (a save here or elsewhere): read again when nothing is unsaved
   useEffect(() => documents.onFiles((paths) => {
-    if (paths.includes(FIX_LIST)) loadFixList();
+    if (paths.includes(REVIEW_FILE)) loadReview();
     if (loaded && paths.some((p) => p.endsWith(".pal") && Object.values(loaded.palettes).includes(p))) setEpoch((n) => n + 1);
-  }), [loaded, loadFixList]);
+  }), [loaded, loadReview]);
 
   const binding: Binding = loaded?.layout === "icon" && current ? { kind: "icon", slots: current.slots } : { kind: "sheet" };
   const { main, other } = viewPalettes(view);
@@ -264,11 +298,22 @@ export function SpriteEditor({ constants }: ToolProps) {
   live.current = current;
   const change = (next: Snapshot) => { live.current = next; setCurrent(next); };
 
+  // Another species, keeping the kind (an icon; a sheet of the same kind, follower or walking, where it has one) and
+  // the frame where it has it
   const choose = (k: string) => {
     if (k === key) return;
     if (dirty && !confirm("The sprite has unsaved changes. Leave it without saving?")) return;
     setKey(k);
-    setTarget({ kind: "icon" });
+    if (target.kind === "sheet") {
+      const next = sheetsByKey.get(k) ?? [];
+      const followers = target.folder.includes("/followers/");
+      const same = next.find((s) => s.folder.includes("/followers/") === followers) ?? next[0];
+      setTarget(same ? { kind: "sheet", folder: same.folder } : { kind: "icon" });
+    }
+  };
+  const step = (by: 1 | -1) => {
+    const next = stepKey(order, shownSet, key, by);
+    if (next) choose(next);
   };
   const chooseTarget = (t: Target) => {
     if (dirty && !confirm("The sprite has unsaved changes. Leave it without saving?")) return;
@@ -284,6 +329,16 @@ export function SpriteEditor({ constants }: ToolProps) {
     if (phase === "start" && (alt || tool === "eyedropper")) {
       const s = swatchOfIndex(binding, sprite.pixels[y * sprite.width + x]);
       if (s) setSwatch(s);
+      return;
+    }
+    if (phase === "start" && tool === "replace") {
+      const r = replaceIndex(binding, swatch, current, loaded, x, y, replaceAll ? null : area);
+      if ("error" in r) { setMessage({ text: r.error, error: true }); return; }
+      setMessage(null);
+      if (r.points.length) {
+        history.current.push(current);
+        change(r.after);
+      }
       return;
     }
     if (phase === "start") {
@@ -315,8 +370,15 @@ export function SpriteEditor({ constants }: ToolProps) {
   };
 
   const preview = (x: number, y: number) => {
-    if (!area || tool === "eyedropper") return null;
-    const r = current ? paintIndex(binding, swatch, current.pixels) : null;
+    if (!area || tool === "eyedropper" || !current || !loaded) return null;
+    if (tool === "replace") {
+      // Every pixel that would change, in the new colour (those of the frame shown)
+      const r = replaceIndex(binding, swatch, current, loaded, x, y, replaceAll ? null : area);
+      if ("error" in r || !r.points.length) return null;
+      const after: Binding = binding.kind === "icon" ? { kind: "icon", slots: r.after.slots } : binding;
+      return { points: r.points, colour: indexColour(after, paletteOfView(main), r.index) };
+    }
+    const r = paintIndex(binding, swatch, current.pixels);
     if (!r || "error" in r) return null;
     const colour = indexColour({ ...binding, ...(binding.kind === "icon" ? { slots: r.slots } : {}) } as Binding, paletteOfView(main), r.index);
     return { points: tool === "fill" ? [[x, y] as [number, number]] : brushPixels(x, y, brush, area), colour };
@@ -336,7 +398,8 @@ export function SpriteEditor({ constants }: ToolProps) {
       if (!result.ok) { setMessage({ text: `Not saved: ${result.error}`, error: true }); return false; }
       setCurrent(out);
       setSavedState(out);
-      setMessage({ text: `Saved ${result.written?.join(", ")}`, error: false });
+      setMessage({ text: `Saved ${result.written?.join(", ")}${result.handEdited ? " · marked hand-edited" : ""}`, error: false });
+      if (result.handEdited) loadReview();
       return true;
     } catch (e) {
       setMessage({ text: `Not saved: ${(e as Error).message}`, error: true });
@@ -344,25 +407,21 @@ export function SpriteEditor({ constants }: ToolProps) {
     } finally {
       setSaving(false);
     }
-  }, [loaded, current, subject, target]);
+  }, [loaded, current, subject, target, loadReview]);
 
-  const stepFix = (by: 1 | -1) => {
-    const at = shown.findIndex((s) => s.key === key);
-    const next = shown[Math.max(0, Math.min(shown.length - 1, at + by))];
-    if (next) choose(next.key);
-  };
-
-  const done = async () => {
-    if (!subject) return;
-    if (dirty && !(await save())) return;
-    const keys = fixList.keys.filter((k) => k !== subject.key).sort();
-    const at = shown.findIndex((s) => s.key === subject.key);
-    const result = await api.save({ path: FIX_LIST, text: fileText(fromPlain({ fix_by_hand: keys })), baseVersion: fixList.version });
-    if (!result.ok) { setMessage({ text: "The hand-fix list changed on disk: read it again and retry", error: true }); loadFixList(); return; }
-    setFixList({ keys, version: result.version });
-    setMessage({ text: `${subject.label} is done: off the hand-fix list (${keys.length} left)`, error: false });
-    const next = shown.filter((s) => s.key !== subject.key)[Math.min(at, shown.length - 2)];
-    if (next) { setKey(next.key); setTarget({ kind: "icon" }); }
+  // The sprite shown's review key and marks
+  const spriteKey = !subject ? null : target.kind === "icon" ? subject.key : sheetKey(target.folder);
+  const isChecked = !!spriteKey && marks[kind].checked.has(spriteKey);
+  const isHand = !!spriteKey && marks[kind].hand.has(spriteKey);
+  const toggleChecked = async () => {
+    if (!spriteKey) return;
+    try {
+      const result = await api.spriteMark({ kind, key: spriteKey, mark: "checked", on: !isChecked });
+      if (!result.ok || !result.review) { setMessage({ text: `Not marked: ${result.error}`, error: true }); return; }
+      setReview(readReview(JSON.stringify(result.review)));
+    } catch (e) {
+      setMessage({ text: `Not marked: ${(e as Error).message}`, error: true });
+    }
   };
 
   const savePaletteColour = async () => {
@@ -397,9 +456,11 @@ export function SpriteEditor({ constants }: ToolProps) {
         else if (k === "s") { e.preventDefault(); save(); }
         return;
       }
-      if (k === "b") setTool("pencil");
-      else if (k === "g") setTool("fill");
-      else if (k === "i") setTool("eyedropper");
+      if (e.altKey) return;
+      if (TOOL_KEYS[k]) setTool(TOOL_KEYS[k]);
+      else if (k === "[") step(-1);
+      else if (k === "]") step(1);
+      else if (k === "c") toggleChecked();
       else if (k === "+" || k === "=") setZoom((z) => ZOOMS[Math.min(ZOOMS.length - 1, ZOOMS.indexOf(z) + 1)] ?? z);
       else if (k === "-") setZoom((z) => ZOOMS[Math.max(0, ZOOMS.indexOf(z) - 1)] ?? z);
     };
@@ -411,9 +472,22 @@ export function SpriteEditor({ constants }: ToolProps) {
   if (!subjects.length)
     return <div className="se-page"><h2>Sprite Editor</h2><p className="muted">No icon_battle.png in res/pokemon yet: run <code>tools/paperwhite2/icon_remap.py apply</code>.</p></div>;
 
-  const options: Option[] = shown.map((s) => ({ value: s.key, label: s.label, detail: s.key }));
-  const fixAt = shown.findIndex((s) => s.key === key);
-  const flagged = !!key && fixList.keys.includes(key);
+  // The picker: the species the filter shows (and the one open), each with its marks for this kind
+  const byKey = new Map(subjects.map((s) => [s.key, s]));
+  const markText = (k: string) => {
+    const keys = keysOf(k, kind);
+    const hand = keys.some((x) => marks[kind].hand.has(x));
+    const checked = keys.length > 0 && keys.every((x) => marks[kind].checked.has(x));
+    return `${hand ? " · ✎" : ""}${checked ? " · ✓" : ""}`;
+  };
+  const options: Option[] = [...(key && !shownSet.has(key) ? [key] : []), ...shown].map((k) => {
+    const s = byKey.get(k)!;
+    return { value: k, label: `${s.label}${markText(k)}`, detail: k };
+  });
+  const shownAt = key ? shown.indexOf(key) : -1;
+  const prev = stepKey(order, shownSet, key, -1);
+  const next = stepKey(order, shownSet, key, 1);
+  const kindName = kind === "icons" ? "icon" : "sheet";
   const swapTitle = `Show ${other} colours in the big views (editing stays on the same indices)`;
   const swap = hasShiny ? () => setView(other) : undefined;
   const status = saving ? "Saving…" : dirty ? "Unsaved changes" : "Saved";
@@ -436,6 +510,11 @@ export function SpriteEditor({ constants }: ToolProps) {
       <div className="se-head">
         <h2>Sprite Editor</h2>
         <span className={`se-status${dirty ? " dirty" : ""}`}>{status}</span>
+        {spriteKey && <>
+          <span className={`se-mark${isHand ? " hand" : ""}`} title={isHand ? "Drawn or changed by hand (a save that changes the sprite marks it)" : "As the remap generated it"}>
+            {isHand ? "✎ Hand-edited" : "Generated"}</span>
+          {isChecked && <span className="se-mark checked" title="Marked checked in your pass">✓ Checked</span>}
+        </>}
         <button className="primary" onClick={() => save()} disabled={!dirty || saving} title="Ctrl+S">Save</button>
         {message && <span className={message.error ? "se-error" : "muted"}>{message.text}</span>}
       </div>
@@ -443,24 +522,22 @@ export function SpriteEditor({ constants }: ToolProps) {
       <section className="se-section">
         <h5>Pokémon <span className="muted">{subject ? `${subject.label} · ${subject.group.slice("res/pokemon/".length)}` : ""}</span></h5>
         <div className="se-grid">
-          <span className="se-label">List</span>
+          <span className="se-label">Show</span>
           <div className="se-row">
             <div className="view-switch">
-              <button className={mode === "fix" ? "active" : ""} onClick={() => setMode("fix")}>Hand-fix list ({fixList.keys.length})</button>
-              <button className={mode === "all" ? "active" : ""} onClick={() => setMode("all")}>All icons ({subjects.length})</button>
+              {REVIEW_FILTERS.map((f) => (
+                <button key={f.id} className={filter === f.id ? "active" : ""} onClick={() => setFilter(f.id)} title={f.note}>
+                  {f.label} <span className="muted">{counts.get(f.id) ?? 0}</span></button>
+              ))}
             </div>
-            <span className="muted small">{mode === "fix" ? "The icons still to fix by hand (res/paperwhite2/icon_fix_list.json)." : "Every icon on its battle palettes."}</span>
+            <span className="muted small">By the {kindName}s' marks{kind === "followers" ? " (species with sheets)" : ""}.</span>
           </div>
           <span className="se-label">Species</span>
           <div className="se-row">
+            <button onClick={() => step(-1)} disabled={!prev} title="The previous species the filter shows ([)">◀ <span className="se-key">[</span></button>
             <div className="se-picker"><SearchSelect value={key ?? ""} options={options} onChange={choose} placeholder="Find a Pokémon…" /></div>
-            {mode === "fix" && <>
-              <button onClick={() => stepFix(-1)} disabled={fixAt <= 0}>◀ Previous</button>
-              <span className="muted">{fixAt + 1} of {shown.length}</span>
-              <button onClick={() => stepFix(1)} disabled={fixAt < 0 || fixAt >= shown.length - 1}>Next ▶</button>
-            </>}
-            {flagged && <button onClick={done} title="Saves the icon if it has changes, then takes it off the hand-fix list">Done (unflag)</button>}
-            {!flagged && mode === "all" && <span className="muted small">Not on the hand-fix list.</span>}
+            <button onClick={() => step(1)} disabled={!next} title="The next species the filter shows (])"><span className="se-key">]</span> ▶</button>
+            <span className="muted small">{shownAt >= 0 ? `${shownAt + 1} of ${shown.length}` : `not in this filter · ${shown.length} shown`}</span>
           </div>
           <span className="se-label">Sprite</span>
           <div className="se-row">
@@ -474,6 +551,28 @@ export function SpriteEditor({ constants }: ToolProps) {
           </div>
           <span />
           <span className="muted small">{loaded?.note}</span>
+        </div>
+      </section>
+
+      <section className="se-section">
+        <h5>Review <span className="muted">marks of the sprite shown, kept apart for icons and sheets (res/paperwhite2/sprite_review.json)</span></h5>
+        <div className="se-grid">
+          <span className="se-label">This {kindName}</span>
+          <div className="se-row">
+            <button className={isChecked ? "se-checked" : ""} onClick={toggleChecked} disabled={!spriteKey}
+                    title="Your pass over every sprite: marks this one checked, or takes the mark off (C)">
+              {isChecked ? "Checked ✓" : "Mark checked"} <span className="se-key">C</span></button>
+            <span className="muted small">{isHand ? "Hand-edited" : "Generated"} (the header shows both marks). A save that changes the pixels{kind === "icons" ? " or slots" : ""} marks it hand-edited; palette colour edits don't.</span>
+          </div>
+          <span className="se-label">Progress</span>
+          <div className="se-row">
+            {(["icons", "followers"] as const).map((k) => (
+              <span key={k} className={`se-progress${k === kind ? " current" : ""}`}>
+                {k === "icons" ? "Icons" : "Walking and follower sheets"}: {progress[k].checked} / {progress[k].total} checked
+                <span className="muted"> · {review[k].hand_edited.length} hand-edited</span>
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -548,6 +647,8 @@ export function SpriteEditor({ constants }: ToolProps) {
               <div className="view-switch">
                 {TOOLS.map((t) => <button key={t.id} className={tool === t.id ? "active" : ""} onClick={() => setTool(t.id)} title={t.note}>{t.label} <span className="se-key">{t.key}</span></button>)}
               </div>
+              {tool === "replace" && <label className="se-inline" title="Replace in every frame, not only the one shown">
+                <input type="checkbox" checked={replaceAll} onChange={(e) => setReplaceAll(e.target.checked)} /> All frames</label>}
               <button onClick={undo} disabled={!history.current.canUndo} title="Ctrl+Z">Undo</button>
               <button onClick={redo} disabled={!history.current.canRedo} title="Ctrl+Y">Redo</button>
             </div>

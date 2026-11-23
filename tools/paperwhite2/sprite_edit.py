@@ -29,7 +29,20 @@ colours in the PNG, or for an opted-out sheet its own sprite.pal's.
     sprite_edit.py save-sheet FOLDER DATA.json [--res DIR]
         writes FOLDER/sprite.png (a folder under res/field/actors) from {"pixels": hex}, its size unchanged
 
-Each prints one JSON line: {"ok": true, "written": [paths]} or {"ok": false, "error": "..."}. Standard library only.
+    sprite_edit.py mark KIND KEY MARK on|off [--res DIR]
+        sets or clears a review mark (KIND icons or followers, MARK hand_edited or checked)
+
+**The review marks** (res/paperwhite2/sprite_review.json, written as the data tools write JSON), kept apart for the
+icons (by icon key) and the walking/follower sheets (by their folder under res/field/actors, such as followers/fakemon):
+
+    {"icons": {"hand_edited": [keys], "checked": [keys]}, "followers": {"hand_edited": [...], "checked": [...]}}
+
+"hand_edited": drawn by hand, no longer as icon_remap.py apply generated it (apply keeps these unless --force); a save
+that changes a sprite's pixels, or an icon's slots, adds it. "checked": the user's pass over every sprite, set in the
+Sprite Editor.
+
+Each prints one JSON line: {"ok": true, "written": [paths], "hand_edited": changed} (mark: {"ok": true, "review": {...}})
+or {"ok": false, "error": "..."}. Standard library only.
 """
 import argparse
 import json
@@ -46,6 +59,9 @@ SLOTS = 13                                        # icon indices 1-13
 UNUSED = (255, 0, 255)
 ICON_SIZE = (32, 64)
 ACTORS = Path("field") / "actors"                 # under res/
+REVIEW_FILE = Path("paperwhite2") / "sprite_review.json"   # under res/: the review marks
+REVIEW_KINDS = ("icons", "followers")
+REVIEW_MARKS = ("hand_edited", "checked")
 
 
 class SpriteError(Exception):
@@ -168,6 +184,52 @@ def sheet_file(res: Path, folder: str, pixels: bytes) -> dict:
     return {path / "sprite.png": write_indexed_png(w, h, bytes(pixels), colours[:16])}
 
 
+def read_review(res: Path) -> dict:
+    """The review marks, every kind and mark present (empty while the file is missing), each a sorted list of keys."""
+    path = res / REVIEW_FILE
+    data = json.loads(path.read_text()) if path.is_file() else {}
+    if not isinstance(data, dict):
+        raise SpriteError(f"{path}: not an object")
+    out = {}
+    for kind in REVIEW_KINDS:
+        marks = data.get(kind) or {}
+        out[kind] = {mark: sorted({k for k in marks.get(mark) or [] if isinstance(k, str)}) for mark in REVIEW_MARKS}
+    return out
+
+
+def review_file(res: Path, review: dict) -> dict:
+    """The review file's bytes, by path, its lists sorted."""
+    data = {kind: {mark: sorted(set(review[kind][mark])) for mark in REVIEW_MARKS} for kind in REVIEW_KINDS}
+    return {res / REVIEW_FILE: (dumps(data) + "\n").encode()}
+
+
+def set_mark(review: dict, kind: str, key: str, mark: str, on: bool) -> bool:
+    """Sets or clears a mark; whether that changed anything."""
+    if kind not in REVIEW_KINDS or mark not in REVIEW_MARKS:
+        raise SpriteError(f"no review mark {kind}/{mark}")
+    keys = set(review[kind][mark])
+    if (key in keys) == on:
+        return False
+    review[kind][mark] = sorted(keys | {key} if on else keys - {key})
+    return True
+
+
+def sheet_key(res: Path, folder: str) -> str:
+    """A sheet's review key: its folder under res/field/actors (followers/fakemon)."""
+    return (res / folder).resolve().relative_to((res / ACTORS).resolve()).as_posix()
+
+
+def changes_sprite(res: Path, kind: str, key: str, pixels: bytes, slots=None) -> bool:
+    """Whether a save changes the sprite on disk: an icon's pixels or slots, a sheet's pixels (not its colours, which
+    come from the palette files). A sprite with no file yet counts as changed."""
+    if kind == "icons":
+        png, data = icon_paths(res / "pokemon", key)
+        if not png.is_file() or not data.is_file():
+            return True
+        return read_icon(res / "pokemon", key) != (bytes(pixels), list(slots))
+    return read_indexed_png(res / ACTORS / key / "sprite.png")[2] != bytes(pixels)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = parser.add_subparsers(dest="command", required=True)
@@ -176,20 +238,40 @@ def main(argv=None):
         p.add_argument(target)
         p.add_argument("data", type=Path)
         p.add_argument("--res", type=Path, default=ROOT / "res")
+    m = sub.add_parser("mark")
+    m.add_argument("kind", choices=REVIEW_KINDS)
+    m.add_argument("key")
+    m.add_argument("mark", choices=REVIEW_MARKS)
+    m.add_argument("state", choices=("on", "off"))
+    m.add_argument("--res", type=Path, default=ROOT / "res")
     args = parser.parse_args(argv)
     try:
+        review = read_review(args.res)
+        if args.command == "mark":
+            if not args.key or not all(ch.isalnum() or ch in "_/" for ch in args.key):
+                raise SpriteError(f"{args.key}: not a sprite's key")
+            if set_mark(review, args.kind, args.key, args.mark, args.state == "on"):
+                write_files(review_file(args.res, review))
+            print(json.dumps({"ok": True, "review": review}))
+            return 0
         data = json.loads(args.data.read_text())
         pixels = bytes.fromhex(data["pixels"])
         if args.command == "save-icon":
             files = icon_files(args.res / "pokemon", args.key, pixels, data.get("slots"))
+            kind, key = "icons", args.key
         else:
             files = sheet_file(args.res, args.folder, pixels)
+            kind, key = "followers", sheet_key(args.res, args.folder)
+        changed = changes_sprite(args.res, kind, key, pixels, data.get("slots"))
         written = write_files(files)
+        # A change by hand marks the sprite hand-edited (a palette colour edit never comes here)
+        if changed and set_mark(review, kind, key, "hand_edited", True):
+            write_files(review_file(args.res, review))
     except (SpriteError, OSError, ValueError, KeyError, TypeError) as error:
         print(json.dumps({"ok": False, "error": str(error)}))
         return 1
     print(json.dumps({"ok": True, "written": [str(Path(p).resolve().relative_to(args.res.resolve().parent))
-                                              for p in written]}))
+                                              for p in written], "hand_edited": changed}))
     return 0
 
 

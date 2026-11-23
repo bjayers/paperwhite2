@@ -920,7 +920,8 @@ the apply is byte-identical to the one before (`verify_dsi_rom.py`: intact).
   tools' layout.
 - **`icon_remap.py apply`** writes the files from `build/icon_review/`: each icon's choice, or IHM where it has none.
   - It refuses a choice that the review in `build/icon_review/` doesn't have, and checks every icon before writing any.
-  - It keeps icons whose files differ from their candidate (fixed by hand since) unless `--force`.
+  - It keeps icons whose files differ from their candidate (fixed by hand since) unless `--force`, and marks them
+    hand-edited in the review marks (section 15.3); with `--force` it unmarks those it overwrites.
   - A battle index the methods put in two slots (65 icons; one slot per vanilla colour) is merged into one slot
     (`sprite_edit.canonical`), which changes no colour, normal or shiny.
 - **Applied:** 744 icons. By method: IHM 539 (282 picked plus 257 without a choice), J 103, G2 57, K 32, IH 7, H 6.
@@ -929,11 +930,10 @@ the apply is byte-identical to the one before (`verify_dsi_rom.py`: intact).
   - Checked after writing: every icon's normal and shiny colours equal its candidate's, and its transparency equals
     the vanilla icon's.
   - About 330 KB in `res/`.
-- **The hand-fix checklist** moves to `res/paperwhite2/icon_fix_list.json` (`{"fix_by_hand": [keys]}`, 78 icons).
-  - `apply` starts it from the review's `fix_by_hand` when the file is missing, and leaves it alone after that.
-  - The Sprite Editor's **Done** takes icons off it.
+- **The hand-fix checklist** (`res/paperwhite2/icon_fix_list.json`, 78 icons, ticked off with the editor's Done) was
+  finished on 2026-11-23 and replaced by the review marks (section 15.3).
   - `icon_remap_choices.json` stays as the review's record, so `generate` gives the same candidates. Its
-    `fix_by_hand` is no longer updated. The Icon review page can be removed.
+    `fix_by_hand` is no longer updated.
 
 ### 15.2 The Sprite Editor (editor, Editors, **Sprite Editor**)
 
@@ -950,9 +950,14 @@ the apply is byte-identical to the one before (`verify_dsi_rom.py`: intact).
     Clicking either reference in the other palette swaps the page's palette. The big views then show shiny colours,
     the references normal, and editing stays on the same indices.
 - **Tools:**
-  - pencil (B), with brushes of 1-3 px and a hover preview of the pixels it would set;
-  - fill (G): a 4-connected flood of one index, within the frame;
-  - eyedropper (I, or Alt+click), on either side;
+  - pencil (S), with brushes of 1-3 px and a hover preview of the pixels it would set;
+  - fill (Z): a 4-connected flood of one index, within the frame;
+  - replace (R): every pixel of the clicked index becomes the swatch's, in the frame shown or, with **All frames**, in
+    every frame; one undo step; the hover highlights the pixels it would change, in their new colour. The pencil's rules
+    hold (a new battle index takes a slot, 13 at most; only the transparent swatch clears). The replaced index's slot
+    counts as free when no pixel keeps it, so on an icon with 13 colours replacing one colour everywhere with a new one
+    just moves that slot to the new battle index;
+  - eyedropper (Q, or Alt+click), on either side;
   - undo and redo (Ctrl+Z, Ctrl+Y);
   - save (Ctrl+S);
   - frame thumbnails: the icon's 2 frames, or a sheet's frames, named as on the follower pages.
@@ -972,9 +977,16 @@ the apply is byte-identical to the one before (`verify_dsi_rom.py`: intact).
     edited on their own `sprite.pal`; the page says they have no battle link and no shiny colours, and sampling the
     battle sprite is off for them.
 - **Navigation:**
-  - Two lists: **Hand-fix list** (the default) and **All icons**, in dex order, with a search picker.
-  - In the hand-fix list: Previous, Next, and **Done (unflag)**, which saves any unsaved change first and then moves on.
-  - The header says Saved or Unsaved changes. Leaving unsaved changes asks first.
+  - The species in dex order, with a search picker whose entries show their marks (✎ hand-edited, ✓ checked) for the
+    kind shown, and ◀ ▶ beside it (keys `[` and `]`) to step through the species the filter shows.
+  - **Show** filters by the marks of the kind shown (an icon, or the walking and follower sheets): All, Not checked,
+    Checked, Hand-edited, Generated only, each with its count. For sheets a species counts as checked when all its
+    sheets are, hand-edited when any is, and species without sheets (and a female icon, which shares its species'
+    sheets) are left out.
+  - Stepping or picking keeps the kind (the icon, or a sheet of the same kind, follower or walking, where the species
+    has one) and the frame. Stepping goes on from the species shown even when the filter no longer shows it (one just
+    marked checked under Not checked).
+  - The header says Saved or Unsaved changes, and the sprite's marks. Leaving unsaved changes asks first.
 - **Save:** `POST /api/sprite-editor/save` runs `sprite_edit.py save-icon|save-sheet`, which checks and writes the
   files as `apply` does: the PNG via `nitro_2d.write_indexed_png`, the JSON via `datajson`.
   - An icon is saved canonical: repeated battle indices merged, unused slots dropped.
@@ -983,11 +995,40 @@ the apply is byte-identical to the one before (`verify_dsi_rom.py`: intact).
 - **Tests:**
   - `test_sprite_edit.py`: keys and paths, the round trip, the checks, the save command, sheets, opt-out colours and
     paths outside `res/field/actors`.
-  - `test_icon_remap.py`'s `test_apply_writes_the_chosen_icons`: choices, `same`/`kept`/`--force`, and the fix list.
+  - `test_sprite_edit.py` also: the marks file's round trip and layout, `mark`, and saves marking hand-edited (and an
+    unchanged save not).
+  - `test_icon_remap.py`'s `test_apply_writes_the_chosen_icons`: choices, `same`/`kept`/`--force`, and kept icons
+    marked hand-edited (unmarked with `--force`, nothing written on a dry run).
   - `editor/tests/sprite-editor.test.ts`: slot add, reuse and limit, colours and samples, the palette swap, pencil,
-    lines and fill, `canonicalIcon` against Python's, and the server's save round trip. All on fixtures.
+    lines and fill, replace (frame, all frames, the slot limit, transparency, undo), the marks, the filters and
+    stepping, `canonicalIcon` against Python's, and the server's save and mark round trips. All on fixtures.
 - **Next:** the in-game work: icons drawn from `icon_battle.png` with their slots coloured from the battle palettes
   (section 6). Then retire the vanilla banks and the review page.
+
+### 15.3 The review marks (2026-11-23)
+
+After the hand fixes the checklist became two marks per sprite, kept apart for the icons and for the walking and
+follower sheets, in `res/paperwhite2/sprite_review.json` (`sprite_edit.py` reads and writes it in the data tools'
+layout; its lists sorted):
+
+    {"icons": {"hand_edited": [icon keys], "checked": [icon keys]},
+     "followers": {"hand_edited": [sheet keys], "checked": [sheet keys]}}
+
+A sheet's key is its folder under `res/field/actors` (`followers/bulbasaur`, `pokemon/bulbasaur`).
+
+- **hand_edited:** drawn by hand rather than as `icon_remap.py apply` generated it.
+  - Seeded with the 78 icons whose `icon_battle.png`/`.json` differed from what `apply` generates from the review's
+    choices (candidates regenerated in a worktree; `apply --dry-run`'s "kept"). They are the checklist's 78 less
+    Appletun (art in progress, no `icon_battle` yet) and Garbodor (its pixels and slots equal its candidate), plus
+    Bulbasaur and Ivysaur, fixed after. No sheets yet.
+  - `sprite_edit.py save-icon|save-sheet` adds the sprite when the save changes its pixels (or an icon's slots), so
+    every save from the Sprite Editor that changes something marks it. Palette colour edits write the battle palette,
+    not the sprite, and mark nothing.
+  - `apply` keeps hand-edited icons unless `--force`, as before, marks any it keeps that aren't marked yet, and unmarks
+    those `--force` overwrites.
+- **checked:** the user's quick pass over every sprite: the Sprite Editor's **Mark checked** / **Checked ✓** toggle
+  (key C) on the sprite shown, `sprite_edit.py mark KIND KEY checked on|off` through `POST /api/sprite-editor/mark`.
+  The Review section shows the progress of both kinds (checked / total) and their hand-edited counts.
 
 ## 16. In game (2026-11-23)
 

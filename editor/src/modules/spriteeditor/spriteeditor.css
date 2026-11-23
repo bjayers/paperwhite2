@@ -37,3 +37,10 @@
 .se-chip-label { font-family: var(--mono); font-size: 10px; color: var(--muted); }
 .se-hex { width: 80px; font-family: var(--mono); }
 .se-settings { margin-top: 14px; }
+/* The review marks */
+.se-mark { font-size: 12px; padding: 1px 8px; border-radius: 4px; background: var(--panel-2); color: var(--muted); }
+.se-mark.hand { background: var(--warning-soft); color: var(--warning); }
+.se-mark.checked { background: var(--accent-soft); color: var(--accent); }
+.se-checked { border-color: var(--accent); background: var(--accent-soft); }
+.se-progress { font-size: 12px; }
+.se-progress.current { font-weight: 600; }

@@ -4,7 +4,7 @@ import { WRITE_HEADER, type BuildState, type DataFile, type Entry, type ScanMatc
   type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
 import { schemaPart, splitSchemaId, type Schema } from "../shared/schema.ts";
 import type { Usage, UsageKind } from "../server/usage.ts";
-import type { SpriteSave, SpriteSaveResult } from "../server/spriteEditor.ts";
+import type { SpriteMark, SpriteMarkResult, SpriteSave, SpriteSaveResult } from "../server/spriteEditor.ts";
 import type { ArtReport, ItemIconCheck, ItemIcons, SpriteSheet, SpriteSheetCheck, TypeIconCheck, TypeIcons } from "../shared/api.ts";
 
 /** Whether a request failed because what it asked for isn't there (the server's 404: a file deleted on disk). */
@@ -530,6 +530,8 @@ export const api = {
   save: (save: SaveRequest) => request<SaveResult>("PUT", "/api/file", save),
   /** The Sprite Editor's save of an icon or a sheet (sprite_edit.py writes and checks it). */
   spriteSave: (save: SpriteSave) => request<SpriteSaveResult>("POST", "/api/sprite-editor/save", save),
+  /** Sets or clears a Sprite Editor review mark (hand-edited, checked); returns every mark. */
+  spriteMark: (mark: SpriteMark) => request<SpriteMarkResult>("POST", "/api/sprite-editor/mark", mark),
   /** A sheet as it was before the battle-palette remap: its PNG (base64) and sprite.pal text, null where it wasn't. */
   spriteBeforeRemap: (folder: string) =>
     request<{ image: string | null; palette: string | null }>("GET", `/api/sprite-editor/before-remap?folder=${encodeURIComponent(folder)}`),

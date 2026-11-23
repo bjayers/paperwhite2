@@ -1,6 +1,7 @@
 // The Sprite Editor's logic, kept apart from the page so it can edit other indexed sprites later and be tested: an
 // indexed sprite (a palette index per pixel), how its indices meet the palettes it is drawn with (a binding), the
-// tools (pencil, fill, eyedropper), the palette swap of the views, and the undo history.
+// tools (pencil, fill, replace, eyedropper), the palette swap of the views, the undo history, and the review marks
+// (hand-edited, checked) with the species navigation's filters and stepping.
 //
 // Two bindings so far (tools/paperwhite2/sprite_edit.py has the files):
 // - an icon on its battle palettes: index 0 transparent, 1-13 its "slots" (battle indices, coloured through normal.pal
@@ -254,10 +255,97 @@ export function iconKeyOf(path: string): string | null {
   return `${m[1]}${m[2] ? `_form_${m[2]}` : ""}${m[3] === "icon_female_battle" ? "_female" : ""}`;
 }
 
-/** The hand-fix checklist (icon_remap.py apply starts it from the review's fix_by_hand). */
-export const FIX_LIST = "res/paperwhite2/icon_fix_list.json";
+// ---------------------------------------------------------------- The review marks
 
-export function readFixList(text: string): string[] {
-  const data = JSON.parse(text) as { fix_by_hand?: unknown };
-  return Array.isArray(data.fix_by_hand) ? data.fix_by_hand.filter((k): k is string => typeof k === "string") : [];
+/** The review marks (sprite_edit.py writes them): for the icons and, apart, the walking and follower sheets. */
+export const REVIEW_FILE = "res/paperwhite2/sprite_review.json";
+
+export type ReviewKind = "icons" | "followers";
+export type Review = Record<ReviewKind, { hand_edited: string[]; checked: string[] }>;
+
+export const emptyReview = (): Review => ({ icons: { hand_edited: [], checked: [] }, followers: { hand_edited: [], checked: [] } });
+
+/** The marks file's text (null: missing) as marks, every kind and mark present. */
+export function readReview(text: string | null): Review {
+  const out = emptyReview();
+  if (text === null) return out;
+  const data = JSON.parse(text) as Record<string, Record<string, unknown> | undefined>;
+  for (const kind of ["icons", "followers"] as const)
+    for (const mark of ["hand_edited", "checked"] as const) {
+      const list = data?.[kind]?.[mark];
+      out[kind][mark] = Array.isArray(list) ? [...new Set(list.filter((k): k is string => typeof k === "string"))].sort() : [];
+    }
+  return out;
+}
+
+/** A sheet's key in the marks: its folder under res/field/actors (followers/fakemon). */
+export const sheetKey = (folder: string) => folder.replace(/^res\/field\/actors\//, "");
+
+/** One kind's marks as sets, for lookups. */
+export interface MarkSets { hand: Set<string>; checked: Set<string> }
+export const markSets = (review: Review, kind: ReviewKind): MarkSets =>
+  ({ hand: new Set(review[kind].hand_edited), checked: new Set(review[kind].checked) });
+
+/** What the species navigation shows. */
+export type ReviewFilter = "all" | "unchecked" | "checked" | "hand" | "generated";
+export const REVIEW_FILTERS: { id: ReviewFilter; label: string; note: string }[] = [
+  { id: "all", label: "All", note: "Every sprite of this kind." },
+  { id: "unchecked", label: "Not checked", note: "Those with a sprite of this kind not yet marked checked." },
+  { id: "checked", label: "Checked", note: "Those whose sprites of this kind are all marked checked." },
+  { id: "hand", label: "Hand-edited", note: "Those with a sprite of this kind drawn or changed by hand." },
+  { id: "generated", label: "Generated only", note: "Those whose sprites of this kind are all as the remap generated them." },
+];
+
+/** Whether a species shows under a filter, by the review keys of its sprites of the kind shown (an icon key; its
+ * sheets' keys). A species with no sprite of the kind never shows. */
+export function matchesFilter(keys: string[], marks: MarkSets, filter: ReviewFilter): boolean {
+  if (!keys.length) return false;
+  const checked = keys.filter((k) => marks.checked.has(k)).length;
+  const hand = keys.some((k) => marks.hand.has(k));
+  switch (filter) {
+    case "all": return true;
+    case "unchecked": return checked < keys.length;
+    case "checked": return checked === keys.length;
+    case "hand": return hand;
+    case "generated": return !hand;
+  }
+}
+
+/** The previous or next key that shows, from current's place in the whole list (so stepping works from a species the
+ * filter no longer shows, such as one just marked checked under "Not checked"); null at the end. */
+export function stepKey(order: string[], shown: Set<string>, current: string | null, by: 1 | -1): string | null {
+  let at = current === null ? -1 : order.indexOf(current);
+  if (at < 0) at = by > 0 ? -1 : order.length;
+  for (let i = at + by; i >= 0 && i < order.length; i += by) if (shown.has(order[i])) return order[i];
+  return null;
+}
+
+// ---------------------------------------------------------------- Replace
+
+/** The pixels of one index, in area (a frame) or the whole sprite. */
+export function indexPixels(sprite: Sprite, index: number, area: Frame | null): [number, number][] {
+  const a = area ?? { x: 0, y: 0, width: sprite.width, height: sprite.height };
+  const out: [number, number][] = [];
+  for (let y = a.y; y < a.y + a.height; y++)
+    for (let x = a.x; x < a.x + a.width; x++) if (sprite.pixels[y * sprite.width + x] === index) out.push([x, y]);
+  return out;
+}
+
+/** The Replace tool: every pixel of the index at x, y, in area (null: every frame), becomes the swatch's index, as the
+ * pencil paints it (an icon takes a slot for a new battle index; only the transparent swatch clears). The replaced
+ * index's slot counts as free when no pixel keeps it, so an icon with 13 colours can swap one for another. The points
+ * it changes, the state after, or an error; points is empty when nothing would change. */
+export function replaceIndex(binding: Binding, swatch: Swatch, snapshot: Snapshot, size: { width: number; height: number },
+                             x: number, y: number, area: Frame | null):
+    { points: [number, number][]; index: number; after: Snapshot } | { error: string } {
+  const sprite: Sprite = { ...size, pixels: snapshot.pixels };
+  const from = snapshot.pixels[y * size.width + x];
+  const points = indexPixels(sprite, from, area);
+  const probe = paint(sprite, points, 0);
+  const r = paintIndex(binding, swatch, probe === snapshot.pixels ? snapshot.pixels : probe);
+  if ("error" in r) return r;
+  const pixels = paint(sprite, points, r.index);
+  const slots = binding.kind === "icon" ? r.slots : snapshot.slots;
+  const after = { pixels, slots };
+  return sameSnapshot(after, snapshot) ? { points: [], index: from, after: snapshot } : { points, index: r.index, after };
 }

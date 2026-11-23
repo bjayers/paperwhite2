@@ -18,7 +18,7 @@ import { Python, pythonFor } from "./python.ts";
 import { loadSettings } from "./settings.ts";
 import { UsageCache } from "./usage.ts";
 import { removable, weatherCalendarLimit } from "./weather.ts";
-import { BEFORE_REMAP, beforeRemapPaths, saveSprite } from "./spriteEditor.ts";
+import { BEFORE_REMAP, beforeRemapPaths, markSprite, saveSprite } from "./spriteEditor.ts";
 
 // The checkout this folder is in; PAPERWHITE_ROOT points it at another, as the tests do with a scratch copy.
 const ROOT = resolve(process.env.PAPERWHITE_ROOT ?? join(import.meta.dirname, "../.."));
@@ -985,6 +985,12 @@ const routes: Record<string, Handler> = {
   // sprite_edit.py, and a sheet as it was before the battle-palette remap (git, read only)
   "POST /api/sprite-editor/save": async (req, res) => {
     const result = await saveSprite((script, args) => python.tool(script, args), join(ROOT, "res"), await readJson(req));
+    if (result.ok) gitMayHaveChanged();
+    json(res, result);
+  },
+  // A review mark (hand-edited, checked) of an icon or a sheet set or cleared (sprite_edit.py mark)
+  "POST /api/sprite-editor/mark": async (req, res) => {
+    const result = await markSprite((script, args) => python.tool(script, args), join(ROOT, "res"), await readJson(req));
     if (result.ok) gitMayHaveChanged();
     json(res, result);
   },

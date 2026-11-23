@@ -45,9 +45,9 @@ choice is already one of the four below, also get four more candidates for the r
     icon_remap.py apply [--res DIR] [--review DIR] [--force] [--dry-run]
         writes each icon's chosen candidate (IHM without a choice) from generate's output into res/pokemon as
         icon_battle.png and icon_battle.json (icon_female_battle.* for a female icon; sprite_edit.py has the format),
-        next to the vanilla icon.png the game still builds from. Icons that differ from their candidate (fixed by
-        hand) are kept unless --force. Starts res/paperwhite2/icon_fix_list.json (the hand-fix checklist) from the
-        review's fix_by_hand when it is missing (section 15).
+        next to the vanilla icon.png the game still builds from. Icons marked hand-edited in
+        res/paperwhite2/sprite_review.json (sprite_edit.py has the marks), and any that differ from their candidate,
+        are kept unless --force; a kept icon not yet marked is marked, a forced one unmarked (section 15).
 
 Standard library only (the build's python3).
 """
@@ -64,7 +64,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from tools.data.datajson import dumps  # noqa: E402
 from tools.data.nitro_2d import read_indexed_png, read_palette, write_indexed_png  # noqa: E402
 from tools.paperwhite2 import palette_remap as pr  # noqa: E402
 from tools.paperwhite2.palette_remap import chroma, hue_difference, oklab  # noqa: E402
@@ -1861,15 +1860,12 @@ def write_icon(res: Path, r, folder: Path):
         (folder / f"{name}.png").write_bytes(write_indexed_png(32, 64, bytes.fromhex(r[name]["pixels"]), pal))
 
 
-FIX_LIST_FILE = Path("paperwhite2") / "icon_fix_list.json"   # under res/: the hand-fix checklist (section 15)
-
-
 def apply(res: Path, review_dir: Path, force: bool = False, dry_run: bool = False) -> dict:
     """Writes each reviewed icon's chosen candidate (its choice, IHM without one) next to its vanilla art as
     icon_battle.png and icon_battle.json (sprite_edit.py has the format), from the candidates in review_dir; the game
     still builds from icon.png. An icon whose files are already there and differ (fixed by hand since) is left alone
-    unless force. The hand-fix checklist, res/paperwhite2/icon_fix_list.json, starts as the review's fix_by_hand and is
-    left alone once it exists (the Sprite Editor's "Done" takes icons off it)."""
+    unless force, whether or not the review marks (res/paperwhite2/sprite_review.json) call it hand-edited: apply
+    marks those it keeps ("marked"), and with force unmarks those it overwrites ("unmarked")."""
     from tools.paperwhite2 import sprite_edit
     index_path = review_dir / "index.json"
     if not index_path.is_file():
@@ -1880,7 +1876,9 @@ def apply(res: Path, review_dir: Path, force: bool = False, dry_run: bool = Fals
     stray = sorted(set(review["choices"]) - known)
     if stray:
         raise SystemExit(f"choices for icons the review doesn't have: {', '.join(stray)}")
-    out = dict(written=[], same=[], kept=[], merged=0, methods=collections.Counter())
+    marks = sprite_edit.read_review(res)
+    hand = set(marks["icons"]["hand_edited"])
+    out = dict(written=[], same=[], kept=[], marked=[], unmarked=[], merged=0, methods=collections.Counter())
     pokemon = res / "pokemon"
     writes = {}
     for entry in index["entries"]:
@@ -1900,18 +1898,19 @@ def apply(res: Path, review_dir: Path, force: bool = False, dry_run: bool = Fals
             out["same"].append(key)
         elif existing and not force:
             out["kept"].append(key)
+            if key not in hand:
+                out["marked"].append(key)
         else:
             out["written"].append(key)
             writes.update(files)
+            if key in hand:
+                out["unmarked"].append(key)
     # Every icon checked before any is written
+    if out["marked"] or out["unmarked"]:
+        marks["icons"]["hand_edited"] = sorted((hand | set(out["marked"])) - set(out["unmarked"]))
+        writes.update(sprite_edit.review_file(res, marks))
     if not dry_run:
         sprite_edit.write_files(writes)
-    fix_list = res / FIX_LIST_FILE
-    out["fix_list"] = None
-    if not fix_list.is_file():
-        out["fix_list"] = len(review["fix_by_hand"])
-        if not dry_run:
-            fix_list.write_text(dumps({"fix_by_hand": sorted(review["fix_by_hand"])}) + "\n")
     return out
 
 
@@ -1937,7 +1936,8 @@ def main(argv=None):
               f"{len(r['kept'])} kept as they are (they differ: fixed by hand? --force overwrites)"
               f"{': ' + ', '.join(r['kept']) if r['kept'] else ''}; methods {methods}; "
               f"{r['merged']} with a battle index in two slots merged into one"
-              + (f"; started {FIX_LIST_FILE} with {r['fix_list']} icons" if r["fix_list"] is not None else ""))
+              + (f"; {len(r['marked'])} newly marked hand-edited" if r["marked"] else "")
+              + (f"; {len(r['unmarked'])} no longer hand-edited" if r["unmarked"] else ""))
         return
     species = args.species or args.res.resolve().parent / "generated" / "species.txt"
     names = species_order(species.parent.parent)

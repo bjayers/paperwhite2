@@ -9,10 +9,11 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { detectLayout, parseJson } from "../shared/json.ts";
-import { saveSprite } from "../server/spriteEditor.ts";
+import { markSprite, saveSprite } from "../server/spriteEditor.ts";
 import { readIndexedPng } from "../src/modules/palettes/png.ts";
 import { History, ICON_SLOTS, brushPixels, canonicalIcon, clearedPixels, fill, framesOf, iconFiles, iconKeyOf, indexColour,
-  linePixels, paint, paintIndex, readFixList, spriteColours, swatchOfIndex, toHex, viewPalettes, type Rgb, type Sprite } from "../src/modules/spriteeditor/model.ts";
+  linePixels, markSets, matchesFilter, paint, paintIndex, readReview, replaceIndex, sheetKey, spriteColours, stepKey, swatchOfIndex, toHex,
+  viewPalettes, type Rgb, type Sprite } from "../src/modules/spriteeditor/model.ts";
 
 const REPO = resolve(import.meta.dirname, "../..");
 
@@ -122,7 +123,86 @@ test("icon keys and files", () => {
   assert.equal(iconFiles("fakemon_female").vanilla, "res/pokemon/fakemon/icon_female.png");
   for (const key of ["fakemon", "fakemon_female", "fakemon_form_12", "nidoran_f"]) assert.equal(iconKeyOf(iconFiles(key).png), key);
   assert.equal(iconKeyOf("res/pokemon/fakemon/icon.png"), null);
-  assert.deepEqual(readFixList('{"fix_by_hand": ["a", 3, "b"]}'), ["a", "b"]);
+});
+
+test("the review marks: read with every kind and mark, filters and stepping", () => {
+  const empty = { hand_edited: [], checked: [] };
+  assert.deepEqual(readReview(null), { icons: empty, followers: empty });
+  const review = readReview('{"icons": {"hand_edited": ["b", 3, "a", "b"], "checked": ["a"]}, "followers": {"checked": ["followers/c"]}}');
+  assert.deepEqual(review.icons, { hand_edited: ["a", "b"], checked: ["a"] });
+  assert.deepEqual(review.followers, { hand_edited: [], checked: ["followers/c"] }, "kinds kept apart");
+  assert.equal(sheetKey("res/field/actors/followers/c"), "followers/c");
+  const icons = markSets(review, "icons");
+  const shows = (f: Parameters<typeof matchesFilter>[2]) => ["a", "b", "c"].filter((k) => matchesFilter([k], icons, f));
+  assert.deepEqual(shows("all"), ["a", "b", "c"]);
+  assert.deepEqual(shows("unchecked"), ["b", "c"]);
+  assert.deepEqual(shows("checked"), ["a"]);
+  assert.deepEqual(shows("hand"), ["a", "b"]);
+  assert.deepEqual(shows("generated"), ["c"]);
+  // a species' sheets: checked when all are, hand-edited when any is; none never shows
+  const sheets = markSets(readReview('{"followers": {"hand_edited": ["pokemon/x"], "checked": ["followers/x"]}}'), "followers");
+  assert.equal(matchesFilter(["followers/x", "pokemon/x"], sheets, "checked"), false);
+  assert.equal(matchesFilter(["followers/x", "pokemon/x"], sheets, "unchecked"), true);
+  assert.equal(matchesFilter(["followers/x", "pokemon/x"], sheets, "hand"), true);
+  assert.equal(matchesFilter([], sheets, "all"), false);
+  // stepping within the filter, from a species it no longer shows too
+  const order = ["a", "b", "c", "d", "e"], shown = new Set(["b", "d"]);
+  assert.equal(stepKey(order, shown, "b", 1), "d");
+  assert.equal(stepKey(order, shown, "d", 1), null);
+  assert.equal(stepKey(order, shown, "b", -1), null);
+  assert.equal(stepKey(order, shown, "c", 1), "d", "just marked checked under Not checked: on to the next");
+  assert.equal(stepKey(order, shown, "c", -1), "b");
+  assert.equal(stepKey(order, shown, null, 1), "b");
+});
+
+test("the replace tool: one index's pixels in the frame or every frame, the pencil's rules", () => {
+  const size = { width: 2, height: 4 };
+  const frame = { x: 0, y: 0, width: 2, height: 2 };
+  const pixels = new Uint8Array([1, 2, 1, 0, 1, 2, 2, 1]);
+  const icon = { kind: "icon" as const, slots: [5, 6] };
+  const snap = { pixels, slots: [5, 6] };
+  // battle 6 is the icon's slot 2: in this frame only, then in every frame
+  const one = replaceIndex(icon, { kind: "palette", index: 6 }, snap, size, 0, 0, frame);
+  assert.ok(!("error" in one));
+  assert.deepEqual(one.points, [[0, 0], [0, 1]]);
+  assert.deepEqual([...one.after.pixels], [2, 2, 2, 0, 1, 2, 2, 1]);
+  const all = replaceIndex(icon, { kind: "palette", index: 6 }, snap, size, 0, 0, null);
+  assert.ok(!("error" in all));
+  assert.deepEqual([...all.after.pixels], [2, 2, 2, 0, 2, 2, 2, 2]);
+  assert.deepEqual([...pixels], [1, 2, 1, 0, 1, 2, 2, 1], "a copy");
+  // a new battle index: in every frame the replaced slot is freed and takes it (the pixels stay, the colour changes)
+  const recolour = replaceIndex(icon, { kind: "palette", index: 9 }, snap, size, 0, 0, null);
+  assert.ok(!("error" in recolour));
+  assert.deepEqual(recolour.after.slots, [9, 6]);
+  assert.equal(recolour.points.length, 4);
+  // ... at 13 slots: allowed when the replaced slot is freed, refused when it isn't
+  const full = { kind: "icon" as const, slots: Array.from({ length: ICON_SLOTS }, (_, i) => i + 1) };
+  const fullPixels = new Uint8Array(32).map((_, i) => (i % ICON_SLOTS) + 1);
+  const fullSnap = { pixels: fullPixels, slots: full.slots };
+  const swap = replaceIndex(full, { kind: "palette", index: 15 }, fullSnap, { width: 8, height: 4 }, 0, 0, null);
+  assert.ok(!("error" in swap));
+  assert.equal(swap.after.slots[0], 15);
+  const refused = replaceIndex(full, { kind: "palette", index: 15 }, fullSnap, { width: 8, height: 4 }, 0, 0, { x: 0, y: 0, width: 8, height: 1 });
+  assert.ok("error" in refused && /13 battle colours/.test(refused.error), "index 1 stays outside the frame");
+  // nothing to change; and only the transparent swatch clears
+  const same = replaceIndex(icon, { kind: "palette", index: 5 }, snap, size, 0, 0, null);
+  assert.ok(!("error" in same) && same.points.length === 0 && same.after === snap);
+  const cleared = replaceIndex(icon, { kind: "transparent" }, snap, size, 1, 0, frame);
+  assert.ok(!("error" in cleared));
+  assert.deepEqual([...cleared.after.pixels], [1, 0, 1, 0, 1, 2, 2, 1]);
+  assert.equal(clearedPixels(pixels, cleared.after.pixels), 1, "the transparent swatch, chosen");
+  for (const sw of [{ kind: "palette", index: 6 }, { kind: "grey", which: 0 }] as const) {
+    const r = replaceIndex(icon, sw, snap, size, 1, 0, null);
+    assert.ok(!("error" in r));
+    assert.equal(clearedPixels(pixels, r.after.pixels), 0, "a colour never turns a pixel transparent");
+  }
+  // a sheet: its indices are the palette's; one undo step is the state before
+  const sheet = replaceIndex({ kind: "sheet" }, { kind: "palette", index: 7 }, { pixels, slots: [] }, size, 0, 0, null);
+  assert.ok(!("error" in sheet));
+  assert.deepEqual([...sheet.after.pixels], [7, 2, 7, 0, 7, 2, 2, 7]);
+  const h = new History();
+  h.push(snap);
+  assert.equal(h.undo(sheet.after), snap);
 });
 
 test("saving an icon and a sheet round-trips through sprite_edit.py", async () => {
@@ -132,7 +212,7 @@ test("saving an icon and a sheet round-trips through sprite_edit.py", async () =
     const pixels = new Uint8Array(32 * 64);
     pixels.set([1, 2, 14, 15], 40);
     const saved = await saveSprite(run, res, { kind: "icon", key: "fakemon", pixels: toHex(pixels), slots: [3, 5] });
-    assert.deepEqual(saved, { ok: true, written: ["res/pokemon/fakemon/icon_battle.png", "res/pokemon/fakemon/icon_battle.json"] });
+    assert.deepEqual(saved, { ok: true, written: ["res/pokemon/fakemon/icon_battle.png", "res/pokemon/fakemon/icon_battle.json"], handEdited: true });
     const image = await readIndexedPng(new Uint8Array(readFileSync(join(res, "pokemon/fakemon/icon_battle.png"))).buffer);
     assert.deepEqual([image.width, image.height], [32, 64]);
     assert.deepEqual([...image.pixels], [...pixels]);
@@ -151,10 +231,29 @@ test("saving an icon and a sheet round-trips through sprite_edit.py", async () =
     // a sheet keeps its size, coloured from the battle normal.pal
     const sheet = new Uint8Array(64 * 32).map((_, i) => i % 7);
     const done = await saveSprite(run, res, { kind: "sheet", folder: "res/field/actors/pokemon/fakemon", pixels: toHex(sheet) });
-    assert.deepEqual(done, { ok: true, written: ["res/field/actors/pokemon/fakemon/sprite.png"] });
+    assert.deepEqual(done, { ok: true, written: ["res/field/actors/pokemon/fakemon/sprite.png"], handEdited: true });
     const back = await readIndexedPng(new Uint8Array(readFileSync(join(res, "field/actors/pokemon/fakemon/sprite.png"))).buffer);
     assert.deepEqual([...back.pixels], [...sheet]);
     assert.equal((await saveSprite(run, res, { kind: "sheet", folder: "res/field/actors/pokemon/fakemon", pixels: "00" })).ok, false, "another size");
+    // both saves changed their sprite: each marked hand-edited in its own kind, in the data tools' layout
+    const marksPath = join(res, "paperwhite2/sprite_review.json");
+    let marks = readReview(readFileSync(marksPath, "utf8"));
+    assert.deepEqual(marks.icons.hand_edited, ["fakemon"]);
+    assert.deepEqual(marks.followers.hand_edited, ["pokemon/fakemon"]);
+    const marksText = readFileSync(marksPath, "utf8");
+    assert.notEqual(detectLayout(marksText, parseJson(marksText)), null);
+    // saving it unchanged marks nothing new
+    assert.equal((await saveSprite(run, res, { kind: "sheet", folder: "res/field/actors/pokemon/fakemon", pixels: toHex(sheet) })).handEdited, false);
+    // checked, on and off, through the server's mark
+    const on = await markSprite(run, res, { kind: "followers", key: "pokemon/fakemon", mark: "checked", on: true });
+    assert.deepEqual(on.review?.followers.checked, ["pokemon/fakemon"]);
+    assert.deepEqual(on.review?.icons.checked, []);
+    await markSprite(run, res, { kind: "icons", key: "fakemon", mark: "checked", on: true });
+    await markSprite(run, res, { kind: "icons", key: "fakemon", mark: "checked", on: false });
+    marks = readReview(readFileSync(marksPath, "utf8"));
+    assert.deepEqual([marks.icons.checked, marks.followers.checked], [[], ["pokemon/fakemon"]]);
+    assert.equal((await markSprite(run, res, { kind: "icons", key: "../x", mark: "checked", on: true })).ok, false);
+    assert.equal((await markSprite(run, res, { kind: "other", key: "fakemon", mark: "checked", on: true })).ok, false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

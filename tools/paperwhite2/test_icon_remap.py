@@ -299,7 +299,7 @@ def test_k_takes_the_pale_tint():
 
 def test_apply_writes_the_chosen_icons(tmp_path):
     """apply: each icon's choice (IHM without one) as icon_battle.png and .json; icons fixed by hand since are kept
-    unless forced; the hand-fix list starts from the review's flags and is left alone once there."""
+    unless forced, and marked hand-edited in the review marks (unmarked when forced)."""
     from tools.paperwhite2 import sprite_edit
     root = make_fixture(tmp_path)
     res = root / "res"
@@ -315,17 +315,21 @@ def test_apply_writes_the_chosen_icons(tmp_path):
     form = icon(root, "fakemon_form_1")["ihm"]
     assert sprite_edit.read_icon(res / "pokemon", "fakemon_form_1") == canon(form)
     assert (res / "pokemon" / "fakemon" / "icon.png").read_bytes() == vanilla, "the vanilla icon stays"
-    fix_list = res / icon_remap.FIX_LIST_FILE
-    assert json.loads(fix_list.read_text()) == {"fix_by_hand": ["fakemon"]} and r["fix_list"] == 1
+    assert not (res / sprite_edit.REVIEW_FILE).exists(), "nothing hand-edited yet"
     # Again: nothing to do; a hand fix is kept, and --force overwrites it
     assert icon_remap.apply(res, root / "out")["same"] == ["fakemon", "fakemon_form_1"]
     px, slots = sprite_edit.read_icon(res / "pokemon", "fakemon")
     edited = bytes([14 if px[0] != 14 else 15]) + px[1:]
     sprite_edit.write_files(sprite_edit.icon_files(res / "pokemon", "fakemon", edited, slots))
-    fix_list.write_text(json.dumps({"fix_by_hand": []}))
+    r = icon_remap.apply(res, root / "out", dry_run=True)
+    assert r["kept"] == ["fakemon"] and r["marked"] == ["fakemon"]
+    assert not (res / sprite_edit.REVIEW_FILE).exists(), "a dry run writes nothing"
     r = icon_remap.apply(res, root / "out")
-    assert r["kept"] == ["fakemon"] and r["fix_list"] is None
+    assert r["kept"] == ["fakemon"] and r["marked"] == ["fakemon"]
     assert sprite_edit.read_icon(res / "pokemon", "fakemon")[0] == edited
-    assert json.loads(fix_list.read_text()) == {"fix_by_hand": []}, "the list is the editor's once it exists"
-    assert icon_remap.apply(res, root / "out", force=True)["written"] == ["fakemon"]
+    assert sprite_edit.read_review(res)["icons"]["hand_edited"] == ["fakemon"], "a kept icon is marked hand-edited"
+    assert icon_remap.apply(res, root / "out")["marked"] == [], "once"
+    r = icon_remap.apply(res, root / "out", force=True)
+    assert r["written"] == ["fakemon"] and r["unmarked"] == ["fakemon"]
+    assert sprite_edit.read_review(res)["icons"]["hand_edited"] == [], "overwritten: generated again"
     assert sprite_edit.read_icon(res / "pokemon", "fakemon")[0] == canon(k)[0]

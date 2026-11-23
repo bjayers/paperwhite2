@@ -2,6 +2,21 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-23: Sprite Editor: review marks, Replace, stepping (ROM session)
+
+- **The hand fixes are done**, so the hand-fix list (`icon_fix_list.json`, its tab and Done) is gone. In its place,
+  **review marks** in `res/paperwhite2/sprite_review.json`, kept apart for icons and for walking/follower sheets
+  (shiny-icons.md section 15.3): **hand-edited**, seeded with the 78 icons whose files differ from what
+  `icon_remap.py apply` generates (regenerated in a worktree) and set by every save that changes a sprite; and
+  **checked**, a Mark checked / Checked ✓ toggle (C) for the user's pass, with each kind's progress.
+- **Navigation:** Show filters (All, Not checked, Checked, Hand-edited, Generated only, with counts) by the marks of
+  the kind shown; ◀ ▶ (`[` `]`) beside the picker step through them, keeping the kind and frame; the picker's entries
+  and the header show the marks.
+- **Tools:** new hotkeys pencil S, fill Z, eyedropper Q; a **Replace** tool (R): every pixel of the clicked index in
+  the frame or all frames, with a hover preview, the pencil's slot and transparency rules, one undo step.
+- `icon_remap.py apply` keeps hand-edited icons unless `--force` (as before), marks those it keeps, unmarks those it
+  overwrites. Tested on fixtures (Python and the editor's tests).
+
 ## 2026-11-23: Icons on their battle palettes, phase 6: the sweep (ROM session)
 
 - **The Battle Recorder's video screen** (My Video's battle info, up to 12 icons) is converted after all: 8bpp icons

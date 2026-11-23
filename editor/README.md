@@ -784,11 +784,15 @@ the game doesn't build from yet), or of one of its walking or follower sheets, b
   swatches below.
 - **Right:** the sprite, large. Above it are the vanilla art (or the sheet before the battle-palette remap, from git)
   and the sprite in the other palette. Clicking an other-palette view swaps the page between normal and shiny.
-- **Tools:** pencil (B) with a hover preview, fill (G), eyedropper (I or Alt+click), undo and redo, zoom, a grid,
-  frames, and editing a palette colour (with a warning).
+- **Tools:** pencil (S) with a hover preview, fill (Z), replace (R: every pixel of the clicked index, in the frame or
+  all frames, with a hover preview), eyedropper (Q or Alt+click), undo and redo, zoom, a grid, frames, and editing a
+  palette colour (with a warning).
 - **Icon rules:** an icon has 13 battle slots plus the two outline greys, and only the transparent swatch clears a
   pixel.
-- **Lists:** the Hand-fix list steps through `res/paperwhite2/icon_fix_list.json`, with Done (unflag).
+- **Review marks** (`res/paperwhite2/sprite_review.json`, kept apart for icons and for walking/follower sheets):
+  hand-edited, set by any save that changes a sprite, and checked, the **Mark checked** toggle (C) for a pass over
+  every sprite, with each kind's progress. The species picker shows them, **Show** filters by them (All, Not checked,
+  Checked, Hand-edited, Generated only), and ◀ ▶ (`[` `]`) step through the filter, keeping the kind and frame.
 - **Saving:** through `tools/paperwhite2/sprite_edit.py`, which checks and writes the files.
 
 ## The Move Editor and the Ability Editor
