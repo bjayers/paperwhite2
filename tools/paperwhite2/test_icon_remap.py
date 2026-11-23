@@ -232,6 +232,38 @@ def test_flagged_icons_get_more_candidates(tmp_path):
     assert all(a == b for a, b in zip(jpx, kpx) if a in (14, 15)), "K keeps the pick's outline greys"
 
 
+
+def test_k_keeps_its_base(tmp_path):
+    """An icon kept on another method keeps its extra candidates without the flag, and K the base it was built from:
+    k_base when recorded, else the last run's K."""
+    root = make_fixture(tmp_path)
+    choices = root / "res" / "paperwhite2" / "icon_remap_choices.json"
+    choices.parent.mkdir(parents=True, exist_ok=True)
+    run = lambda: icon_remap.generate(root / "res", icon_remap.species_order(root), root / "out", workers=1)  # noqa: E731
+    choices.write_text(json.dumps({"choices": {"fakemon": "j"}, "fix_by_hand": ["fakemon"]}))
+    run()
+    first = icon(root, "fakemon")["candidates"]
+    assert first["k"]["base"] == "j"
+    # Kept on G2 and unflagged, before k_base existed: the last run's K
+    choices.write_text(json.dumps({"choices": {"fakemon": "g2"}, "fix_by_hand": []}))
+    summary = run()
+    assert {e["key"]: e for e in summary["entries"]}["fakemon"]["candidates"] == ["g2", "h", "ih", "k"]
+    assert icon(root, "fakemon")["candidates"] == first
+    # The recorded k_base wins, with or without a last run
+    choices.write_text(json.dumps({"choices": {"fakemon": "k"}, "fix_by_hand": [], "k_base": {"fakemon": "j"}}))
+    (root / "out" / "icons" / "fakemon" / "icon.json").unlink()
+    run()
+    assert icon(root, "fakemon")["candidates"] == first
+    # Without either, IHM; and an icon kept on IHM or J without the flag has no extra candidates
+    choices.write_text(json.dumps({"choices": {"fakemon": "h"}, "fix_by_hand": []}))
+    (root / "out" / "icons" / "fakemon" / "icon.json").unlink()
+    run()
+    assert icon(root, "fakemon")["candidates"]["k"]["base"] == "ihm"
+    choices.write_text(json.dumps({"choices": {"fakemon": "j"}, "fix_by_hand": [], "k_base": {"fakemon": "ihm"}}))
+    run()
+    assert "candidates" not in icon(root, "fakemon")
+    assert icon_remap.read_choices(choices)["k_base"] == {"fakemon": "ihm"}
+
 def test_k_takes_the_pale_tint():
     # Battle art: a dark outline, a pale blue-grey body (tinted, chroma 4-12) and a red patch; the pick put the
     # body on a pure grey the art barely uses.

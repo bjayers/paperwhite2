@@ -775,7 +775,8 @@ The user picks, icon by icon, between IHM and J; nothing in `res/pokemon/` chang
   icons).
 - **To decide:** IHM and J differ on **416** of the 744 icons (any pixel's normal or shiny colour; 307 by 3% or more,
   as in section 12). The other 328 keep IHM.
-- **Choices:** `res/paperwhite2/icon_remap_choices.json`, `{"choices": {icon key: "ihm" | "j"}, "fix_by_hand": [icon keys]}`,
+- **Choices:** `res/paperwhite2/icon_remap_choices.json`, `{"choices": {icon key: "ihm" | "j"}, "fix_by_hand": [icon keys]}`
+  (and `k_base`, section 14.3),
   written on each click by the editor's server (`PUT /api/icon-review/choice` for the base to fix from, `PUT
   /api/icon-review/flag` for the flag; keys sorted, the data tools' JSON layout). An icon without a choice keeps IHM;
   choosing IHM where the two are the same writes no entry. "Fix by hand" is an independent flag, not a third choice: any
@@ -862,22 +863,38 @@ then the most-used twin swap.
 
 ### 14.3 The Flagged review mode
 
-- **Tool:** `icon_remap.py generate` gives each flagged icon (`fix_by_hand` when it runs) four more candidates in
+- **Tool:** `icon_remap.py generate` gives each flagged icon (`fix_by_hand` when it runs), and each icon whose choice is
+  already G2, H, IH or K (flagged or not), four more candidates in
   `icon.json`'s `candidates`: **G2**, **H**, **IH** (before the twin swap) and **K**. `index.json` lists them per icon.
   - G2 is ported from the round 2 script: G's decisions on the shared registration stage (`registered_units`, which H
     now uses too), with ramps built without H's pale-is-white rule (`build_ramps(pale=False)`).
   - Checked on all 727 icons with their own pixels: G2 matches round 2's G2 pixel for pixel, and H matches round 3's
     H. IHM and J are unchanged on all 744.
   - Flagging another icon needs a new run before it gets its candidates.
-- **Page:** an icon flagged to fix by hand shows, in order:
+- **Page:** an icon with extra candidates (flagged, or kept on one of them) shows, in order:
   - the user's pick of IHM and J (marked "your pick"; K starts from it);
   - then G2, H, IH and K, each normal and shiny.
 
   Number keys 1-5 pick them in that order, and **0** toggles the fix-by-hand flag (3 would pick H here). The buttons
   show their keys. Other icons keep 1 IHM, 2 J, 3 the flag.
+  - While the icon is flagged, each candidate also has **Keep and unflag** (Shift and its number): it keeps the
+    candidate and clears the flag in one write (`PUT /api/icon-review/choice` with `unflag: true`), for a candidate that
+    fixes the icon. A plain pick keeps the flag. Unflagged, the icon keeps its extra candidates while its choice is G2,
+    H, IH or K.
+  - An action that drops the shown icon from the filter (unflagging it under Fix by hand, say) leaves it in the list at
+    its place until the user moves on; "go to the next icon after choosing" decides whether choosing moves on.
 - **Choices:** the choices file keeps its shape. `choices` values may now be `ihm`, `j`, `g2`, `h`, `ih` or `k`; the
-  last four only for an icon that has those candidates (the server checks). A filter "Kept another" lists those icons.
-  Once a pick is G2, H, IH or K, K is regenerated from IHM.
+  last four only for an icon that has those candidates (the server checks). A filter "Kept another" lists those icons,
+  flagged or not.
+- **K stays the same.** Keeping any candidate of an icon with extra candidates records the pick K was built from in an
+  optional `k_base: {icon key: "ihm" | "j"}` (written only when it has entries; files without it still read). The tool
+  builds K from `k_base`, else from the choice when it is IHM or J, else (a G2, H, IH or K choice from before `k_base`)
+  from the base of the K the last run wrote, else IHM. The server drops an icon's `k_base` when its choice is cleared
+  or it leaves the extra candidates' set (unflagged on IHM or J). Checked on a copy of the user's choices file
+  (2026-11-22, 131 flagged, 7 on G2 or K): generating again reproduces every icon's candidates pixel for pixel, K
+  included, and so it does with the 7 unflagged. (Before this, a choice of G2, H, IH or K made the next run rebuild K
+  from IHM, and an unflagged icon lost its extra candidates.)
 - **Tests:** in `test_icon_remap.py`, a flagged fixture icon gets all four candidates under the rules, and K takes a
-  pale tint. In `icon-review.test.ts`, the generator writes the candidates, the display order, and the server takes K
-  only for a flagged icon.
+  pale tint; `test_k_keeps_its_base` (unflagged on G2 the candidates stay, K from `k_base` or the last run). In
+  `icon-review.test.ts`, the generator writes the candidates, the display order, the server takes K only for an icon
+  with it, keep and unflag in one write with K the same after generating again, and the filter keeping the shown icon.

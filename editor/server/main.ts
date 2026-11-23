@@ -992,11 +992,13 @@ const routes: Record<string, Handler> = {
     json(res, detail);
   },
   "PUT /api/icon-review/choice": async (req, res) => {
-    const body = (await readJson(req)) as { key?: string; choice?: unknown };
+    // unflag: also clears the fix-by-hand flag (the page's "Keep and unflag")
+    const body = (await readJson(req)) as { key?: string; choice?: unknown; unflag?: unknown };
     if (typeof body.key !== "string" || (body.choice !== null && !isChoice(body.choice)))
       return error(res, 400, "Name an icon and a choice (ihm, j, g2, h, ih, k or null)");
+    if (body.unflag !== undefined && typeof body.unflag !== "boolean") return error(res, 400, "unflag is true or false");
     try {
-      json(res, await iconChoices.set(body.key, body.choice));
+      json(res, await iconChoices.set(body.key, body.choice, body.unflag ?? false));
     } catch (e) {
       error(res, 400, (e as Error).message);
     }

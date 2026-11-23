@@ -8,7 +8,8 @@ export type ReviewFilter = "undecided" | "needs" | "all" | "ihm" | "j" | "other"
 export const METHOD_LABEL: Record<IconChoice, string> = { ihm: "IHM", j: "J", g2: "G2", h: "H", ih: "IH", k: "K" };
 
 /** The Flagged mode's candidates in display order (number keys 1, 2, … in this order): the user's pick of IHM and J
- * (the one K started from), then G2, H, IH and K; only those the icon has. Empty for an icon without extra candidates. */
+ * (the one K started from), then G2, H, IH and K; only those the icon has. Empty for an icon without extra candidates
+ * (they come with the flag, or with a choice of G2, H, IH or K, when the candidates were generated). */
 export function flaggedOrder(detail: IconReviewDetail): IconChoice[] {
   const extra = detail.candidates;
   if (!extra) return [];
@@ -27,7 +28,7 @@ export const FILTERS: { id: ReviewFilter; label: string; hint: string }[] = [
   { id: "all", label: "All", hint: "every icon, including those where IHM and J are the same (they keep IHM)" },
   { id: "ihm", label: "Kept IHM", hint: "icons you kept IHM for" },
   { id: "j", label: "Kept J", hint: "icons you kept J for" },
-  { id: "other", label: "Kept another", hint: "flagged icons you kept G2, H, IH or K for" },
+  { id: "other", label: "Kept another", hint: "icons you kept G2, H, IH or K for, flagged or not" },
   { id: "flagged", label: "Fix by hand", hint: "icons flagged to fix by hand, whatever their choice; with their extra candidates (G2, H, IH, K)" },
 ];
 
@@ -36,7 +37,15 @@ export function choiceOf(entry: IconReviewEntry, choices: Record<string, IconCho
   return choices[entry.key] ?? (entry.differ ? null : "ihm");
 }
 
-export function filterEntries(entries: IconReviewEntry[], review: ReviewChoices, filter: ReviewFilter): IconReviewEntry[] {
+/** The icons a filter shows, in the review's order. keep: an icon kept in the list at its place even when it no longer
+ * matches (the shown one, until the user moves on from it). */
+export function filterEntries(entries: IconReviewEntry[], review: ReviewChoices, filter: ReviewFilter, keep?: string | null): IconReviewEntry[] {
+  const matching = new Set(matches(entries, review, filter).map((e) => e.key));
+  return keep && !matching.has(keep) && entries.some((e) => e.key === keep)
+    ? entries.filter((e) => matching.has(e.key) || e.key === keep) : entries.filter((e) => matching.has(e.key));
+}
+
+function matches(entries: IconReviewEntry[], review: ReviewChoices, filter: ReviewFilter): IconReviewEntry[] {
   const { choices, fixByHand } = review;
   switch (filter) {
     case "all": return entries;

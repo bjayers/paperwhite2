@@ -25,19 +25,20 @@ Two candidates per icon, built in stages (each section's script of the experimen
 
 And the suspects list of section 12 (parts whose shiny behaviour disagrees with the battle sprite's), on IHM.
 
-The icons the user flagged to fix by hand (fix_by_hand in res/paperwhite2/icon_remap_choices.json) also get four
-more candidates for the review page's Flagged mode (section 14):
+The icons the user flagged to fix by hand (fix_by_hand in res/paperwhite2/icon_remap_choices.json), and those whose
+choice is already one of the four below, also get four more candidates for the review page's Flagged mode (section 14):
 
 - **G2** (section 8): F kept unless the registered battle sprite clearly disagrees, the vanilla outline greys kept.
 - **H** and **IH** as above (H's own pixels; IH before the twin swap).
-- **K** (section 14): the user's pick of IHM and J corrected for the error classes measured on the flagged icons
+- **K** (section 14): the user's pick of IHM and J (k_base in the choices file once recorded, so K stays the same
+  after the choice moves to another method) corrected for the error classes measured on the flagged icons
   (grey where the art has a pale tint, a missing battle colour family, collapsed shades, too dark), then the twin
   swap.
 
     icon_remap.py generate [--res DIR] [--out DIR] [-j N] [KEY ...]
         writes OUT (default build/icon_review/): index.json (every icon, whether IHM and J differ, its suspects,
-        the flagged icons' extra candidates), differ.txt, and per icon icons/<key>/: icon.json (pixels, slots,
-        palettes, battle front, and for a flagged icon its "candidates" g2, h, ih and k), vanilla.png, ihm.png and
+        the extra candidates of those icons), differ.txt, and per icon icons/<key>/: icon.json (pixels, slots,
+        palettes, battle front, and for those icons their "candidates" g2, h, ih and k), vanilla.png, ihm.png and
         j.png (index images with the normal colours through their slots). Regenerable; nothing in res/ changes.
         KEYs limit it to some icons (with their palette-only forms).
 
@@ -1655,7 +1656,7 @@ def run_base(job) -> dict:
     j = method_i(job, px, ipal, fpx, hpx, hslots, battle, True)
     out = dict(job, ih=dict(pixels=ih["pixels"].hex(), slots=ih["slots"], ramps=ih["ramps"]),
                jr=dict(pixels=j["pixels"].hex(), slots=j["slots"], moves=j["moves"]))
-    if job.get("flagged"):
+    if job.get("extended"):
         g2, g2slots = method_g2(job, px, ipal, fpx, battle)
         out["extra"] = dict(g2=dict(pixels=g2.hex(), slots=g2slots), h=dict(pixels=hpx.hex(), slots=hslots),
                             ih=dict(pixels=ih["pixels"].hex(), slots=ih["slots"]))
@@ -1673,9 +1674,9 @@ def finish(result) -> dict:
     out["ihm"] = dict(pixels=result["ih"]["pixels"], slots=ihm_slots, swaps=ihm_swaps)
     out["j"] = dict(pixels=result["jr"]["pixels"], slots=j_slots, swaps=j_swaps, moves=result["jr"]["moves"])
     out["suspects"] = suspects(result, ihm_px, ihm_slots, result["ih"]["ramps"], battle)
-    if result.get("flagged") and "extra" in result:
-        # K starts from the user's pick of IHM and J (from IHM once the pick is another method)
-        base = result.get("pick", "ihm") if result.get("pick", "ihm") in ("ihm", "j") else "ihm"
+    if result.get("extended") and "extra" in result:
+        # K starts from the user's pick of IHM and J (k_base_of)
+        base = result["k_base"]
         px, ipal = load_icon(Path(result["icon"]))
         kpx, kslots, kswaps, kchanges = method_k(result, px, ipal, battle, bytes.fromhex(out[base]["pixels"]),
                                                  out[base]["slots"])
@@ -1713,9 +1714,10 @@ def generate(res: Path, names: list[str], out: Path, workers: int = 8, only: set
     all_jobs = jobs(res / "pokemon", names)
     review = read_choices(res / CHOICES_FILE)
     flagged = set(review["fix_by_hand"])
-    flagged_bases = flagged | {k.split("_form_")[0] for k in flagged}
+    extended = extended_keys(review)
+    extended_bases = extended | {k.split("_form_")[0] for k in extended}
     for j in all_jobs:
-        j["flagged"] = j["key"] in flagged_bases
+        j["extended"] = j["key"] in extended_bases
     base_jobs = [j for j in all_jobs if j["kind"] != "palette_form" and (not only or j["key"] in only)]
     if workers > 1 and len(base_jobs) > 1:
         with Pool(workers) as pool:
@@ -1739,8 +1741,10 @@ def generate(res: Path, names: list[str], out: Path, workers: int = 8, only: set
         if "error" in r:
             errors.append(dict(key=r["key"], error=r["error"]))
             continue
-        r = dict(r, flagged=r["key"] in flagged, pick=review["choices"].get(r["key"], "ihm"))
-        if not r["flagged"]:
+        r = dict(r, flagged=r["key"] in flagged, extended=r["key"] in extended)
+        if r["extended"]:
+            r["k_base"] = k_base_of(review, r["key"], out)
+        else:
             r.pop("extra", None)
         results.append(r)
     if workers > 1 and len(results) > 1:
@@ -1779,14 +1783,42 @@ CHOICES_FILE = Path("paperwhite2") / "icon_remap_choices.json"   # under res/
 METHODS = ("ihm", "j", "g2", "h", "ih", "k")
 
 
+EXTRA_METHODS = ("g2", "h", "ih", "k")
+
+
 def read_choices(path: Path) -> dict:
-    """The user's review: {"choices": {key: method}, "fix_by_hand": [keys]} (empty while the file is missing)."""
-    out = {"choices": {}, "fix_by_hand": []}
+    """The user's review: {"choices": {key: method}, "fix_by_hand": [keys], "k_base": {key: "ihm" | "j"}} (empty while
+    the file is missing; k_base is optional: the pick K was built from, which the editor records when the user keeps
+    one of an icon's extra candidates)."""
+    out = {"choices": {}, "fix_by_hand": [], "k_base": {}}
     if path.is_file():
         data = json.loads(path.read_text())
         out["choices"] = {k: v for k, v in (data.get("choices") or {}).items() if v in METHODS}
         out["fix_by_hand"] = [k for k in data.get("fix_by_hand") or [] if isinstance(k, str)]
+        out["k_base"] = {k: v for k, v in (data.get("k_base") or {}).items() if v in ("ihm", "j")}
     return out
+
+
+def extended_keys(review) -> set[str]:
+    """The icons that get the extra candidates: those flagged to fix by hand, and those whose choice is one of them
+    (so unflagging an icon kept on G2, H, IH or K leaves its candidates)."""
+    return set(review["fix_by_hand"]) | {k for k, v in review["choices"].items() if v in EXTRA_METHODS}
+
+
+def k_base_of(review, key: str, out: Path) -> str:
+    """The pick K starts from, so the same review gives the same K: the recorded k_base; else the choice when it is IHM
+    or J; else (a choice of G2, H, IH or K from before k_base was recorded) the base of the K the last run wrote to out;
+    else IHM."""
+    if key in review["k_base"]:
+        return review["k_base"][key]
+    pick = review["choices"].get(key, "ihm")
+    if pick in ("ihm", "j"):
+        return pick
+    try:
+        base = json.loads((out / "icons" / key / "icon.json").read_text())["candidates"]["k"]["base"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return "ihm"
+    return base if base in ("ihm", "j") else "ihm"
 
 
 def rel(res: Path, path) -> str:

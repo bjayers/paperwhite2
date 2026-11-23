@@ -1,7 +1,9 @@
 // The Icon review page (temporary): one icon at a time, its vanilla art above the re-indexing methods' results (IHM
-// and J, each normal and shiny), and a click (or 1, 2) keeps one for it; 3 flags the icon to fix by hand. An icon
-// flagged to fix by hand shows the Flagged mode instead: the pick of IHM and J it was flagged on, then G2, H, IH and K,
-// on number keys 1-5 in that order, and 0 for the flag. See model.ts and server/iconReview.ts.
+// and J, each normal and shiny), and a click (or 1, 2) keeps one for it; 3 flags the icon to fix by hand. An icon with
+// extra candidates (flagged to fix by hand, or kept on one of them, when they were generated) shows the Flagged mode
+// instead: the pick of IHM and J K started from, then G2, H, IH and K, on number keys 1-5 in that order, and 0 for the
+// flag; while it is flagged, each candidate's "Keep and unflag" (Shift and its number) keeps it and clears the flag in
+// one go. See model.ts and server/iconReview.ts.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../api.ts";
@@ -57,9 +59,11 @@ const METHOD_HINT: Record<IconChoice, string> = {
   k: "your pick corrected for the flagged icons' error classes (section 14)",
 };
 
-function Candidate({ detail, which, frame, chosen, shortcut, mark, onChoose }: {
+function Candidate({ detail, which, frame, chosen, shortcut, mark, onChoose, onUnflag }: {
   detail: IconReviewDetail; which: IconChoice; frame: number; chosen: boolean; shortcut: string; mark?: string;
   onChoose: () => void;
+  /** Keeps it and clears the fix-by-hand flag (only while the icon is flagged). */
+  onUnflag?: () => void;
 }) {
   const normal = useMemo(() => candidateColours(detail, which, "normal"), [detail, which]);
   const shiny = useMemo(() => candidateColours(detail, which, "shiny"), [detail, which]);
@@ -67,22 +71,27 @@ function Candidate({ detail, which, frame, chosen, shortcut, mark, onChoose }: {
   if (!c) return null;
   const swaps = c.swaps?.length ?? 0;
   return (
-    <button className={`ir-candidate${chosen ? " chosen" : ""}`} onClick={onChoose}
-      title={`Keep ${CHOICE_LABEL[which]} for this icon (key ${shortcut}): ${METHOD_HINT[which]}`}>
-      <span className="ir-candidate-head"><strong>{CHOICE_LABEL[which]}</strong>
-        <span className="ir-key">{shortcut}</span>
-        {mark && <span className="ir-flag ir-hand">{mark}</span>}
-        {chosen && <span className="muted small">kept</span>}</span>
-      <span className="ir-pair">
-        <Icon hex={c.pixels} colours={normal} frame={frame} caption="normal" />
-        <Icon hex={c.pixels} colours={shiny} frame={frame} caption="shiny" />
-      </span>
-      <span className="muted small ir-candidate-note">
-        {c.slots.length} battle colours{swaps ? `, ${swaps} twin swap${swaps > 1 ? "s" : ""}` : ""}
-        {which === "j" && c.moves?.length ? `, ${c.moves.length} family move${c.moves.length > 1 ? "s" : ""}` : ""}
-        {which === "k" ? (c.changes?.length ? `, ${c.changes.length} change${c.changes.length > 1 ? "s" : ""} to ${CHOICE_LABEL[c.base ?? "ihm"]}` : `, the same as ${CHOICE_LABEL[c.base ?? "ihm"]}`) : ""}
-      </span>
-    </button>
+    <span className="ir-candidate-card">
+      <button className={`ir-candidate${chosen ? " chosen" : ""}`} onClick={onChoose}
+        title={`Keep ${CHOICE_LABEL[which]} for this icon (key ${shortcut}): ${METHOD_HINT[which]}`}>
+        <span className="ir-candidate-head"><strong>{CHOICE_LABEL[which]}</strong>
+          <span className="ir-key">{shortcut}</span>
+          {mark && <span className="ir-flag ir-hand">{mark}</span>}
+          {chosen && <span className="muted small">kept</span>}</span>
+        <span className="ir-pair">
+          <Icon hex={c.pixels} colours={normal} frame={frame} caption="normal" />
+          <Icon hex={c.pixels} colours={shiny} frame={frame} caption="shiny" />
+        </span>
+        <span className="muted small ir-candidate-note">
+          {c.slots.length} battle colours{swaps ? `, ${swaps} twin swap${swaps > 1 ? "s" : ""}` : ""}
+          {which === "j" && c.moves?.length ? `, ${c.moves.length} family move${c.moves.length > 1 ? "s" : ""}` : ""}
+          {which === "k" ? (c.changes?.length ? `, ${c.changes.length} change${c.changes.length > 1 ? "s" : ""} to ${CHOICE_LABEL[c.base ?? "ihm"]}` : `, the same as ${CHOICE_LABEL[c.base ?? "ihm"]}`) : ""}
+        </span>
+      </button>
+      {onUnflag && <button className="ir-unflag small" onClick={onUnflag}
+        title={`Keep ${CHOICE_LABEL[which]} and clear the fix-by-hand flag (Shift+${shortcut})`}>
+        Keep and unflag <span className="ir-key">⇧{shortcut}</span></button>}
+    </span>
   );
 }
 
@@ -106,6 +115,8 @@ export function IconReview() {
   const [animate, setAnimate] = useState(true);
   const [frame, setFrame] = useState(0);
   const [advance, setAdvance] = useState(true);
+  // The shown icon, kept in the list at its place after an action drops it from the filter, until the user moves on
+  const [stay, setStay] = useState<string | null>(null);
 
   const load = useCallback(() => api.iconReview().then(setState).catch((e: Error) => setMessage(e.message)), []);
   useEffect(() => { load(); }, [load]);
@@ -123,13 +134,17 @@ export function IconReview() {
 
   const entries = state?.index?.entries ?? [];
   const choices = state?.choices ?? {};
-  const review = useMemo(() => ({ choices: state?.choices ?? {}, fixByHand: state?.fixByHand ?? [] }), [state?.choices, state?.fixByHand]);
-  const list = useMemo(() => filterEntries(entries, review, filter), [entries, review, filter]);
+  const review = useMemo(() => ({ choices: state?.choices ?? {}, fixByHand: state?.fixByHand ?? [], kBase: state?.kBase ?? {} }),
+    [state?.choices, state?.fixByHand, state?.kBase]);
+  const list = useMemo(() => filterEntries(entries, review, filter, stay), [entries, review, filter, stay]);
   const counts = useMemo(() => progress(entries, review), [entries, review]);
   const entry: IconReviewEntry | undefined = entries.find((e) => e.key === key);
-  // The Flagged mode's candidates (an icon flagged to fix by hand with its extra candidates generated)
-  const order = useMemo(() => (entry && detail && detail.key === entry.key && review.fixByHand.includes(entry.key)
-    ? flaggedOrder(detail) : []), [entry, detail, review.fixByHand]);
+  // The Flagged mode's candidates (an icon with extra candidates generated: flagged, or kept on one of them)
+  const order = useMemo(() => (entry && detail && detail.key === entry.key ? flaggedOrder(detail) : []), [entry, detail]);
+  const flaggedNow = !!key && review.fixByHand.includes(key);
+  useEffect(() => {
+    if (stay && key !== stay) setStay(null);
+  }, [key, stay]);
 
   // The first icon of the list when nothing (or nothing known) is shown
   useEffect(() => {
@@ -149,14 +164,17 @@ export function IconReview() {
     return () => { live = false; };
   }, [key, state?.ready, state?.index?.generated]);
 
-  const choose = useCallback(async (choice: IconChoice | null) => {
+  /** unflag: also clears the fix-by-hand flag. Moves on as "go to the next icon after choosing" says; otherwise the icon
+   * stays in the list even when it no longer matches the filter. */
+  const choose = useCallback(async (choice: IconChoice | null, unflag = false) => {
     if (!key) return;
     const next = advance && choice !== null ? afterChoosing(list, key) : key;
     try {
-      const saved = await api.iconReviewChoose(key, choice);
+      const saved = await api.iconReviewChoose(key, choice, unflag);
       setState((s) => (s ? { ...s, ...saved } : s));
       setMessage(null);
-      if (next) setKey(next);
+      if (next === key) setStay(key);
+      else if (next) setKey(next);
     } catch (e) {
       setMessage((e as Error).message);
     }
@@ -169,6 +187,7 @@ export function IconReview() {
       const saved = await api.iconReviewFlag(key, !(state?.fixByHand ?? []).includes(key));
       setState((s) => (s ? { ...s, ...saved } : s));
       setMessage(null);
+      setStay(key);
     } catch (e) {
       setMessage((e as Error).message);
     }
@@ -179,7 +198,16 @@ export function IconReview() {
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      // The Flagged mode: 1-5 the candidates in display order, 0 the flag; otherwise 1 IHM, 2 J, 3 the flag
+      // The Flagged mode: 1-5 the candidates in display order (with Shift, keep and unflag while flagged), 0 the flag;
+      // otherwise 1 IHM, 2 J, 3 the flag. Shift+digit by the key's code: e.key is the shifted symbol.
+      const digit = /^(?:Digit|Numpad)(\d)$/.exec(e.code)?.[1];
+      if (e.shiftKey) {
+        const m = digit ? order[Number(digit) - 1] : undefined;
+        if (!m || !flaggedNow) return;
+        choose(m, true);
+        e.preventDefault();
+        return;
+      }
       const keys: Record<string, () => void> = order.length
         ? Object.fromEntries([["0", toggleFlag], ...order.map((m, i) => [String(i + 1), () => choose(m)])])
         : { 1: () => choose("ihm"), 2: () => choose("j"), 3: toggleFlag };
@@ -191,7 +219,7 @@ export function IconReview() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [choose, toggleFlag, list, order]);
+  }, [choose, toggleFlag, list, order, flaggedNow]);
 
   const generate = async () => {
     const { started } = await api.iconReviewGenerate();
@@ -210,7 +238,7 @@ export function IconReview() {
     <div className="ir-page">
       <div className="ir-page-head"><strong>Icon review</strong> <span className="ir-temp">temporary</span>
         <span className="muted small">Choose, per party/box icon, between two re-indexings onto its battle palettes (IHM and J);
-          an icon flagged to fix by hand also offers G2, H, IH and K.
+          an icon flagged to fix by hand (or kept on one of them) also offers G2, H, IH and K.
           Choices go to res/paperwhite2/icon_remap_choices.json; no icon in res/pokemon/ changes yet.</span></div>
 
       <section className="ir-section">
@@ -234,7 +262,7 @@ export function IconReview() {
             <span className="ir-label">Show</span>
             <span className="ir-row">
               <span className="view-switch">
-                {FILTERS.map((f) => <button key={f.id} className={filter === f.id ? "active" : ""} onClick={() => setFilter(f.id)}>{f.label}</button>)}
+                {FILTERS.map((f) => <button key={f.id} className={filter === f.id ? "active" : ""} onClick={() => { setStay(null); setFilter(f.id); }}>{f.label}</button>)}
               </span>
               <span className="hint">{list.length} {list.length === 1 ? "icon" : "icons"}: {filterHint}</span>
             </span>
@@ -248,7 +276,7 @@ export function IconReview() {
               </select>
               <button onClick={() => setKey((k) => step(list, k, 1))} disabled={!list.length} title="The next one (→)">→</button>
               <span className="hint">{at >= 0 ? `${at + 1} of ${list.length}` : "not in this list"}; ← → move, {order.length
-                ? `${order.map((m, i) => `${i + 1} ${CHOICE_LABEL[m]}`).join(", ")}, 0 fix by hand (this flagged icon's candidates)`
+                ? `${order.map((m, i) => `${i + 1} ${CHOICE_LABEL[m]}`).join(", ")}${flagged ? " (Shift: keep and unflag)" : ""}, 0 fix by hand (this icon's extra candidates)`
                 : "1 IHM, 2 J, 3 fix by hand (a flag: stays on the icon)"}</span>
             </span>
             <span className="ir-label">Frames</span>
@@ -290,7 +318,8 @@ export function IconReview() {
               <div className="ir-candidates">
                 {order.map((m, i) => (
                   <Candidate key={m} detail={detail} which={m} frame={frame} chosen={chosen === m} shortcut={String(i + 1)}
-                    mark={i === 0 ? "your pick" : undefined} onChoose={() => choose(m)} />
+                    mark={i === 0 ? "your pick" : undefined} onChoose={() => choose(m)}
+                    onUnflag={flagged ? () => choose(m, true) : undefined} />
                 ))}
               </div>
             ) : (

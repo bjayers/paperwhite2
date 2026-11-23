@@ -531,9 +531,9 @@ export const api = {
   /** The temporary Icon review page: its candidates' index, the choices and the generator's state. */
   iconReview: () => request<IconReviewState>("GET", "/api/icon-review"),
   iconReviewIcon: (key: string) => request<IconReviewDetail>("GET", `/api/icon-review/icon?key=${encodeURIComponent(key)}`),
-  /** Keeps a candidate for an icon (null clears it); the choices after. */
-  iconReviewChoose: (key: string, choice: IconChoice | null) =>
-    request<ReviewChoices>("PUT", "/api/icon-review/choice", { key, choice }),
+  /** Keeps a candidate for an icon (null clears it), with unflag also clearing its fix-by-hand flag; the choices after. */
+  iconReviewChoose: (key: string, choice: IconChoice | null, unflag = false) =>
+    request<ReviewChoices>("PUT", "/api/icon-review/choice", { key, choice, unflag }),
   iconReviewFlag: (key: string, flag: boolean) =>
     request<ReviewChoices>("PUT", "/api/icon-review/flag", { key, flag }),
   /** Runs tools/paperwhite2/icon_remap.py generate in the background. */

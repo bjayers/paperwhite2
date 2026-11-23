@@ -18,6 +18,8 @@
 .ir-candidate.chosen { border-color: var(--accent); background: var(--accent-soft); }
 .ir-candidate-head { display: flex; gap: 8px; align-items: baseline; }
 .ir-candidate-note { max-width: 280px; }
+.ir-candidate-card { display: flex; flex-direction: column; gap: 4px; }
+.ir-unflag { align-self: flex-start; font-size: 12px; padding: 2px 8px; }
 .ir-pair { display: flex; gap: 8px; align-items: flex-end; }
 .ir-icon { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .ir-pixels { image-rendering: pixelated; border-radius: 4px; display: block; }
