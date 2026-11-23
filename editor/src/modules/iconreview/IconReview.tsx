@@ -9,7 +9,7 @@ import { FILTERS, afterChoosing, candidateColours, choiceOf, filterEntries, pixe
 /** The box tray's grey, behind every icon as in the PC. */
 const BOX = "#a8b8b0";
 const ICON_SCALE = 4;
-const FRONT_SCALE = 1;
+const FRONT_SCALE = 2;
 
 /** Indexed pixels drawn nearest-neighbour: one frame (rows frame*height on) of a width-wide image. */
 function Pixels({ hex, colours, width, height, frame = 0, scale }: {
@@ -227,17 +227,19 @@ export function IconReview() {
             {choices[entry.key] && <button onClick={() => choose(null)} title="Clear the choice">Clear the choice</button>}
           </div>
           <div className="ir-stage">
-            <div className="ir-vanilla">
-              <span className="ir-caption">Vanilla <span className="muted small">(the game today, the same for a shiny)</span></span>
-              <Icon hex={detail.vanilla.pixels} colours={[null, ...detail.vanilla.palette.slice(1)]} frame={frame} caption="bank colours" />
+            <div className="ir-reference">
+              <div className="ir-vanilla">
+                <span className="ir-caption">Vanilla <span className="muted small">(the game today, the same for a shiny)</span></span>
+                <Icon hex={detail.vanilla.pixels} colours={[null, ...detail.vanilla.palette.slice(1)]} frame={frame} caption="bank colours" />
+              </div>
+              <div className="ir-battle">
+                <span className="ir-caption">Battle front <span className="muted small">for reference</span></span>
+                <span className="ir-pair"><Front detail={detail} palette="normal" /><Front detail={detail} palette="shiny" /></span>
+              </div>
             </div>
             <div className="ir-candidates">
               <Candidate detail={detail} which="ihm" frame={frame} chosen={chosen === "ihm"} onChoose={() => choose("ihm")} />
               <Candidate detail={detail} which="j" frame={frame} chosen={chosen === "j"} onChoose={() => choose("j")} />
-            </div>
-            <div className="ir-battle">
-              <span className="ir-caption">Battle front <span className="muted small">for reference</span></span>
-              <span className="ir-pair"><Front detail={detail} palette="normal" /><Front detail={detail} palette="shiny" /></span>
             </div>
           </div>
           <div className="ir-grid">

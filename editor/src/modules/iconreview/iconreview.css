@@ -12,6 +12,7 @@
 .ir-output { font-family: var(--mono); font-size: 12px; white-space: pre-wrap; max-height: 200px; overflow: auto; background: var(--panel-2); padding: 6px; }
 .ir-stage { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin: 6px 0 12px; }
 .ir-caption { display: block; font-size: 12px; margin-bottom: 4px; }
+.ir-reference { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-end; }
 .ir-candidates { display: flex; flex-wrap: wrap; gap: 12px; }
 .ir-candidate { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border: 2px solid var(--border); border-radius: 8px; text-align: left; }
 .ir-candidate.chosen { border-color: var(--accent); background: var(--accent-soft); }
