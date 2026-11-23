@@ -1,6 +1,7 @@
 // The Icon review page's server side (temporary, docs/paperwhite2/design/shiny-icons.md section 13): the candidates
 // tools/paperwhite2/icon_remap.py writes to build/icon_review/ (ignored, regenerable), and the user's choice per icon
-// in res/paperwhite2/icon_remap_choices.json ({icon key: "ihm" | "j" | "manual"}; an icon without an entry keeps IHM).
+// in res/paperwhite2/icon_remap_choices.json ({"choices": {icon key: "ihm" | "j"}, "fix_by_hand": [icon keys]}; an icon
+// without a choice keeps IHM, and the fix-by-hand flag is separate: any icon can carry it, whatever its choice).
 
 import { execFile } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -10,7 +11,7 @@ import { fileText, fromPlain, parseJson, toPlain } from "../shared/json.ts";
 export const REVIEW_DIR = "build/icon_review";
 export const CHOICES_FILE = "res/paperwhite2/icon_remap_choices.json";
 export const REMAP_TOOL = "tools/paperwhite2/icon_remap.py";
-export const CHOICES = ["ihm", "j", "manual"] as const;
+export const CHOICES = ["ihm", "j"] as const;
 export type IconChoice = (typeof CHOICES)[number];
 
 /** A suspect part (section 12): A, its shiny behaviour disagrees with its colour family's; B, the icon's share of
@@ -64,11 +65,13 @@ export interface IconReviewDetail {
 
 export interface GenerateState { running: boolean; ok: boolean | null; output: string; startedAt: number | null }
 
-export interface IconReviewState {
+/** The choices file's content: the base each icon is fixed from, and the icons flagged to fix by hand. */
+export interface ReviewChoices { choices: Record<string, IconChoice>; fixByHand: string[] }
+
+export interface IconReviewState extends ReviewChoices {
   /** Whether build/icon_review/index.json is there. */
   ready: boolean;
   index: IconReviewIndex | null;
-  choices: Record<string, IconChoice>;
   generate: GenerateState;
 }
 
@@ -78,22 +81,25 @@ export function isChoice(v: unknown): v is IconChoice {
 
 const KEY = /^[a-z0-9_]+$/;
 
-/** The choices file's entries; none while it's missing. Entries that aren't a known choice are left out. */
-export function readChoices(root: string): Record<string, IconChoice> {
+/** The choices file's content; empty while it's missing. Entries that aren't a known choice or icon key are left out. */
+export function readChoices(root: string): ReviewChoices {
+  const out: ReviewChoices = { choices: {}, fixByHand: [] };
   const path = join(root, CHOICES_FILE);
-  if (!existsSync(path)) return {};
+  if (!existsSync(path)) return out;
   const data = toPlain(parseJson(readFileSync(path, "utf8")));
-  const out: Record<string, IconChoice> = {};
-  if (data && typeof data === "object" && !Array.isArray(data))
-    for (const [k, v] of Object.entries(data as Record<string, unknown>)) if (KEY.test(k) && isChoice(v)) out[k] = v;
+  if (!data || typeof data !== "object" || Array.isArray(data)) return out;
+  const { choices, fix_by_hand: flagged } = data as { choices?: unknown; fix_by_hand?: unknown };
+  if (choices && typeof choices === "object" && !Array.isArray(choices))
+    for (const [k, v] of Object.entries(choices as Record<string, unknown>)) if (KEY.test(k) && isChoice(v)) out.choices[k] = v;
+  if (Array.isArray(flagged)) out.fixByHand = [...new Set(flagged.filter((k): k is string => typeof k === "string" && KEY.test(k)))].sort();
   return out;
 }
 
 /** The file's text: the keys sorted, written as the data tools write JSON. */
-export function choicesText(choices: Record<string, IconChoice>): string {
-  const sorted: Record<string, IconChoice> = {};
-  for (const k of Object.keys(choices).sort()) sorted[k] = choices[k];
-  return fileText(fromPlain(sorted));
+export function choicesText(file: ReviewChoices): string {
+  const choices: Record<string, IconChoice> = {};
+  for (const k of Object.keys(file.choices).sort()) choices[k] = file.choices[k];
+  return fileText(fromPlain({ choices, fix_by_hand: [...file.fixByHand].sort() }));
 }
 
 export function readIndex(root: string): IconReviewIndex | null {
@@ -113,25 +119,49 @@ export function readDetail(root: string, key: string): IconReviewDetail | null {
   return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as IconReviewDetail) : null;
 }
 
-/** Sets (or with null clears) one icon's choice and writes the file; the choices after. A choice of "ihm" for an icon
- * where IHM and J are the same is no entry. Changes run one after another, so quick clicks never lose one. */
+/** Sets (or with null clears) one icon's choice, or sets or clears its fix-by-hand flag, and writes the file; the content
+ * after. A choice of "ihm" for an icon where IHM and J are the same is no entry. Changes run one after another, so quick
+ * clicks never lose one. */
 export class ChoiceWriter {
   private queue: Promise<unknown> = Promise.resolve();
 
   constructor(private root: string, private write: (path: string, text: string) => Promise<void>) {}
 
-  set(key: string, choice: IconChoice | null): Promise<Record<string, IconChoice>> {
-    if (!KEY.test(key)) return Promise.reject(new Error(`Not an icon key: ${key}`));
+  set(key: string, choice: IconChoice | null): Promise<ReviewChoices> {
     if (choice !== null && !isChoice(choice)) return Promise.reject(new Error(`Not a choice: ${String(choice)}`));
+    const entry = this.entryOf(key);
+    if (entry instanceof Error) return Promise.reject(entry);
+    return this.change((file) => {
+      if (choice === null || (choice === "ihm" && entry && !entry.differ)) delete file.choices[key];
+      else file.choices[key] = choice;
+    });
+  }
+
+  flag(key: string, flag: boolean): Promise<ReviewChoices> {
+    if (typeof flag !== "boolean") return Promise.reject(new Error(`Not a flag: ${String(flag)}`));
+    const entry = this.entryOf(key);
+    if (entry instanceof Error) return Promise.reject(entry);
+    return this.change((file) => {
+      file.fixByHand = file.fixByHand.filter((k) => k !== key);
+      if (flag) file.fixByHand.push(key);
+    });
+  }
+
+  /** The review's entry for key (undefined without a review), or an error for a bad key. */
+  private entryOf(key: string): IconReviewEntry | undefined | Error {
+    if (!KEY.test(key)) return new Error(`Not an icon key: ${key}`);
     const index = readIndex(this.root);
     const entry = index?.entries.find((e) => e.key === key);
-    if (index && !entry) return Promise.reject(new Error(`The review has no icon ${key}`));
+    return index && !entry ? new Error(`The review has no icon ${key}`) : entry;
+  }
+
+  private change(edit: (file: ReviewChoices) => void): Promise<ReviewChoices> {
     const next = this.queue.then(async () => {
-      const choices = readChoices(this.root);
-      if (choice === null || (choice === "ihm" && entry && !entry.differ)) delete choices[key];
-      else choices[key] = choice;
-      await this.write(CHOICES_FILE, choicesText(choices));
-      return choices;
+      const file = readChoices(this.root);
+      edit(file);
+      file.fixByHand.sort();
+      await this.write(CHOICES_FILE, choicesText(file));
+      return file;
     });
     this.queue = next.catch(() => undefined);
     return next;
@@ -159,5 +189,5 @@ export class ReviewGenerator {
 
 export function reviewState(root: string, generator: ReviewGenerator): IconReviewState {
   const index = readIndex(root);
-  return { ready: index !== null, index, choices: readChoices(root), generate: generator.state };
+  return { ready: index !== null, index, ...readChoices(root), generate: generator.state };
 }

@@ -1,9 +1,9 @@
 // The Icon review page's logic (temporary): which icons a filter shows, how far the review is, and each candidate's
 // 16 colours (slot 0 transparent, slots 1-13 its battle indices through normal.pal or shiny.pal, 14-15 the greys).
 
-import type { IconChoice, IconReviewDetail, IconReviewEntry } from "../../../server/iconReview.ts";
+import type { IconChoice, IconReviewDetail, IconReviewEntry, ReviewChoices } from "../../../server/iconReview.ts";
 
-export type ReviewFilter = "undecided" | "needs" | "all" | IconChoice;
+export type ReviewFilter = "undecided" | "needs" | "all" | IconChoice | "flagged";
 
 export const FILTERS: { id: ReviewFilter; label: string; hint: string }[] = [
   { id: "undecided", label: "Undecided", hint: "icons where IHM and J differ and nothing is chosen yet" },
@@ -11,7 +11,7 @@ export const FILTERS: { id: ReviewFilter; label: string; hint: string }[] = [
   { id: "all", label: "All", hint: "every icon, including those where IHM and J are the same (they keep IHM)" },
   { id: "ihm", label: "Kept IHM", hint: "icons you kept IHM for" },
   { id: "j", label: "Kept J", hint: "icons you kept J for" },
-  { id: "manual", label: "By hand", hint: "icons marked to fix by hand" },
+  { id: "flagged", label: "Fix by hand", hint: "icons flagged to fix by hand, whatever their choice" },
 ];
 
 /** The choice an icon ends with: its entry, or IHM where IHM and J are the same; null while undecided. */
@@ -19,22 +19,27 @@ export function choiceOf(entry: IconReviewEntry, choices: Record<string, IconCho
   return choices[entry.key] ?? (entry.differ ? null : "ihm");
 }
 
-export function filterEntries(entries: IconReviewEntry[], choices: Record<string, IconChoice>, filter: ReviewFilter): IconReviewEntry[] {
+export function filterEntries(entries: IconReviewEntry[], review: ReviewChoices, filter: ReviewFilter): IconReviewEntry[] {
+  const { choices, fixByHand } = review;
   switch (filter) {
     case "all": return entries;
     case "needs": return entries.filter((e) => e.differ);
     case "undecided": return entries.filter((e) => e.differ && !choices[e.key]);
+    case "flagged": return entries.filter((e) => fixByHand.includes(e.key));
     default: return entries.filter((e) => choices[e.key] === filter);
   }
 }
 
-export interface Progress { needed: number; decided: number; ihm: number; j: number; manual: number }
+/** decided counts the icons where IHM and J differ that have a choice (the flag doesn't decide); flagged counts every
+ * flagged icon of the review. */
+export interface Progress { needed: number; decided: number; ihm: number; j: number; flagged: number }
 
-export function progress(entries: IconReviewEntry[], choices: Record<string, IconChoice>): Progress {
-  const out: Progress = { needed: 0, decided: 0, ihm: 0, j: 0, manual: 0 };
+export function progress(entries: IconReviewEntry[], review: ReviewChoices): Progress {
+  const out: Progress = { needed: 0, decided: 0, ihm: 0, j: 0, flagged: 0 };
   for (const e of entries) {
     if (e.differ) out.needed++;
-    const c = choices[e.key];
+    if (review.fixByHand.includes(e.key)) out.flagged++;
+    const c = review.choices[e.key];
     if (!c) continue;
     if (e.differ) out.decided++;
     out[c]++;

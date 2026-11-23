@@ -994,9 +994,19 @@ const routes: Record<string, Handler> = {
   "PUT /api/icon-review/choice": async (req, res) => {
     const body = (await readJson(req)) as { key?: string; choice?: unknown };
     if (typeof body.key !== "string" || (body.choice !== null && !isChoice(body.choice)))
-      return error(res, 400, "Name an icon and a choice (ihm, j, manual or null)");
+      return error(res, 400, "Name an icon and a choice (ihm, j or null)");
     try {
-      json(res, { choices: await iconChoices.set(body.key, body.choice) });
+      json(res, await iconChoices.set(body.key, body.choice));
+    } catch (e) {
+      error(res, 400, (e as Error).message);
+    }
+  },
+  // The fix-by-hand flag, separate from the choice: any icon can carry it
+  "PUT /api/icon-review/flag": async (req, res) => {
+    const body = (await readJson(req)) as { key?: string; flag?: unknown };
+    if (typeof body.key !== "string" || typeof body.flag !== "boolean") return error(res, 400, "Name an icon and a flag (true or false)");
+    try {
+      json(res, await iconChoices.flag(body.key, body.flag));
     } catch (e) {
       error(res, 400, (e as Error).message);
     }

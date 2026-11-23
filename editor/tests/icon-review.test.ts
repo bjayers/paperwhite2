@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { detectLayout, parseJson } from "../shared/json.ts";
 import { CHOICES_FILE, ChoiceWriter, REVIEW_DIR, ReviewGenerator, choicesText, readChoices, readDetail, readIndex,
-  reviewState, type IconReviewEntry } from "../server/iconReview.ts";
+  reviewState, type IconReviewEntry, type ReviewChoices } from "../server/iconReview.ts";
 import { afterChoosing, candidateColours, choiceOf, filterEntries, progress, step } from "../src/modules/iconreview/model.ts";
 
 const REPO = resolve(import.meta.dirname, "../..");
@@ -40,6 +40,7 @@ test("the generator writes the review and the server reads it", async () => {
     const before = reviewState(root, new ReviewGenerator(root, "python3"));
     assert.equal(before.ready, false);
     assert.deepEqual(before.choices, {});
+    assert.deepEqual(before.fixByHand, []);
     const generator = await generate(root);
     assert.equal(generator.state.ok, true, generator.state.output);
     const state = reviewState(root, generator);
@@ -64,24 +65,33 @@ test("the generator writes the review and the server reads it", async () => {
   }
 });
 
-test("choices round-trip through the file", async () => {
+test("choices and the fix-by-hand flag round-trip through the file", async () => {
   const root = fixture();
   try {
     const writer = new ChoiceWriter(root, write(root));
-    assert.deepEqual(await writer.set("fakemon", "j"), { fakemon: "j" });
+    assert.deepEqual(await writer.set("fakemon", "j"), { choices: { fakemon: "j" }, fixByHand: [] });
     // Quick clicks one after another all land
-    await Promise.all([writer.set("zubat", "manual"), writer.set("abra", "ihm"), writer.set("fakemon", "manual")]);
+    await Promise.all([writer.flag("zubat", true), writer.set("abra", "ihm"), writer.set("fakemon", "ihm"), writer.flag("abra", true)]);
+    const expected: ReviewChoices = { choices: { abra: "ihm", fakemon: "ihm" }, fixByHand: ["abra", "zubat"] };
     const text = readFileSync(join(root, CHOICES_FILE), "utf8");
-    assert.equal(text, choicesText({ abra: "ihm", fakemon: "manual", zubat: "manual" }));
-    assert.ok(text.indexOf('"abra"') < text.indexOf('"zubat"'), "keys sorted");
+    assert.equal(text, choicesText(expected));
+    assert.ok(text.indexOf('"abra"') < text.indexOf('"fakemon"'), "keys sorted");
     assert.notEqual(detectLayout(text, parseJson(text)), null, "written as the data tools write JSON");
-    assert.deepEqual(readChoices(root), { abra: "ihm", fakemon: "manual", zubat: "manual" });
-    assert.deepEqual(await writer.set("zubat", null), { abra: "ihm", fakemon: "manual" });
+    assert.deepEqual(readChoices(root), expected);
+    // The flag is independent of the choice: clearing one leaves the other
+    assert.deepEqual(await writer.set("abra", null), { choices: { fakemon: "ihm" }, fixByHand: ["abra", "zubat"] });
+    assert.deepEqual(await writer.flag("abra", false), { choices: { fakemon: "ihm" }, fixByHand: ["zubat"] });
+    assert.deepEqual(await writer.flag("zubat", true), { choices: { fakemon: "ihm" }, fixByHand: ["zubat"] }, "flagging twice is one entry");
     await assert.rejects(writer.set("Bad Key", "j"));
+    await assert.rejects(writer.flag("Bad Key", true));
     await assert.rejects(writer.set("abra", "neither" as never));
-    // Entries that aren't a choice are ignored when read
-    writeFileSync(join(root, CHOICES_FILE), '{\n    "abra": "ihm",\n    "odd": 3\n}\n');
-    assert.deepEqual(readChoices(root), { abra: "ihm" });
+    await assert.rejects(writer.set("abra", "manual" as never));
+    await assert.rejects(writer.flag("abra", "yes" as never));
+    // Entries that aren't a choice or a key are ignored when read, and the old flat file reads as empty
+    writeFileSync(join(root, CHOICES_FILE), '{\n    "choices": {\n        "abra": "ihm",\n        "odd": 3,\n        "zub": "manual"\n    },\n    "fix_by_hand": [\n        "b",\n        "A b",\n        4,\n        "b"\n    ]\n}\n');
+    assert.deepEqual(readChoices(root), { choices: { abra: "ihm" }, fixByHand: ["b"] });
+    writeFileSync(join(root, CHOICES_FILE), '{\n    "abra": "ihm"\n}\n');
+    assert.deepEqual(readChoices(root), { choices: {}, fixByHand: [] });
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -98,9 +108,12 @@ test("with a review, only its icons take choices, and IHM where both agree is no
     assert.equal(readIndex(root)!.entries.length, 2);
     const writer = new ChoiceWriter(root, write(root));
     await assert.rejects(writer.set("nomon", "j"), /no icon nomon/);
-    assert.deepEqual(await writer.set("same", "ihm"), {});
-    assert.deepEqual(await writer.set("same", "j"), { same: "j" });
-    assert.deepEqual(await writer.set("other", "ihm"), { same: "j", other: "ihm" });
+    await assert.rejects(writer.flag("nomon", true), /no icon nomon/);
+    assert.deepEqual(await writer.set("same", "ihm"), { choices: {}, fixByHand: [] });
+    assert.deepEqual(await writer.set("same", "j"), { choices: { same: "j" }, fixByHand: [] });
+    assert.deepEqual(await writer.set("other", "ihm"), { choices: { same: "j", other: "ihm" }, fixByHand: [] });
+    // An icon where IHM and J are the same can be flagged too
+    assert.deepEqual((await writer.flag("same", true)).fixByHand, ["same"]);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -110,12 +123,15 @@ test("the page's filters, progress and moves", () => {
   const e = (key: string, differ: boolean): IconReviewEntry => ({ key, label: key, num: 1, kind: "base", differ,
     differ_frac: 0, differ_px: { normal: 0, shiny: 0 }, suspects: [], suspect_px: 0 });
   const entries = [e("a", true), e("b", false), e("c", true), e("d", true)];
-  const choices = { a: "j", d: "manual" } as const;
-  assert.deepEqual(filterEntries(entries, choices, "undecided").map((x) => x.key), ["c"]);
-  assert.deepEqual(filterEntries(entries, choices, "needs").map((x) => x.key), ["a", "c", "d"]);
-  assert.deepEqual(filterEntries(entries, choices, "all").length, 4);
-  assert.deepEqual(filterEntries(entries, choices, "j").map((x) => x.key), ["a"]);
-  assert.deepEqual(progress(entries, choices), { needed: 3, decided: 2, ihm: 0, j: 1, manual: 1 });
+  const choices = { a: "j", d: "ihm" } as const;
+  const review = { choices, fixByHand: ["a", "b", "c"] };
+  assert.deepEqual(filterEntries(entries, review, "undecided").map((x) => x.key), ["c"]);
+  assert.deepEqual(filterEntries(entries, review, "needs").map((x) => x.key), ["a", "c", "d"]);
+  assert.deepEqual(filterEntries(entries, review, "all").length, 4);
+  assert.deepEqual(filterEntries(entries, review, "j").map((x) => x.key), ["a"]);
+  assert.deepEqual(filterEntries(entries, review, "ihm").map((x) => x.key), ["d"]);
+  assert.deepEqual(filterEntries(entries, review, "flagged").map((x) => x.key), ["a", "b", "c"], "any icon, with or without a choice");
+  assert.deepEqual(progress(entries, review), { needed: 3, decided: 2, ihm: 1, j: 1, flagged: 3 });
   assert.equal(choiceOf(entries[1], choices), "ihm");
   assert.equal(choiceOf(entries[2], choices), null);
   assert.equal(step(entries, "a", 1), "b");

@@ -775,16 +775,19 @@ The user picks, icon by icon, between IHM and J; nothing in `res/pokemon/` chang
   icons).
 - **To decide:** IHM and J differ on **416** of the 744 icons (any pixel's normal or shiny colour; 307 by 3% or more,
   as in section 12). The other 328 keep IHM.
-- **Choices:** `res/paperwhite2/icon_remap_choices.json`, `{icon key: "ihm" | "j" | "manual"}`, written on each click
-  by the editor's server (`PUT /api/icon-review/choice`, keys sorted, the data tools' JSON layout). An icon without an
-  entry keeps IHM; choosing IHM where the two are the same writes no entry.
+- **Choices:** `res/paperwhite2/icon_remap_choices.json`, `{"choices": {icon key: "ihm" | "j"}, "fix_by_hand": [icon keys]}`,
+  written on each click by the editor's server (`PUT /api/icon-review/choice` for the base to fix from, `PUT
+  /api/icon-review/flag` for the flag; keys sorted, the data tools' JSON layout). An icon without a choice keeps IHM;
+  choosing IHM where the two are the same writes no entry. "Fix by hand" is an independent flag, not a third choice: any
+  icon can carry it, whichever base it has (or none), and the list is the checklist for the hand fixes.
 - **Page:** the editor's sidebar, Tools, **Icon review (temporary)**: one icon at a time on the box-tray grey, vanilla
   above IHM and J (normal and shiny, 4x, the two frames animated), the battle front normal and shiny for reference.
-  Click a candidate or press 1 (IHM), 2 (J), 3 (neither, fix by hand); arrows move. Filters: undecided (default),
-  needs a choice, all, and each choice; a progress count; suspects marked (⚑) with their reasons. Without
+  Click a candidate or press 1 (IHM), 2 (J), both of which go on to the next icon; the Fix by hand toggle (3) flags the
+  icon and stays on it; arrows move. Filters: undecided (default), needs a choice, all, kept IHM, kept J, flagged to fix
+  by hand; a progress count; suspects marked (⚑) with their reasons. Without
   `build/icon_review/` the page offers to generate it (the server runs the tool).
 - **Tests:** `tools/paperwhite2/test_icon_remap.py` (a made-up species with its own palettes, battle frames, icon and
   a palette-only form) and `editor/tests/icon-review.test.ts` (the tool run on that fixture through the server's
   generator, the choices file's round trip, the page's filters).
 - **Next:** once every icon is decided, write the chosen icons into `res/pokemon/` (indexed on the battle palettes
-  plus the two greys), fix the "manual" ones by hand, then remove the page.
+  plus the two greys), fix the flagged ones by hand, then remove the page.

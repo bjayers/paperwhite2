@@ -24,3 +24,4 @@
 .ir-suspects { margin: 0; padding-left: 16px; font-size: 12px; }
 .ir-flag { font-family: var(--mono); font-size: 11px; padding: 0 4px; border-radius: 3px; background: var(--warning-soft); color: var(--warning); }
 .ir-message { color: var(--error); font-size: 12px; }
+.ir-hand { background: var(--accent-soft); color: var(--accent); }

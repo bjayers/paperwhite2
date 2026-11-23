@@ -4,7 +4,7 @@ import { WRITE_HEADER, type BuildState, type DataFile, type Entry, type ScanMatc
   type SaveRequest, type SaveResult, type ServerEvent } from "../shared/api.ts";
 import { schemaPart, splitSchemaId, type Schema } from "../shared/schema.ts";
 import type { Usage, UsageKind } from "../server/usage.ts";
-import type { IconChoice, IconReviewDetail, IconReviewState } from "../server/iconReview.ts";
+import type { IconChoice, IconReviewDetail, IconReviewState, ReviewChoices } from "../server/iconReview.ts";
 import type { ArtReport, ItemIconCheck, ItemIcons, SpriteSheet, SpriteSheetCheck, TypeIconCheck, TypeIcons } from "../shared/api.ts";
 
 /** Whether a request failed because what it asked for isn't there (the server's 404: a file deleted on disk). */
@@ -533,7 +533,9 @@ export const api = {
   iconReviewIcon: (key: string) => request<IconReviewDetail>("GET", `/api/icon-review/icon?key=${encodeURIComponent(key)}`),
   /** Keeps a candidate for an icon (null clears it); the choices after. */
   iconReviewChoose: (key: string, choice: IconChoice | null) =>
-    request<{ choices: Record<string, IconChoice> }>("PUT", "/api/icon-review/choice", { key, choice }),
+    request<ReviewChoices>("PUT", "/api/icon-review/choice", { key, choice }),
+  iconReviewFlag: (key: string, flag: boolean) =>
+    request<ReviewChoices>("PUT", "/api/icon-review/flag", { key, flag }),
   /** Runs tools/paperwhite2/icon_remap.py generate in the background. */
   iconReviewGenerate: () => request<{ started: boolean }>("POST", "/api/icon-review/generate"),
   /** Removes a species' encounter file (the only kind the server lets go). */

@@ -1,5 +1,5 @@
 // The Icon review page (temporary): one icon at a time, its vanilla art above the two re-indexing methods' results
-// (IHM and J, each normal and shiny), and a click (or 1, 2, 3) keeps one for it. See model.ts and server/iconReview.ts.
+// (IHM and J, each normal and shiny), and a click (or 1, 2) keeps one for it; 3 flags the icon to fix by hand. See model.ts and server/iconReview.ts.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../api.ts";
@@ -42,7 +42,7 @@ function Icon({ hex, colours, frame, caption }: { hex: string; colours: (string 
   );
 }
 
-const CHOICE_LABEL: Record<IconChoice, string> = { ihm: "IHM", j: "J", manual: "by hand" };
+const CHOICE_LABEL: Record<IconChoice, string> = { ihm: "IHM", j: "J" };
 
 function Candidate({ detail, which, frame, chosen, onChoose }: {
   detail: IconReviewDetail; which: "ihm" | "j"; frame: number; chosen: boolean; onChoose: () => void;
@@ -104,8 +104,9 @@ export function IconReview() {
 
   const entries = state?.index?.entries ?? [];
   const choices = state?.choices ?? {};
-  const list = useMemo(() => filterEntries(entries, choices, filter), [entries, choices, filter]);
-  const counts = useMemo(() => progress(entries, choices), [entries, choices]);
+  const review = useMemo(() => ({ choices: state?.choices ?? {}, fixByHand: state?.fixByHand ?? [] }), [state?.choices, state?.fixByHand]);
+  const list = useMemo(() => filterEntries(entries, review, filter), [entries, review, filter]);
+  const counts = useMemo(() => progress(entries, review), [entries, review]);
   const entry: IconReviewEntry | undefined = entries.find((e) => e.key === key);
 
   // The first icon of the list when nothing (or nothing known) is shown
@@ -124,14 +125,26 @@ export function IconReview() {
     if (!key) return;
     const next = advance && choice !== null ? afterChoosing(list, key) : key;
     try {
-      const { choices: saved } = await api.iconReviewChoose(key, choice);
-      setState((s) => (s ? { ...s, choices: saved } : s));
+      const saved = await api.iconReviewChoose(key, choice);
+      setState((s) => (s ? { ...s, ...saved } : s));
       setMessage(null);
       if (next) setKey(next);
     } catch (e) {
       setMessage((e as Error).message);
     }
   }, [key, list, advance]);
+
+  /** Sets or clears the fix-by-hand flag; it never moves to another icon. */
+  const toggleFlag = useCallback(async () => {
+    if (!key) return;
+    try {
+      const saved = await api.iconReviewFlag(key, !(state?.fixByHand ?? []).includes(key));
+      setState((s) => (s ? { ...s, ...saved } : s));
+      setMessage(null);
+    } catch (e) {
+      setMessage((e as Error).message);
+    }
+  }, [key, state?.fixByHand]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -140,7 +153,7 @@ export function IconReview() {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === "1") choose("ihm");
       else if (e.key === "2") choose("j");
-      else if (e.key === "3") choose("manual");
+      else if (e.key === "3") toggleFlag();
       else if (e.key === "ArrowRight" || e.key === "ArrowDown") setKey((k) => step(list, k, 1));
       else if (e.key === "ArrowLeft" || e.key === "ArrowUp") setKey((k) => step(list, k, -1));
       else return;
@@ -148,7 +161,7 @@ export function IconReview() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [choose, list]);
+  }, [choose, toggleFlag, list]);
 
   const generate = async () => {
     const { started } = await api.iconReviewGenerate();
@@ -159,6 +172,7 @@ export function IconReview() {
   if (!state) return <div className="ir-page"><p className="muted">{message ?? "Reading…"}</p></div>;
   const gen = state.generate;
   const chosen = entry ? choiceOf(entry, choices) : null;
+  const flagged = entry ? review.fixByHand.includes(entry.key) : false;
   const at = list.findIndex((e) => e.key === key);
   const filterHint = FILTERS.find((f) => f.id === filter)?.hint;
 
@@ -184,7 +198,7 @@ export function IconReview() {
 
       {state.ready && (
         <section className="ir-section">
-          <h5>Review <span className="muted">{counts.decided} of {counts.needed} decided · IHM {counts.ihm} · J {counts.j} · by hand {counts.manual}</span></h5>
+          <h5>Review <span className="muted">{counts.decided} of {counts.needed} decided · IHM {counts.ihm} · J {counts.j} · fix by hand {counts.flagged}</span></h5>
           <div className="ir-grid">
             <span className="ir-label">Show</span>
             <span className="ir-row">
@@ -198,11 +212,11 @@ export function IconReview() {
               <button onClick={() => setKey((k) => step(list, k, -1))} disabled={!list.length} title="The one before (←)">←</button>
               <select value={key ?? ""} onChange={(e) => setKey(e.target.value)}>
                 {(list.length && at >= 0 ? list : entry ? [entry, ...list] : list).map((e) => (
-                  <option key={e.key} value={e.key}>{e.label} {e.key}{e.suspects.length ? " ⚑" : ""}{choices[e.key] ? ` (${CHOICE_LABEL[choices[e.key]]})` : ""}</option>
+                  <option key={e.key} value={e.key}>{e.label} {e.key}{e.suspects.length ? " ⚑" : ""}{choices[e.key] ? ` (${CHOICE_LABEL[choices[e.key]]})` : ""}{review.fixByHand.includes(e.key) ? " ✎" : ""}</option>
                 ))}
               </select>
               <button onClick={() => setKey((k) => step(list, k, 1))} disabled={!list.length} title="The next one (→)">→</button>
-              <span className="hint">{at >= 0 ? `${at + 1} of ${list.length}` : "not in this list"}; ← → move, 1 IHM, 2 J, 3 by hand</span>
+              <span className="hint">{at >= 0 ? `${at + 1} of ${list.length}` : "not in this list"}; ← → move, 1 IHM, 2 J, 3 fix by hand (a flag: stays on the icon)</span>
             </span>
             <span className="ir-label">Frames</span>
             <span className="ir-row">
@@ -221,9 +235,11 @@ export function IconReview() {
           <h5>{entry.label} {entry.key} <span className="muted">{entry.kind.replace("_", " ")} ·{" "}
             {entry.differ ? `IHM and J differ on ${entry.differ_frac >= 0.01 ? `${Math.round(100 * entry.differ_frac)}%` : "under 1%"} of its pixels` : "IHM and J are the same"}
             {" · "}{chosen ? `kept: ${CHOICE_LABEL[chosen]}` : "undecided"}</span>
+            {flagged && <span className="ir-flag ir-hand" title="Flagged to fix by hand later">✎ fix by hand</span>}
             {entry.suspects.length > 0 && <span className="ir-flag" title="On the suspects list: see Suspects below">⚑ suspect</span>}</h5>
           <div className="ir-actions">
-            <button className={chosen === "manual" ? "active" : ""} onClick={() => choose("manual")} title="Neither: fix this icon by hand (3)">Neither, fix by hand <span className="muted">3</span></button>
+            <button className={flagged ? "active" : ""} aria-pressed={flagged} onClick={toggleFlag}
+              title="Flag this icon to fix by hand later, on top of whichever of IHM and J you keep (3); it doesn't move on">Fix by hand <span className="muted">3</span></button>
             {choices[entry.key] && <button onClick={() => choose(null)} title="Clear the choice">Clear the choice</button>}
           </div>
           <div className="ir-stage">
