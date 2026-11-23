@@ -136,6 +136,12 @@ export function IconReview() {
     if (!entries.length) return;
     if (!key || !entries.some((e) => e.key === key)) setKey(list[0]?.key ?? entries[0].key);
   }, [entries, list, key]);
+  // A filter that leaves the shown icon out of its list goes to the list's first icon
+  useEffect(() => {
+    if (list.length && !list.some((e) => e.key === key)) setKey(list[0].key);
+    // (only when the filter changes: choosing can drop the shown icon from Undecided, and afterChoosing moves on)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter]);
   useEffect(() => {
     if (!key || !state?.ready) return;
     let live = true;
@@ -237,7 +243,7 @@ export function IconReview() {
               <button onClick={() => setKey((k) => step(list, k, -1))} disabled={!list.length} title="The one before (←)">←</button>
               <select value={key ?? ""} onChange={(e) => setKey(e.target.value)}>
                 {(list.length && at >= 0 ? list : entry ? [entry, ...list] : list).map((e) => (
-                  <option key={e.key} value={e.key}>{e.label} {e.key}{e.suspects.length ? " ⚑" : ""}{choices[e.key] ? ` (${CHOICE_LABEL[choices[e.key]]})` : ""}{review.fixByHand.includes(e.key) ? " ✎" : ""}</option>
+                  <option key={e.key} value={e.key}>{e.label} {e.key}{e.suspects.length ? " (suspect)" : ""}{choices[e.key] ? ` (${CHOICE_LABEL[choices[e.key]]})` : ""}{review.fixByHand.includes(e.key) ? " ✎" : ""}</option>
                 ))}
               </select>
               <button onClick={() => setKey((k) => step(list, k, 1))} disabled={!list.length} title="The next one (→)">→</button>
