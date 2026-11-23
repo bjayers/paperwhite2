@@ -295,3 +295,37 @@ def test_k_takes_the_pale_tint():
     assert by_vanilla[1] == {("grey", 15)}
     assert by_vanilla[2] == {3}, "the grey body takes the pale tint the art uses"
     assert any(c.startswith("grey for tint") for c in changes)
+
+
+def test_apply_writes_the_chosen_icons(tmp_path):
+    """apply: each icon's choice (IHM without one) as icon_battle.png and .json; icons fixed by hand since are kept
+    unless forced; the hand-fix list starts from the review's flags and is left alone once there."""
+    from tools.paperwhite2 import sprite_edit
+    root = make_fixture(tmp_path)
+    res = root / "res"
+    (res / "paperwhite2").mkdir(parents=True, exist_ok=True)
+    (res / icon_remap.CHOICES_FILE).write_text(json.dumps({"choices": {"fakemon": "k"}, "fix_by_hand": ["fakemon"]}))
+    icon_remap.generate(res, icon_remap.species_order(root), root / "out", workers=1)
+    vanilla = (res / "pokemon" / "fakemon" / "icon.png").read_bytes()
+    canon = lambda c: sprite_edit.canonical(bytes.fromhex(c["pixels"]), c["slots"])  # noqa: E731
+    r = icon_remap.apply(res, root / "out")
+    assert sorted(r["written"]) == ["fakemon", "fakemon_form_1"] and r["methods"] == {"k": 1, "ihm": 1}
+    k = icon(root, "fakemon")["candidates"]["k"]
+    assert sprite_edit.read_icon(res / "pokemon", "fakemon") == canon(k)
+    form = icon(root, "fakemon_form_1")["ihm"]
+    assert sprite_edit.read_icon(res / "pokemon", "fakemon_form_1") == canon(form)
+    assert (res / "pokemon" / "fakemon" / "icon.png").read_bytes() == vanilla, "the vanilla icon stays"
+    fix_list = res / icon_remap.FIX_LIST_FILE
+    assert json.loads(fix_list.read_text()) == {"fix_by_hand": ["fakemon"]} and r["fix_list"] == 1
+    # Again: nothing to do; a hand fix is kept, and --force overwrites it
+    assert icon_remap.apply(res, root / "out")["same"] == ["fakemon", "fakemon_form_1"]
+    px, slots = sprite_edit.read_icon(res / "pokemon", "fakemon")
+    edited = bytes([14 if px[0] != 14 else 15]) + px[1:]
+    sprite_edit.write_files(sprite_edit.icon_files(res / "pokemon", "fakemon", edited, slots))
+    fix_list.write_text(json.dumps({"fix_by_hand": []}))
+    r = icon_remap.apply(res, root / "out")
+    assert r["kept"] == ["fakemon"] and r["fix_list"] is None
+    assert sprite_edit.read_icon(res / "pokemon", "fakemon")[0] == edited
+    assert json.loads(fix_list.read_text()) == {"fix_by_hand": []}, "the list is the editor's once it exists"
+    assert icon_remap.apply(res, root / "out", force=True)["written"] == ["fakemon"]
+    assert sprite_edit.read_icon(res / "pokemon", "fakemon")[0] == canon(k)[0]

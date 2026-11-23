@@ -41,6 +41,12 @@ choice is already one of the four below, also get four more candidates for the r
         palettes, battle front, and for those icons their "candidates" g2, h, ih and k), vanilla.png, ihm.png and
         j.png (index images with the normal colours through their slots). Regenerable; nothing in res/ changes.
         KEYs limit it to some icons (with their palette-only forms).
+    icon_remap.py apply [--res DIR] [--review DIR] [--force] [--dry-run]
+        writes each icon's chosen candidate (IHM without a choice) from generate's output into res/pokemon as
+        icon_battle.png and icon_battle.json (icon_female_battle.* for a female icon; sprite_edit.py has the format),
+        next to the vanilla icon.png the game still builds from. Icons that differ from their candidate (fixed by
+        hand) are kept unless --force. Starts res/paperwhite2/icon_fix_list.json (the hand-fix checklist) from the
+        review's fix_by_hand when it is missing (section 15).
 
 Standard library only (the build's python3).
 """
@@ -57,6 +63,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
+from tools.data.datajson import dumps  # noqa: E402
 from tools.data.nitro_2d import read_indexed_png, read_palette, write_indexed_png  # noqa: E402
 from tools.paperwhite2 import palette_remap as pr  # noqa: E402
 from tools.paperwhite2.palette_remap import chroma, hue_difference, oklab  # noqa: E402
@@ -1853,6 +1860,60 @@ def write_icon(res: Path, r, folder: Path):
         (folder / f"{name}.png").write_bytes(write_indexed_png(32, 64, bytes.fromhex(r[name]["pixels"]), pal))
 
 
+FIX_LIST_FILE = Path("paperwhite2") / "icon_fix_list.json"   # under res/: the hand-fix checklist (section 15)
+
+
+def apply(res: Path, review_dir: Path, force: bool = False, dry_run: bool = False) -> dict:
+    """Writes each reviewed icon's chosen candidate (its choice, IHM without one) next to its vanilla art as
+    icon_battle.png and icon_battle.json (sprite_edit.py has the format), from the candidates in review_dir; the game
+    still builds from icon.png. An icon whose files are already there and differ (fixed by hand since) is left alone
+    unless force. The hand-fix checklist, res/paperwhite2/icon_fix_list.json, starts as the review's fix_by_hand and is
+    left alone once it exists (the Sprite Editor's "Done" takes icons off it)."""
+    from tools.paperwhite2 import sprite_edit
+    index_path = review_dir / "index.json"
+    if not index_path.is_file():
+        raise SystemExit(f"{index_path}: missing; run icon_remap.py generate first")
+    index = json.loads(index_path.read_text())
+    review = read_choices(res / CHOICES_FILE)
+    known = {e["key"] for e in index["entries"]}
+    stray = sorted(set(review["choices"]) - known)
+    if stray:
+        raise SystemExit(f"choices for icons the review doesn't have: {', '.join(stray)}")
+    out = dict(written=[], same=[], kept=[], merged=0, methods=collections.Counter())
+    pokemon = res / "pokemon"
+    writes = {}
+    for entry in index["entries"]:
+        key = entry["key"]
+        method = review["choices"].get(key, "ihm")
+        detail = json.loads((review_dir / "icons" / key / "icon.json").read_text())
+        candidate = detail[method] if method in ("ihm", "j") else (detail.get("candidates") or {}).get(method)
+        if candidate is None:
+            raise SystemExit(f"{key}: chose {method.upper()}, which the review in {review_dir} doesn't have; "
+                             "generate again with the same choices file")
+        pixels, slots = sprite_edit.canonical(bytes.fromhex(candidate["pixels"]), candidate["slots"])
+        out["merged"] += len(slots) != len(candidate["slots"])
+        files = sprite_edit.icon_files(pokemon, key, pixels, slots)
+        out["methods"][method] += 1
+        existing = {p: p.read_bytes() for p in files if p.is_file()}
+        if existing and existing == files:
+            out["same"].append(key)
+        elif existing and not force:
+            out["kept"].append(key)
+        else:
+            out["written"].append(key)
+            writes.update(files)
+    # Every icon checked before any is written
+    if not dry_run:
+        sprite_edit.write_files(writes)
+    fix_list = res / FIX_LIST_FILE
+    out["fix_list"] = None
+    if not fix_list.is_file():
+        out["fix_list"] = len(review["fix_by_hand"])
+        if not dry_run:
+            fix_list.write_text(dumps({"fix_by_hand": sorted(review["fix_by_hand"])}) + "\n")
+    return out
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = parser.add_subparsers(dest="command", required=True)
@@ -1862,7 +1923,21 @@ def main(argv=None):
     g.add_argument("--out", type=Path, default=ROOT / "build" / "icon_review")
     g.add_argument("-j", "--jobs", type=int, default=max(1, min(8, (os.cpu_count() or 2) - 1)))
     g.add_argument("keys", nargs="*")
+    a = sub.add_parser("apply", help="write the chosen icons into res/pokemon as icon_battle.png and .json")
+    a.add_argument("--res", type=Path, default=ROOT / "res")
+    a.add_argument("--review", type=Path, default=ROOT / "build" / "icon_review", help="generate's output")
+    a.add_argument("--force", action="store_true", help="also overwrite icons that differ (fixed by hand)")
+    a.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
+    if args.command == "apply":
+        r = apply(args.res, args.review, args.force, args.dry_run)
+        methods = ", ".join(f"{m.upper()} {n}" for m, n in sorted(r["methods"].items(), key=lambda x: -x[1]))
+        print(f"{'would write' if args.dry_run else 'wrote'} {len(r['written'])} icons, {len(r['same'])} unchanged, "
+              f"{len(r['kept'])} kept as they are (they differ: fixed by hand? --force overwrites)"
+              f"{': ' + ', '.join(r['kept']) if r['kept'] else ''}; methods {methods}; "
+              f"{r['merged']} with a battle index in two slots merged into one"
+              + (f"; started {FIX_LIST_FILE} with {r['fix_list']} icons" if r["fix_list"] is not None else ""))
+        return
     species = args.species or args.res.resolve().parent / "generated" / "species.txt"
     names = species_order(species.parent.parent)
     summary = generate(args.res, names, args.out, args.jobs, set(args.keys) or None)

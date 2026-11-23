@@ -774,6 +774,23 @@ armature bakes.
 - **Preview:** the bones, from each joint toward its picture, with dashed links to the parent (or to the root's ring
   at the feet); the Bones toggle hides them. Ctrl+Z and Ctrl+Y undo across both files in one history.
 
+## The Sprite Editor
+
+Pixel editing of a Pokémon's party/box icon on its battle palettes (`icon_battle.png` and `icon_battle.json`, which
+the game doesn't build from yet), or of one of its walking or follower sheets, beside its battle sprite
+(`src/modules/spriteeditor/`; docs/paperwhite2/design/shiny-icons.md section 15).
+
+- **Left:** the battle sprite, which you click to pick a colour, with the other palette above it and the palette's
+  swatches below.
+- **Right:** the sprite, large. Above it are the vanilla art (or the sheet before the battle-palette remap, from git)
+  and the sprite in the other palette. Clicking an other-palette view swaps the page between normal and shiny.
+- **Tools:** pencil (B) with a hover preview, fill (G), eyedropper (I or Alt+click), undo and redo, zoom, a grid,
+  frames, and editing a palette colour (with a warning).
+- **Icon rules:** an icon has 13 battle slots plus the two outline greys, and only the transparent swatch clears a
+  pixel.
+- **Lists:** the Hand-fix list steps through `res/paperwhite2/icon_fix_list.json`, with Done (unflag).
+- **Saving:** through `tools/paperwhite2/sprite_edit.py`, which checks and writes the files.
+
 ## The Move Editor and the Ability Editor
 
 Every move (`src/modules/moves/`, `res/moves/<move>/data.json`) and every ability (`src/modules/abilities/`,

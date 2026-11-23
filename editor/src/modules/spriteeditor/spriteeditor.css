@@ -1,0 +1,39 @@
+/* The Sprite Editor: headed sections, a label column beside the controls, the references above the big views. */
+.se-page { padding: 12px 16px; overflow: auto; height: 100%; box-sizing: border-box; }
+.se-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; margin-bottom: 4px; }
+.se-head h2 { margin: 0 8px 0 0; }
+.se-status { font-size: 12px; padding: 1px 8px; border-radius: 4px; background: var(--panel-2); color: var(--muted); }
+.se-status.dirty { background: var(--warning-soft); color: var(--warning); }
+.se-error { color: var(--error); font-size: 12px; }
+.se-warning { color: var(--warning); }
+.se-section { border: 1px solid var(--border); border-radius: 6px; margin: 10px 0; padding: 10px 12px; }
+.se-section h5 { margin: 0 0 8px; font-size: 13px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.se-section h5 .muted { font-weight: normal; }
+.se-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+.se-grid { display: grid; grid-template-columns: 84px 1fr; column-gap: 12px; row-gap: 10px; align-items: center; margin: 4px 0 10px; }
+.se-label { color: var(--muted); font-size: 12px; text-align: right; }
+.se-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.se-picker { min-width: 280px; }
+.se-inline { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; }
+.se-key { font-family: var(--mono); font-size: 10px; padding: 0 4px; border: 1px solid var(--border); border-radius: 3px; color: var(--muted); }
+.se-columns { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 0 16px; align-items: start; }
+.se-column { min-width: 0; }
+.se-stack { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.se-refs { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; }
+.se-ref { margin: 0; display: flex; flex-direction: column; gap: 3px; cursor: default; }
+.se-ref[title] { cursor: pointer; }
+.se-ref[title]:hover canvas { outline: 2px solid var(--accent); }
+.se-big { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.se-pixels { image-rendering: pixelated; display: block; border: 1px solid var(--border); touch-action: none; }
+.se-frames { gap: 6px; }
+.se-frame { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; border: 2px solid var(--border); border-radius: 6px; }
+.se-frame.active { border-color: var(--accent); background: var(--accent-soft); }
+.se-swatches { display: grid; grid-template-columns: repeat(9, 34px); gap: 6px; margin-bottom: 6px; }
+.se-swatch { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 3px; border: 2px solid var(--border); border-radius: 6px; position: relative; }
+.se-swatch.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.se-swatch.in-icon::after { content: ""; position: absolute; top: 2px; right: 2px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.se-chip { width: 22px; height: 22px; border-radius: 3px; border: 1px solid rgba(0, 0, 0, 0.3);
+  background: repeating-conic-gradient(#cfcfcf 0 25%, #f4f4f4 0 50%) 0 0 / 8px 8px; }
+.se-chip-label { font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.se-hex { width: 80px; font-family: var(--mono); }
+.se-settings { margin-top: 14px; }

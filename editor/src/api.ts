@@ -5,6 +5,7 @@ import { WRITE_HEADER, type BuildState, type DataFile, type Entry, type ScanMatc
 import { schemaPart, splitSchemaId, type Schema } from "../shared/schema.ts";
 import type { Usage, UsageKind } from "../server/usage.ts";
 import type { IconChoice, IconReviewDetail, IconReviewState, ReviewChoices } from "../server/iconReview.ts";
+import type { SpriteSave, SpriteSaveResult } from "../server/spriteEditor.ts";
 import type { ArtReport, ItemIconCheck, ItemIcons, SpriteSheet, SpriteSheetCheck, TypeIconCheck, TypeIcons } from "../shared/api.ts";
 
 /** Whether a request failed because what it asked for isn't there (the server's 404: a file deleted on disk). */
@@ -537,6 +538,11 @@ export const api = {
   iconReviewFlag: (key: string, flag: boolean) =>
     request<ReviewChoices>("PUT", "/api/icon-review/flag", { key, flag }),
   /** Runs tools/paperwhite2/icon_remap.py generate in the background. */
+  /** The Sprite Editor's save of an icon or a sheet (sprite_edit.py writes and checks it). */
+  spriteSave: (save: SpriteSave) => request<SpriteSaveResult>("POST", "/api/sprite-editor/save", save),
+  /** A sheet as it was before the battle-palette remap: its PNG (base64) and sprite.pal text, null where it wasn't. */
+  spriteBeforeRemap: (folder: string) =>
+    request<{ image: string | null; palette: string | null }>("GET", `/api/sprite-editor/before-remap?folder=${encodeURIComponent(folder)}`),
   iconReviewGenerate: () => request<{ started: boolean }>("POST", "/api/icon-review/generate"),
   /** Removes a species' encounter file (the only kind the server lets go). */
   /** How many zones the weather calendar holds, and where that limit was read. */

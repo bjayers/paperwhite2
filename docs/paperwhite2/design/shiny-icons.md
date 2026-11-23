@@ -898,3 +898,93 @@ then the most-used twin swap.
   pale tint; `test_k_keeps_its_base` (unflagged on G2 the candidates stay, K from `k_base` or the last run). In
   `icon-review.test.ts`, the generator writes the candidates, the display order, the server takes K only for an icon
   with it, keep and unflag in one write with K the same after generating again, and the filter keeping the shown icon.
+
+## 15. Applied and the sprite editor (2026-11-22)
+
+The review is finished. Every icon's chosen candidate is now in `res/pokemon/`, next to its vanilla art. The game still
+builds from the vanilla `icon.png` and the three shared banks until the in-game work lands: the hack ROM built after
+the apply is byte-identical to the one before (`verify_dsi_rom.py`: intact).
+
+### 15.1 The files
+
+- **Per icon, beside `icon.png`:** `icon_battle.png` and `icon_battle.json`. A female icon has `icon_female_battle.*`.
+  A form has them in its `form_<n>/`, including Arceus' 17 palette-only forms, which show the base icon's pixels on
+  the form's palettes. `tools/paperwhite2/sprite_edit.py` defines the format.
+- **The PNG:** 32x64, indexed, frame 0 above frame 1. Its 16 colours:
+  - 0: the battle palette's colour 0, transparent;
+  - 1-13: the slots' `normal.pal` colours, so the file views correctly in any image editor; unused slots are magenta;
+  - 14-15: the outline greys `#62625a` and `#414141`.
+  
+  The shiny is the same pixels through `shiny.pal`.
+- **The JSON:** `{"slots": [battle indices 1-15, at most 13, no repeats], "greys": ["#62625a", "#414141"]}`, in the data
+  tools' layout.
+- **`icon_remap.py apply`** writes the files from `build/icon_review/`: each icon's choice, or IHM where it has none.
+  - It refuses a choice that the review in `build/icon_review/` doesn't have, and checks every icon before writing any.
+  - It keeps icons whose files differ from their candidate (fixed by hand since) unless `--force`.
+  - A battle index the methods put in two slots (65 icons; one slot per vanilla colour) is merged into one slot
+    (`sprite_edit.canonical`), which changes no colour, normal or shiny.
+- **Applied:** 744 icons. By method: IHM 539 (282 picked plus 257 without a choice), J 103, G2 57, K 32, IH 7, H 6.
+  - Before applying, the candidates were regenerated in a fresh worktree. For every icon's chosen method they matched
+    the main checkout's `build/icon_review/` pixel for pixel, slots included.
+  - Checked after writing: every icon's normal and shiny colours equal its candidate's, and its transparency equals
+    the vanilla icon's.
+  - About 330 KB in `res/`.
+- **The hand-fix checklist** moves to `res/paperwhite2/icon_fix_list.json` (`{"fix_by_hand": [keys]}`, 78 icons).
+  - `apply` starts it from the review's `fix_by_hand` when the file is missing, and leaves it alone after that.
+  - The Sprite Editor's **Done** takes icons off it.
+  - `icon_remap_choices.json` stays as the review's record, so `generate` gives the same candidates. Its
+    `fix_by_hand` is no longer updated. The Icon review page can be removed.
+
+### 15.2 The Sprite Editor (editor, Editors, **Sprite Editor**)
+
+- **Layout:**
+  - **Left:** the species' or form's battle sprite. Front, back and the two sheets can be picked; a female icon gets
+    the female art. The sprite in the other palette is above it, and the palette's swatches are below it. Clicking the
+    battle sprite picks that battle index.
+  - **Right:** the sprite being edited, zoomable (6-24x), with a grid and a choice of checker or box-tray grey behind
+    transparency. Above it are two references:
+    - the vanilla art: an icon's `icon.png` in its bank colours; a sheet as it was before the battle-palette remap,
+      read with `git show 6d04855193^:…`, local only;
+    - the edited sprite in the other palette.
+
+    Clicking either reference in the other palette swaps the page's palette. The big views then show shiny colours,
+    the references normal, and editing stays on the same indices.
+- **Tools:**
+  - pencil (B), with brushes of 1-3 px and a hover preview of the pixels it would set;
+  - fill (G): a 4-connected flood of one index, within the frame;
+  - eyedropper (I, or Alt+click), on either side;
+  - undo and redo (Ctrl+Z, Ctrl+Y);
+  - save (Ctrl+S);
+  - frame thumbnails: the icon's 2 frames, or a sheet's frames, named as on the follower pages.
+- **Swatches:**
+  - For an icon: battle indices 1-15, a dot on the ones the icon has, the two greys and transparency. Painting a
+    battle index the icon lacks takes a slot no pixel uses any more, or a new one. A 14th slot is refused with a
+    warning.
+  - Index 0 can only be painted with the transparent swatch. The eyedropper ignores transparency, so a coloured pixel
+    never turns transparent by accident.
+- **Edit colour:** changes one colour of the battle `normal.pal` or `shiny.pal` (the one shown), after a warning that it
+  also changes the battle sprite and the sheets or shiny followers. For an opted-out sheet it changes its own
+  `sprite.pal`.
+- **Sheets:**
+  - The walking and follower sheets whose `"palette"` names the group. Rows that play another group's sheet through a
+    map have no sheet of their own, so they aren't listed.
+  - The opted-out sheets (Castform, Cherrim, Hydrapple, the ??? Arceus) are listed under their species. They are
+    edited on their own `sprite.pal`; the page says they have no battle link and no shiny colours, and sampling the
+    battle sprite is off for them.
+- **Navigation:**
+  - Two lists: **Hand-fix list** (the default) and **All icons**, in dex order, with a search picker.
+  - In the hand-fix list: Previous, Next, and **Done (unflag)**, which saves any unsaved change first and then moves on.
+  - The header says Saved or Unsaved changes. Leaving unsaved changes asks first.
+- **Save:** `POST /api/sprite-editor/save` runs `sprite_edit.py save-icon|save-sheet`, which checks and writes the
+  files as `apply` does: the PNG via `nitro_2d.write_indexed_png`, the JSON via `datajson`.
+  - An icon is saved canonical: repeated battle indices merged, unused slots dropped.
+  - A sheet keeps its size, coloured from `normal.pal`, or `sprite.pal` when opted out.
+  - A refused save writes nothing.
+- **Tests:**
+  - `test_sprite_edit.py`: keys and paths, the round trip, the checks, the save command, sheets, opt-out colours and
+    paths outside `res/field/actors`.
+  - `test_icon_remap.py`'s `test_apply_writes_the_chosen_icons`: choices, `same`/`kept`/`--force`, and the fix list.
+  - `editor/tests/sprite-editor.test.ts`: slot add, reuse and limit, colours and samples, the palette swap, pencil,
+    lines and fill, `canonicalIcon` against Python's, and the server's save round trip. All on fixtures.
+- **Next:** the in-game work: icons drawn from `icon_battle.png` with their slots coloured from the battle palettes
+  (section 6). Then retire the vanilla banks and the review page.

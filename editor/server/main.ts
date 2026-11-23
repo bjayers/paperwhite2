@@ -19,6 +19,7 @@ import { loadSettings } from "./settings.ts";
 import { UsageCache } from "./usage.ts";
 import { removable, weatherCalendarLimit } from "./weather.ts";
 import { ChoiceWriter, ReviewGenerator, isChoice, readDetail, reviewState } from "./iconReview.ts";
+import { BEFORE_REMAP, beforeRemapPaths, saveSprite } from "./spriteEditor.ts";
 
 // The checkout this folder is in; PAPERWHITE_ROOT points it at another, as the tests do with a scratch copy.
 const ROOT = resolve(process.env.PAPERWHITE_ROOT ?? join(import.meta.dirname, "../.."));
@@ -1014,6 +1015,25 @@ const routes: Record<string, Handler> = {
     }
   },
   "POST /api/icon-review/generate": (_req, res) => json(res, { started: iconReview.start() }),
+  // The Sprite Editor (server/spriteEditor.ts): an icon on its battle palettes or a walking/follower sheet saved through
+  // sprite_edit.py, and a sheet as it was before the battle-palette remap (git, read only)
+  "POST /api/sprite-editor/save": async (req, res) => {
+    const result = await saveSprite((script, args) => python.tool(script, args), join(ROOT, "res"), await readJson(req));
+    if (result.ok) gitMayHaveChanged();
+    json(res, result);
+  },
+  "GET /api/sprite-editor/before-remap": async (_req, res, url) => {
+    const paths = beforeRemapPaths(url.searchParams.get("folder") ?? "");
+    if (!paths) return error(res, 400, "Name a sheet's folder under res/field/actors");
+    let png: Buffer;
+    try {
+      png = await git.show(BEFORE_REMAP, paths.png);
+    } catch {
+      return json(res, { image: null, palette: null });
+    }
+    const palette = await git.show(BEFORE_REMAP, paths.pal).then((b) => b.toString("utf8"), () => null);
+    json(res, { image: png.toString("base64"), palette });
+  },
   "GET /api/build": (_req, res) => json(res, builder.state),
   "POST /api/build": (_req, res) => json(res, { started: builder.start(settings.buildCommand) }),
   "POST /api/build/stop": (_req, res) => {

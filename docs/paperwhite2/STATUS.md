@@ -2,6 +2,23 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-22: Icons applied to res/, and the Sprite Editor (ROM session)
+
+- **Applied:** `icon_remap.py apply` wrote all 744 reviewed icons as `icon_battle.png` and `icon_battle.json` (female:
+  `icon_female_battle.*`) next to the vanilla art. By method: IHM 539, J 103, G2 57, K 32, IH 7, H 6. In 65 icons a
+  battle index sat in two slots and was merged, which changes no colour.
+  - The game still builds from `icon.png` and the shared banks: the hack ROM is byte-identical to before, and the DSi
+    check says intact.
+  - The hand-fix checklist is now `res/paperwhite2/icon_fix_list.json` (78 icons).
+- **Sprite Editor** (Editors): pixel editing of an icon on its battle palettes, or of a walking or follower sheet,
+  beside the battle sprite. The other palette is shown above both sides, and clicking it swaps the page's palette.
+  - Tools: pencil with a hover preview, fill, eyedropper, undo and redo, and editing a palette colour (with a warning).
+  - An icon is limited to 13 slots, and only the transparent swatch can clear a coloured pixel.
+  - The hand-fix list has Done (unflag). Saves go through `tools/paperwhite2/sprite_edit.py`.
+- **Tested:** Python tests (`test_sprite_edit.py` and the new apply test in `test_icon_remap.py`), editor tsc, npm
+  test and vite build, the hack build before and after (`cmp` identical), and screenshots against a scratch copy.
+  Details: shiny-icons.md section 15.
+
 ## 2026-11-22: Flagged icons: patterns, method K and the Flagged review mode (ROM session)
 
 - **Patterns** of the 131 icons flagged to fix by hand (among the 416 reviewed): missing battle colour family (27),
