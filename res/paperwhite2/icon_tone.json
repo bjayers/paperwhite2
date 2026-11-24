@@ -1,6 +1,6 @@
 {
     "enabled": true,
-    "strength": 0.5,
+    "strength": 0.6,
     "lightness_spread": 0.12,
     "min_contrast": 0.5,
     "chroma_knee": 0.18,
