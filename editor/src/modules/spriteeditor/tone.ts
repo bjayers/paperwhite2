@@ -17,9 +17,13 @@ export interface ToneParams {
   min_contrast: number;
   chroma_knee: number;
   chroma_above_knee: number;
+  saturation_max: number;
+  dark_floor: number;
+  dark_knee: number;
 }
 
-const PARAMETERS = ["strength", "lightness_spread", "min_contrast", "chroma_knee", "chroma_above_knee"] as const;
+const PARAMETERS = ["strength", "lightness_spread", "min_contrast", "chroma_knee", "chroma_above_knee", "saturation_max",
+  "dark_floor", "dark_knee"] as const;
 
 /** icon_tone.json's parameters, or null when the file doesn't hold them (icon_tone.load's checks). */
 export function readTone(text: string | null): ToneParams | null {
@@ -28,7 +32,7 @@ export function readTone(text: string | null): ToneParams | null {
     const data = JSON.parse(text) as Record<string, unknown>;
     if (typeof data.enabled !== "boolean") return null;
     if (PARAMETERS.some((p) => typeof data[p] !== "number" || (data[p] as number) < 0)) return null;
-    if ((data.strength as number) > 1 || (data.min_contrast as number) > 1 || (data.chroma_above_knee as number) > 1) return null;
+    if ((["strength", "min_contrast", "chroma_above_knee", "dark_floor", "dark_knee"] as const).some((p) => (data[p] as number) > 1)) return null;
     return data as unknown as ToneParams;
   } catch {
     return null;
@@ -78,6 +82,18 @@ export function srgb(lightness: number, chroma: number, hue: number): Rgb {
 }
 
 /** An icon palette's 16 colours toned (icon_tone.tone): counts are the icon's pixels at each index. */
+/** The relative-saturation cap, then the soft dark floor (icon_tone.limits). */
+export function limits(lightness: number, chroma: number, params: ToneParams): [number, number] {
+  const cap = params.saturation_max;
+  if (cap > 0 && chroma > cap * lightness) {
+    lightness = Math.min(lightness + (chroma - cap * lightness), 1);
+    chroma = Math.min(chroma, cap * lightness);
+  }
+  const low = params.dark_floor, knee = params.dark_knee;
+  if (knee > low && lightness < knee) lightness = low + lightness * (knee - low) / knee;
+  return [lightness, chroma];
+}
+
 export function tone(colours: Rgb[], counts: number[], params: ToneParams, strength = params.strength): Rgb[] {
   if (colours.length !== COLOURS || counts.length !== COLOURS) throw new Error(`${colours.length} colours and ${counts.length} counts, not ${COLOURS}`);
   const used = [...Array(COLOURS).keys()].filter((i) => !FIXED.has(i) && counts[i] > 0);
@@ -100,6 +116,7 @@ export function tone(colours: Rgb[], counts: number[], params: ToneParams, stren
     let [lightness, chroma, hue] = at(i);
     lightness = top - (top - lightness) * k;
     if (chroma > knee) chroma -= strength * (chroma - knee) * (1 - params.chroma_above_knee);
+    [lightness, chroma] = limits(lightness, chroma, params);
     return srgb(lightness, chroma, hue);
   });
 }

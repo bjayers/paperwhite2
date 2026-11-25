@@ -9,7 +9,8 @@ import type { Rgb } from "../src/modules/spriteeditor/model.ts";
 import { readTone, tone, tonedColours, type ToneParams } from "../src/modules/spriteeditor/tone.ts";
 
 const REPO = resolve(import.meta.dirname, "../..");
-const PARAMS: ToneParams = { enabled: true, strength: 1, lightness_spread: 0.12, min_contrast: 0.5, chroma_knee: 0.18, chroma_above_knee: 0.5 };
+const PARAMS: ToneParams = { enabled: true, strength: 1, lightness_spread: 0.12, min_contrast: 0.5, chroma_knee: 0.18, chroma_above_knee: 0.5,
+  saturation_max: 0.24, dark_floor: 0.32, dark_knee: 0.58 };
 const GREYS: Rgb[] = [[0x62, 0x62, 0x5a], [0x41, 0x41, 0x41]];
 
 // Made-up icons: deep shading, vivid colours near the sRGB edge, a flat one, near-blacks and whites, unused slots

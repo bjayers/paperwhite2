@@ -14,6 +14,16 @@ outline grey) and each icon's lightness in a narrow band. This tones an icon's c
 - "strength" 0..1 blends both: k becomes 1 - strength * (1 - k), the chroma change is scaled the same way. 0 is the
   battle colours unchanged.
 
+Then two limits, in full whenever the tone is on (strength above 0), from the user's review of every icon:
+
+- relative saturation: chroma may be at most "saturation_max" times lightness (vanilla's colours stay under about
+  0.24-0.29); the excess goes into lightness, L' = L + (C - saturation_max * L), C' = min(C, saturation_max * L'), so
+  deep, vivid shades (the battle palettes' reds and magentas, which keep their chroma as they darken) become lighter,
+  softer ones. 0 turns it off.
+- a soft dark floor: lightness below "dark_knee" is squeezed into [dark_floor, dark_knee],
+  L' = dark_floor + L * (dark_knee - dark_floor) / dark_knee, so near-blacks lift while dark shades keep their order
+  and stay distinct (a hard floor merged Zekrom's shades into one). A dark_knee at or under dark_floor turns it off.
+
 A colour outside sRGB after this keeps its lightness and hue and loses chroma until it fits. Index 0 (transparency)
 and 14-15 (the vanilla outline greys) never change, and nor do the pixels or indices. res/paperwhite2/icon_tone.json
 has the parameters; the build applies them only when it says "enabled": true. The editor's Sprite Editor mirrors this
@@ -34,7 +44,8 @@ ROOT = Path(__file__).resolve().parents[2]
 TONE_FILE = ROOT / "res" / "paperwhite2" / "icon_tone.json"
 COLOURS = 16
 FIXED = (0, 14, 15)          # transparency and the two outline greys
-PARAMETERS = ("strength", "lightness_spread", "min_contrast", "chroma_knee", "chroma_above_knee")
+PARAMETERS = ("strength", "lightness_spread", "min_contrast", "chroma_knee", "chroma_above_knee", "saturation_max",
+              "dark_floor", "dark_knee")
 
 
 def load(path: Path = TONE_FILE) -> dict:
@@ -45,8 +56,9 @@ def load(path: Path = TONE_FILE) -> dict:
     for name in PARAMETERS:
         if not isinstance(data.get(name), (int, float)) or isinstance(data.get(name), bool) or data[name] < 0:
             raise ValueError(f"{path}: \"{name}\" must be a number, at least 0")
-    if data["strength"] > 1 or data["min_contrast"] > 1 or data["chroma_above_knee"] > 1:
-        raise ValueError(f"{path}: \"strength\", \"min_contrast\" and \"chroma_above_knee\" are at most 1")
+    if any(data[name] > 1 for name in ("strength", "min_contrast", "chroma_above_knee", "dark_floor", "dark_knee")):
+        raise ValueError(f"{path}: \"strength\", \"min_contrast\", \"chroma_above_knee\", \"dark_floor\" and "
+                         f"\"dark_knee\" are at most 1")
     return data
 
 
@@ -123,8 +135,21 @@ def tone(colours, counts, params: dict, strength=None) -> list:
         toned = top - (top - lightness) * k
         if chroma > knee:
             chroma -= strength * (chroma - knee) * (1 - params["chroma_above_knee"])
+        toned, chroma = limits(toned, chroma, params)
         out[i] = srgb(toned, chroma, hue)
     return out
+
+
+def limits(lightness: float, chroma: float, params: dict) -> tuple:
+    """The relative-saturation cap, then the soft dark floor (see above)."""
+    cap = params["saturation_max"]
+    if cap > 0 and chroma > cap * lightness:
+        lightness = min(lightness + (chroma - cap * lightness), 1.0)
+        chroma = min(chroma, cap * lightness)
+    low, knee = params["dark_floor"], params["dark_knee"]
+    if knee > low and lightness < knee:
+        lightness = low + lightness * (knee - low) / knee
+    return lightness, chroma
 
 
 def pixel_counts(pixels) -> list:

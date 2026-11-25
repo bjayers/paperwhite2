@@ -12,7 +12,8 @@ from tools.data.datajson import dumps  # noqa: E402
 from tools.paperwhite2 import icon_tone, poke_icons  # noqa: E402
 
 PARAMS = {"enabled": True, "strength": 1.0, "lightness_spread": 0.12, "min_contrast": 0.5, "chroma_knee": 0.18,
-          "chroma_above_knee": 0.5}
+          "chroma_above_knee": 0.5, "saturation_max": 0.0, "dark_floor": 0.0, "dark_knee": 0.0}
+LIMITS = {**PARAMS, "saturation_max": 0.24, "dark_floor": 0.32, "dark_knee": 0.58}
 GREYS = [(0x62, 0x62, 0x5a), (0x41, 0x41, 0x41)]
 # A made-up icon palette: transparency, a deep-shaded blue body, a vivid red, white, black, an unused slot, the greys
 COLOURS = ([(0, 128, 0), (20, 40, 120), (60, 90, 200), (140, 170, 250), (230, 20, 20), (255, 255, 255), (8, 8, 8),
@@ -72,6 +73,25 @@ def test_chroma_above_the_knee_comes_down():
     assert red[1] > PARAMS["chroma_knee"]
     toned = icon_tone.oklch(icon_tone.tone(COLOURS, COUNTS, PARAMS, 1.0)[4])
     assert toned[1] < red[1]
+
+
+def test_saturation_cap_turns_a_deep_vivid_red_lighter_and_softer():
+    lightness, chroma = icon_tone.limits(0.45, 0.18, {**LIMITS, "dark_knee": 0.0})
+    assert abs(lightness - (0.45 + 0.18 - 0.24 * 0.45)) < 1e-12
+    assert chroma <= 0.24 * lightness + 1e-12
+    assert icon_tone.limits(0.7, 0.1, {**LIMITS, "dark_knee": 0.0}) == (0.7, 0.1)
+
+
+def test_soft_floor_lifts_darks_and_keeps_their_order():
+    darks = [0.05, 0.2, 0.35, 0.5]
+    lifted = [icon_tone.limits(lightness, 0.0, LIMITS)[0] for lightness in darks]
+    assert all(lightness >= LIMITS["dark_floor"] for lightness in lifted)
+    assert lifted == sorted(set(lifted))
+    assert icon_tone.limits(0.8, 0.0, LIMITS) == (0.8, 0.0)
+
+
+def test_limits_off_change_nothing():
+    assert icon_tone.limits(0.3, 0.2, PARAMS) == (0.3, 0.2)
 
 
 def test_no_used_slots_or_bad_lengths():

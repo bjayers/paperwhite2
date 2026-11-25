@@ -1097,6 +1097,19 @@ It works per icon and per palette (normal and shiny each on their own), in OKLCh
 Each of those icons was already close (its shiny differs mainly in lightness). The worst hue drift on a coloured slot
 is 2°, from 8-bit rounding.
 
+**Two limits added after the user's review of every icon (2026-11-24),** applied after the tone, in full whenever it is
+on, both in `icon_tone.limits` and the editor's mirror:
+
+- **Relative saturation, `saturation_max` 0.24.** Red-heavy icons (Charmeleon, Scolipede, Venipede, Darmanitan) still
+  looked too dark and vivid. The vanilla banks have only warm, light reds (hue 29-37°, L 0.63-0.68), and red parts were
+  shaded with the outline greys; the battle palettes' red ramps keep their chroma as they darken (Scolipede's body
+  L 0.45-0.54, C 0.17-0.20, chroma/lightness up to 0.42, against vanilla's p90 0.29). Chroma is capped at 0.24 × L and
+  the excess turned into lightness. Hue is kept; near-greys (Zekrom, Zorua) have no excess and don't change.
+- **A soft dark floor, `dark_floor` 0.32 / `dark_knee` 0.58.** Near-black colours with little chroma (Scolipede's belly,
+  Zekrom's body) weren't touched by the cap. A hard floor at the light outline grey's lightness merged Zekrom's shades
+  into one colour, so lightness under the knee is squeezed into [floor, knee] instead, keeping the shades' order. The
+  user compared three settings (0.42/0.75, 0.36/0.65, 0.32/0.58) on every icon and chose the lightest.
+
 ### 17.3 The build, the preview and the editor
 
 - **The build:**

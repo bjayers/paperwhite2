@@ -4,5 +4,8 @@
     "lightness_spread": 0.12,
     "min_contrast": 0.5,
     "chroma_knee": 0.18,
-    "chroma_above_knee": 0.5
+    "chroma_above_knee": 0.5,
+    "saturation_max": 0.24,
+    "dark_floor": 0.32,
+    "dark_knee": 0.58
 }
