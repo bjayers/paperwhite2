@@ -32,6 +32,8 @@ export function GitPanel({ state, commitEnabled, onOpen, onClose, onRefresh }: {
   const [pushed, setPushed] = useState<PushResult | null>(null);
 
   const changes = useMemo(() => (state?.changes ?? []).filter((c) => !onlyRes || isGameData(c.path)), [state, onlyRes]);
+  // Changed files outside res/ and generated/ (code, docs, tools) that the game-data filter hides
+  const hidden = onlyRes ? (state?.changes.length ?? 0) - changes.length : 0;
 
   useEffect(() => {
     if (!selected) return setDiff("");
@@ -99,6 +101,7 @@ export function GitPanel({ state, commitEnabled, onOpen, onClose, onRefresh }: {
       {state && <p className="muted small pad">Last commit: {state.head}</p>}
       <label className="checkbox pad small">
         <input type="checkbox" checked={onlyRes} onChange={(e) => setOnlyRes(e.target.checked)} /> Only game data (res/, generated/)
+        {hidden > 0 && <span className="badge" title="Changed files outside res/ and generated/ (code, docs, tools): untick to see them">{hidden} other hidden</span>}
       </label>
       <label className="checkbox pad small">
         <input type="checkbox" disabled={!commitEnabled || !changes.length} checked={allChosen}

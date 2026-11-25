@@ -1,6 +1,6 @@
 # Paper White 2 roadmap
 
-First agreed with the user on 2026-10-29; audited against what is built on 2026-11-15. Each big item has a design doc
+First agreed with the user on 2026-10-29; audited against what is built on 2026-11-15 and again on 2026-11-25. Each big item has a design doc
 for approval before code. Where something is built, the line says where (STATUS.md's dated entry, plugins.md's
 section, a design doc's "Built" part, or the code). **Done** means built and the user has seen it; "untested" means
 built and waiting for the user's playtest. Nothing here has had the full fresh-save playtest yet: it waits on more
@@ -11,23 +11,24 @@ Avenue's further lines) wait with it (STATUS.md, 2026-11-06 "where things stand"
 
 | Area | State |
 | --- | --- |
-| Small things (shiny rate, Shiny Candy, Exp. Share, summary EVs/IVs, START debug menu, wild triples) | Done |
+| Small things (shiny rate, Shiny Candy, the party-wide Exp. Share, summary EVs/IVs, START debug menu, wild triples) | Done |
 | Conditions module | Done |
-| Encounter overhaul, habitat Dex, level scaling | Done |
+| Encounter overhaul (seasons, times of day, weathers), habitat Dex, level scaling | Done |
 | NPC spawn system | Mostly done (loose ends below) |
 | Ambients and wanderers (overworld wild Pokémon) | Done, small gaps |
-| Follower dialogue and gifts | Believed done (loose ends below) |
+| Following Pokémon and their dialogue and gifts | Done as systems (loose ends below); the content is the user's to write |
 | The editor | Done for everything built so far; later pages follow their features |
 | New screens: DexNav, Pokédex pages, C-Gear | Done; two ideas not designed (berry picker, interaction menu) |
 | Join Avenue offline | Believed done |
 | Pokémon Center attendants | Done (Day Care, Training Services, Wonder Trade) |
-| Forms, new species, new moves and abilities | Done as systems; content grows with the user's art |
+| Forms (the Spiky-eared Pichu and others), new species, new moves and abilities | Done as systems; content grows with the user's art |
 | Rig Editor v2 (battle sprites) | Done |
 | Save expansion (Pokédex for 1500 species) | Done |
-| Shiny palettes | Not done |
-| Fairy type | Next |
-| Entralink roguelike | Design pending |
-| Final wireless removal | After the Entralink roguelike |
+| Shiny palettes: palette variation, followers and icons on the battle palettes | Done (loose ends below) |
+| Sprite Editor (icons and walking sheets) | Done |
+| Fairy type | Done |
+| Entralink roguelike (the Entree) | Built and playtested; screens' art, C-Gear run display and reaching it in play left |
+| Final wireless removal | Started: 9 wireless-only screens are shells; the final pass at the end |
 | Move and ability effect designer | Later |
 
 ## Order, with what became of each step
@@ -42,10 +43,10 @@ Avenue's further lines) wait with it (STATUS.md, 2026-11-06 "where things stand"
       `tools/paperwhite2/conditions.py`; the debug menu's Conditions pages).
    2. **Encounter overhaul: done** (below).
    3. **NPC spawn system: mostly done** (below).
-   4. **Fairy type: next.** The research is `design/moves-and-abilities.md` section 8 (a type appended as 18 keeps every
-      constant; the places that treat 17 as "none" need patching). The Pokédex's type icons already leave an 18th
-      place (`design/pokedex.md`). **Shiny variants: not done** (below).
-   5. **Follower dialogue and gifts: built, believed done** (below).
+   4. **Fairy type: done** (`design/fairy-type.md`; STATUS.md 2026-11-15: the type, its moves, the Roseli Berry, the
+      Fairy Gem, Flower Shield, Fairy Lock, Crafty Shield, the Pixie Plate and Arceus-Fairy, step 2's cases tested).
+      **Shiny variants: done** (below).
+   5. **Follower dialogue and gifts: done as a system** (below).
 3. **The editor: done for what exists, and growing.** Specialty editors: Encounter, Graphics & Palettes, Follower,
    Overworld, Map, Text, Script, Pokémon (with Add form and Add Pokémon), Move and Ability (with Add move and Add
    ability), Rig, Trainer, Join Avenue, Pokémon Center, Weather, C-Gear Pictures, and the Flag and Var Reference
@@ -88,6 +89,10 @@ Avenue's further lines) wait with it (STATUS.md, 2026-11-06 "where things stand"
   export and import.
 - **Save expansion** (plugins.md, Save expansion; `design/save-expansion.md`; STATUS.md 2026-11-12): the Pokédex in the
   Pal Pad's block for 1500 species, old saves upgraded on load, the original block mirrored for species 1-649.
+- **Since 2026-11-15:** the Shop Editor and every shop's goods as data (STATUS.md 2026-11-15); the follower's shadow
+  fixed across the game's cameras (`res/paperwhite2/follower_camera_fixes.json`; STATUS.md 2026-11-18 to 11-19); palette
+  variation in the field and for wanderers (2026-11-18); damage numbers and HP bars in battle (2026-11-20, from the
+  Entralink buffs); the Sprite Editor (2026-11-22, below).
 - **Also built:** trainer level scaling, the difficulty setting and Prestige levels (plugins.md; STATUS.md
   2026-11-05; their numbers wait for the playtest), the Version Key (kept as a debug tool), the weather calendar and
   the Weather Editor, street chatter in Castelia (`design/street-chatter.md`), HMs by learners, name entry without the
@@ -104,15 +109,36 @@ Not checked in this audit: whether the encounter-biasing abilities (Static, Magn
 Sweet Scent and rippling-water drops were reworked beyond what plugins.md's Wild encounters lists. Outbreaks and Hidden
 Grotto entries are in the Encounter Editor. Roaming legendaries are not started.
 
-## Shiny palettes: not done
+## Shiny palettes: done
 
-The deep dive is `design/shiny-palettes.md` ("Nothing here is built"). Decided 2026-10-29: variants by PID bits 8-15
-(`((pid >> 8) & 0xff) % N`), the shiny check unchanged, N per species and form, mostly 1. The goal is one place that
-defines a species' shiny colours, which the battle sprites, the followers and the party and box icons all follow. Open:
-whether shiny followers can share the normal sheet with only another palette, deriving follower and icon palettes
-from the battle sprite's, spare palette slots for icons. Until then the wrong follower shiny palettes stay (the
-regeneration is on hold), and new species' shiny walking sprites are placeholders (STATUS.md 2026-11-13). The editor's
-Shinies page shows the shiny palette beside the normal. Comes after the conditions module (done), so it is unblocked.
+The goal (`design/shiny-palettes.md`) was one place for a species' colours that the battle sprite, the follower and the
+party and box icons all follow. Built:
+- **Palette variation** in battle and the field, wanderers included (STATUS.md 2026-11-18).
+- **Followers and walking sprites on the battle palettes** (`design/follower-palette-remap.md`, method F; STATUS.md
+  2026-11-22): sheets re-indexed onto `normal.pal`, shinies through `shiny.pal` at run time, the separate shiny sheets
+  gone; female rows only where the art differs. Opted out: Castform, Cherrim, Hydrapple and the ??? Arceus sheet.
+- **Party and box icons on the battle palettes, everywhere** (`design/shiny-icons.md`, `design/icon-screens.md`;
+  STATUS.md 2026-11-22 to 11-24): one icon per species re-indexed onto its battle palette and hand-revised by the user,
+  each with its own palette on every icon screen (extended palettes on the busy ones), shiny-aware, toned toward the
+  vanilla banks at build time (`res/paperwhite2/icon_tone.json`).
+- **The Sprite Editor** (Editors): icons and walking sheets edited in battle-palette indices, normal and shiny side by
+  side, with review marks (`res/paperwhite2/sprite_review.json`).
+
+Left: the user's 3DS pass over the icon screens (`design/icon-screens.md`, section 6), then removing the old three
+shared icon banks kept as a fallback; Hydrapple's and Flapple's art and icons (the user is redrawing them); the
+user's review of the follower sheets (about 50 flagged in `follower-palette-remap.md` section 9).
+
+## Entralink roguelike (the Entree): built
+
+`design/entralink-roguelike-prototype.md`, `design/entralink-buffs.md`; STATUS.md 2026-11-15 to 2026-11-22. Runs with
+a level-100 copy of the party and a forfeit, rooms and room types as data (the Entree Editor), the run's bag, the
+Nightmare Ball, Dream Dust, shops, the hub shop and Dream Shards, markers and fogs, random enemy rooms, the buff
+catalogue (phases 1-7), enemy scaling, records, the Entree's menu, ranks and their rewards, and the difficulty tiers
+(Daydream, Reverie, Delusion, Nightmare) with their modifiers. Playtested three times and rebalanced.
+
+Left: the proper buff and Entree screens with the user's art (from Claude's specs), the C-Gear's run display, the
+records page's layout tweaks the user listed, and how the player reaches the Entralink in normal play (the prototype
+doc says it is reached by the debug menu; check before building anything on it).
 
 ## NPC spawn system: mostly done
 
@@ -130,7 +156,7 @@ Left:
 - the maps with many NPCs that freeze: the research found the limits (actors, event data, the 64 billboard materials
   and 128 handles per map) but each map is still checked as the user places things.
 
-## Follower dialogue and gifts: believed done
+## Following Pokémon, dialogue and gifts: done as a system
 
 Built (STATUS.md 2026-10-30; `following-pokemon.md`, Dialogue rules, gifts and steps; the Follower Editor): dialogue as
 condition rules, gifts as actions (items or pools), pickups and ambient emotes on steps, a daily friendship from a talk.
@@ -160,13 +186,13 @@ open problem"). The Map Editor and the Overworld Editor stay separate editors on
 
 ## Still to come, in the user's words
 
-- **Fairy type:** next. Research done; no code.
-- **The Entralink roguelike:** design pending. `design/entralink.md` is the research (the Entralink is unreachable in the
-  hack today; its wireless parts and what still works alone). Wireless leaves in its place.
-- **Final wireless removal:** one pass at the very end, after the Entralink roguelike, for whatever wireless is left.
-  Until then wireless goes feature by feature as each is reworked to be local; no full audit before.
+- **The Entralink's screens and run display:** above.
+- **Final wireless removal:** one pass at the very end for whatever wireless is left. Until then wireless goes feature
+  by feature as each is reworked to be local; no full audit before. Started 2026-11-23: the GTS, Wi-Fi Club, Game
+  Sync, IR ranking, linked trades, link multi battles, the recorder's online rankings, the Battle Competition and the
+  Dream Radar are shells (`design/wireless-shells.md`).
 - **The berry picker and the wild-Pokémon interaction menu:** wanted, not designed.
-- **Shiny palettes:** above.
+- **Icons and followers:** the loose ends under Shiny palettes, above.
 - **The move and ability effect designer:** later. The pieces for it are in `paperwhite2_battle.c` (small rules kept
   apart on purpose; `design/moves-and-abilities.md` section 9, step 6), with custom animations.
 - **Rail maps' precision (Castelia's waterfront and other rail maps):** parked 2026-11-19. Vanilla rails place actors
@@ -174,7 +200,8 @@ open problem"). The Map Editor and the Overworld Editor stay separate editors on
   draws over a curb or railing in two spots of `castelia_city` (the player doesn't). Fixing it means tracing the rail
   system's fixed-point maths from rail line to world position and the rails' own collision grid
   (`following-pokemon.md` has the camera side); a large investigation, not a quick fix.
-- **Later ideas:** day/night encounter tables per season, party-wide Exp. Share, DexNav starting the searched Pokémon's
-  battle, an HGSS-style Pokédex grid, roaming legendaries, a new species' real art as the user draws it.
+- **Later ideas:** DexNav starting the searched Pokémon's battle, an HGSS-style Pokédex grid, roaming legendaries, a
+  new species' real art as the user draws it. (Day/night encounters by season, wanderers, the party-wide Exp. Share
+  and the Shiny Candy, once listed here, are built: see the table above.)
 - **The full fresh-save playtest:** after more features land. Test findings and the decisions that wait for it are in
   STATUS.md.

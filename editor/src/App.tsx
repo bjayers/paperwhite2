@@ -240,6 +240,7 @@ export function App() {
     setSelection(backShown?.to ?? null);
   };
   const changes = git?.changes.filter((c) => isGameData(c.path)).length ?? 0;
+  const otherChanges = (git?.changes.length ?? 0) - changes;
 
   if (loadError) return <div className="fatal">The editor's server didn't answer: {loadError}. Is <code>npm start</code> running?</div>;
 
@@ -258,6 +259,7 @@ export function App() {
         </button>
         <button onClick={() => setShowGit((v) => !v)} className={showGit ? "active" : ""} title="What changed since the last commit">
           Changes{changes > 0 && <span className="badge">{changes}</span>}
+          {otherChanges > 0 && <span className="badge muted" title="Changed files outside res/ and generated/ (code, docs, tools)">+{otherChanges}</span>}
         </button>
         <button className="icon" onClick={toggleTheme} title="Light or dark">{theme === "dark" ? "☀" : "☾"}</button>
       </header>

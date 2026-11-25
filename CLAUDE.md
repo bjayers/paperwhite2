@@ -23,6 +23,10 @@ this section wins.
   merging: unlink the shared-folder symlinks inside it (`orig`, `extract`, `.venv`, `editor/node_modules`, the tools),
   never following them, then `git worktree remove --force <path>` and `git branch -d <its branch>`. Keep a worktree
   only while it holds unmerged commits or changes that aren't in main, and tell the user about it.
+- **Keep `docs/paperwhite2/ROADMAP.md` current.** When a feature starts, is built, or the user changes a plan, update
+  its row in "Status at a glance" and its section in the same commit as the work (with STATUS.md's dated entry), so
+  the roadmap never needs a catch-up audit again (the 2026-11-25 one found Fairy, shiny palettes and the Entralink
+  still listed as not done).
 
 ## What changes from upstream's rules
 
@@ -84,12 +88,9 @@ the decomp's packers cover is imported; STATUS.md lists what isn't yet. The orig
 
 ## After the trial (context only)
 
-- A new desktop editor that edits `res/` and builds the ROM (likely Electron + TypeScript, with three.js previews of
-  the decomp's glTF maps), with an "Import from ROM" tool so edits made in Frost meanwhile aren't lost.
-- Port the Following Pokémon runtime into this source, then add the planned dialogue, interaction and gift features
-  (bjayers/FrostsGen5Editor, `docs/following-pokemon-plans.md`).
-- Later ideas: day/night encounter tables per season, overworld (symbol) encounters, party-wide Exp. Share, a
-  shiny-making item.
+All of the plans first listed here are built: the editor (`editor/`), the Following Pokémon runtime with its dialogue
+and gifts, day/night and seasonal encounters, wanderers (overworld wild Pokémon), the party-wide Exp. Share and the
+Shiny Candy. **`docs/paperwhite2/ROADMAP.md` is the plan now**: what is built, what is left and what comes next.
 
 ---
 
