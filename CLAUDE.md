@@ -18,6 +18,11 @@ this section wins.
   `editor/` with its own `.gitignore` for dependencies and packaged builds, and reads and writes `res/` in place
   rather than keeping copies of game data. The ROM session doesn't edit `editor/`, and the cloud session doesn't edit
   files outside it. Both push to `main`: run `git fetch origin && git merge origin/main` before every push.
+- **Remove each helper's worktree once its work is merged and pushed.** Every worktree under `.claude/worktrees/` is a
+  full checkout with its own build (about 2 GB); 158 left behind filled 297 GB of the WSL disk by 2026-11-25. After
+  merging: unlink the shared-folder symlinks inside it (`orig`, `extract`, `.venv`, `editor/node_modules`, the tools),
+  never following them, then `git worktree remove --force <path>` and `git branch -d <its branch>`. Keep a worktree
+  only while it holds unmerged commits or changes that aren't in main, and tell the user about it.
 
 ## What changes from upstream's rules
 
