@@ -11689,6 +11689,35 @@
         },
         {
             "op": 761,
+            "macro": "Roamers",
+            "name": "roamers",
+            "handler": "Scrcmd_PaperWhite2_Roamers",
+            "description": "The roaming legendaries' command (docs/paperwhite2/design/roaming-legendaries.md): runs the action (ROAMERS_ACTION_*, paperwhite2/roamer_actions.h) and puts what it returns in the variable. RELEASE releases arg1, a roamer (ROAMER_*), a group (ROAMERS_TARGET_GROUP + ROAMER_GROUP_*) or all (ROAMERS_TARGET_ALL), each not released yet, and returns how many; GET_STATE gives a roamer's state (ROAMERS_STATE_*), GET_ZONE its route's zone while it roams (else 0xffff). The second argument is for later actions",
+            "args": [
+                {
+                    "name": "action",
+                    "type": "any",
+                    "kind": "number"
+                },
+                {
+                    "name": "arg1",
+                    "type": "any",
+                    "kind": "number"
+                },
+                {
+                    "name": "arg2",
+                    "type": "any",
+                    "kind": "number"
+                },
+                {
+                    "name": "result",
+                    "type": "var",
+                    "kind": "var"
+                }
+            ]
+        },
+        {
+            "op": 762,
             "macro": "Debug",
             "name": "debug",
             "handler": "Scrcmd_PaperWhite2_Debug",

@@ -3824,7 +3824,7 @@
     .2byte \a1
     .endm
 
-    // Paper White 2: the Pokémon Center attendants': runs one of their actions (POKEMON_CENTER_ACTION_*, paperwhite2/pokemon_center.h) with two arguments and puts the result in a variable: a fee of res/paperwhite2/pokemon_center/services.json, paying it, Training Services' changes to a party Pokémon, or the Wonder Trade's check, Box pick and trade, which the script waits for (include/paperwhite2/pokemon_center_commands.h)
+    // Paper White 2: the Pokémon Center attendants': runs one of their actions (POKEMON_CENTER_ACTION_*, paperwhite2/pokemon_center.h) with two arguments and puts the result in a variable: a fee of res/paperwhite2/pokemon_center/services.json, paying it, Training Services' changes to a party Pokémon, or the Wonder Trade's check, Box pick and trade, which the script waits for; the Battle Points' window, the Champion's discount and the Day Care counter's badges (include/paperwhite2/pokemon_center_commands.h)
     .macro PokemonCenter a0, a1, a2, a3
     FieldCommand 759
     .2byte \a0
@@ -3842,9 +3842,18 @@
     .2byte \a3
     .endm
 
+    // Paper White 2: the roaming legendaries': runs one of their actions (ROAMERS_ACTION_*, paperwhite2/roamer_actions.h) with two arguments and puts the result in a variable: releasing a roamer, a group or all (ROAMER_*, ROAMER_GROUP_* of paperwhite2/roamers_config.h), or a roamer's state or zone (include/paperwhite2/roamers.h)
+    .macro Roamers a0, a1, a2, a3
+    FieldCommand 761
+    .2byte \a0
+    .2byte \a1
+    .2byte \a2
+    .2byte \a3
+    .endm
+
     // Paper White 2: the debug menu's, under PAPERWHITE2_DEBUG_MENU: runs one of its actions (DEBUG_ACTION_*, paperwhite2/debug_actions.h) with two arguments and puts the result in a variable (include/paperwhite2/debug_commands.h)
     .macro Debug a0, a1, a2, a3
-    FieldCommand 761
+    FieldCommand 762
     .2byte \a0
     .2byte \a1
     .2byte \a2

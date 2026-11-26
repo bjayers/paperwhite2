@@ -12,6 +12,9 @@
 #include "save/encounter.h"
 #include "system/game_data.h"
 #include "system/zone_weather.h"
+#ifdef PAPERWHITE2
+#include "paperwhite2/roamers.h"
+#endif
 
 // A group of ROAMING_POKEMON_ZONES's indices. The groups hold indices 0 to 15 once each, but nothing reads them, so
 // what they are for is unknown
@@ -117,7 +120,12 @@ void EncountSave_SpawnPendingEntries(GameData *gameData) {
 }
 
 u32 GetDefaultWeatherValue(GameData *gameData, u16 zoneId) {
+#ifdef PAPERWHITE2
+    // Paper White 2: a roaming legendary's weather on its route, the first weather source (paperwhite2/roamers.h)
+    return PaperWhite2_Roamers_GetWeather(gameData, zoneId);
+#else
     return WEATHER_NONE;
+#endif
 }
 
 BOOL EncountSave_IsAnyEntryActive(GameData *gameData) {

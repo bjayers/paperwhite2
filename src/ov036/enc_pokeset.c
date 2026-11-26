@@ -325,6 +325,14 @@ RoamingPkm *FieldEncount_RndCheckRoaming(EncountManager *manager, u32 zoneId) {
     return roaming[GFL_RandomLCAlt(count)];
 }
 
+#ifdef PAPERWHITE2
+// Paper White 2: the Repel's check of a level, for the roaming legendaries' roll (paperwhite2/roamers.h), which takes
+// the roll's place above
+BOOL FieldEncount_PaperWhite2_IsLevelRepelled(EncountManager *manager, u8 level) {
+    return FieldEncount_CheckLevelRepelled(manager, level);
+}
+#endif
+
 u8 FieldEncount_RndCheckNPoke(EncountManager *manager, u32 zoneId) {
     u8 candidates[ENCOUNT_SAVE_N_POKE_COUNT];
     u8 count;

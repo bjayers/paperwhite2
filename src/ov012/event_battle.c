@@ -56,6 +56,7 @@
 #include "paperwhite2/battle_weather.h"
 #include "paperwhite2/difficulty.h"
 #include "paperwhite2/entralink_run_battle.h"
+#include "paperwhite2/roamers.h"
 #include "paperwhite2/shiny_candy.h"
 #endif
 
@@ -674,6 +675,9 @@ static void EventBattleCall_SyncGameDataOnReturn(EventBattleCallWork *work, Game
     // Paper White 2: a weather that a move or an ability set stays in the zone after the battle
     PaperWhite2_BattleWeather_OnBattleReturn(PlayerState_GetZoneID(GameData_GetPlayerState(gameData)),
                                              work->setup->fieldSituation.env.weather);
+    // Paper White 2: a roaming legendary keeps its HP and status, is caught or knocked out, or scatters, before the
+    // zone's weather is set again without it (paperwhite2/roamers.h)
+    PaperWhite2_Roamers_OnBattleEnd(gameData, work->setup);
 #endif
     ResetWeather(work->gsys, PlayerState_GetZoneID(GameData_GetPlayerState(gameData)));
 }

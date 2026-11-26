@@ -1277,6 +1277,20 @@ def main():
                           "res/paperwhite2/palette_variation.schema.json", "tools/data/datajson.py",
                           "generated/species.txt"])
         constant_headers.append(output)
+        # Paper White 2: the roaming legendaries and their route graph, from res/paperwhite2/roamers/
+        # (docs/paperwhite2/design/roaming-legendaries.md)
+        n.rule("roamers", "$python tools/paperwhite2/roamers.py res/paperwhite2/roamers $out", "Generating $out",
+               restat="1")
+        output = Path(GENERATED_INCLUDE_DIR) / "paperwhite2" / "roamers_config.h"
+        n.build([output], "roamers", [f"res/paperwhite2/roamers/{name}" for name in
+                                      ("roamers.json", "roamers.schema.json", "routes.json", "routes.schema.json")],
+                implicit=["tools/paperwhite2/roamers.py", *script_imports("tools/paperwhite2/roamers.py"),
+                          "tools/data/datajson.py", "generated/species.txt", "generated/zones.txt",
+                          "generated/places.txt",
+                          *sorted(str(path) for path in Path("res/field/zones").glob("*.json")),
+                          *sorted(str(path) for path in Path("res/town_map").glob("*.json")),
+                          *sorted(str(path) for path in Path("res/paperwhite2/encounters/areas").glob("*.json"))])
+        constant_headers.append(output)
         # Paper White 2: the custom field tints, from res/paperwhite2/field_tints/tints.json
         # (docs/paperwhite2/plugins.md, Custom tints)
         n.rule("field_tints", "$python tools/paperwhite2/field_tints.py $in $out", "Generating $out", restat="1")

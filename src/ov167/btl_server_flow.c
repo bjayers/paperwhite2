@@ -43,6 +43,7 @@
 #include "paperwhite2/entralink_run_party.h"
 #include "paperwhite2/pokemon_forms.h"
 #include "paperwhite2/prestige.h"
+#include "paperwhite2/roamers.h"
 #include "text/system/0019.h"
 #endif
 
@@ -1274,6 +1275,15 @@ BOOL ServerControl_EscapeSub(BtlServerFlow *handler, BattleMon *mon, u32 flag) {
             if (result) {
                 flag = TRUE;
             }
+#ifdef PAPERWHITE2
+        } else if (BtlSetup_IsBattleType(handler->mainModule, ROAMERS_BTL_SETUP_FLAG)) {
+            // Paper White 2: a roaming legendary escapes by the player's rule against the player's Pokémon, without
+            // the player's tries' bonus, where the original let a wild Pokémon always flee (paperwhite2/roamers.h)
+            result = ServerEvent_CheckSureEscape(handler, mon);
+            if (result) {
+                flag = TRUE;
+            }
+#endif
         } else {
             flag = TRUE;
         }
@@ -1282,13 +1292,28 @@ BOOL ServerControl_EscapeSub(BtlServerFlow *handler, BattleMon *mon, u32 flag) {
         result = TRUE;
     }
     if (!flag) {
+#ifdef PAPERWHITE2
+        // Paper White 2: the side facing mon's, which for a roamer is the player's
+        enemy = GetClientMonData(handler->pokeCon,
+                                 GetClientIDFromMonID(GetMonID(mon)) == GetPlayerClientID(handler->mainModule)
+                                     ? 1
+                                     : GetPlayerClientID(handler->mainModule),
+                                 0);
+#else
         enemy = GetClientMonData(handler->pokeCon, 1, 0);
+#endif
         if (enemy != NULL) {
             speed = RawBattleMonStat(mon, BATTLEMON_SPEED);
             enemySpeed = RawBattleMonStat(enemy, BATTLEMON_SPEED);
             if (speed <= enemySpeed) {
                 chance = (speed << 12) / enemySpeed * 128 >> 12;
+#ifdef PAPERWHITE2
+                if (GetClientIDFromMonID(GetMonID(mon)) == GetPlayerClientID(handler->mainModule)) {
+                    chance += handler->unk786 * 30;
+                }
+#else
                 chance += handler->unk786 * 30;
+#endif
                 if (BattleRandom(256) >= chance) {
                     return FALSE;
                 }

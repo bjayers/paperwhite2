@@ -266,6 +266,15 @@ DEBUG                           L_DebugMenu
     Force species: <Off|species>    number, 0 for Off; then its form, for a species with more than one
     Wild form: <Off|form>           number: the forced species' form, 0 to its forms count - 1 (Off after a new species)
     Wild level: <Off|level>         number, 0 for Off
+    Roamers...                      the roaming legendaries (Roaming legendaries, below):
+      Release all                     the script command's release of every roamer not released yet
+      Roamers now                     each roamer's route and state, four a page (the clocks counted first)
+      Bring one here                  a roamer picked from their list onto the player's route, if one of its own
+      Heal one                        full HP, no status; a knocked out one back now
+      Respawn the knocked out         every knocked out roamer back now, rerolled
+      Freeze movement: ON/OFF         the roamers' clocks stop counting (a field of their save)
+      Run out their clocks            the next zone change moves each roamer off the player's route
+      Reset all (unreleased)          the roamers' save cleared
   Player...
     Warp to last Pokémon Center     the town of the last Center used, at its fly spot, as Teleport
     Warp to zone...                 number (0-614, with its place name), at the zone's fly spot
@@ -368,6 +377,11 @@ of the last number entry.
 | `FOLLOWER_PICKUP` (40) | | `FollowingDebug_ForcePickup`: the item in word 3; whether one was found |
 | `FOLLOWER_CLEAR_ITEM` (41) | | forgets its waiting item |
 | `FOLLOWER_RULES` (42) | | the talk rule that would be chosen now (0), its priority (1), the matches (2), the ambient (3) and pickup (4) rules |
+| `ROAMERS_RELEASE_ALL` (65) | | `Roamers_Release(ROAMERS_TARGET_ALL)`, then the field's weather again; how many, also in word 0 |
+| `ROAMERS_PAGE` (66) | page | four roamers' species, route (place name, or none) and state in words 3n to 3n + 2; FALSE past the last |
+| `ROAMERS_WORDS` (67) | | the roamers' species in words 0-7 (the pick list's labels), Freeze movement's state in word 8 |
+| `ROAMER_BRING` (68), `ROAMER_HEAL` (69) | roamer | `Roamers_DebugBringHere` (FALSE off its routes, or caught), `Roamers_DebugHeal` |
+| `ROAMERS_RESPAWN` (70), `ROAMERS_FREEZE` (71), `ROAMERS_RESET` (72), `ROAMERS_EXPIRE` (73) | | every knocked out one back (how many); Freeze movement turned over; the save cleared; every clock at 0 |
 
 **Number entry.** The game has no number input that a script can open: the Bag's and the shops' quantity selectors are
 parts of their apps, and no script command asks for a number. So the menu has its own, `L_DebugNumber`, a subroutine
@@ -440,7 +454,8 @@ hooks; the text stays.
 The hack's script commands follow the original's last, 0x2f2, in `EVCMD_TABLE` (`src/ov012/scrcmd_vm.c`), each with
 its row in `EVCMD_PERM_TABLE` (`src/ov012/script_sys.c`): the conditions' two (0x2f3, 0x2f4) and `ReloadMapHere`
 (0x2f5, Version places below), `PartyFieldMoveUser` (0x2f6, HMs by learners below), `PokemonCenter` (0x2f7) and
-`EntralinkRun` (0x2f8, Entralink roguelike below) under `PAPERWHITE2`, then `Debug` (0x2f9) under
+`EntralinkRun` (0x2f8, Entralink roguelike below) and `Roamers` (0x2f9, Roaming legendaries below) under
+`PAPERWHITE2`, then `Debug` (0x2fa) under
 `PAPERWHITE2_DEBUG_MENU`, last, so that a
 build without the menu keeps the others' IDs. Its entry in
 `tools/script/field_commands.json` has a `"hack"` key, which `field_command_table.py` keeps when it writes the table
@@ -450,7 +465,7 @@ both tables, its entry in the JSON, then `python3 tools/script/field_script.py i
 
 | Command | ID | Arguments | Handler |
 | --- | --- | --- | --- |
-| `Debug action, arg1, arg2, result` | 0x2f9 (761) | a `DEBUG_ACTION_*`, two arguments, each a value or a variable, and the variable for the result | `Scrcmd_PaperWhite2_Debug` (`src/paperwhite2/ov012/paperwhite2_debug_commands.c`); the actions above. A warp action waits a frame, as the map change commands do |
+| `Debug action, arg1, arg2, result` | 0x2fa (762) | a `DEBUG_ACTION_*`, two arguments, each a value or a variable, and the variable for the result | `Scrcmd_PaperWhite2_Debug` (`src/paperwhite2/ov012/paperwhite2_debug_commands.c`); the actions above. A warp action waits a frame, as the map change commands do |
 
 **Memory.** The menu costs about 4 KB of the budget (the main arena had 159 KB left before it, 155 KB after): the
 command's code and tables in overlay 12, the overrides and the shiny PID in main, the hooks.
@@ -1563,6 +1578,73 @@ sinking, random wandering, the touch and the battle.
   tile behind the player, where the follower walks.
 - **Not yet:** the zone's switch, a "!" for an aggressive one noticing the player, a sparkle sound, the sparkle's
   height by the sprite.
+
+### Roaming legendaries
+
+Phase 1 of `design/roaming-legendaries.md` (sections 9 and 9.2 are the user's decisions): Articuno, Zapdos, Moltres,
+Raikou, Entei, Suicune, Tornadus and Thundurus roam Routes 1-23 once released, one to a route. Header
+`include/paperwhite2/roamers.h`; the core in overlay 12 (`src/paperwhite2/ov012/paperwhite2_roamers.c`), the roll and
+the battle's Pokémon in overlay 36 (`src/paperwhite2/ov036/paperwhite2_roamers_field.c`).
+
+- **Data:** `res/paperwhite2/roamers/roamers.json` (each roamer's species, form, level, group, odds, methods and
+  weather; the clock's minutes, the most moves counted at once, the scatter's links) and `routes.json` (the route
+  graph: each route is a town map place of `res/town_map/` with its outdoor zones, map type 0, by their headers'
+  place; the links are a hand list, taken both ways), with schemas. `tools/paperwhite2/roamers.py` checks them and
+  writes `paperwhite2/roamers_config.h` (only `#define`s: the `ROAMER_*` and `ROAMER_GROUP_*` IDs for the scripts,
+  and the `ROAMERS_DATA` and `ROAMERS_ROUTES` initializers). A roamer's routes are those of its list (all when it
+  lists none) on which one of its methods has a step rate in some season (`res/paperwhite2/encounters/areas/`): Routes
+  17 and 21 are water only, so the walkers (the beasts but Suicune, and the forces) never go there. Route 10 has no
+  town map place in White 2, so 22 routes. Tests: `tools/paperwhite2/test_roamers.py` (fixtures, and the real data
+  packs).
+- **Save:** the World Trade block (`SAVE_BLOCK_WORLDTRADE`, 0xf8 bytes), which only the GTS used and whose code is a
+  shell. `RoamersSave`: magic, version, the battle's roamer, Freeze movement, the clock of the last count, the
+  player's zone then, and 8 slots of 0x18 (species, form, level, HP or `ROAMERS_HP_FULL`, status, state, zone, timer,
+  PID, IVs, nature, the seen flag, the day it was knocked out): 0xd0 bytes, the rest reserved. A block without the
+  magic and version (the GTS's zeros) is cleared on first use. The original's `EncountSave` slots stay unused.
+- **Release:** the script command `Roamers action, arg1, arg2, result` (0x2f9, `paperwhite2/roamer_actions.h`):
+  `ROAMERS_ACTION_RELEASE` with a roamer (`ROAMER_*`), a group (`ROAMERS_TARGET_GROUP + ROAMER_GROUP_*`) or all
+  (`ROAMERS_TARGET_ALL`) releases each one not released yet onto a free route, with a PID (the Shiny Charm's and Pass
+  Power's rolls, and the debug menu's Always shiny), IVs and nature rolled; `GET_STATE` and `GET_ZONE` read a roamer.
+  A script includes `paperwhite2/roamer_actions.h` and `paperwhite2/roamers_config.h` for the names. The debug menu's
+  Release all calls the same function.
+- **Movement, "settle, then scatter":** `PaperWhite2_Roamers_OnZoneChange` counts the clock's seconds since the last
+  count (`RTC_ConvertDateTimeToSecond`, the cached clock) on each roaming roamer's timer, except the one on the route
+  the player was on, which waits; each time a timer runs out (15 minutes) the roamer moves to a free neighbouring
+  route (the nearest free one of its own when its neighbours are taken). Never onto another roamer's route or the
+  player's (both the zone being left and the one entered). At most 4 moves' time is counted at once, so a long break
+  moves each roamer 4 routes at most; a clock set back counts nothing. It is called by `ZoneChange_OnMapChange`
+  (warps, before the new zone's weather), the field's seamless zone change (`fieldmap.c`, before
+  `Field_SwapWeather`) and `ZoneChange_OnFieldLoad` (every field that opens, which is how a continued save, which
+  opens its field without a zone change, counts the time the game was off). Nothing counts while Freeze movement is
+  on or an Entralink run is (`EntralinkRun_IsActive`); their time isn't counted later.
+- **Encounter:** in `EventWildBattleCall_CreateRandom` (`src/ov036/field_encount.c`) `PaperWhite2_Roamers_Roll` takes
+  the original's `FieldEncount_RndCheckRoaming`'s place: after a step's encounter has passed its rate check, the
+  roamer on the player's route, if the encounter's type is one of its methods (walk: grass, dark grass, a cave's floor
+  and rustling spots; surf; fish; none of them fish), the Repel doesn't keep it off
+  (`FieldEncount_PaperWhite2_IsLevelRepelled`) and its odds come up (50%), is the battle: a single battle
+  (`FieldEncount_SetupRoamer`, the original's `SetupRoaming` with the setup's flag 8, so the roaming AI) of the
+  Pokémon its slot makes (`PaperWhite2_Roamers_MakePkm`: species, level, the trainer's ID, IVs, PID, form, nature,
+  the stats, then the HP kept and the status). It comes before N's Pokémon. Its seen flag is set.
+- **After the battle** (`EventBattleCall_SyncGameDataOnReturn`, `src/ov012/event_battle.c`, before the zone's weather
+  is set again): caught, the roamer is gone (`ROAMER_STATE_CAUGHT`); knocked out, it is back on any other day
+  (`ROAMER_STATE_KNOCKED_OUT` with the day), at full HP with a new PID, IVs and nature, so its shininess is rolled
+  again; otherwise (it fled, the player ran or lost) its HP and status are kept and it scatters at once, at least 2
+  links away.
+- **Fleeing:** the roaming AI (`res/trainers/ai/roaming_pokemon.s`) tries to flee every turn unless trapped. In
+  `ServerControl_EscapeSub` (`src/ov167/btl_server_flow.c`) a roaming battle's wild Pokémon now escapes by the
+  player's rule against the player's Pokémon (always when it is the faster, else speed × 128 / the other's speed in
+  256, Run Away and the Smoke Ball as for the player), without the player's tries' bonus; the original let a wild
+  Pokémon always flee. Trapping moves, abilities and items hold it as before; a failed try says "The wild ... can't
+  escape!" and takes its turn.
+- **Weather:** `GetDefaultWeatherValue`, the first source of `GetWeatherAll`, returns a roaming roamer's weather on
+  its route: Tornadus gusty rain, Thundurus, Zapdos and Raikou thunderstorm, Suicune snow (`WEATHER_FLAKE`), Articuno
+  hail (`WEATHER_BLIZZARD`, the heavier snow). Entei's and Moltres' harsh sun is a later phase's new weather: they have
+  none for now. The weather comes and goes with the zone's next weather reset (entering it, a battle's end, the debug
+  menu's Release all and Bring one here).
+- **Memory:** overlay 12 +3.4 KB (the core 2.3 KB with its 0.3 KB of tables, the debug menu's actions 0.9 KB), overlay
+  36 +0.5 KB, overlay 167 a few dozen bytes; the DS arena 0x55e0 → 0x46c0 (17.7 KB). No heap or RAM besides the save
+  block's 0xd0 bytes.
+- **Not in phase 1:** the DexNav's Roamers page, the gates' board, harsh sun, the editor's page, story releases.
 
 ### Wild encounters
 

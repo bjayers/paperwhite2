@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Roaming legendaries",
+  "description": "The roaming legendaries (docs/paperwhite2/design/roaming-legendaries.md): how they move, then one entry per roamer, at most 8 (the save's slots), in their ROAMER_* order. tools/paperwhite2/roamers.py checks the file with routes.json beside it and writes paperwhite2/roamers_config.h for src/paperwhite2/ov012/paperwhite2_roamers.c and the scripts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [ "move_minutes", "offline_moves_max", "scatter_links", "groups", "roamers" ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "move_minutes": { "type": "integer", "minimum": 1, "maximum": 60, "description": "The real-time minutes (the clock's) a roamer stays on a route before it moves to a neighbouring one; the clock pauses while the player is on its route" },
+    "offline_moves_max": { "type": "integer", "minimum": 1, "maximum": 16, "description": "The most moves a roamer makes for the time counted at once: with the game off, or a long stay on one map" },
+    "scatter_links": { "type": "integer", "minimum": 1, "maximum": 4, "description": "After a battle it leaves (it fled, the player ran or lost), a roamer moves at once at least this many links away" },
+    "groups": {
+      "type": "array", "minItems": 1, "maxItems": 8,
+      "description": "The groups that a script releases together, by name: ROAMER_GROUP_<NAME> in the header, in this order",
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" }
+    },
+    "roamers": {
+      "type": "array", "minItems": 1, "maxItems": 8,
+      "items": { "$ref": "#/$defs/roamer" }
+    }
+  },
+  "$defs": {
+    "roamer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "name", "species", "level", "group", "odds", "methods", "weather" ],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "Its ROAMER_<NAME> in the header and the scripts" },
+        "species": { "type": "string", "x-constant": "SPECIES_" },
+        "form": { "type": "integer", "minimum": 0, "maximum": 31, "description": "Its form; 0 when absent" },
+        "level": { "type": "integer", "minimum": 1, "maximum": 100, "description": "Its level, fixed" },
+        "group": { "type": "string", "description": "One of groups" },
+        "odds": { "type": "integer", "minimum": 1, "maximum": 100, "description": "The percent of the step encounters on its route that are it, for its methods (the original's 50)" },
+        "methods": {
+          "type": "array", "minItems": 1, "maxItems": 3,
+          "description": "How it is met: walk (grass, dark grass, cave floors), surf, fish. Only the routes of routes.json with a step rate for one of them in the wild encounters' data are its routes",
+          "items": { "enum": [ "walk", "surf", "fish" ] }
+        },
+        "weather": { "enum": [ "none", "rain", "gusty_rain", "thunderstorm", "snow", "hail", "harsh_sun" ], "description": "The field weather of its route while it is there, over the weather calendar: snow is the field's light snow (WEATHER_FLAKE), hail its heavier snow (WEATHER_BLIZZARD). harsh_sun is a later phase's new weather and gives none for now" },
+        "routes": {
+          "type": "array", "minItems": 1,
+          "description": "The routes of routes.json it roams, by place; all of them when absent",
+          "items": { "type": "string", "x-constant": "PLACE_" }
+        }
+      }
+    }
+  }
+}

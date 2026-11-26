@@ -28,6 +28,7 @@ Avenue's further lines) wait with it (STATUS.md, 2026-11-06 "where things stand"
 | Sprite Editor (icons and walking sheets) | Done |
 | Fairy type | Done |
 | Entralink roguelike (the Entree) | Built and playtested; screens' art, C-Gear run display and reaching it in play left |
+| Roaming legendaries | Phase 1 built (roaming, encounters, weather, debug menu); DexNav page, gate board, harsh sun, editor, story left |
 | Final wireless removal | Started: 9 wireless-only screens are shells; the final pass at the end |
 | Move and ability effect designer | Later |
 
@@ -64,7 +65,11 @@ Avenue's further lines) wait with it (STATUS.md, 2026-11-06 "where things stand"
    - **Berry picker and the wild-Pokémon interaction menu: wanted, not designed yet** (no design doc, no code).
    - **Join Avenue offline: believed done** (below).
    - **Pokémon Centers' upstairs attendants: done** (below).
-   - **Roaming legendaries: not started** (the idea was to look at BW1's roaming Tornadus/Thundurus code first).
+   - **Roaming legendaries: phase 1 built, untested by the user** (design/roaming-legendaries.md, sections 9-10;
+     plugins.md, Roaming legendaries; STATUS.md 2026-11-25): the eight roam Routes 1-23 once released (the debug
+     menu's Release all for now), move on a 15-minute clock, scatter after a battle, keep their HP and status, come back
+     the day after a knock-out, and bring their weather. Left: the DexNav's Roamers page, the gates' board, harsh sun
+     (Entei, Moltres), the editor's page, the story's releases (phases 2-5).
 
 ## Beyond the original order: built since
 
@@ -107,7 +112,7 @@ conditions; priority; level scaling from the party's level (`res/paperwhite2/lev
 without its 30-species cap (plugins.md, Habitat Dex); the ecological encounters are in `res/` (STATUS.md 2026-11-12).
 Not checked in this audit: whether the encounter-biasing abilities (Static, Magnet Pull) as weight modifiers, fishing,
 Sweet Scent and rippling-water drops were reworked beyond what plugins.md's Wild encounters lists. Outbreaks and Hidden
-Grotto entries are in the Encounter Editor. Roaming legendaries are not started.
+Grotto entries are in the Encounter Editor. Roaming legendaries: phase 1 built (above).
 
 ## Shiny palettes: done
 
@@ -200,8 +205,8 @@ open problem"). The Map Editor and the Overworld Editor stay separate editors on
   draws over a curb or railing in two spots of `castelia_city` (the player doesn't). Fixing it means tracing the rail
   system's fixed-point maths from rail line to world position and the rails' own collision grid
   (`following-pokemon.md` has the camera side); a large investigation, not a quick fix.
-- **Later ideas:** DexNav starting the searched Pokémon's battle, an HGSS-style Pokédex grid, roaming legendaries, a
-  new species' real art as the user draws it. (Day/night encounters by season, wanderers, the party-wide Exp. Share
+- **Later ideas:** DexNav starting the searched Pokémon's battle, an HGSS-style Pokédex grid, a new species' real art
+  as the user draws it. (Roaming legendaries are being built: phase 1, above.) (Day/night encounters by season, wanderers, the party-wide Exp. Share
   and the Shiny Candy, once listed here, are built: see the table above.)
 - **The full fresh-save playtest:** after more features land. Test findings and the decisions that wait for it are in
   STATUS.md.

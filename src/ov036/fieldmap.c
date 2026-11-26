@@ -99,6 +99,7 @@
 #include "paperwhite2/field.h"
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/following_render.h"
+#include "paperwhite2/roamers.h"
 #include "paperwhite2/sprites.h"
 #include "paperwhite2/wanderers.h"
 #include "paperwhite2/weather_fog.h"
@@ -1228,6 +1229,11 @@ void Field_SwapZoneByMatrix(Field *field) {
     EventData_Reset(eventData);
     EventData_LoadEntities(eventData, zoneId, GameData_GetSeason(gameData));
     MI_SetMainMemoryPriority(MI_PROCESSOR_ARM7);
+#ifdef PAPERWHITE2
+    // Paper White 2: the roaming legendaries move by their clocks as the player changes zone, before the zone's
+    // weather is set (paperwhite2/roamers.h)
+    PaperWhite2_Roamers_OnZoneChange(gameData, zoneId);
+#endif
     ZoneChange_OnSeamless(gameData, field);
     Field_SwapZoneBGM(field, zoneId);
     Field_SwapFog(field, zoneId);

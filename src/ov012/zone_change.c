@@ -11,6 +11,7 @@
 #include "system/game_data.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/entralink_run.h"
+#include "paperwhite2/roamers.h"
 #endif
 
 void ZoneChange_OnSeamless(GameData *gameData, Field *field) {
@@ -33,6 +34,11 @@ void ZoneChange_OnMapChange(GameData *gameData, u16 zoneId) {
     if (IsZoneAbyssalRuinsInside(zoneId) == FALSE) {
         PlayerSave_SetAbyssalRuinsStepCounter(SaveControl_GetPlayerSave(GameData_GetSaveControl(gameData)), 0);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: the roaming legendaries move by their clocks as the player changes zone, before the new zone's
+    // weather is set (paperwhite2/roamers.h)
+    PaperWhite2_Roamers_OnZoneChange(gameData, zoneId);
+#endif
 }
 
 void ZoneChange_OnFly(GameData *gameData, u16 zoneId) {
@@ -67,6 +73,9 @@ void ZoneChange_OnFieldLoad(GameData *gameData, u16 zoneId) {
     // Paper White 2: an Entralink run ends when the player is no longer in it, so the real party comes back
     // (paperwhite2/entralink_run.h)
     EntralinkRun_OnFieldLoad(gameData, zoneId);
+    // Paper White 2: the roaming legendaries' clocks are counted as every field opens, which counts the time the game
+    // was off when a save is continued, since that opens its field without a zone change (paperwhite2/roamers.h)
+    PaperWhite2_Roamers_OnZoneChange(gameData, zoneId);
 #endif
 }
 

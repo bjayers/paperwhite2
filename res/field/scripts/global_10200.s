@@ -3,6 +3,8 @@
 #ifdef PAPERWHITE2_DEBUG_MENU
 #include "paperwhite2/debug_actions.h"
 #include "paperwhite2/entralink_run_actions.h"
+#include "paperwhite2/roamer_actions.h"
+#include "paperwhite2/roamers_config.h"
 #endif
 
     ScriptEntry Script_1
@@ -641,6 +643,7 @@ L_DebugEncounters:
     ListMenuAdd Global10200_Text_DebugForceSpecies, 65535, 2
     ListMenuAdd Global10200_Text_DebugWildForm, 65535, 7
     ListMenuAdd Global10200_Text_DebugWildLevel, 65535, 3
+    ListMenuAdd Global10200_Text_DebugRoamers, 65535, 9
     ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
     ListMenuShow
     WorkCmpConst 0x8020, 0
@@ -661,6 +664,8 @@ L_DebugEncounters:
     VMJumpIf CMP_EQ, L_DebugWildForm
     WorkCmpConst 0x8020, 8
     VMJumpIf CMP_EQ, L_DebugToggleForceTriple
+    WorkCmpConst 0x8020, 9
+    VMJumpIf CMP_EQ, L_DebugRoamers
     VMJump L_DebugMenu
 
 L_DebugToggleAlwaysShiny:
@@ -726,6 +731,124 @@ L_DebugWildLevel:
     Debug DEBUG_ACTION_SET_WILD_LEVEL, 0, 0, 0x8025
     SEPlay SEQ_SE_SELECT1
     VMJump L_DebugEncounters
+
+// Roamers...: the roaming legendaries (paperwhite2/roamers.h). Release all, as the script command Roamers releases
+// them; their list a page at a time (0x8026 the page): each one's route and state; one brought to the player's route,
+// one healed (0x8026 the roamer picked); every knocked out one back now; Freeze movement; every clock run out, so that
+// the next zone change moves them; every roamer unreleased
+L_DebugRoamers:
+    Debug DEBUG_ACTION_ROAMERS_WORDS, 0, 0, 0x8025
+    SystemMsg Global10200_Text_DebugRoamersTitle, 2
+    ListMenuAnchorTopRight 31, 1, 0, 1, 0x8020
+    ListMenuAdd Global10200_Text_DebugRoamersRelease, 65535, 0
+    ListMenuAdd Global10200_Text_DebugRoamersList, 65535, 1
+    ListMenuAdd Global10200_Text_DebugRoamerBring, 65535, 2
+    ListMenuAdd Global10200_Text_DebugRoamerHeal, 65535, 3
+    ListMenuAdd Global10200_Text_DebugRoamersRespawn, 65535, 4
+    ListMenuAdd Global10200_Text_DebugRoamersFreeze, 65535, 5
+    ListMenuAdd Global10200_Text_DebugRoamersExpire, 65535, 6
+    ListMenuAdd Global10200_Text_DebugRoamersReset, 65535, 7
+    ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
+    ListMenuShow
+    WorkCmpConst 0x8020, 0
+    VMJumpIf CMP_EQ, L_DebugRoamersRelease
+    WorkCmpConst 0x8020, 1
+    VMJumpIf CMP_EQ, L_DebugRoamersListStart
+    WorkCmpConst 0x8020, 2
+    VMJumpIf CMP_EQ, L_DebugRoamerBring
+    WorkCmpConst 0x8020, 3
+    VMJumpIf CMP_EQ, L_DebugRoamerHeal
+    WorkCmpConst 0x8020, 4
+    VMJumpIf CMP_EQ, L_DebugRoamersRespawn
+    WorkCmpConst 0x8020, 5
+    VMJumpIf CMP_EQ, L_DebugRoamersFreeze
+    WorkCmpConst 0x8020, 6
+    VMJumpIf CMP_EQ, L_DebugRoamersExpire
+    WorkCmpConst 0x8020, 7
+    VMJumpIf CMP_EQ, L_DebugRoamersReset
+    VMJump L_DebugEncounters
+
+L_DebugRoamersRelease:
+    Debug DEBUG_ACTION_ROAMERS_RELEASE_ALL, 0, 0, 0x8025
+    SystemMsg Global10200_Text_DebugRoamersReleased, 2
+    LastKeyWait
+    VMJump L_DebugRoamers
+
+L_DebugRoamersListStart:
+    WorkSetConst 0x8026, 0
+
+L_DebugRoamersList:
+    Debug DEBUG_ACTION_ROAMERS_PAGE, 0x8026, 0, 0x8025
+    WorkCmpConst 0x8025, 0
+    VMJumpIf CMP_EQ, L_DebugRoamers
+    SystemMsg Global10200_Text_DebugRoamersPage, 2
+    LastKeyWait
+    WorkAdd 0x8026, 1
+    VMJump L_DebugRoamersList
+
+L_DebugRoamerBring:
+    VMCall L_DebugRoamerPick
+    WorkCmpConst 0x8026, ROAMERS_COUNT
+    VMJumpIf CMP_GE, L_DebugRoamers
+    Debug DEBUG_ACTION_ROAMER_BRING, 0x8026, 0, 0x8025
+    WorkCmpConst 0x8025, 0
+    VMJumpIf CMP_EQ, L_DebugRoamerNotHere
+    SystemMsg Global10200_Text_DebugRoamerBrought, 2
+    LastKeyWait
+    VMJump L_DebugRoamers
+
+L_DebugRoamerNotHere:
+    SystemMsg Global10200_Text_DebugRoamerNotHere, 2
+    LastKeyWait
+    VMJump L_DebugRoamers
+
+L_DebugRoamerHeal:
+    VMCall L_DebugRoamerPick
+    WorkCmpConst 0x8026, ROAMERS_COUNT
+    VMJumpIf CMP_GE, L_DebugRoamers
+    Debug DEBUG_ACTION_ROAMER_HEAL, 0x8026, 0, 0x8025
+    SEPlay SEQ_SE_SELECT1
+    VMJump L_DebugRoamers
+
+L_DebugRoamersRespawn:
+    Debug DEBUG_ACTION_ROAMERS_RESPAWN, 0, 0, 0x8025
+    SystemMsg Global10200_Text_DebugRoamersRespawned, 2
+    LastKeyWait
+    VMJump L_DebugRoamers
+
+L_DebugRoamersFreeze:
+    Debug DEBUG_ACTION_ROAMERS_FREEZE, 0, 0, 0x8025
+    SEPlay SEQ_SE_SELECT1
+    VMJump L_DebugRoamers
+
+L_DebugRoamersExpire:
+    Debug DEBUG_ACTION_ROAMERS_EXPIRE, 0, 0, 0x8025
+    SystemMsg Global10200_Text_DebugRoamersExpired, 2
+    LastKeyWait
+    VMJump L_DebugRoamers
+
+L_DebugRoamersReset:
+    Debug DEBUG_ACTION_ROAMERS_RESET, 0, 0, 0x8025
+    SystemMsg Global10200_Text_DebugRoamersResetDone, 2
+    LastKeyWait
+    VMJump L_DebugRoamers
+
+// A roamer picked from their list, in 0x8026: ROAMERS_COUNT or more for none (Back, B)
+L_DebugRoamerPick:
+    Debug DEBUG_ACTION_ROAMERS_WORDS, 0, 0, 0x8025
+    SystemMsg Global10200_Text_DebugRoamerPickTitle, 2
+    ListMenuAnchorTopRight 31, 1, 0, 1, 0x8026
+    ListMenuAdd Global10200_Text_DebugRoamer0, 65535, 0
+    ListMenuAdd Global10200_Text_DebugRoamer1, 65535, 1
+    ListMenuAdd Global10200_Text_DebugRoamer2, 65535, 2
+    ListMenuAdd Global10200_Text_DebugRoamer3, 65535, 3
+    ListMenuAdd Global10200_Text_DebugRoamer4, 65535, 4
+    ListMenuAdd Global10200_Text_DebugRoamer5, 65535, 5
+    ListMenuAdd Global10200_Text_DebugRoamer6, 65535, 6
+    ListMenuAdd Global10200_Text_DebugRoamer7, 65535, 7
+    ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
+    ListMenuShow
+    VMReturn
 
 // Player...: the warps end the script, and the map change follows it
 L_DebugPlayer:

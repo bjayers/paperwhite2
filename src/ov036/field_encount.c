@@ -33,6 +33,7 @@
 #include "constants/items.h"
 #include "constants/pokemon.h"
 #include "paperwhite2/encounters.h"
+#include "paperwhite2/roamers.h"
 #include "pml/personal.h"
 #include "save/bag.h"
 #include "save/high_link.h"
@@ -52,6 +53,10 @@ static void FieldEncount_SetupRoaming(EncountSystem *system, EncountManager *man
                                       RoamingPkm *roamingPkm);
 static void FieldEncount_SetupNPoke(EncountSystem *system, EncountManager *manager, BtlSetup *setup, HeapID heapId,
                                     u8 index);
+#ifdef PAPERWHITE2
+static void FieldEncount_SetupRoamer(EncountSystem *system, EncountManager *manager, BtlSetup *setup, HeapID heapId,
+                                     u32 slot);
+#endif
 static void EncountState_SyncToPlayer(EncountState *state, FieldPlayer *player);
 static void EncountState_UpdateTerrain(EncountState *state, u32 tileType);
 static void EncSys_UpdateEncountRate(EncountSystem *system, EncountState *state, u32 tileType);
@@ -126,6 +131,9 @@ GameEvent *EventWildBattleCall_CreateRandom(EncountSystem *system, u32 mode) {
     BtlSetup *setup;
     u8 nIndex = N_POKE_NONE;
     RoamingPkm *roamingPkm = NULL;
+#ifdef PAPERWHITE2
+    u32 roamer = ROAMERS_NONE;
+#endif
     EncountState *state;
     FieldPlayer *player;
 
@@ -175,9 +183,24 @@ GameEvent *EventWildBattleCall_CreateRandom(EncountSystem *system, u32 mode) {
     } else {
         u16 zoneId = Field_GetPlayerStateZoneID(system->field);
 
+#ifdef PAPERWHITE2
+        // Paper White 2: the roaming legendaries' roll in place of the original's, which had no roamers
+        // (paperwhite2/roamers.h)
+        roamer = PaperWhite2_Roamers_Roll(&manager, zoneId, encType);
+#else
         roamingPkm = FieldEncount_RndCheckRoaming(&manager, zoneId);
+#endif
         nIndex = FieldEncount_RndCheckNPoke(&manager, zoneId);
     }
+#ifdef PAPERWHITE2
+    // Paper White 2: a roamer's battle comes before N's Pokémon, as the original's roaming Pokémon's did
+    if (roamer != ROAMERS_NONE) {
+        setup = BtlSetup_Create(4);
+        FieldEncount_SetupRoamer(system, &manager, setup, 4, roamer);
+        EncountState_SyncToPlayer(state, player);
+        return EventWildBattleCall_CreateCore(system->gsys, system->field, setup, 0, mode, N_POKE_NONE);
+    }
+#endif
     if (roamingPkm != NULL) {
         setup = BtlSetup_Create(4);
         FieldEncount_SetupRoaming(system, &manager, setup, 4, roamingPkm);
@@ -454,6 +477,25 @@ static void FieldEncount_SetupRoaming(EncountSystem *system, EncountManager *man
     GFL_HeapFree(pkm);
     GFL_HeapFree(party);
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: FieldEncount_SetupRoaming's battle with a roamer's Pokémon, made from its slot with its form
+// (paperwhite2/roamers.h)
+static void FieldEncount_SetupRoamer(EncountSystem *system, EncountManager *manager, BtlSetup *setup, HeapID heapId,
+                                     u32 slot) {
+    PokeParty *party = PokeParty_Create(heapId);
+    PartyPkm *pkm = GFL_HeapAllocate(HEAPID_TAIL(heapId), PokeParty_GetPkmRawSize(), TRUE, "field_encount.c", 684);
+    BtlFieldStatus status;
+
+    PaperWhite2_Roamers_MakePkm(pkm, system->gameData, slot, manager->trainerId);
+    PokeParty_AddPkm(party, pkm);
+    SaveBtlFieldStatus(&status, system->gameData, system->field);
+    BtlSetup_SetWildNormal(setup, system->gameData, party, &status, FALSE, heapId);
+    BtlSetup_SetFlag(setup, ROAMERS_BTL_SETUP_FLAG);
+    GFL_HeapFree(pkm);
+    GFL_HeapFree(party);
+}
+#endif
 
 static void FieldEncount_SetupNPoke(EncountSystem *system, EncountManager *manager, BtlSetup *setup, HeapID heapId,
                                     u8 index) {

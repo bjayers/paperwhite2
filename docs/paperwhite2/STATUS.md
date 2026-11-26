@@ -2,6 +2,30 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-25: Roaming legendaries, phase 1 (ROM session)
+
+- **Built** (design/roaming-legendaries.md sections 9-10, plugins.md "Roaming legendaries"): Articuno, Zapdos,
+  Moltres, Raikou, Entei, Suicune, Tornadus and Thundurus, level 70, roam Routes 1-23 (22 routes: Route 10 has no town
+  map place), one to a route, never the player's. Data in `res/paperwhite2/roamers/` (`roamers.json`, `routes.json`,
+  schemas), packed by `tools/paperwhite2/roamers.py`; tests `tools/paperwhite2/test_roamers.py`.
+- **Save:** the World Trade block (the GTS shell leaves it unused), 0xd0 of 0xf8 bytes.
+- **Release:** script command `Roamers action, arg1, arg2, result` (0x2f9; **`Debug` is now 0x2fa**), for one roamer, a
+  group or all; for now only the debug menu calls it: **START > Encounters... > Roamers... > Release all.** The same menu
+  has Roamers now (routes and states), Bring one here, Heal one, Respawn the knocked out, Freeze movement, Run out
+  their clocks, Reset all.
+- **Behaviour:** each roamer moves to a neighbouring route every 15 minutes of real time, the clock paused on the
+  player's route; time with the game off counts on load, at most 4 moves. 50% of a step's encounters on its route by
+  its methods (walk; surf too for the birds and Suicune). It tries to flee every turn by the player's speed rule
+  (trapping holds it), keeps its HP and status, scatters 2 links after a battle it leaves, and comes back the day after
+  a knock-out at full HP with a new PID (shiny rolled again). Its route has its weather (gusty rain, thunderstorm, snow,
+  hail); **Entei and Moltres have none until harsh sun exists** (a later phase).
+- **Cost:** overlay 12 +3.4 KB, overlay 36 +0.5 KB: the DS arena 0x55e0 → 0x46c0 (17.7 KB).
+- **Tested** in py-desmume on a save copy, screenshots in `Pokemon Paper White\roamers\` (release, list, gusty rain and
+  thunderstorm, Tornadus' battle and flight, "can't escape", knock-out and next-day return, the clock's pause and cap,
+  Bring one here). Details in the design doc's section 10.
+- **Next:** the user's playtest (odds, the 15 minutes, the bouncing between two routes noted in section 10); then
+  phase 2 (the DexNav's Roamers page), harsh sun, the gates' board, the editor's page and the story's releases.
+
 ## 2026-11-23: Icon tone (ROM session)
 
 - **Measured** (shiny-icons.md section 17, OKLCh):

@@ -191,6 +191,21 @@
 #define DEBUG_ACTION_ENTREE_RANK_WORDS 62
 #define DEBUG_ACTION_ENTREE_RANK_RAISE 63
 #define DEBUG_ACTION_ENTREE_RANKS_RESET 64
+// The roaming legendaries (paperwhite2/roamers.h): every roamer released, as the script command's release does, how
+// many in word 0; page arg1 of the roamers' list (4 a page: each one's species, route and state in three words), TRUE
+// while there is one; the roamers' species in words 0 to 7 and Freeze movement's state in word 8; roamer arg1 to the
+// player's route (FALSE off its routes, or caught); roamer arg1 healed; every knocked out roamer back now, how many;
+// Freeze movement turned over; every roamer unreleased; and every clock run out, so that the next zone change moves
+// each roamer that isn't on the player's route
+#define DEBUG_ACTION_ROAMERS_RELEASE_ALL 65
+#define DEBUG_ACTION_ROAMERS_PAGE 66
+#define DEBUG_ACTION_ROAMERS_WORDS 67
+#define DEBUG_ACTION_ROAMER_BRING 68
+#define DEBUG_ACTION_ROAMER_HEAL 69
+#define DEBUG_ACTION_ROAMERS_RESPAWN 70
+#define DEBUG_ACTION_ROAMERS_FREEZE 71
+#define DEBUG_ACTION_ROAMERS_RESET 72
+#define DEBUG_ACTION_ROAMERS_EXPIRE 73
 
 // The kinds of number entry: their ranges and messages are sDebugNumberKinds (paperwhite2_debug_commands.c)
 #define DEBUG_NUMBER_LEVEL 0

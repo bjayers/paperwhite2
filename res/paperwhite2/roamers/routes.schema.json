@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Roamers' route graph",
+  "description": "The routes the roaming legendaries move between and their links (docs/paperwhite2/design/roaming-legendaries.md). Each route is a town map place (res/town_map/, a route place) and its outdoor zones are the zones whose header names that place (res/field/zones/, map type 0). Links go both ways and need only be listed on one side: a link is two routes a player walks (or surfs, or sails) between through at most a town or a bridge. tools/paperwhite2/roamers.py reads it with roamers.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [ "routes" ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "routes": {
+      "type": "array", "minItems": 2, "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [ "place", "links" ],
+        "properties": {
+          "place": { "type": "string", "x-constant": "PLACE_" },
+          "links": { "type": "array", "items": { "type": "string", "x-constant": "PLACE_" } },
+          "note": { "type": "string", "description": "What lies between it and its links" }
+        }
+      }
+    }
+  }
+}

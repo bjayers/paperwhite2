@@ -35,6 +35,8 @@
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/following_render.h"
 #include "paperwhite2/prestige.h"
+#include "paperwhite2/roamer_actions.h"
+#include "paperwhite2/roamers.h"
 #include "paperwhite2/season.h"
 #include "paperwhite2/shiny_candy.h"
 #include "paperwhite2/spawns.h"
@@ -104,6 +106,10 @@
 #define FOLLOWER_WORD_ITEM 3
 // The rules that one message of the readout shows
 #define CONDITIONS_RULES_PER_PAGE 3
+// The roamers that a page of their list shows, three words each (species, route, state), and the word of Freeze
+// movement's state after the roamers' species (DEBUG_ACTION_ROAMERS_WORDS)
+#define ROAMERS_PAGE_ROAMERS 4
+#define ROAMERS_WORD_FROZEN ROAMERS_SAVE_SLOTS
 
 // What a kind of number entry shows besides the number
 enum {
@@ -278,6 +284,8 @@ static void DebugCommands_ConditionsPick(FieldScriptEnv *env);
 static u32 DebugCommands_SpawnGroups(FieldScriptEnv *env, u32 first);
 static u32 DebugCommands_FlagWatchEntry(FieldScriptEnv *env, u32 index);
 static BOOL DebugCommands_RecordsPage(FieldScriptEnv *env, u32 page);
+static BOOL DebugCommands_RoamersPage(FieldScriptEnv *env, u32 page);
+static void DebugCommands_RefreshWeather(GameSystem *gsys);
 static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2, BOOL *wait);
 
 BOOL Scrcmd_PaperWhite2_Debug(VM *vm, FieldScriptEnv *env) {
@@ -457,6 +465,46 @@ static u32 DebugCommands_Run(FieldScriptEnv *env, u16 action, u16 arg1, u16 arg2
     case DEBUG_ACTION_ENTREE_RANKS_RESET:
         EntralinkRanks_DebugReset(gameData);
         return TRUE;
+    case DEBUG_ACTION_ROAMERS_RELEASE_ALL:
+        // The script command's release, then the weather of the player's route if one came here
+        value = Roamers_Release(gameData, ROAMERS_TARGET_ALL);
+        DebugCommands_SetWordNumber(env, 0, value);
+        DebugCommands_RefreshWeather(gsys);
+        return value;
+    case DEBUG_ACTION_ROAMERS_PAGE:
+        return DebugCommands_RoamersPage(env, arg1);
+    case DEBUG_ACTION_ROAMERS_WORDS:
+        for (value = 0; value < ROAMERS_COUNT; value++) {
+            WordSet_LoadSpeciesName(ScriptWork_GetWordSet(FieldScriptEnv_GetScriptWork(env)), value,
+                                    Roamers_GetData(value)->species);
+        }
+        DebugCommands_SetWordOnOff(env, ROAMERS_WORD_FROZEN, Roamers_GetSave(gameData)->frozen);
+        return 0;
+    case DEBUG_ACTION_ROAMER_BRING:
+        if (arg1 >= ROAMERS_COUNT || !Roamers_DebugBringHere(gameData, arg1)) {
+            return FALSE;
+        }
+        DebugCommands_RefreshWeather(gsys);
+        return TRUE;
+    case DEBUG_ACTION_ROAMER_HEAL:
+        if (arg1 < ROAMERS_COUNT) {
+            Roamers_DebugHeal(gameData, arg1);
+        }
+        return 0;
+    case DEBUG_ACTION_ROAMERS_RESPAWN:
+        value = Roamers_DebugRespawn(gameData);
+        DebugCommands_SetWordNumber(env, 0, value);
+        return value;
+    case DEBUG_ACTION_ROAMERS_FREEZE:
+        Roamers_GetSave(gameData)->frozen = !Roamers_GetSave(gameData)->frozen;
+        return Roamers_GetSave(gameData)->frozen;
+    case DEBUG_ACTION_ROAMERS_RESET:
+        Roamers_DebugReset(gameData);
+        DebugCommands_RefreshWeather(gsys);
+        return 0;
+    case DEBUG_ACTION_ROAMERS_EXPIRE:
+        Roamers_DebugExpireTimers(gameData);
+        return 0;
     case DEBUG_ACTION_SET_WILD_LEVEL:
         PaperWhite2_Debug_SetOverride(DEBUG_OVERRIDE_WILD_LEVEL,
                                       sDebugNumber.value == 0 ? DEBUG_OVERRIDE_OFF : sDebugNumber.value);
@@ -1458,6 +1506,102 @@ static BOOL DebugCommands_RecordsLine(const EntralinkProgress *progress, u32 ind
 }
 
 // A page of the records' readout in words 0 to RECORDS_PAGE_LINES - 1 (DEBUG_ACTION_RECORDS_PAGE); FALSE past the last
+// The party's status condition by its bits (the sleep's turns, then poison, burn, freeze, paralysis, toxic)
+static const char *DebugCommands_StatusName(u32 status) {
+    if (status & 7) {
+        return ", asleep";
+    }
+    if (status & 0x80) {
+        return ", bad poison";
+    }
+    if (status & 8) {
+        return ", poisoned";
+    }
+    if (status & 0x10) {
+        return ", burned";
+    }
+    if (status & 0x20) {
+        return ", frozen";
+    }
+    if (status & 0x40) {
+        return ", paralyzed";
+    }
+    return "";
+}
+
+// The roamers' list (DEBUG_ACTION_ROAMERS_PAGE): for each roamer of the page, its species, its route's place name (or
+// none) and its state in words 3n to 3n + 2: its HP (full, or what is left), status and minutes until it moves, or
+// knocked out, caught, not released (at most 34 characters). The clocks are counted first, as a zone change counts them
+static BOOL DebugCommands_RoamersPage(FieldScriptEnv *env, u32 page) {
+    GameData *gameData = FieldScriptEnv_GetGameData(env);
+    WordSet *wordSet = ScriptWork_GetWordSet(FieldScriptEnv_GetScriptWork(env));
+    RoamersSave *save;
+    u32 i;
+
+    if (page * ROAMERS_PAGE_ROAMERS >= ROAMERS_COUNT) {
+        return FALSE;
+    }
+    if (page == 0) {
+        PaperWhite2_Roamers_OnZoneChange(gameData, PlayerState_GetZoneID(GameData_GetPlayerState(gameData)));
+    }
+    save = Roamers_GetSave(gameData);
+    for (i = 0; i < ROAMERS_PAGE_ROAMERS; i++) {
+        u32 slot = page * ROAMERS_PAGE_ROAMERS + i;
+        const Roamer *roamer = &save->roamers[slot];
+        char line[ASCII_WORD_LENGTH];
+        char *end = line;
+
+        line[0] = '\0';
+        if (slot >= ROAMERS_COUNT) {
+            DebugCommands_SetWordAscii(env, 3 * i, "");
+            DebugCommands_SetWordAscii(env, 3 * i + 1, "");
+            DebugCommands_SetWordAscii(env, 3 * i + 2, "");
+            continue;
+        }
+        WordSet_LoadSpeciesName(wordSet, 3 * i, Roamers_GetData(slot)->species);
+        if (roamer->state == ROAMER_STATE_ROAMING && roamer->zone != ROAMERS_ZONE_NONE) {
+            loadLocationNameToStrbuf(wordSet, 3 * i + 1, ZoneData_GetPlaceNameID(roamer->zone));
+        } else {
+            DebugCommands_SetWordText(env, 3 * i + 1, Global10200_Text_DebugNone);
+        }
+        switch (roamer->state) {
+        case ROAMER_STATE_UNRELEASED:
+            DebugCommands_AppendText(end, "not released");
+            break;
+        case ROAMER_STATE_KNOCKED_OUT:
+            DebugCommands_AppendText(end, "knocked out, back tomorrow");
+            break;
+        case ROAMER_STATE_CAUGHT:
+            DebugCommands_AppendText(end, "caught");
+            break;
+        default:
+            if (roamer->hp == ROAMERS_HP_FULL) {
+                end = DebugCommands_AppendText(end, "HP full");
+            } else {
+                end = DebugCommands_AppendText(end, "HP ");
+                end = DebugCommands_AppendNumber(end, roamer->hp);
+            }
+            end = DebugCommands_AppendText(end, DebugCommands_StatusName(roamer->status));
+            end = DebugCommands_AppendText(end, ", ");
+            end = DebugCommands_AppendNumber(end, (roamer->timer + 59) / 60);
+            end = DebugCommands_AppendText(end, " min");
+            if (roamer->flags & ROAMER_FLAG_SEEN) {
+                DebugCommands_AppendText(end, ", seen");
+            }
+            break;
+        }
+        DebugCommands_SetWordAscii(env, 3 * i + 2, line);
+    }
+    return TRUE;
+}
+
+// The field's weather again, with the debug menu's weather override as it is, for a roamer that came or went
+static void DebugCommands_RefreshWeather(GameSystem *gsys) {
+    u32 weather = PaperWhite2_Debug_GetOverride(DEBUG_OVERRIDE_WEATHER);
+
+    DebugCommands_SetWeather(gsys, weather == DEBUG_OVERRIDE_OFF ? 0 : weather + 1);
+}
+
 static BOOL DebugCommands_RecordsPage(FieldScriptEnv *env, u32 page) {
     const EntralinkProgress *progress = EntralinkProgress_Get(GameData_GetSaveControl(FieldScriptEnv_GetGameData(env)));
     char line[ASCII_WORD_LENGTH];

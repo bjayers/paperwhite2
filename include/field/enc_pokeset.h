@@ -109,6 +109,11 @@ void CreateEncountManager(EncountManager *manager, GameData *gameData, int encTy
 u32 FieldEncount_CalcEncountRate(EncountManager *manager, GameData *gameData, u32 rate);
 int FieldEncount_GenWilds(EncData *encData, EncountManager *manager, u16 zoneId, WildPkmParam *params);
 RoamingPkm *FieldEncount_RndCheckRoaming(EncountManager *manager, u32 zoneId);
+#ifdef PAPERWHITE2
+// Paper White 2: whether the Repel keeps a Pokémon of the level off, for the roaming legendaries' roll
+// (paperwhite2/roamers.h)
+BOOL FieldEncount_PaperWhite2_IsLevelRepelled(EncountManager *manager, u8 level);
+#endif
 // What FieldEncount_RndCheckNPoke returns when none of N's Pokémon appears
 #define N_POKE_NONE 0xff
 
