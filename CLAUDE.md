@@ -21,7 +21,8 @@ this section wins.
 - **Remove each helper's worktree once its work is merged and pushed.** Every worktree under `.claude/worktrees/` is a
   full checkout with its own build (about 2 GB); 158 left behind filled 297 GB of the WSL disk by 2026-11-25. After
   merging: unlink the shared-folder symlinks inside it (`orig`, `extract`, `.venv`, `editor/node_modules`, the tools),
-  never following them, then `git worktree remove --force <path>` and `git branch -d <its branch>`. Keep a worktree
+  never following them, then `git worktree remove --force --force <path>` (twice: a helper's own worktree is locked
+  while it runs, so the main session removes it after the helper ends) and `git branch -d <its branch>`. Keep a worktree
   only while it holds unmerged commits or changes that aren't in main, and tell the user about it.
 - **Keep `docs/paperwhite2/ROADMAP.md` current.** When a feature starts, is built, or the user changes a plan, update
   its row in "Status at a glance" and its section in the same commit as the work (with STATUS.md's dated entry), so

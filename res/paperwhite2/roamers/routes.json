@@ -1,27 +1,113 @@
 {
     "$schema": "routes.schema.json",
     "routes": [
-        { "place": "PLACE_ROUTE_1", "links": [ "PLACE_ROUTE_2", "PLACE_ROUTE_17" ], "note": "Accumula Town; Route 17 by water" },
-        { "place": "PLACE_ROUTE_2", "links": [ "PLACE_ROUTE_3" ], "note": "Striaton City" },
-        { "place": "PLACE_ROUTE_3", "links": [ "PLACE_ROUTE_4" ], "note": "Nacrene City, Pinwheel Forest, Skyarrow Bridge and Castelia City" },
-        { "place": "PLACE_ROUTE_4", "links": [ "PLACE_ROUTE_5", "PLACE_ROUTE_16", "PLACE_ROUTE_20" ], "note": "Nimbasa City; Route 20 by Castelia's ship to Virbank City" },
-        { "place": "PLACE_ROUTE_5", "links": [ "PLACE_ROUTE_6", "PLACE_ROUTE_16" ], "note": "Driftveil Drawbridge and Driftveil City; Nimbasa City" },
-        { "place": "PLACE_ROUTE_6", "links": [ "PLACE_ROUTE_7" ], "note": "Mistralton City" },
-        { "place": "PLACE_ROUTE_7", "links": [ "PLACE_ROUTE_8" ], "note": "Twist Mountain and Icirrus City" },
-        { "place": "PLACE_ROUTE_8", "links": [ "PLACE_ROUTE_9" ], "note": "Moor of Icirrus and Tubeline Bridge" },
-        { "place": "PLACE_ROUTE_9", "links": [ "PLACE_ROUTE_11" ], "note": "Opelucid City" },
-        { "place": "PLACE_ROUTE_11", "links": [ "PLACE_ROUTE_12" ], "note": "Village Bridge" },
-        { "place": "PLACE_ROUTE_12", "links": [ "PLACE_ROUTE_13" ], "note": "Lacunosa Town" },
-        { "place": "PLACE_ROUTE_13", "links": [ "PLACE_ROUTE_14", "PLACE_ROUTE_21", "PLACE_ROUTE_22" ], "note": "Undella Town and Undella Bay; Giant Chasm" },
-        { "place": "PLACE_ROUTE_14", "links": [ "PLACE_ROUTE_15", "PLACE_ROUTE_21" ], "note": "Black City or White Forest; Undella Town" },
-        { "place": "PLACE_ROUTE_15", "links": [ "PLACE_ROUTE_16" ], "note": "Marvelous Bridge" },
-        { "place": "PLACE_ROUTE_16", "links": [], "note": "Lostlorn Forest's side of Nimbasa City" },
-        { "place": "PLACE_ROUTE_17", "links": [ "PLACE_ROUTE_18" ], "note": "water only" },
-        { "place": "PLACE_ROUTE_18", "links": [] },
-        { "place": "PLACE_ROUTE_19", "links": [ "PLACE_ROUTE_20" ], "note": "Floccesy Town" },
-        { "place": "PLACE_ROUTE_20", "links": [], "note": "Virbank City" },
-        { "place": "PLACE_ROUTE_21", "links": [ "PLACE_ROUTE_22" ], "note": "water only; Humilau City" },
-        { "place": "PLACE_ROUTE_22", "links": [ "PLACE_ROUTE_23" ], "note": "Giant Chasm" },
-        { "place": "PLACE_ROUTE_23", "links": [] }
+        {
+            "place": "PLACE_ROUTE_1",
+            "links": [ "PLACE_ROUTE_2", "PLACE_ROUTE_17" ],
+            "note": "Accumula Town; Route 17 by water"
+        },
+        {
+            "place": "PLACE_ROUTE_2",
+            "links": [ "PLACE_ROUTE_3" ],
+            "note": "Striaton City"
+        },
+        {
+            "place": "PLACE_ROUTE_3",
+            "links": [ "PLACE_ROUTE_4" ],
+            "note": "Nacrene City, Pinwheel Forest, Skyarrow Bridge and Castelia City"
+        },
+        {
+            "place": "PLACE_ROUTE_4",
+            "links": [ "PLACE_ROUTE_5", "PLACE_ROUTE_16", "PLACE_ROUTE_20" ],
+            "note": "Nimbasa City; Route 20 by Castelia's ship to Virbank City"
+        },
+        {
+            "place": "PLACE_ROUTE_5",
+            "links": [ "PLACE_ROUTE_6", "PLACE_ROUTE_16" ],
+            "note": "Driftveil Drawbridge and Driftveil City; Nimbasa City"
+        },
+        {
+            "place": "PLACE_ROUTE_6",
+            "links": [ "PLACE_ROUTE_7" ],
+            "note": "Mistralton City"
+        },
+        {
+            "place": "PLACE_ROUTE_7",
+            "links": [ "PLACE_ROUTE_8" ],
+            "note": "Twist Mountain and Icirrus City"
+        },
+        {
+            "place": "PLACE_ROUTE_8",
+            "links": [ "PLACE_ROUTE_9" ],
+            "note": "Moor of Icirrus and Tubeline Bridge"
+        },
+        {
+            "place": "PLACE_ROUTE_9",
+            "links": [ "PLACE_ROUTE_11" ],
+            "note": "Opelucid City"
+        },
+        {
+            "place": "PLACE_ROUTE_11",
+            "links": [ "PLACE_ROUTE_12" ],
+            "note": "Village Bridge"
+        },
+        {
+            "place": "PLACE_ROUTE_12",
+            "links": [ "PLACE_ROUTE_13" ],
+            "note": "Lacunosa Town"
+        },
+        {
+            "place": "PLACE_ROUTE_13",
+            "links": [ "PLACE_ROUTE_14", "PLACE_ROUTE_21", "PLACE_ROUTE_22" ],
+            "note": "Undella Town and Undella Bay; Giant Chasm"
+        },
+        {
+            "place": "PLACE_ROUTE_14",
+            "links": [ "PLACE_ROUTE_15", "PLACE_ROUTE_21" ],
+            "note": "Black City or White Forest; Undella Town"
+        },
+        {
+            "place": "PLACE_ROUTE_15",
+            "links": [ "PLACE_ROUTE_16" ],
+            "note": "Marvelous Bridge"
+        },
+        {
+            "place": "PLACE_ROUTE_16",
+            "links": [],
+            "note": "Lostlorn Forest's side of Nimbasa City"
+        },
+        {
+            "place": "PLACE_ROUTE_17",
+            "links": [ "PLACE_ROUTE_18" ],
+            "note": "water only"
+        },
+        {
+            "place": "PLACE_ROUTE_18",
+            "links": []
+        },
+        {
+            "place": "PLACE_ROUTE_19",
+            "links": [ "PLACE_ROUTE_20" ],
+            "note": "Floccesy Town"
+        },
+        {
+            "place": "PLACE_ROUTE_20",
+            "links": [],
+            "note": "Virbank City"
+        },
+        {
+            "place": "PLACE_ROUTE_21",
+            "links": [ "PLACE_ROUTE_22" ],
+            "note": "water only; Humilau City"
+        },
+        {
+            "place": "PLACE_ROUTE_22",
+            "links": [ "PLACE_ROUTE_23" ],
+            "note": "Giant Chasm"
+        },
+        {
+            "place": "PLACE_ROUTE_23",
+            "links": []
+        }
     ]
 }
