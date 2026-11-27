@@ -255,4 +255,5 @@ GymInsect_Text_MayBecomeStarPokestar_2 = ◇ You may become a star in Pokéstar 
 GymInsect_Text_MoviesFromAllOver_2 = ◇ Movies from all over the world come to Pokéstar Studios.
 GymInsect_Text_PokestarStudiosPlaceWhere_2 = ◇ Pokéstar Studios is a place where various directors turn their unique vision into movies.
 GymInsect_Text_PokestarStudiosBoastsLatest_2 = ◇ Pokéstar Studios boasts the latest movie studios and a theater.
+GymInsect_Text_HarshSunlight = Harsh sunlight
 \pad{0a}

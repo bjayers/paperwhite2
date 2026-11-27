@@ -684,7 +684,7 @@ menu's Force weather. Design and the weathers: `docs/paperwhite2/design/weather-
 | Battle's weather | Field weather |
 | --- | --- |
 | rain | `WEATHER_RAIN` |
-| sun | `WEATHER_SUNNY`: the field has no harsh sun, so sun clears the sky |
+| sun | `WEATHER_HARSH_SUN` (since 2026-11-27; before, `WEATHER_SUNNY`), so Sunny Day and Drought leave harsh sun, which gives sun again |
 | sandstorm | `WEATHER_SANDSTORM` |
 | hail | `WEATHER_FLUTTER`, the snow that `ConvFieldWeatherToBtl` gives hail for, so the next battle there has hail again |
 
@@ -720,7 +720,7 @@ Weather that looks right under any camera, made for Castelia (research and optio
 A weather's fog shift and offset are depth-buffer values that suit a normal town's camera (defaults 0: Z-buffered, near
 1, far 1024, its target 237 units away). The weathers keep setting and animating them as in the original, and
 `FieldFog_Flush` maps them to the current camera when the fog is a falling weather's (rain, thunderstorm, gusty rain,
-snow, blizzard, flutter, speck, sandstorm; `PaperWhite2_WeatherFog_FollowsPlayer`): the depth at the camera's target
+snow, blizzard, flutter, speck, sandstorm, the dry thunderstorm; `PaperWhite2_WeatherFog_FollowsPlayer`): the depth at the camera's target
 on the reference camera goes to the depth at the target on this one, and the fog's steps scale by the power of two
 nearest the ratio of how fast depth grows with distance at the target on the two (W-buffering: 8 a unit; Z-buffering:
 `0x7fff f n / (d^2 (f - n))`). So the density at the target is the same as in a normal town (rain 41%, thunderstorm
@@ -890,6 +890,82 @@ custom tint as `WEATHER_SUNNY`, which keeps the encounter tables' 16-bit masks),
 four in Castelia (screenshots in the session's scratchpad `tints/shots/`, `m_forest.png`, `m_town.png`); a tint, then
 Off, back to the forest's own look; a tint kept through a run battle's loss and the warp to the hub. Not tested: real
 hardware (DeSmuME's fog is close for a Z-buffered camera), a W-buffered camera.
+
+### Harsh sun and the dry thunderstorm
+
+Two field weathers of the hack's own (2026-11-27; research, prototypes and the user's decisions in
+`docs/paperwhite2/design/harsh-sun.md`), `WEATHER_HARSH_SUN` (27) and `WEATHER_DRY_THUNDERSTORM` (28) after the custom
+tints in `include/system/zone_weather.h`. Debug menu: **START > World... > Weather > Harsh sun / Dry thunderstorm** (the
+list's last two entries); the debug menu's Time of day override changes harsh sun's look too.
+
+**Harsh sun** (`include/paperwhite2/harsh_sun.h`): one weather whose look follows the time of day
+(`GetRealTimeDayPeriod`).
+- Light: its own weather light file, `res/lighting/battle/010.json` (`HARSH_SUN_LIGHT_FILE`), faded in as the rain's
+  is and reset on exit: summer's field lights (`res/lighting/field/141.json`) made warm and bright by day, orange in
+  the evening and warmer at night (the formulas in the design note's section 13). It replaces the zone's light set
+  while it plays, as every weather's light does. Tuning is data.
+- Morning and day: a **heat shimmer**, the 3D layer (BG0) moved a pixel left or right per line from the HBlank
+  interrupt (an HBlank TCB, `GFL_HBlankTCBAdd`), a sine wave 28 lines long drifting slowly, full on lines 0-39 and
+  fading to none by line 64, so the player and the ground near them never move; and the **vanilla lens flare**
+  (`field_goout_effect.c`'s scene 3, archive 0xe8: the season's day flare), loaded by harsh sun when the field has
+  none, placed before the camera each frame and held between animation frames 6 and 16 on a slow cosine (about 7
+  seconds a pulse in DeSmuME), so it pulses. A building exit's own flare is left to play.
+- Evening: the evening flare (flare 4), pulsing; no shimmer.
+- Night: **embers**, the weather's OBJs at priority 3 as the snow's flakes (so the place name banner and the message
+  boxes draw over them): the diamond dust's speck cells (archive 0x37 members 0x19-0x1c) with the particles' palette
+  replaced by four ember shades (`WeatherTask_SetParticlePalette`); one every 4 frames, each living 45-85 frames,
+  rising 0.6-1.5 px a frame with a sine sway of 2-3 px and fading through its shape's cells from yellow to dim red
+  (`Ember_Move`, a new routine: the specks' own move never sets the position, a `// BUG:` of the original).
+- Code: the weather in overlay 75 with the particle weathers (`src/paperwhite2/ov075/paperwhite2_harsh_sun.c`); the
+  shimmer and the flare in overlay 36 (`src/paperwhite2/ov036/paperwhite2_harsh_sun_field.c`), driven by the strength
+  the weather sets (`PaperWhite2_HarshSun_SetLevel`, faded over 60 frames in and 40 out) and updated each frame from
+  `fieldmap.c`'s `FieldG3D_Update` after the lens flare's own update. The weather's exit (also when the field closes)
+  removes the HBlank task and writes BG0's offset back to 0; `PaperWhite2_HarshSun_FieldEnd`, before the field frees
+  its 3D objects, does the same and frees the flare. `weather_task.c` gains `WeatherTask_GetSeason` and
+  `WeatherTask_SetParticlePalette`.
+- Battle: sun (`ConvFieldWeatherToBtl`), so the battle starts with the vanilla sun animation and "The sunlight turned
+  harsh!"; every sun rule follows. The battle is lit by harsh sun's light file: `FieldLightStatus_Get` gets the
+  battle's own weather (a `BTL_WEATHER_*`, which the original reads as a field weather's index), and sun now takes
+  file 10 instead of field weather 1's light (the snow's). An Entree run battle whose climate is sun gets the same
+  light. After a battle, sun is harsh sun (Battle weather above), so Sunny Day or Drought leave harsh sun for
+  `BATTLE_WEATHER_SECONDS` in a zone that had another weather.
+- Encounters: clear (`WEATHER_GROUP_CLEAR`; the conditions context counts it as `WEATHER_SUNNY`, so the 16-bit
+  weather masks hold); Sweet Scent works in it as in the clear (`EventSweetScent_CheckWeatherClear`; not tested).
+
+**The dry thunderstorm** (`include/field/weather_rain.h`, `DRY_THUNDERSTORM_WEATHER` at the end of
+`src/ov076/weather_rain.c` under `PAPERWHITE2`, using the thunderstorm's static `Lightning_*`): the thunderstorm's fog,
+light file (6) and dark light colour, its lightning (the yellow flashes) and thunder claps, with no drops, no sheet and
+no rain loop. No wind loop either: the weathers' one wind sound (0x6e3, the sandstorm's and the blizzard's) is a
+full-volume howl that would read as a sandstorm. Its fog follows the player as the thunderstorm's does. No battle
+weather, and the battle is lit as in the clear; for encounters it is the thunderstorm (`WEATHER_GROUP_THUNDERSTORM`,
+the conditions context maps it to `WEATHER_THUNDERSTORM`, so the DexNav names it Thunderstorm).
+
+**Wiring.** `weather.c`'s `WEATHER_OVERLAYS` (overlays 75 and 76); the weather groups (`weather_groups.h`, the editor's
+`WEATHER_GROUPS`); the calendar's and `run.schema.json`'s weather enums (the calendar packer reads the header);
+the Weather Editor's labels and swatches (`editor/src/modules/weather/weathers.ts`); the roamers
+(`roamers.json`: Entei and Moltres `harsh_sun`, Raikou and Zapdos `dry_thunderstorm`; `tools/paperwhite2/roamers.py`);
+the gates' board (`field_gimmick_gate.c`: "Harsh sunlight", `GymInsect_Text_HarshSunlight`, and the dry thunderstorm
+as the thunderstorm's message); the debug menu's names. `PAPERWHITE2_CUSTOM_TINT_SLOTS` now counts the tints alone.
+Unchanged on purpose: the Xtransceiver's weather object (`local_tvt_calldata.c`) gives both new weathers none, as in
+the clear; the encounter abilities (`enc_pokeset.c`) have no sun case.
+
+**Cost.** Overlay 36 about 1 KB (the field side, 0xd0 of BSS with the shimmer's table, the hooks), overlay 75 about
+0.6 KB, overlay 76 about 0.4 KB, ARM9 main a few dozen bytes: the DS arena 0x46c0 → 0x4060 (16 KB); a 0.5 KB light
+file; the flare's model and animations on the field heap while shown (the vanilla flare's 15,000-byte floor applies).
+Per frame: the shimmer's 192-line table and one store per HBlank.
+
+**Tested (py-desmume, a copy of the user's save, 2026-11-27; `Pokemon Paper White\harsh_sun\built_*`):** Route 19 by
+day (`built_day_clear.png` / `built_day_harsh_sun.png`, the shimmer `built_day_shimmer.gif` on the top 64 lines only,
+the flare pulsing `built_day_flare_pulse.gif`; the HBlank task ran 263 times a frame), evening (`built_evening_*`, the
+evening flare) and night (`built_night_harsh_sun.png`, `built_night_embers.gif`, 19 ember OBJs at priority 3); the
+banner and the debug menu's message box over each (`built_*_banner_a.png`, `built_*_menu.png`); a wild battle in harsh
+sun starting in sun (`built_battle_sun_start.gif`); Sunny Day used by Klink in a clear zone's double battle
+(`built_sunny_day_in_battle.gif`), then fleeing: the field came back in harsh sun (`built_after_sunny_day_field.png`,
+battle weather 27 for the zone); the roamers brought here (debug menu): Entei's harsh sun, Raikou's dry thunderstorm
+(`built_roamer_*.png`); the dry thunderstorm's dark and flash (`built_dry_thunderstorm_*`, three flashes in its first
+seconds, no OBJs). A weather change from harsh sun to the dry thunderstorm ended the shimmer and the flare. **On
+hardware:** the shimmer's per-line BG0 scroll (DeSmuME draws it; the 3DS and the user's melonDS core are unchecked),
+and the single backdrop-coloured column a shifted line shows at the screen's edge.
 
 ### Season app
 

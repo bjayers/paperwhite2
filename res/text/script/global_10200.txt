@@ -287,3 +287,5 @@ Global10200_Text_DebugRoamer4 = {0100:4}
 Global10200_Text_DebugRoamer5 = {0100:5}
 Global10200_Text_DebugRoamer6 = {0100:6}
 Global10200_Text_DebugRoamer7 = {0100:7}
+Global10200_Text_DebugWeatherHarshSun = Harsh sun
+Global10200_Text_DebugWeatherDryThunderstorm = Dry thunderstorm

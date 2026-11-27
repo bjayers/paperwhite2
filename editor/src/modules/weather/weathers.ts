@@ -41,6 +41,10 @@ const LOOKS: Record<string, WeatherLook> = {
   WEATHER_CUSTOM_TINT_10: customTint(10),
   WEATHER_CUSTOM_TINT_11: customTint(11),
   WEATHER_CUSTOM_TINT_12: customTint(12),
+  WEATHER_HARSH_SUN: { label: "Harsh sun", color: "#f08a24",
+    note: "Paper White 2's harsh sun: warm bright light, a heat shimmer and a pulsing lens flare by day, an orange evening, rising embers at night. Sun in battle; clear for encounters." },
+  WEATHER_DRY_THUNDERSTORM: { label: "Dry thunderstorm", color: "#5a5f7a",
+    note: "Paper White 2's dry thunderstorm: the thunderstorm's dark light, lightning and thunder with no rain. No battle weather; a thunderstorm for encounters." },
 };
 
 const plain = (name: string) => {

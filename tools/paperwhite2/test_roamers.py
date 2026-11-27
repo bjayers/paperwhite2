@@ -111,3 +111,11 @@ def test_broken_roamers(tmp_path, entries, message):
     directory, zones, town_map, areas = fixture(tmp_path, entries=entries)
     with pytest.raises(datajson.DataError, match=message):
         roamers.header(directory, zones, town_map, areas)
+
+
+def test_new_weathers():
+    # Harsh sun and the dry thunderstorm are field weathers of their own, which include/system/zone_weather.h's enum has
+    assert roamers.WEATHERS["harsh_sun"] == "WEATHER_HARSH_SUN"
+    assert roamers.WEATHERS["dry_thunderstorm"] == "WEATHER_DRY_THUNDERSTORM"
+    enum = (roamers.ROOT / "include/system/zone_weather.h").read_text()
+    assert all(f"{name}," in enum for name in roamers.WEATHERS.values() if name != "WEATHER_NONE")

@@ -48,7 +48,11 @@ void ConditionContext_FillWorld(ConditionContext *ctx, GameData *gameData) {
     ctx->weather = GetNowWeather(gameData);
     // The hack's tints are a look, not a weather to meet Pokémon in: they count as clear, which also keeps every
     // weather that a condition or an encounter tests within the tables' 16 bits (paperwhite2/field_tint.h)
-    if (ctx->weather >= WEATHER_CUSTOM_TINT_1 && ctx->weather < WEATHER_MAX) {
+    // Harsh sun counts as clear and the dry thunderstorm as the thunderstorm, the weathers of their groups
+    // (paperwhite2/weather_groups.h), for the same reason
+    if (ctx->weather == WEATHER_DRY_THUNDERSTORM) {
+        ctx->weather = WEATHER_THUNDERSTORM;
+    } else if (ctx->weather >= WEATHER_CUSTOM_TINT_1 && ctx->weather < WEATHER_MAX) {
         ctx->weather = WEATHER_SUNNY;
     }
     ctx->zone = PlayerState_GetZoneID(GameData_GetPlayerState(gameData));

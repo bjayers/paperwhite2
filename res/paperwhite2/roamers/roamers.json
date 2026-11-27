@@ -6,9 +6,9 @@
     "groups": [ "birds", "beasts", "forces" ],
     "roamers": [
         { "name": "articuno", "species": "SPECIES_ARTICUNO", "level": 70, "group": "birds", "odds": 50, "methods": [ "walk", "surf" ], "weather": "hail" },
-        { "name": "zapdos", "species": "SPECIES_ZAPDOS", "level": 70, "group": "birds", "odds": 50, "methods": [ "walk", "surf" ], "weather": "thunderstorm" },
+        { "name": "zapdos", "species": "SPECIES_ZAPDOS", "level": 70, "group": "birds", "odds": 50, "methods": [ "walk", "surf" ], "weather": "dry_thunderstorm" },
         { "name": "moltres", "species": "SPECIES_MOLTRES", "level": 70, "group": "birds", "odds": 50, "methods": [ "walk", "surf" ], "weather": "harsh_sun" },
-        { "name": "raikou", "species": "SPECIES_RAIKOU", "level": 70, "group": "beasts", "odds": 50, "methods": [ "walk" ], "weather": "thunderstorm" },
+        { "name": "raikou", "species": "SPECIES_RAIKOU", "level": 70, "group": "beasts", "odds": 50, "methods": [ "walk" ], "weather": "dry_thunderstorm" },
         { "name": "entei", "species": "SPECIES_ENTEI", "level": 70, "group": "beasts", "odds": 50, "methods": [ "walk" ], "weather": "harsh_sun" },
         { "name": "suicune", "species": "SPECIES_SUICUNE", "level": 70, "group": "beasts", "odds": 50, "methods": [ "walk", "surf" ], "weather": "snow" },
         { "name": "tornadus", "species": "SPECIES_TORNADUS", "level": 70, "group": "forces", "odds": 50, "methods": [ "walk" ], "weather": "gusty_rain" },

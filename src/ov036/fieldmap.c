@@ -99,6 +99,7 @@
 #include "paperwhite2/field.h"
 #include "paperwhite2/following_field.h"
 #include "paperwhite2/following_render.h"
+#include "paperwhite2/harsh_sun.h"
 #include "paperwhite2/roamers.h"
 #include "paperwhite2/sprites.h"
 #include "paperwhite2/wanderers.h"
@@ -657,6 +658,10 @@ u32 FieldRoutine_MapUnload(GameSystem *gsys, Field *field) {
     }
     UnloadScrPluginOverlays(field->gameData);
     Field_TerminateGimmick(field);
+#ifdef PAPERWHITE2
+    // Paper White 2: harsh sun's shimmer ends and its flare goes before the 3D objects (paperwhite2/harsh_sun.h)
+    PaperWhite2_HarshSun_FieldEnd();
+#endif
     FieldLensFlare_Free(field->lensFlare);
     FieldExpObj_Free(field->expObjSystem);
     EncSys_Free(field->encountSystem);
@@ -1039,6 +1044,10 @@ void FieldG3D_Update(Field *field) {
     FieldFogCtrl_Update(field->fogCtrl, field->heapId);
     FieldWeather_Update(field->weatherSystem, HEAPID_FIELD_WEATHER);
     FieldLensFlare_Update(field->lensFlare, field->cameraSystem);
+#ifdef PAPERWHITE2
+    // Paper White 2: harsh sun's shimmer and flare, by the time of day (paperwhite2/harsh_sun.h)
+    PaperWhite2_HarshSun_Update(field);
+#endif
     FieldFog_Update(field->fog);
 #ifdef PAPERWHITE2
     // Paper White 2: a weather's fog follows the player as the camera moves (paperwhite2/weather_fog.h)

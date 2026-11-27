@@ -1181,3 +1181,126 @@ static u16 Lightning_GetShade(Lightning *lightning) {
 
     return shade | shade << 5 | 0x2000;
 }
+
+#ifdef PAPERWHITE2
+// Paper White 2: the dry thunderstorm, WEATHER_DRY_THUNDERSTORM (field/weather_rain.h): weather 6's fog, its light file
+// and dark light colour, and its lightning with the thunder, without the drops' spawner, the sheet or the rain loop.
+// The storm's only sound is the lightning's thunder: the weathers' one wind loop (0x6e3) is the sandstorm's and the
+// blizzard's howl, which plays at full volume and would read as a sandstorm
+static BOOL DryThunder_Init(WeatherTask *task, u32 arg, HeapID heapId);
+static BOOL DryThunder_FadeIn(WeatherTask *task, u32 arg, HeapID heapId);
+static BOOL DryThunder_InitNoFade(WeatherTask *task, u32 arg, HeapID heapId);
+static BOOL DryThunder_Main(WeatherTask *task, u32 arg, HeapID heapId);
+static BOOL DryThunder_InitFadeOut(WeatherTask *task, u32 arg, HeapID heapId);
+static BOOL DryThunder_FadeOut(WeatherTask *task, u32 arg, HeapID heapId);
+static BOOL DryThunder_Exit(WeatherTask *task, u32 arg, HeapID heapId);
+
+WeatherData DRY_THUNDERSTORM_WEATHER = {
+    { 0x37, 0, 0 },
+    sizeof(ThunderWork),
+    {
+        DryThunder_Init,
+        DryThunder_FadeIn,
+        DryThunder_InitNoFade,
+        DryThunder_Main,
+        DryThunder_InitFadeOut,
+        DryThunder_FadeOut,
+        DryThunder_Exit,
+    },
+    NULL,
+};
+
+static BOOL DryThunder_Init(WeatherTask *task, u32 arg, HeapID heapId) {
+    ThunderWork *work = WeatherTask_GetWorkBuffer(task);
+
+    Lightning_Init(&work->lightning, 2);
+    WeatherTask_InitFog(task, 9, RAIN_START_COLOR, arg);
+    work->timer = 0;
+    work->state = 0;
+    return TRUE;
+}
+
+// Thunder_FadeIn's steps: the storm's light, its dark colour, a first flash with its thunder, then the fog
+static BOOL DryThunder_FadeIn(WeatherTask *task, u32 arg, HeapID heapId) {
+    ThunderWork *work = WeatherTask_GetWorkBuffer(task);
+
+    switch (work->state) {
+    case 0:
+        WeatherTask_FadeLight(task, WEATHER_SOUND_TYPE, FieldLightStatus_GetWeatherLight(6));
+        work->state++;
+        work->timer = RAIN_FADE_IN_FRAMES;
+        break;
+    case 1:
+        if (--work->timer < 0) {
+            work->state++;
+        }
+        break;
+    case 2:
+        WeatherTask_SetLightColor(task, 0x28c6, 8);
+        work->timer = 16;
+        work->state++;
+        break;
+    case 3:
+        if (--work->timer < 0) {
+            WeatherTask_FlashLight(task, 0x23de, 4, 60);
+            WeatherTask_PlaySeDirect(task, SEQ_SE_FLD_33);
+            work->state++;
+        }
+        break;
+    case 4:
+        if (!WeatherTask_IsLightFlashing(task)) {
+            WeatherTask_ChangeFog(task, 9, 0x7f80, 0x50, arg);
+            work->state++;
+        }
+        break;
+    case 5:
+        if (WeatherTask_IsFogIdle(task)) {
+            return TRUE;
+        }
+        break;
+    }
+    return FALSE;
+}
+
+static BOOL DryThunder_InitNoFade(WeatherTask *task, u32 arg, HeapID heapId) {
+    WeatherTask_InitFog(task, 9, 0x7f80, arg);
+    WeatherTask_SetLight(task, WEATHER_SOUND_TYPE, FieldLightStatus_GetWeatherLight(6));
+    return TRUE;
+}
+
+static BOOL DryThunder_Main(WeatherTask *task, u32 arg, HeapID heapId) {
+    ThunderWork *work = WeatherTask_GetWorkBuffer(task);
+
+    Lightning_Update(&work->lightning, task);
+    return FALSE;
+}
+
+static BOOL DryThunder_InitFadeOut(WeatherTask *task, u32 arg, HeapID heapId) {
+    ThunderWork *work = WeatherTask_GetWorkBuffer(task);
+
+    work->timer = 1;
+    return TRUE;
+}
+
+static BOOL DryThunder_FadeOut(WeatherTask *task, u32 arg, HeapID heapId) {
+    ThunderWork *work = WeatherTask_GetWorkBuffer(task);
+
+    if (work->timer > 0) {
+        if (--work->timer == 0) {
+            WeatherTask_ChangeFogOffset(task, RAIN_START_COLOR, RAIN_FADE_OUT_FRAMES, arg);
+        }
+    } else if (arg ? WeatherTask_IsFogIdle(task) : TRUE) {
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static BOOL DryThunder_Exit(WeatherTask *task, u32 arg, HeapID heapId) {
+    ThunderWork *work = WeatherTask_GetWorkBuffer(task);
+
+    WeatherTask_DisableFog(task, arg);
+    WeatherTask_ResetLight(task, arg);
+    Lightning_Exit(&work->lightning);
+    return TRUE;
+}
+#endif

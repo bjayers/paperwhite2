@@ -17,6 +17,9 @@
 #include "struct_decls.h"
 #include "system/game_event.h"
 #include "system/game_system.h"
+#ifdef PAPERWHITE2
+#include "system/zone_weather.h"
+#endif
 
 static const SweetScentPalette sPalette = { 0, 0x5d5f };
 
@@ -110,7 +113,14 @@ GameEventReturnCode EventSweetScent_Callback(GameEvent *event, u32 *state, void 
 }
 
 BOOL EventSweetScent_CheckWeatherClear(SweetScentEventData *work) {
+#ifdef PAPERWHITE2
+    u16 weather = FieldWeather_GetWeatherId(Field_GetWeatherSystem(work->field));
+
+    // Paper White 2: harsh sun counts as clear, as it does for encounters (paperwhite2/weather_groups.h)
+    if (weather == WEATHER_SUNNY || weather == WEATHER_HARSH_SUN) {
+#else
     if (FieldWeather_GetWeatherId(Field_GetWeatherSystem(work->field)) == 0) {
+#endif
         return TRUE;
     }
     return FALSE;

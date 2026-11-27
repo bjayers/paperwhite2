@@ -69,11 +69,11 @@ test("painting writes only the changed month, in the dump's form", () => {
 
 test("the packer's checks", () => {
   const bad = monthsOf({ january: { "0": "WEATHER_RAIN", "2-1": "WEATHER_RAIN", x: "WEATHER_RAIN" }, february: { "30": "WEATHER_RAIN" },
-    march: { "1-3": "WEATHER_RAIN", "3": "WEATHER_FLAKE", "5": "WEATHER_HARSH_SUN" }, smarch: {} });
+    march: { "1-3": "WEATHER_RAIN", "3": "WEATHER_FLAKE", "5": "WEATHER_HEATWAVE" }, smarch: {} });
   const { errors } = readYear(bad, WEATHERS);
   assert.equal(errors.length, 7, errors.join("\n"));
   assert.ok(errors.some((e) => e.includes("day 3 has a weather already")));
-  assert.ok(errors.some((e) => e.includes("WEATHER_HARSH_SUN")));
+  assert.ok(errors.some((e) => e.includes("WEATHER_HEATWAVE")));
   assert.ok(errors.some((e) => e.startsWith("smarch")));
   // February has a 29th
   assert.deepEqual(readYear(monthsOf({ february: { "29": "WEATHER_RAIN" } }), WEATHERS).errors, []);

@@ -494,8 +494,8 @@ L_DebugSeason:
     SEPlay SEQ_SE_SELECT1
     VMJump L_DebugWorld
 
-// Weather: Off, or a WEATHER_* + 1, WEATHER_SUNNY to WEATHER_CUSTOM_TINT_12, the tints, the second sandstorm and the
-// hack's tints (res/paperwhite2/field_tints/tints.json, by slot) included
+// Weather: Off, or a WEATHER_* + 1, WEATHER_SUNNY to WEATHER_DRY_THUNDERSTORM, the tints, the second sandstorm, the
+// hack's tints (res/paperwhite2/field_tints/tints.json, by slot), harsh sun and the dry thunderstorm included
 L_DebugWeather:
     SystemMsg Global10200_Text_DebugWeatherTitle, 2
     ListMenuAnchorTopRight 31, 1, 0, 1, 0x8020
@@ -527,9 +527,11 @@ L_DebugWeather:
     ListMenuAdd Global10200_Text_DebugWeatherCustomTint10, 65535, 25
     ListMenuAdd Global10200_Text_DebugWeatherCustomTint11, 65535, 26
     ListMenuAdd Global10200_Text_DebugWeatherCustomTint12, 65535, 27
+    ListMenuAdd Global10200_Text_DebugWeatherHarshSun, 65535, 28
+    ListMenuAdd Global10200_Text_DebugWeatherDryThunderstorm, 65535, 29
     ListMenuAdd Global10200_Text_DebugBack, 65535, DEBUG_LIST_BACK
     ListMenuShow
-    WorkCmpConst 0x8020, 27
+    WorkCmpConst 0x8020, 29
     VMJumpIf CMP_GT, L_DebugWorld
     Debug DEBUG_ACTION_SET_WEATHER, 0x8020, 0, 0x8025
     SEPlay SEQ_SE_SELECT1

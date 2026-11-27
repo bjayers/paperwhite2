@@ -101,6 +101,9 @@ const WeatherData *WeatherTask_GetData(WeatherTask *task);
 FieldFog *WeatherTask_GetFog(WeatherTask *task);
 // Applies the light's colours and the fog's colour at once
 void WeatherTask_FlushLight(WeatherTask *task);
+// Paper White 2: the field's season, and a palette of 16 colours for the particles (paperwhite2/harsh_sun.h)
+u16 WeatherTask_GetSeason(WeatherTask *task);
+void WeatherTask_SetParticlePalette(WeatherTask *task, const GXRgb *colors);
 #endif
 void WeatherTask_ChangeFog(WeatherTask *task, u32 depthShift, u32 color, int duration, u32 mode);
 void WeatherTask_ChangeFogOffset(WeatherTask *task, u32 color, u32 duration, u32 mode);

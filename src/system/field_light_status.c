@@ -9,6 +9,8 @@
 #include "system/area_data.h"
 #include "system/rtc.h"
 #ifdef PAPERWHITE2
+#include "constants/battle.h"
+#include "paperwhite2/harsh_sun.h"
 #include "system/zone_weather.h"
 #endif
 
@@ -46,9 +48,13 @@ void FieldLightStatus_Get(u32 zoneId, u32 hour, u32 minute, u32 weather, u32 sea
     int seconds = minute * 60 + hour * 3600;
 
 #ifdef PAPERWHITE2
-    // Paper White 2: the hack's tints have no battle light of their own, so a battle in one is lit as in the clear
-    // (paperwhite2/field_tint.h)
-    if (weather != 0 && weather < WEATHER_CUSTOM_TINT_1) {
+    // Paper White 2: a battle passes its own weather (BTL_WEATHER_*, ConvFieldWeatherToBtl's), which the original reads
+    // as a field weather's index; sun, which harsh sun gives, takes harsh sun's light (paperwhite2/harsh_sun.h) rather
+    // than field weather 1's (the snow's). The hack's tints have no battle light of their own, so a battle in one is
+    // lit as in the clear (paperwhite2/field_tint.h)
+    if (weather == BTL_WEATHER_SUN) {
+        data = FieldLightStatus_LoadData(ARCID_LIGHTS_BATTLE, HARSH_SUN_LIGHT_FILE, &count, HEAPID_TAIL(heapId));
+    } else if (weather != 0 && weather < WEATHER_CUSTOM_TINT_1) {
 #else
     if (weather != 0) {
 #endif

@@ -18,6 +18,7 @@
 #include "system/zone_weather.h"
 #ifdef PAPERWHITE2
 #include "paperwhite2/field_tint.h"
+#include "paperwhite2/harsh_sun.h"
 #endif
 
 struct FieldWeather {
@@ -105,6 +106,10 @@ static const WeatherOverlay WEATHER_OVERLAYS[WEATHER_MAX] = {
     { &PAPERWHITE2_CUSTOM_TINT_WEATHERS[9], OVERLAY_ID(78) },
     { &PAPERWHITE2_CUSTOM_TINT_WEATHERS[10], OVERLAY_ID(78) },
     { &PAPERWHITE2_CUSTOM_TINT_WEATHERS[11], OVERLAY_ID(78) },
+    // Paper White 2: harsh sun, with the particle weathers (paperwhite2/harsh_sun.h), and the dry thunderstorm, with
+    // the rain's (field/weather_rain.h)
+    { &PAPERWHITE2_HARSH_SUN_WEATHER, OVERLAY_ID(75) },
+    { &DRY_THUNDERSTORM_WEATHER, OVERLAY_ID(76) },
 #endif
 };
 

@@ -561,6 +561,11 @@ u32 ConvFieldWeatherToBtl(Field *field) {
     case WEATHER_BLIZZARD:
     case WEATHER_FLUTTER:
         return BTL_WEATHER_HAIL;
+#ifdef PAPERWHITE2
+    // Paper White 2: harsh sun is sun in battle, as field rain is rain (paperwhite2/harsh_sun.h)
+    case WEATHER_HARSH_SUN:
+        return BTL_WEATHER_SUN;
+#endif
     default:
         return BTL_WEATHER_NONE;
     }

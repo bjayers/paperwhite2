@@ -43,6 +43,11 @@ enum {
     WEATHER_CUSTOM_TINT_10,
     WEATHER_CUSTOM_TINT_11,
     WEATHER_CUSTOM_TINT_12,
+    // Paper White 2: the hack's own weathers. Harsh sun (paperwhite2/harsh_sun.h) gives sun in battle and counts as
+    // clear for encounters; the dry thunderstorm (field/weather_rain.h) is the thunderstorm without its rain, with no
+    // battle weather, and counts as the thunderstorm
+    WEATHER_HARSH_SUN,
+    WEATHER_DRY_THUNDERSTORM,
 #endif
     WEATHER_MAX,
 };

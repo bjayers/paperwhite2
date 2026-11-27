@@ -27,12 +27,12 @@ void PaperWhite2_BattleWeather_OnBattleReturn(u32 zoneId, u32 startBtlWeather) {
     PaperWhite2_BattleWeather_Start(weather, zoneId);
 }
 
-// The field weather of a battle weather. The field has no harsh sun, so sun clears the sky. Hail is the snow that
-// ConvFieldWeatherToBtl gives hail for, so a battle in it has hail again, as one in the rain or the sandstorm has those
+// The field weather of a battle weather: each the field weather that ConvFieldWeatherToBtl gives it for, so a battle
+// there has it again (harsh sun for sun, the snow of hail), as one in the rain or the sandstorm has those
 static u32 BattleWeather_ToFieldWeather(u32 btlWeather) {
     switch (btlWeather) {
     case BTL_WEATHER_SUN:
-        return WEATHER_SUNNY;
+        return WEATHER_HARSH_SUN;
     case BTL_WEATHER_RAIN:
         return WEATHER_RAIN;
     case BTL_WEATHER_HAIL:

@@ -28,7 +28,8 @@ Avenue's further lines) wait with it (STATUS.md, 2026-11-06 "where things stand"
 | Sprite Editor (icons and walking sheets) | Done |
 | Fairy type | Done |
 | Entralink roguelike (the Entree) | Built and playtested; screens' art, C-Gear run display and reaching it in play left |
-| Roaming legendaries | Phase 1 built (roaming, encounters, weather, debug menu); DexNav page, gate board, harsh sun, editor, story left |
+| Roaming legendaries | Phase 1 built (roaming, encounters, weather, debug menu), with harsh sun and the dry thunderstorm; DexNav page, gate board, editor, story left |
+| Harsh sun and the dry thunderstorm (new field weathers) | Built 2026-11-27; the user's look check and the 3DS shimmer check left |
 | Final wireless removal | Started: 9 wireless-only screens are shells; the final pass at the end |
 | Move and ability effect designer | Later |
 
@@ -68,8 +69,9 @@ Avenue's further lines) wait with it (STATUS.md, 2026-11-06 "where things stand"
    - **Roaming legendaries: phase 1 built, untested by the user** (design/roaming-legendaries.md, sections 9-10;
      plugins.md, Roaming legendaries; STATUS.md 2026-11-25): the eight roam Routes 1-23 once released (the debug
      menu's Release all for now), move on a 15-minute clock, scatter after a battle, keep their HP and status, come back
-     the day after a knock-out, and bring their weather. Left: the DexNav's Roamers page, the gates' board, harsh sun
-     (Entei, Moltres), the editor's page, the story's releases (phases 2-5).
+     the day after a knock-out, and bring their weather (Entei and Moltres harsh sun, Raikou and Zapdos the dry
+     thunderstorm since 2026-11-27). Left: the DexNav's Roamers page, the gates' board, the editor's page, the story's
+     releases (phases 2-5).
 
 ## Beyond the original order: built since
 
@@ -100,7 +102,8 @@ Avenue's further lines) wait with it (STATUS.md, 2026-11-06 "where things stand"
   Entralink buffs); the Sprite Editor (2026-11-22, below).
 - **Also built:** trainer level scaling, the difficulty setting and Prestige levels (plugins.md; STATUS.md
   2026-11-05; their numbers wait for the playtest), the Version Key (kept as a debug tool), the weather calendar and
-  the Weather Editor, street chatter in Castelia (`design/street-chatter.md`), HMs by learners, name entry without the
+  the Weather Editor and the hack's weathers (custom tints; harsh sun and the dry thunderstorm, plugins.md "Harsh sun
+  and the dry thunderstorm"), street chatter in Castelia (`design/street-chatter.md`), HMs by learners, name entry without the
   word filter, the Map Editor and map maker (`design/map-editor.md`, `design/map-reader.md`; STATUS.md 2026-11-01 to
   2026-11-05), and the Overworld Editor with its rails, cameras and ambients.
 

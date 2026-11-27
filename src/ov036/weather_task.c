@@ -470,6 +470,25 @@ FieldFog *WeatherTask_GetFog(WeatherTask *task) {
 void WeatherTask_FlushLight(WeatherTask *task) {
     FieldLight_Flush(task->light, TRUE);
 }
+
+// Paper White 2: the field's season, which the time of day of harsh sun's look takes (paperwhite2/harsh_sun.h)
+u16 WeatherTask_GetSeason(WeatherTask *task) {
+    return task->season;
+}
+
+// Paper White 2: replaces the particles' palette with a palette of 16 colours, harsh sun's embers' (32 bytes, kept
+// until the copy is done)
+void WeatherTask_SetParticlePalette(WeatherTask *task, const GXRgb *colors) {
+    NNSG2dPaletteData palette;
+
+    if (task->res.loaded) {
+        palette.fmt = GX_TEXFMT_PLTT16;
+        palette.bExtendedPlt = FALSE;
+        palette.szByte = 16 * sizeof(GXRgb);
+        palette.pRawData = (void *)colors;
+        ClActSys_ReplacePlttData(task->res.palette, &palette, 1);
+    }
+}
 #endif
 
 void WeatherTask_DisableFog(WeatherTask *task, u32 mode) {

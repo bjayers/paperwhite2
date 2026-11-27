@@ -38,10 +38,10 @@ ZONE_NONE = 0xFFFF
 # paperwhite2/roamers.h's ROAMER_METHOD_* bits, and the encounter rates of each method
 METHODS = {"walk": 1, "surf": 2, "fish": 4}
 METHOD_RATES = {"walk": ("grass", "dark_grass"), "surf": ("surf",), "fish": ("fishing",)}
-# The field weathers of the file's names (include/system/zone_weather.h); harsh sun is a later phase's new weather
+# The field weathers of the file's names (include/system/zone_weather.h)
 WEATHERS = {"none": "WEATHER_NONE", "rain": "WEATHER_RAIN", "gusty_rain": "WEATHER_GUSTY_RAIN",
             "thunderstorm": "WEATHER_THUNDERSTORM", "snow": "WEATHER_FLAKE", "hail": "WEATHER_BLIZZARD",
-            "harsh_sun": "WEATHER_NONE"}
+            "harsh_sun": "WEATHER_HARSH_SUN", "dry_thunderstorm": "WEATHER_DRY_THUNDERSTORM"}
 TOWN_MAP_ROUTE_TYPE = 1
 
 

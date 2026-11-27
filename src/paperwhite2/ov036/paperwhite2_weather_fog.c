@@ -330,7 +330,7 @@ static const u16 sRearPlaneFogZones[] = {
 BOOL PaperWhite2_WeatherFog_FollowsPlayer(const WeatherData *data) {
     return data == &RAIN_WEATHER || data == &THUNDERSTORM_WEATHER || data == &GUSTY_RAIN_WEATHER ||
            data == &FLAKE_WEATHER || data == &BLIZZARD_WEATHER || data == &FLUTTER_WEATHER || data == &SPECK_WEATHER ||
-           data == &SANDSTORM_WEATHER || PaperWhite2_FieldTint_FollowsPlayer(data);
+           data == &SANDSTORM_WEATHER || data == &DRY_THUNDERSTORM_WEATHER || PaperWhite2_FieldTint_FollowsPlayer(data);
 }
 
 // 0x7fff times how far the Z-buffer's depth runs from 0 at the near plane to 1 at the far plane, in 16.16

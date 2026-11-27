@@ -13,7 +13,7 @@
 // distance, like the rain's fog, and follows the player whatever the camera (paperwhite2/weather_fog.h). The sky gaps
 // take the fog too. The field's lights are left as they are, and a battle in a tint is lit as in the clear
 
-#define PAPERWHITE2_CUSTOM_TINT_SLOTS (WEATHER_MAX - WEATHER_CUSTOM_TINT_1)
+#define PAPERWHITE2_CUSTOM_TINT_SLOTS (WEATHER_CUSTOM_TINT_12 + 1 - WEATHER_CUSTOM_TINT_1)
 
 // The tints' weathers, by slot (weather.c's WEATHER_OVERLAYS)
 extern WeatherData PAPERWHITE2_CUSTOM_TINT_WEATHERS[PAPERWHITE2_CUSTOM_TINT_SLOTS];

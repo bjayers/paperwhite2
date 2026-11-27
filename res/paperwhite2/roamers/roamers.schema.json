@@ -37,7 +37,7 @@
           "description": "How it is met: walk (grass, dark grass, cave floors), surf, fish. Only the routes of routes.json with a step rate for one of them in the wild encounters' data are its routes",
           "items": { "enum": [ "walk", "surf", "fish" ] }
         },
-        "weather": { "enum": [ "none", "rain", "gusty_rain", "thunderstorm", "snow", "hail", "harsh_sun" ], "description": "The field weather of its route while it is there, over the weather calendar: snow is the field's light snow (WEATHER_FLAKE), hail its heavier snow (WEATHER_BLIZZARD). harsh_sun is a later phase's new weather and gives none for now" },
+        "weather": { "enum": [ "none", "rain", "gusty_rain", "thunderstorm", "snow", "hail", "harsh_sun", "dry_thunderstorm" ], "description": "The field weather of its route while it is there, over the weather calendar: snow is the field's light snow (WEATHER_FLAKE), hail its heavier snow (WEATHER_BLIZZARD), harsh_sun the hack's harsh sun (sun in battle), dry_thunderstorm the thunderstorm without its rain (no battle weather)" },
         "routes": {
           "type": "array", "minItems": 1,
           "description": "The routes of routes.json it roams, by place; all of them when absent",

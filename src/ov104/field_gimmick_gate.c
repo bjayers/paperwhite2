@@ -668,13 +668,20 @@ void GimmickGate_AddWeatherMessage(GimmickGateWork *work) {
         }
         weather = list.weather[i];
 #ifdef PAPERWHITE2
-        // Paper White 2: the hack's tints show as the original's tints do (paperwhite2/field_tint.h)
-        if (weather >= WEATHER_CUSTOM_TINT_1) {
+        // Paper White 2: harsh sun has a name of its own, the dry thunderstorm shows as the thunderstorm, and the
+        // hack's tints show as the original's tints do (paperwhite2/field_tint.h)
+        if (weather == WEATHER_DRY_THUNDERSTORM) {
+            weather = WEATHER_THUNDERSTORM;
+        } else if (weather >= WEATHER_CUSTOM_TINT_1 && weather != WEATHER_HARSH_SUN) {
             weather = WEATHER_TINT_10;
         }
-#endif
+        placeName = GFL_MsgDataLoadStrbufNew(placeMessages, ZoneData_GetPlaceNameID(list.zones[i]));
+        weatherName = GFL_MsgDataLoadStrbufNew(
+            weatherMessages, weather == WEATHER_HARSH_SUN ? GymInsect_Text_HarshSunlight : sWeatherMessages[weather]);
+#else
         placeName = GFL_MsgDataLoadStrbufNew(placeMessages, ZoneData_GetPlaceNameID(list.zones[i]));
         weatherName = GFL_MsgDataLoadStrbufNew(weatherMessages, sWeatherMessages[weather]);
+#endif
         formatSet = GFL_WordSetSystemCreate(2, 0x100, work->heapId);
         template = GFL_MsgDataLoadStrbufNew(weatherMessages, GymInsect_Text_Empty_57);
         formatted = GFL_StrBufCreate(0x40, work->heapId);

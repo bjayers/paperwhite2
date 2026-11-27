@@ -2,6 +2,25 @@
 
 Kept by both Claude sessions (see CLAUDE.md). Newest first.
 
+## 2026-11-27: Harsh sun and the dry thunderstorm (ROM session)
+
+- **Built** (design/harsh-sun.md section 13, plugins.md "Harsh sun and the dry thunderstorm"): `WEATHER_HARSH_SUN`
+  (27) and `WEATHER_DRY_THUNDERSTORM` (28). Harsh sun by day: warm bright light, a 1-pixel heat shimmer on the screen's
+  top 64 lines only, the vanilla lens flare pulsing; evening: orange light and the evening flare; night: a warm night
+  and rising embers (the weather's OBJs, under the banner and messages). Sun in battle; Sunny Day and Drought now leave
+  harsh sun (battle weather); clear for encounters. The dry thunderstorm: the storm's dark light, flashes and thunder
+  without rain; no battle weather; a thunderstorm for encounters. Entei and Moltres bring harsh sun, Raikou and Zapdos
+  the dry thunderstorm. Calendar, Weather Editor, Entree run weather, debug menu, gates' board, Sweet Scent wired.
+- **Try it:** START > World... > Weather > Harsh sun / Dry thunderstorm (the list's end); World... > Time changes the
+  period's look.
+- **Cost:** DS arena 0x46c0 → 0x4060 (16.1 KB); see design/memory.md.
+- **Tested** in py-desmume on a save copy (`Pokemon Paper White\harsh_sun\built_*`): day, evening, night, banner and
+  message box over both, battle start in sun, Sunny Day leaving harsh sun, the roamers' routes, the dry storm's flash.
+  Editor tests: the round-trip check's two failures on `roamers.json` and `routes.json` were there before (the roamers'
+  commit's hand-compact layout).
+- **Next:** the user's look check; the shimmer on the 3DS and melonDS (per-line BG0 scroll, one backdrop column at the
+  screen's edge).
+
 ## 2026-11-25: Roaming legendaries, phase 1 (ROM session)
 
 - **Built** (design/roaming-legendaries.md sections 9-10, plugins.md "Roaming legendaries"): Articuno, Zapdos,
@@ -18,7 +37,7 @@ Kept by both Claude sessions (see CLAUDE.md). Newest first.
   its methods (walk; surf too for the birds and Suicune). It tries to flee every turn by the player's speed rule
   (trapping holds it), keeps its HP and status, scatters 2 links after a battle it leaves, and comes back the day after
   a knock-out at full HP with a new PID (shiny rolled again). Its route has its weather (gusty rain, thunderstorm, snow,
-  hail); **Entei and Moltres have none until harsh sun exists** (a later phase).
+  hail); **Entei and Moltres have none until harsh sun exists** (a later phase; built 2026-11-27, above).
 - **Cost:** overlay 12 +3.4 KB, overlay 36 +0.5 KB: the DS arena 0x55e0 → 0x46c0 (17.7 KB).
 - **Tested** in py-desmume on a save copy, screenshots in `Pokemon Paper White\roamers\` (release, list, gusty rain and
   thunderstorm, Tornadus' battle and flight, "can't escape", knock-out and next-day return, the clock's pause and cap,

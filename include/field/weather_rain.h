@@ -15,5 +15,11 @@ extern WeatherData RAIN_WEATHER;
 extern WeatherData THUNDERSTORM_WEATHER;
 // Weather 7: rain that gusts, with two scrolling backgrounds and thunder rumbling
 extern WeatherData GUSTY_RAIN_WEATHER;
+#ifdef PAPERWHITE2
+// Paper White 2: WEATHER_DRY_THUNDERSTORM, weather 6 without its rain: the dark light and the lightning's flashes and
+// thunder, with no drops, no scrolling sheet and no rain sound. No battle weather; it counts as the thunderstorm for
+// encounters (paperwhite2/weather_groups.h)
+extern WeatherData DRY_THUNDERSTORM_WEATHER;
+#endif
 
 #endif // POKEBW2_FIELD_WEATHER_RAIN_H

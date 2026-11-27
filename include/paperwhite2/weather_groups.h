@@ -8,8 +8,8 @@
 // a condition's or a habitat's weather list means every weather of the listed weathers' groups
 // (tools/paperwhite2/conditions.py, which reads this header, compiles it so), the Pokédex's Area page and Habitat List
 // filter by group, and the DexNav names the zone's weather by its group. The tints are clear (Giant Chasm's mist
-// and the Entralink's lights are no weather to meet Pokémon in); flutter, blizzard and diamond dust are snow; gusty
-// rain is rain; the thunderstorm is its own
+// and the Entralink's lights are no weather to meet Pokémon in), and so is harsh sun; flutter, blizzard and diamond
+// dust are snow; gusty rain is rain; the thunderstorm and the dry thunderstorm are the thunderstorm
 
 enum {
     WEATHER_GROUP_CLEAR,
@@ -29,9 +29,10 @@ enum {
      WEATHER_BIT(WEATHER_CUSTOM_TINT_1) | WEATHER_BIT(WEATHER_CUSTOM_TINT_2) | WEATHER_BIT(WEATHER_CUSTOM_TINT_3) |    \
      WEATHER_BIT(WEATHER_CUSTOM_TINT_4) | WEATHER_BIT(WEATHER_CUSTOM_TINT_5) | WEATHER_BIT(WEATHER_CUSTOM_TINT_6) |    \
      WEATHER_BIT(WEATHER_CUSTOM_TINT_7) | WEATHER_BIT(WEATHER_CUSTOM_TINT_8) | WEATHER_BIT(WEATHER_CUSTOM_TINT_9) |    \
-     WEATHER_BIT(WEATHER_CUSTOM_TINT_10) | WEATHER_BIT(WEATHER_CUSTOM_TINT_11) | WEATHER_BIT(WEATHER_CUSTOM_TINT_12))
+     WEATHER_BIT(WEATHER_CUSTOM_TINT_10) | WEATHER_BIT(WEATHER_CUSTOM_TINT_11) | WEATHER_BIT(WEATHER_CUSTOM_TINT_12) | \
+     WEATHER_BIT(WEATHER_HARSH_SUN))
 #define WEATHER_GROUP_RAIN_WEATHERS (WEATHER_BIT(WEATHER_RAIN) | WEATHER_BIT(WEATHER_GUSTY_RAIN))
-#define WEATHER_GROUP_THUNDERSTORM_WEATHERS (WEATHER_BIT(WEATHER_THUNDERSTORM))
+#define WEATHER_GROUP_THUNDERSTORM_WEATHERS (WEATHER_BIT(WEATHER_THUNDERSTORM) | WEATHER_BIT(WEATHER_DRY_THUNDERSTORM))
 #define WEATHER_GROUP_SNOW_WEATHERS                                                                                    \
     (WEATHER_BIT(WEATHER_FLAKE) | WEATHER_BIT(WEATHER_BLIZZARD) | WEATHER_BIT(WEATHER_FLUTTER) |                       \
      WEATHER_BIT(WEATHER_DIAMOND_DUST))

@@ -368,8 +368,8 @@ there). In short:
   Entralink run.
 - **Encounter, battle, after it:** as 9.2 says. The roamer's escape follows the player's speed rule, without the
   player's tries' bonus (a roamer has no count of its tries).
-- **Weather:** the field weathers of 9.2 on the roamer's route; **Entei and Moltres have none until harsh sun exists**
-  (a later phase).
+- **Weather:** the field weathers of 9.2 on the roamer's route. Since 2026-11-27 Entei and Moltres bring **harsh sun**
+  and Raikou and Zapdos the **dry thunderstorm** (no battle weather), the new weathers of harsh-sun.md section 13
 
 **Tested** in py-desmume on a copy of the user's save (screenshots in `Pokemon Paper White\roamers\`): Release all put
 the eight on eight different routes, none the player's (Route 4); Roamers now listed each with its route, HP and

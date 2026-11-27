@@ -14,8 +14,9 @@
 // target on a normal town's planes keeps the weather's values exactly
 
 // Whether a weather's fog follows the player: the weathers that fall (rain, thunderstorm, gusty rain, snow, blizzard,
-// flutter, speck, sandstorm) and the hack's tints that fog by distance (paperwhite2/field_tint.h). The sunny weather
-// sets the zone's own fog, and the original's tints already pick theirs by camera
+// flutter, speck, sandstorm), the dry thunderstorm (field/weather_rain.h) and the hack's tints that fog by distance
+// (paperwhite2/field_tint.h). The sunny weather sets the zone's own fog, and the original's tints already pick theirs by
+// camera
 BOOL PaperWhite2_WeatherFog_FollowsPlayer(const WeatherData *data);
 
 // Every frame, after the fog's animation step: reads the camera and the player, and has the fog flushed again when
